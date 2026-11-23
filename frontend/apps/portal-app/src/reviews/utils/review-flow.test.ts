@@ -72,20 +72,48 @@ const pictures = (count: number): string =>
     (_, index) => `https://images.example.com/reviews/${index}.jpg`,
   ).join('\n')
 
-const OVERALL_RATING_MISSING = '総合の評価を選んでください。'
-const TITLE_TOO_LONG = '255 文字以内で入力してください。'
-const TOO_MANY_IMAGES = '画像は 10 個までです。行を減らしてください。'
-const UNACCEPTABLE =
-  'この値は受け付けられませんでした。入力を確かめてください。'
-const STAFF_GONE =
-  'このスタッフは、選べなくなりました。ほかのスタッフか、「スタッフを評価しない」を選んでください。'
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-const VISIT_READ_AGAIN =
-  'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
+const OVERALL_RATING_MISSING = {
+  en: 'Choose an overall rating.',
+  ja: '総合の評価を選んでください。',
+}
+const TITLE_TOO_LONG = {
+  en: 'Enter up to 255 characters.',
+  ja: '255 文字以内で入力してください。',
+}
+const TOO_MANY_IMAGES = {
+  en: 'Add up to 10 pictures. Remove some lines.',
+  ja: '画像は 10 個までです。行を減らしてください。',
+}
+const UNACCEPTABLE = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
+const STAFF_GONE = {
+  en: 'This member of the staff can no longer be chosen. Choose another, or “Do not rate the staff”.',
+  ja: 'このスタッフは、選べなくなりました。ほかのスタッフか、「スタッフを評価しない」を選んでください。',
+}
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+const NOT_SENT = {
+  en: 'It could not be sent. Check your connection and try again.',
+  ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+const VISIT_READ_AGAIN = {
+  en: 'This review could not be posted. The visit was loaded again: please check it.',
+  ja: 'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。',
+}
+const CHECK_AGAIN = {
+  en: 'Check what you entered and try again.',
+  ja: '入力した内容を確かめて、もう一度お試しください。',
+}
+
+/** What is said of the line of the pictures that is no address the API takes */
+const notAPictureAt = (line: number) => ({
+  en: `Check line ${line}. Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.`,
+  ja: `${line} 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。`,
+})
 
 describe('enteredForVisit', () => {
   it('should open the form with nothing but the member of the staff the booking was with', () => {
@@ -316,8 +344,7 @@ describe('readNewReview', () => {
       {
         type: 'invalid',
         errors: {
-          imageUrls:
-            '3 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+          imageUrls: notAPictureAt(3),
         },
       },
     )
@@ -336,8 +363,7 @@ describe('readNewReview', () => {
       errors: {
         overallRating: OVERALL_RATING_MISSING,
         title: TITLE_TOO_LONG,
-        imageUrls:
-          '1 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        imageUrls: notAPictureAt(1),
       },
     })
   })

@@ -6,7 +6,9 @@ import {
   portalAccountMessages,
   portalBookingMessages,
   portalProfileMessages,
+  portalReviewMessages,
   portalSalonMessages,
+  portalShareMessages,
 } from './index'
 
 const FOUND = messagesOf(catalogues, '')
@@ -16,6 +18,9 @@ const { booking, changes, detail, form, list, summary } = portalBookingMessages
 const { about, hours, menu, results, reviews, searchForm, staff } =
   portalSalonMessages
 const { details, email, membership } = portalProfileMessages
+const { own, report } = portalReviewMessages
+const reviewForm = portalReviewMessages.form
+const { file } = portalShareMessages
 
 /** An address of mail, which stands in every language as it is */
 const EMAIL = 'hanako@example.com'
@@ -50,6 +55,15 @@ const LEVEL = { en: 'Senior stylist', ja: 'シニアスタイリスト' }
 const POSTED = {
   en: '“丁寧なカット” (posted Tue, November 24)',
   ja: '「丁寧なカット」（11月24日（火） 投稿）',
+}
+
+/** A day a review was posted on, as the formats write it */
+const POSTED_ON = { en: 'November 10, 2026', ja: '2026年11月10日' }
+
+/** A review of the customer, as the sentences of the reviews name it */
+const SUBJECT = {
+  en: 'Beauty Salon Tokyo (posted November 10, 2026)',
+  ja: 'Beauty Salon Tokyo（2026年11月10日 投稿）',
 }
 
 /** Every message that is made from a value, with a value and what it then says. */
@@ -303,6 +317,101 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     membership.visitsOf(12),
     { en: '12 visits', ja: '12 回' },
   ],
+  [
+    'portalReviewMessages.subject',
+    portalReviewMessages.subject('Beauty Salon Tokyo', POSTED_ON),
+    SUBJECT,
+  ],
+  [
+    'portalReviewMessages.form.staffFixed',
+    reviewForm.staffFixed('田中 ひろし'),
+    {
+      en: 'Staff rated: 田中 ひろし. The staff rated cannot be changed.',
+      ja: '評価するスタッフ: 田中 ひろし。評価するスタッフは、変更できません。',
+    },
+  ],
+  [
+    'portalReviewMessages.form.titleDescription',
+    reviewForm.titleDescription(255),
+    {
+      en: 'Up to 255 characters. You may leave it empty.',
+      ja: '255 文字以内で書いてください。空欄のままでも、かまいません。',
+    },
+  ],
+  [
+    'portalReviewMessages.form.imagesDescription',
+    reviewForm.imagesDescription(10),
+    {
+      en: 'Write the address of each picture on a line of its own, up to 10 pictures.',
+      ja: '写真のアドレスを、1 行に 1 つずつ、10 個まで書けます。',
+    },
+  ],
+  [
+    'portalReviewMessages.form.tooManyImages',
+    reviewForm.tooManyImages(10),
+    {
+      en: 'Add up to 10 pictures. Remove some lines.',
+      ja: '画像は 10 個までです。行を減らしてください。',
+    },
+  ],
+  [
+    'portalReviewMessages.own.count',
+    own.count(12),
+    { en: '12 reviews', ja: '12 件のレビューがあります' },
+  ],
+  [
+    'portalReviewMessages.own.ratedStaff',
+    own.ratedStaff('田中 ひろし'),
+    { en: 'Staff rated: 田中 ひろし', ja: '評価したスタッフ: 田中 ひろし' },
+  ],
+  [
+    'portalReviewMessages.own.changeOf',
+    own.changeOf(SUBJECT),
+    {
+      en: 'Change the review of Beauty Salon Tokyo (posted November 10, 2026)',
+      ja: 'Beauty Salon Tokyo（2026年11月10日 投稿）のレビューを変更する',
+    },
+  ],
+  [
+    'portalReviewMessages.own.deleteOf',
+    own.deleteOf(SUBJECT),
+    {
+      en: 'Delete the review of Beauty Salon Tokyo (posted November 10, 2026)',
+      ja: 'Beauty Salon Tokyo（2026年11月10日 投稿）のレビューを削除する',
+    },
+  ],
+  [
+    'portalReviewMessages.own.deleteDescription',
+    own.deleteDescription(SUBJECT),
+    {
+      en: 'This deletes your review of Beauty Salon Tokyo (posted November 10, 2026). A deleted review is gone for good, together with the reply of the salon. You can write a review of this visit again.',
+      ja: 'Beauty Salon Tokyo（2026年11月10日 投稿）のレビューを削除します。削除したレビューは、サロンからの返信とともに消え、元に戻せません。この来店のレビューは、もう一度書けます。',
+    },
+  ],
+  [
+    'portalReviewMessages.report.description',
+    report.description(POSTED),
+    {
+      en: 'This reports the review “丁寧なカット” (posted Tue, November 24) to the team that runs the site. The team checks it, and deletes a review that breaks the rules. Until then, the review stays listed.',
+      ja: '「丁寧なカット」（11月24日（火） 投稿）のレビューを、運営に通報します。運営が内容を確かめ、規則に反するレビューは削除します。確かめが済むまで、レビューは掲載されたままです。',
+    },
+  ],
+  [
+    'portalReviewMessages.report.detailsDescription',
+    report.detailsDescription(2000),
+    {
+      en: 'Say what the problem is, in up to 2,000 characters. When the reason is “Other”, this is required.',
+      ja: 'どこが問題かを、2,000 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。',
+    },
+  ],
+  [
+    'portalShareMessages.file.sizeOf',
+    file.sizeOf(
+      { en: '340 kB', ja: '340 KB' },
+      { en: '348,160 bytes', ja: '348,160 バイト' },
+    ),
+    { en: '340 kB (348,160 bytes)', ja: '340 KB（348,160 バイト）' },
+  ],
 ]
 
 /** A name that stands inside a sentence of another catalogue: it begins as it stands there */
@@ -311,6 +420,9 @@ const INSIDE_A_SENTENCE = /\.names\./
 /** A part of a sentence that has a link in it: the parts are joined, in their order, around the link */
 const PART_OF_A_SENTENCE = /WithLinks?\.[^.]+$/
 
+/** A rating of the form, which begins with the figure it names: 「5（とても満足）」 */
+const FIGURE_FIRST = /\.form\.scale\./
+
 /** What stands between the values of a list: punctuation, written in the way of each language */
 const PUNCTUATION = ['portalSalonMessages.about.betweenPhoneNumbers']
 
@@ -318,6 +430,7 @@ const PUNCTUATION = ['portalSalonMessages.about.betweenPhoneNumbers']
 const isWrittenInEach = ([where]: [string, LocalizedText]): boolean =>
   !INSIDE_A_SENTENCE.test(where) &&
   !PART_OF_A_SENTENCE.test(where) &&
+  !FIGURE_FIRST.test(where) &&
   !PUNCTUATION.includes(where)
 
 /** The sentences that have a link in them, by where they are, with their parts joined */
@@ -374,6 +487,17 @@ describe('the messages of the portal', () => {
     },
   )
 
+  it.each(FOUND.texts.filter(([where]) => FIGURE_FIRST.test(where)))(
+    'should write a rating with the figure first, and its word in each language: %s',
+    (_where, written) => {
+      // Assert
+      expect(written.en).toMatch(/^[1-5] \([a-z ]+\)$/)
+      expect(written.ja).toMatch(/^[1-5]（.+）$/)
+      expect(written.ja).toMatch(JAPANESE)
+      expect(written.en.at(0)).toBe(written.ja.at(0))
+    },
+  )
+
   it.each(FOUND.texts.filter(([where]) => PUNCTUATION.includes(where)))(
     'should write punctuation in the way of each language: %s',
     (_where, written) => {
@@ -418,6 +542,19 @@ describe('the messages of the portal', () => {
     ],
     ['star', reviews.ratingOf(1), { en: '1 star', ja: '評価 1' }],
     ['point', membership.pointsOf(1), { en: '1 point', ja: '1 ポイント' }],
+    [
+      'review of the customer',
+      own.count(1),
+      { en: '1 review', ja: '1 件のレビューがあります' },
+    ],
+    [
+      'picture',
+      reviewForm.tooManyImages(1),
+      {
+        en: 'Add up to 1 picture. Remove some lines.',
+        ja: '画像は 1 個までです。行を減らしてください。',
+      },
+    ],
     ['visit', membership.visitsOf(1), { en: '1 visit', ja: '1 回' }],
     ['review', reviews.countOf(1), { en: '1 review', ja: '1 件' }],
     [

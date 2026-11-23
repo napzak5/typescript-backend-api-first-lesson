@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
@@ -17,9 +18,10 @@ import {
   TOKYO,
   VIP,
 } from '@beauty-salon-frontend/testing/seed'
+import { dayOf } from '@beauty-salon-shared/i18n/formats'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../../__tests__/screens'
 import {
@@ -88,6 +90,8 @@ const seenSchema = z.array(
     helpfulCount: z.number().int(),
     /** The day it was posted on, at its salon, as a screen says it */
     posted: z.string(),
+    /** The same day, as the formats are given it: `2026-11-10` */
+    postedOn: z.iso.date(),
     /** The customer is among those who found it helpful */
     voted: z.boolean(),
     /** The account of the customer reported it */
@@ -103,6 +107,7 @@ const reviewsSeenBy = async (email: string, salon: string): Promise<Seen[]> =>
     await testApi().query(
       `select reviews.id::text, reviews.title, writers.email as writer, reviews."helpfulCount",
               to_char(reviews."createdAt" at time zone salons.timezone, 'YYYY"年"FMMM"月"FMDD"日"') as posted,
+              to_char(reviews."createdAt" at time zone salons.timezone, 'YYYY-MM-DD') as "postedOn",
               exists (select 1 from review_helpful_votes votes
                       join customers readers on readers.id = votes."customerId"
                       where votes."reviewId" = reviews.id and readers.email = $1) as voted,
@@ -1156,6 +1161,91 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert
       expect(violations).toEqual([])
+    })
+  })
+})
+
+describe('reporting a review on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  const reporting = () =>
+    screen.getByRole('dialog', { name: 'Report the review' })
+
+  /** The review of a title, once the page knows that a customer reads: it has its buttons. */
+  const reviewInEnglish = async (title: string): Promise<HTMLElement> => {
+    const list = await within(await region('Reviews')).findByRole('list', {
+      name: 'Reviews',
+    })
+    await within(list).findAllByRole('button', { name: /^Helpful: / })
+    const found = within(list)
+      .getAllByRole('listitem')
+      .find((review) => within(review).queryByText(title) !== null)
+    if (found === undefined) {
+      throw new Error(`No review is titled ${title}`)
+    }
+
+    return found
+  }
+
+  it('should ask in English why, naming the review, say that a reason is missing, and report the review', async () => {
+    // Arrange
+    await signedInAs(KENJI.email)
+    const review = await untouchedBy(KENJI.email)
+    renderAt(await salonPathOf(TOKYO))
+    const subject = `“${review.title}” (posted ${dayOf(review.postedOn).en})`
+    const user = userEvent.setup()
+
+    // Act
+    await user.click(
+      within(await reviewInEnglish(review.title)).getByRole('button', {
+        name: `Report the review ${subject}`,
+      }),
+    )
+
+    // Assert
+    expect(reporting()).toHaveAccessibleDescription(
+      `This reports the review ${subject} to the team that runs the site. The team checks it, and deletes a review that breaks the rules. Until then, the review stays listed.`,
+    )
+
+    // Act
+    await user.click(
+      within(reporting()).getByRole('button', { name: 'Report' }),
+    )
+
+    // Assert
+    expect(
+      within(reporting()).getByRole('radiogroup', {
+        name: 'Reason for the report',
+      }),
+    ).toHaveAccessibleDescription('Choose the reason for the report.')
+
+    // Act
+    await user.click(
+      within(reporting()).getByRole('radio', {
+        name: 'Something that is not true',
+      }),
+    )
+    await user.click(
+      within(reporting()).getByRole('button', { name: 'Report' }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You reported the review. The team that runs the site will check it, and the review stays listed until then.',
+      ),
+    ).toBeVisible()
+    expect(await storedOf(review.id)).toMatchObject({
+      reports: [{ by: KENJI.email, reason: 'false_information' }],
     })
   })
 })

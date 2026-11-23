@@ -4,14 +4,16 @@ import {
   aboutTheAttempt,
   Form,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   UnreadNotice,
-  writtenInJapanese,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalShareMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
@@ -24,13 +26,10 @@ import {
 import {
   afterPassword,
   loadMessageOf,
-  NO_TOKEN_SAID,
-  PASSWORD_AGAIN_SAID,
   readPassword,
-  UNUSABLE_SAID,
 } from '../utils/shared-file'
 
-const TITLE = '共有されたファイル'
+const { password: passwordWords, names } = portalShareMessages
 
 const NOT_LOADED: SharedFileContent = {
   type: 'notLoaded',
@@ -48,9 +47,16 @@ type Gate =
   | { type: 'unusable' }
 
 /** The link works no more: the API does not say why. */
-const ShareLinkUnusable = () => (
-  <PageHeader title='この共有リンクは開けません' description={UNUSABLE_SAID} />
-)
+const ShareLinkUnusable = () => {
+  const say = useSay()
+
+  return (
+    <PageHeader
+      title={say(portalShareMessages.cannotOpen)}
+      description={say(portalShareMessages.unusable)}
+    />
+  )
+}
 
 type SharedFileViewProps = {
   token: string
@@ -74,8 +80,9 @@ const SharedFileView = ({
   onPasswordRefused,
   onUnusable,
 }: SharedFileViewProps) => {
+  const say = useSay()
   const [loaded, setLoaded] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | undefined>(undefined)
+  const [message, setMessage] = useState<LocalizedText | undefined>(undefined)
   const heading = useRef<HTMLHeadingElement>(null)
   const loading = useMutation({
     mutationFn: () => loadSharedFile(token, password, file),
@@ -115,7 +122,7 @@ const SharedFileView = ({
     <>
       <PageHeader
         title={file.filename}
-        description='サロンから共有されたファイルです。'
+        description={say(portalShareMessages.sharedBySalon)}
       />
       <SharedFileRecord
         file={file}
@@ -150,9 +157,11 @@ const PasswordGate = ({
   onOpened,
   onUnusable,
 }: PasswordGateProps) => {
-  const [says, setSays] = useState<FormSays>(
-    again ? aboutTheAttempt(PASSWORD_AGAIN_SAID) : NOTHING_TO_SAY,
+  const say = useSay()
+  const [says, setSays] = useState<FormSays<LocalizedText>>(
+    again ? aboutTheAttempt(passwordWords.again) : NOTHING_TO_SAY,
   )
+  const said = useSaidForm(says.message, says.errors)
   const opening = useMutation({
     mutationFn: (password: string) => readSharedFile(token, password),
     onSuccess: (read, password) => {
@@ -179,22 +188,22 @@ const PasswordGate = ({
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='このファイルは、パスワードで保護されています。共有したサロンから、リンクとは別に伝えられたパスワードを入力してください。'
+        title={say(portalShareMessages.title)}
+        description={say(passwordWords.description)}
       />
       <Form
-        submitLabel='ファイルを開く'
-        message={says.message}
+        submitLabel={say(passwordWords.open)}
+        message={said.message}
         errors={says.errors}
         pending={opening.isPending}
         onSubmit={submit}
       >
         <PasswordField
-          label='パスワード'
+          label={say(passwordWords.label)}
           name='password'
           autoComplete='off'
           required
-          error={says.errors['password']}
+          error={said.errors['password']}
         />
       </Form>
     </>
@@ -202,6 +211,7 @@ const PasswordGate = ({
 }
 
 const SharedFileOfToken = ({ token }: { token: string }) => {
+  const say = useSay()
   // Asked once for this screen, and forgotten with it: reading what is
   // known of the file uses nothing up
   const check = useQuery({
@@ -240,8 +250,8 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
       match(check.data)
         .with(undefined, () => (
           <>
-            <PageHeader title={TITLE} />
-            <LoadingIndicator label='共有リンクを確かめています' />
+            <PageHeader title={say(portalShareMessages.title)} />
+            <LoadingIndicator label={say(portalShareMessages.checking)} />
           </>
         ))
         .with({ type: 'found' }, ({ file }) => (
@@ -264,11 +274,9 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
         .with({ type: 'unusable' }, () => <ShareLinkUnusable />)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <>
-            <PageHeader title={TITLE} />
+            <PageHeader title={say(portalShareMessages.title)} />
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('ファイルの情報'), reason),
-              )}
+              message={say(unreadMessageOf(names.file, reason))}
               onRetry={() => void check.refetch()}
               pending={check.isFetching}
             />
@@ -286,12 +294,13 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
  * out of the address once it is read.
  */
 export const SharedFileScreen = () => {
+  const say = useSay()
   const token = useMailedToken()
 
   return token === null ? (
     <PageHeader
-      title='この共有リンクは開けません'
-      description={NO_TOKEN_SAID}
+      title={say(portalShareMessages.cannotOpen)}
+      description={say(portalShareMessages.noToken)}
     />
   ) : (
     <SharedFileOfToken key={token} token={token} />

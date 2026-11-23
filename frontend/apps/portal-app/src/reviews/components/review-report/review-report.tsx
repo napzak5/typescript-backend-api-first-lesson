@@ -1,13 +1,18 @@
-import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   Alert,
   FormDialog,
   type FormErrors,
-  inJapanese,
   NO_ERRORS,
   RadioGroup,
   TextArea,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalReviewMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import {
   DETAILS,
   MAX_DETAILS_LENGTH,
@@ -15,11 +20,13 @@ import {
   REASONS,
 } from '../../utils/reader-flow'
 
+const { report: words } = portalReviewMessages
+
 export type ReviewReportProps = {
   /** The dialog is open */
   open: boolean
-  /** Which review it is, as the dialog names it: 「2026年11月10日 投稿」 */
-  subject: string
+  /** Which review it is, as the page of the salon names it: 「2026年11月10日 投稿」 */
+  subject: LocalizedText
   /**
    * The dialog has closed, or its button that changes nothing was pressed.
    * Set `open` to false here
@@ -31,18 +38,19 @@ export type ReviewReportProps = {
    * form, and can be closed
    */
   reportedBefore?: boolean | undefined
-  /** What went wrong with the attempt as a whole; it is said in the dialog */
-  message?: string | undefined
-  /** What is wrong with a value, under the name of its control */
-  errors?: FormErrors | undefined
+  /** What went wrong with the attempt as a whole; it is said in the dialog, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * What is wrong with a value, under the name of its control. A new
+   * object is a new attempt: the focus goes to the first control with an
+   * error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The report is on its way */
   pending?: boolean | undefined
   /** The customer sent the form: `reason` and `details` */
   onReport: (values: FormData) => void
 }
-
-const REPORTED_BEFORE =
-  'このレビューは、すでに通報しています。1 つのレビューを通報できるのは、1 回です。'
 
 /**
  * The form in which a customer reports a review to those who run the site:
@@ -58,35 +66,45 @@ export const ReviewReport = ({
   errors = NO_ERRORS,
   pending = false,
   onReport,
-}: ReviewReportProps) => (
-  <FormDialog
-    open={open}
-    onClose={onClose}
-    title='レビューを通報する'
-    description={`${subject}のレビューを、運営に通報します。運営が内容を確かめ、規則に反するレビューは削除します。確かめが済むまで、レビューは掲載されたままです。`}
-    submitLabel='通報する'
-    message={message}
-    errors={errors}
-    pending={pending}
-    onSubmit={onReport}
-    answer={
-      reportedBefore ? <Alert tone='info'>{REPORTED_BEFORE}</Alert> : undefined
-    }
-  >
-    <RadioGroup
-      label='通報の理由'
-      name={REASON}
-      options={REASONS}
-      required
-      error={errors[REASON]}
-    />
-    <TextArea
-      label='詳しい内容'
-      name={DETAILS}
-      rows={4}
-      maxLength={MAX_DETAILS_LENGTH}
-      description={`どこが問題かを、${inJapanese(charactersOf(MAX_DETAILS_LENGTH))}以内でご記入ください。理由が「その他」のときは、必ずご記入ください。`}
-      error={errors[DETAILS]}
-    />
-  </FormDialog>
-)
+}: ReviewReportProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <FormDialog
+      open={open}
+      onClose={onClose}
+      title={say(words.title)}
+      description={say(words.description(subject))}
+      submitLabel={say(portalSalonMessages.reviews.report)}
+      message={said.message}
+      errors={errors}
+      pending={pending}
+      onSubmit={onReport}
+      answer={
+        reportedBefore ? (
+          <Alert tone='info'>{say(words.reportedBefore)}</Alert>
+        ) : undefined
+      }
+    >
+      <RadioGroup
+        label={say(words.reason)}
+        name={REASON}
+        options={REASONS.map(({ value, label }) => ({
+          value,
+          label: say(label),
+        }))}
+        required
+        error={said.errors[REASON]}
+      />
+      <TextArea
+        label={say(words.details)}
+        name={DETAILS}
+        rows={4}
+        maxLength={MAX_DETAILS_LENGTH}
+        description={say(words.detailsDescription(MAX_DETAILS_LENGTH))}
+        error={said.errors[DETAILS]}
+      />
+    </FormDialog>
+  )
+}

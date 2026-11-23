@@ -1,3 +1,6 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { fieldMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { enteredForVisit, enteredOf } from '../../utils/review-flow'
@@ -61,10 +64,9 @@ export const WrittenOfNobody: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      overallRating: '総合の評価を選んでください。',
-      title: '255 文字以内で入力してください。',
-      imageUrls:
-        '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      overallRating: portalReviewMessages.form.overallRatingMissing,
+      title: fieldMessages.tooLong(255),
+      imageUrls: fieldMessages.lineToCheck(2, fieldMessages.notWebAddress(500)),
     },
   },
 }
@@ -72,8 +74,7 @@ export const WithErrors: Story = {
 /** Nothing came of the attempt, and no control is to blame */
 export const WithMessage: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 

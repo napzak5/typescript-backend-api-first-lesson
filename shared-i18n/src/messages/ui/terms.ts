@@ -97,6 +97,26 @@ export const termMessages = {
     point: text({ en: 'Points', ja: 'ポイント' }),
   },
   /** The kind of a file that is attached or shared, by its content type */
+  /** Why a review is reported, as the form of a report offers it and a moderator reads it */
+  reviewReportReason: {
+    inappropriate: text({
+      en: 'Inappropriate language (abuse, discrimination and the like)',
+      ja: '不適切な表現（暴言、差別的な表現など）',
+    }),
+    false_information: text({
+      en: 'Something that is not true',
+      ja: '事実と違う内容',
+    }),
+    personal_information: text({
+      en: 'Personal information (names, contact details and the like)',
+      ja: '個人情報（氏名や連絡先など）',
+    }),
+    spam: text({
+      en: 'Advertising, or something that has nothing to do with a visit',
+      ja: '宣伝や、来店と関係のない内容',
+    }),
+    other: text({ en: 'Other', ja: 'その他' }),
+  },
   contentType: {
     'image/jpeg': text({ en: 'JPEG image', ja: 'JPEG 画像' }),
     'image/png': text({ en: 'PNG image', ja: 'PNG 画像' }),

@@ -1,16 +1,20 @@
-import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   type ChoiceOption,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   Note,
   RadioGroup,
   Select,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useState } from 'react'
 import { match } from 'ts-pattern'
 import { DETAIL_RATINGS } from '../../../salons/utils/salon-format'
@@ -25,8 +29,9 @@ import {
   STAFF_RATING,
   TITLE,
 } from '../../utils/review-flow'
-import { NO_STAFF } from '../../utils/review-format'
 import styles from './review-form.module.css'
+
+const { form: words } = portalReviewMessages
 
 /** Whom a review rates, and whether the form asks. */
 type RatedStaff =
@@ -45,23 +50,28 @@ type RatedStaff =
 
 export type ReviewFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
   /** What the controls open with */
   entered: Entered
   staff: RatedStaff
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * The errors of the controls, under their names. A new object is a new
+   * attempt: the focus goes to the first control with an error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 /** The ratings there are, the best first, each with the word for it */
-const RATINGS: readonly ChoiceOption[] = [
-  { value: '5', label: '5（とても満足）' },
-  { value: '4', label: '4（満足）' },
-  { value: '3', label: '3（ふつう）' },
-  { value: '2', label: '2（やや不満）' },
-  { value: '1', label: '1（不満）' },
+const RATINGS: readonly { value: string; label: LocalizedText }[] = [
+  { value: '5', label: words.scale.verySatisfied },
+  { value: '4', label: words.scale.satisfied },
+  { value: '3', label: words.scale.neutral },
+  { value: '2', label: words.scale.somewhatDissatisfied },
+  { value: '1', label: words.scale.dissatisfied },
 ]
-
-const NOT_RATED = '評価しない'
 
 /**
  * What a customer says of a visit: how it was, as one rating and as
@@ -78,9 +88,16 @@ const NOT_RATED = '評価しない'
 export const ReviewForm = ({
   entered,
   staff,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: ReviewFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+  const ratings = RATINGS.map(({ value, label }) => ({
+    value,
+    label: say(label),
+  }))
   const [chosen, setChosen] = useState(entered.staffId ?? '')
   // What is offered may be read again behind the form: a member who is
   // offered no more is not chosen
@@ -93,48 +110,39 @@ export const ReviewForm = ({
     .exhaustive()
 
   return (
-    <Form {...form} errors={errors}>
-      <Note size='small'>
-        レビューは、サロンのページに掲載され、誰でも読めます。
-      </Note>
-      <FormPart label='評価'>
+    <Form {...form} message={said.message} errors={errors}>
+      <Note size='small'>{say(words.shownToAll)}</Note>
+      <FormPart label={say(words.ratings)}>
         <RadioGroup
-          label='総合の評価'
+          label={say(words.overallRating)}
           name={OVERALL_RATING}
-          options={RATINGS}
+          options={ratings}
           defaultValue={entered.overallRating}
           required
-          error={errors[OVERALL_RATING]}
+          error={said.errors[OVERALL_RATING]}
         />
         {match(staff)
           .with({ type: 'choice' }, ({ options }) =>
             options.length === 0 ? (
-              <Note size='small'>
-                この来店を担当したスタッフは、いまサロンのページに掲載されていないため、スタッフの評価はできません。
-              </Note>
+              <Note size='small'>{say(words.noStaffToRate)}</Note>
             ) : (
               <Select
-                label='評価するスタッフ'
+                label={say(words.staff)}
                 name={STAFF}
-                placeholder='スタッフを評価しない'
+                placeholder={say(words.noStaffRated)}
                 options={options}
                 value={staffId}
                 onChange={(event) => setChosen(event.target.value)}
-                description='選んだスタッフへのレビューとしても、集計されます。'
-                error={errors[STAFF]}
+                description={say(words.staffDescription)}
+                error={said.errors[STAFF]}
               />
             ),
           )
           .with({ type: 'fixed' }, ({ name }) => (
-            <Note size='small'>
-              評価するスタッフ: {name ?? NO_STAFF}
-              。評価するスタッフは、変更できません。
-            </Note>
+            <Note size='small'>{say(words.staffFixed(name))}</Note>
           ))
           .with({ type: 'nobody' }, () => (
-            <Note size='small'>
-              このレビューは、スタッフを評価していません。評価するスタッフは、あとから追加できません。
-            </Note>
+            <Note size='small'>{say(words.nobodyRated)}</Note>
           ))
           .exhaustive()}
         <div className={styles['details']}>
@@ -143,39 +151,39 @@ export const ReviewForm = ({
           ).map(({ name, label }) => (
             <Select
               key={name}
-              label={inJapanese(label)}
+              label={say(label)}
               name={name}
-              placeholder={NOT_RATED}
-              options={RATINGS}
+              placeholder={say(words.notRated)}
+              options={ratings}
               defaultValue={entered[name] ?? ''}
-              error={errors[name]}
+              error={said.errors[name]}
             />
           ))}
         </div>
       </FormPart>
-      <FormPart label='感想'>
+      <FormPart label={say(words.words)}>
         <TextField
-          label='タイトル'
+          label={say(words.title)}
           name={TITLE}
           autoComplete='off'
-          description={`${inJapanese(charactersOf(MAX_TITLE_LENGTH))}以内で書いてください。空欄のままでも、かまいません。`}
+          description={say(words.titleDescription(MAX_TITLE_LENGTH))}
           defaultValue={entered.title}
-          error={errors[TITLE]}
+          error={said.errors[TITLE]}
         />
         <TextArea
-          label='本文'
+          label={say(words.comment)}
           name={COMMENT}
           rows={6}
-          description='空欄のままでも、かまいません。'
+          description={say(words.commentDescription)}
           defaultValue={entered.comment}
-          error={errors[COMMENT]}
+          error={said.errors[COMMENT]}
         />
         <TextArea
-          label='写真の URL'
+          label={say(words.images)}
           name={IMAGES}
-          description={`写真のアドレスを、1 行に 1 つずつ、${MAX_IMAGES} 個まで書けます。`}
+          description={say(words.imagesDescription(MAX_IMAGES))}
           defaultValue={entered.imageUrls}
-          error={errors[IMAGES]}
+          error={said.errors[IMAGES]}
         />
       </FormPart>
     </Form>

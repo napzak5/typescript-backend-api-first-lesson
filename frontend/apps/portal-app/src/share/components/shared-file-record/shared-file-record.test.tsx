@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { PIXEL } from '../examples'
 import * as sharedFileRecordStories from './shared-file-record.stories'
 
@@ -104,6 +105,74 @@ describe('SharedFileRecord', () => {
     expect(facts()).toEqual([
       ['種類', 'PDF'],
       ['サイズ', '512 バイト'],
+    ])
+  })
+})
+
+describe('SharedFileRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const partInEnglish = () => screen.getByRole('region', { name: 'File' })
+
+  it('should say in English what the file is, and that loading it counts as a download', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotLoaded.run()
+
+    // Assert
+    expect(
+      within(partInEnglish())
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Type', 'PNG image'],
+      ['Size', '340 kB (348,160 bytes)'],
+    ])
+    expect(partInEnglish()).toHaveTextContent(
+      'Every load of the file counts as one download.',
+    )
+    expect(
+      within(partInEnglish()).getByRole('button', { name: 'Load the file' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the download was counted, and offer to load the file again', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotFetched.run()
+
+    // Assert
+    expect(within(partInEnglish()).getByRole('alert')).toHaveTextContent(
+      'The file could not be loaded. The download was counted. Loading it again counts as another.',
+    )
+    expect(
+      within(partInEnglish()).getByRole('button', { name: 'Load again' }),
+    ).toBeVisible()
+  })
+
+  it('should name the ways to open a file the page holds in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.LoadedPdf.run()
+
+    // Assert
+    const links = within(
+      within(partInEnglish()).getByRole('list', { name: 'Open the file' }),
+    )
+    expect(links.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Open in a new tab',
+      'Save',
     ])
   })
 })

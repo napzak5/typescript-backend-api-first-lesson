@@ -1,9 +1,10 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { useState } from 'react'
+import { act, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { visit } from '../examples'
 import { ReviewForm, type ReviewFormProps } from './review-form'
 import * as reviewFormStories from './review-form.stories'
@@ -387,5 +388,132 @@ describe('ReviewForm', () => {
     expect(text('タイトル')).toHaveAccessibleDescription(
       '255 文字以内で書いてください。空欄のままでも、かまいません。',
     )
+  })
+})
+
+describe('ReviewForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts, its controls and its ratings in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Reviews are shown on the page of the salon, and anybody can read them.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual(['Ratings', 'Your impressions'])
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Overall rating' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      '5 (very satisfied)',
+      '4 (satisfied)',
+      '3 (neutral)',
+      '2 (somewhat dissatisfied)',
+      '1 (dissatisfied)',
+    ])
+    expect(select('Staff to rate')).toHaveAccessibleDescription(
+      'The review also counts as one of the member of the staff you choose.',
+    )
+    expect(optionsOf('Staff to rate').at(0)).toBe('Do not rate the staff')
+    expect(optionsOf(select('Service')).at(0)).toBe('Not rated')
+    expect(text('Title')).toHaveAccessibleDescription(
+      'Up to 255 characters. You may leave it empty.',
+    )
+    expect(text('Comment')).toHaveAccessibleDescription(
+      'You may leave it empty.',
+    )
+    expect(text('Picture URLs')).toHaveAccessibleDescription(
+      'Write the address of each picture on a line of its own, up to 10 pictures.',
+    )
+  })
+
+  it('should say in English whom a review rates, and that nobody can be rated', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WrittenOfStaffThatLeft.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Staff rated: Staff member (no longer listed). The staff rated cannot be changed.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await stories.WrittenOfNobody.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'This review does not rate the staff. The staff to rate cannot be added later.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await stories.NewWithoutStaff.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The member of the staff who served you is not listed on the page of the salon at the moment, so the staff cannot be rated.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English what is wrong at each control, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Overall rating' }),
+    ).toHaveAccessibleDescription('Choose an overall rating.')
+    expect(text('Title')).toHaveAccessibleDescription(
+      'Up to 255 characters. You may leave it empty. Enter up to 255 characters.',
+    )
+
+    // Act
+    await stories.WithMessage.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
+  })
+
+  it('should say its errors again in the language chosen, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run()
+    text('本文').focus()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Overall rating' }),
+    ).toHaveAccessibleDescription('Choose an overall rating.')
+    expect(text('Comment')).toHaveFocus()
   })
 })

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { signIn } from '@beauty-salon-frontend/session'
 import {
   findAccessibilityViolations,
@@ -494,5 +495,121 @@ describe('the screen of a share link, against the API', () => {
         }),
       )
     })
+  })
+})
+
+describe('the screen of a share link on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  const partInEnglish = () => main().getByRole('region', { name: 'File' })
+
+  const passwordInEnglish = () =>
+    screen.findByLabelText('Password', { selector: 'input' })
+
+  it('should say in English what the file is, and load it when asked', async () => {
+    // Arrange
+    const link = await sharePhoto()
+
+    // Act
+    openLink(link.token)
+
+    // Assert
+    expect(await heading(PHOTO)).toBeVisible()
+    expect(main().getByText('A file a salon shared with you.')).toBeVisible()
+    expect(
+      within(partInEnglish())
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Type', 'PNG image'],
+      ['Size', '24 bytes'],
+    ])
+
+    // Act
+    await userEvent.click(
+      within(partInEnglish()).getByRole('button', { name: 'Load the file' }),
+    )
+
+    // Assert
+    expect(
+      await within(partInEnglish()).findByRole('link', { name: 'Save' }),
+    ).toHaveAttribute('download', PHOTO)
+  })
+
+  it('should ask in English for the password, and say what is wrong with it', async () => {
+    // Arrange
+    const link = await shareConsent()
+    const user = userEvent.setup()
+
+    // Act
+    openLink(link.token)
+
+    // Assert
+    const password = await passwordInEnglish()
+    expect(await heading('Shared file')).toBeVisible()
+    expect(
+      main().getByText(
+        'This file is protected by a password. Enter the password the salon that shared it gave you apart from the link.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.click(main().getByRole('button', { name: 'Open the file' }))
+
+    // Assert
+    expect(password).toHaveAccessibleDescription('Enter the password.')
+
+    // Act
+    await user.type(password, 'yama no mieru heya')
+    await user.click(main().getByRole('button', { name: 'Open the file' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(password).toHaveAccessibleDescription(
+        'The password is wrong, or it cannot be used for 15 minutes after 5 wrong attempts in a row. Check it and enter it again.',
+      ),
+    )
+  })
+
+  it('should say in English that a link that works no more cannot be opened', async () => {
+    // Arrange
+    const link = await sharePhoto()
+    await revoke(link.id)
+
+    // Act
+    openLink(link.token)
+
+    // Assert
+    expect(await heading('This share link cannot be opened')).toBeVisible()
+    expect(
+      main().getByText(
+        'The link has expired, reached its limit of downloads, or been withdrawn, or the file was deleted. If you need the file, contact the salon that shared it.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a page without the token shows no file', async () => {
+    // Act
+    renderAt('/share')
+
+    // Assert
+    expect(await heading('This share link cannot be opened')).toBeVisible()
+    expect(
+      await screen.findByText(
+        'Open this page from the share link you received. When you reload the page, open it from the link again too.',
+      ),
+    ).toBeVisible()
   })
 })

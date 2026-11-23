@@ -1,3 +1,9 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { dayOf } from '@beauty-salon-shared/i18n/formats'
+import {
+  portalReviewMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn, userEvent } from 'storybook/test'
@@ -8,7 +14,10 @@ const meta: Meta<typeof ReviewReport> = {
   component: ReviewReport,
   args: {
     open: true,
-    subject: '「思ったとおりの色になりました」（2026年11月10日 投稿）',
+    subject: portalSalonMessages.reviews.posted(
+      '思ったとおりの色になりました',
+      dayOf('2026-11-10'),
+    ),
     onClose: fn(),
     onReport: fn(),
   },
@@ -58,8 +67,7 @@ export const Pending: Story = {
 /** Nothing came of the attempt, which can be made again */
 export const WithMessage: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 
@@ -68,7 +76,7 @@ export const WithoutReason: Story = {
   render: (args) => (
     <Answering
       {...args}
-      answer={{ errors: { reason: '通報の理由を選んでください。' } }}
+      answer={{ errors: { reason: portalReviewMessages.report.reasonMissing } }}
     />
   ),
   play: send,
@@ -84,7 +92,7 @@ export const WithoutDetails: Story = {
       {...args}
       answer={{
         errors: {
-          details: '「その他」を選んだときは、何が問題かを入力してください。',
+          details: portalReviewMessages.report.detailsMissing,
         },
       }}
     />

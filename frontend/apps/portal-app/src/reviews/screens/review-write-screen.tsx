@@ -7,16 +7,20 @@ import {
   DescriptionList,
   EmptyState,
   type FormSays,
-  inJapanese,
   Link,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalBookingMessages,
+  portalReviewMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -40,14 +44,18 @@ import {
   readNewReview,
 } from '../utils/review-flow'
 
-const TITLE = 'レビューを書く'
+const { write: words, own, change, names } = portalReviewMessages
 
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
 
-const TO_THE_VISITS = (
-  <ButtonLink href={listHrefOf('past')}>これまでの予約を見る</ButtonLink>
-)
+const ToTheVisits = () => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href={listHrefOf('past')}>{say(own.toPastBookings)}</ButtonLink>
+  )
+}
 
 type WritingProps = {
   visit: Visit
@@ -61,16 +69,17 @@ type WritingProps = {
  */
 const Writing = ({ visit, onRefused }: WritingProps) => {
   const { booking, salon, staff } = visit
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const writing = useMutation({
     mutationFn: writeReview,
     onSuccess: (outcome) => {
       if (outcome.type === 'written') {
         afterReviewWrite(queryClient, outcome.review, outcome.review)
-        notify({ tone: 'success', message: 'レビューを投稿しました。' })
+        notify({ tone: 'success', message: words.posted })
         void navigate(OWN_REVIEWS)
         return
       }
@@ -92,19 +101,18 @@ const Writing = ({ visit, onRefused }: WritingProps) => {
 
   return (
     <>
-      <Card title='レビューする来店'>
+      <Card title={say(words.visit)}>
         <DescriptionList
           items={[
             {
-              term: 'サロン',
+              term: say(words.salon),
               description: (
                 <Link href={`/salons/${salon.id}`}>{salon.name}</Link>
               ),
             },
             {
-              term: '来店日時',
-              // The reviews are said in Japanese until their texts are messages
-              description: inJapanese(whenLineOf(booking, salon.timezone)),
+              term: say(words.when),
+              description: say(whenLineOf(booking, salon.timezone)),
             },
           ]}
         />
@@ -118,13 +126,13 @@ const Writing = ({ visit, onRefused }: WritingProps) => {
             label: displayName,
           })),
         }}
-        submitLabel='レビューを投稿する'
+        submitLabel={say(words.submit)}
         message={says.message}
         errors={says.errors}
         pending={writing.isPending}
         actions={
           <ButtonLink href={`/bookings/${booking.id}`} variant='quiet'>
-            予約の内容へ戻る
+            {say(portalBookingMessages.move.backToBooking)}
           </ButtonLink>
         }
         onSubmit={submit}
@@ -134,6 +142,7 @@ const Writing = ({ visit, onRefused }: WritingProps) => {
 }
 
 const VisitToReview = () => {
+  const say = useSay()
   const { bookingId = '' } = useParams()
   const read = useQuery({
     queryKey: visitToReviewKey(bookingId),
@@ -162,14 +171,10 @@ const VisitToReview = () => {
 
   return (
     <>
-      <PageHeader title={TITLE} />
-      {refusedAndGone && (
-        <Alert tone='warning'>このレビューは、投稿できませんでした。</Alert>
-      )}
+      <PageHeader title={say(words.title)} />
+      {refusedAndGone && <Alert tone='warning'>{say(words.refused)}</Alert>}
       {match(visit)
-        .with(undefined, () => (
-          <LoadingIndicator label='来店の内容を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'found' }, ({ visit: found }) => (
           <Writing
             visit={found}
@@ -181,45 +186,43 @@ const VisitToReview = () => {
         ))
         .with({ type: 'notVisited' }, () => (
           <EmptyState
-            title='この予約は、まだ来店が済んでいません'
-            description='レビューは、来店が済んだ予約について書けます。'
+            title={say(words.notVisited)}
+            description={say(words.notVisitedDescription)}
             actions={
               <ButtonLink href={`/bookings/${bookingId}`}>
-                予約の内容を見る
+                {say(words.toBooking)}
               </ButtonLink>
             }
           />
         ))
         .with({ type: 'reviewed' }, ({ review }) => (
           <EmptyState
-            title='この来店のレビューは、投稿済みです'
-            description='レビューは、来店 1 回につき 1 件です。投稿したレビューは、変更できます。'
+            title={say(words.reviewed)}
+            description={say(words.reviewedDescription)}
             actions={
               <ButtonLink href={`${OWN_REVIEWS}/${review.id}`}>
-                レビューを変更する
+                {say(change.title)}
               </ButtonLink>
             }
           />
         ))
         .with({ type: 'salonGone' }, () => (
           <EmptyState
-            title='このサロンは、掲載を終えています'
-            description='掲載を終えたサロンのレビューは、書けません。'
-            actions={TO_THE_VISITS}
+            title={say(words.salonGone)}
+            description={say(words.salonGoneDescription)}
+            actions={<ToTheVisits />}
           />
         ))
         .with({ type: 'notFound' }, () => (
           <EmptyState
-            title='予約が見つかりません'
-            description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約のレビューは、書けません。'
-            actions={TO_THE_VISITS}
+            title={say(portalBookingMessages.detail.notFound)}
+            description={say(words.notFoundDescription)}
+            actions={<ToTheVisits />}
           />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('来店の内容'), reason),
-            )}
+            message={say(unreadMessageOf(names.visit, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -234,12 +237,16 @@ const VisitToReview = () => {
  * visit is written about once, after it took place: for a booking that is
  * none, or that has its review, the screen says so and leads on.
  */
-export const ReviewWriteScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='レビューを書くには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <VisitToReview />
-  </RequireSession>
-)
+export const ReviewWriteScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <VisitToReview />
+    </RequireSession>
+  )
+}

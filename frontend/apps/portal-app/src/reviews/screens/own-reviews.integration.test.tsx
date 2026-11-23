@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
@@ -14,6 +15,7 @@ import {
   OSAKA,
   VIP,
 } from '@beauty-salon-frontend/testing/seed'
+import { dayOf } from '@beauty-salon-shared/i18n/formats'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -890,5 +892,122 @@ describe('what a customer wrote, against the API', () => {
       expect(firstSight().at(1)).not.toContain(WRITTEN.title)
       expect(saidIn(review ?? document.body)).toContain('書き直したタイトル')
     })
+  })
+})
+
+describe('what a customer wrote on a page in English, against the API', () => {
+  beforeEach(async () => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+    await signedInAs(KENJI.email)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  const ownListInEnglish = () =>
+    screen.findByRole('list', { name: 'Your reviews' })
+
+  it('should list in English what the customer wrote, ask in English before it removes a review, and say that it was removed', async () => {
+    // Arrange
+    await visitReviewed()
+    const [review] = await storedReviewsOf()
+    const subject = `${OSAKA} (posted ${dayOf(review?.postedOn ?? '').en})`
+    const user = userEvent.setup()
+
+    // Act
+    renderAt(LIST)
+
+    // Assert
+    expect(await heading('Your reviews')).toBeVisible()
+    const [listed] = reviewsIn(await ownListInEnglish())
+    expect(
+      within(listed ?? document.body).getByText(`Staff rated: ${TAKESHI}`),
+    ).toBeVisible()
+    expect(
+      within(listed ?? document.body).getByRole('link', {
+        name: `Change the review of ${subject}`,
+      }),
+    ).toHaveTextContent(/^Change$/)
+    expect(statusMessages()).toContain('1 review')
+
+    // Act
+    await user.click(
+      within(listed ?? document.body).getByRole('button', {
+        name: `Delete the review of ${subject}`,
+      }),
+    )
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Delete the review?' })
+    expect(asking).toHaveAccessibleDescription(
+      `This deletes your review of ${subject}. A deleted review is gone for good, together with the reply of the salon. You can write a review of this visit again.`,
+    )
+
+    // Act
+    await user.click(within(asking).getByRole('button', { name: 'Delete' }))
+
+    // Assert
+    expect(await screen.findByText('No reviews yet')).toBeVisible()
+    expect(statusMessages()).toContain('Your review was deleted.')
+  })
+
+  it('should open the form of a review in English, save the change, and say so', async () => {
+    // Arrange
+    const visit = await visitReviewed()
+    const [review] = await storedReviewsOf()
+    const user = userEvent.setup()
+
+    // Act
+    renderAt(changePathOf(visit.reviewId))
+
+    // Assert
+    await screen.findByRole('radiogroup', { name: 'Overall rating' })
+    expect(await heading('Change the review')).toBeVisible()
+    expect(
+      detailsIn(screen.getByRole('region', { name: 'The review to change' })),
+    ).toEqual({
+      Salon: OSAKA,
+      'Posted on': dayOf(review?.postedOn ?? '').en,
+    })
+    expect(
+      screen.getByText(
+        `Staff rated: ${TAKESHI}. The staff rated cannot be changed.`,
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to your reviews' }),
+    ).toHaveAttribute('href', LIST)
+
+    // Act
+    await user.click(ratingOf('3 (neutral)'))
+    await user.click(button('Save the changes'))
+
+    // Assert
+    expect(await heading('Your reviews')).toHaveFocus()
+    expect(statusMessages()).toContain('Your review was changed.')
+    expect(await storedReviewOf(visit.id)).toMatchObject({ overallRating: 3 })
+  })
+
+  it('should say in English that no such review is found', async () => {
+    // Arrange
+    const { reviewId } = await visitReviewed(CUSTOMER)
+
+    // Act
+    renderAt(changePathOf(reviewId))
+
+    // Assert
+    expect(await screen.findByText('Review not found')).toBeVisible()
+    expect(
+      screen.getByText(
+        'Check that the address is correct. A review written with another account cannot be changed.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'See your reviews' }),
+    ).toHaveAttribute('href', LIST)
   })
 })

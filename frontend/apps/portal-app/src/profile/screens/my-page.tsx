@@ -18,5 +18,5 @@ const BackToMyPage = () => {
   )
 }
 
-/** The link of a screen below the page of a customer back to it, beside its title */
+/** The link of a form below the page of a customer back to it, beside the button that sends the form */
 export const BACK_TO_MY_PAGE = <BackToMyPage />

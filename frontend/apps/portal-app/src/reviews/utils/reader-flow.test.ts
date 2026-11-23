@@ -17,6 +17,35 @@ import {
   readReport,
 } from './reader-flow'
 
+const REASON_MISSING = {
+  en: 'Choose the reason for the report.',
+  ja: '通報の理由を選んでください。',
+}
+const DETAILS_TOO_LONG = {
+  en: 'Enter up to 2,000 characters.',
+  ja: '2,000 文字以内で入力してください。',
+}
+const DETAILS_MISSING = {
+  en: 'When you choose “Other”, say what the problem is.',
+  ja: '「その他」を選んだときは、何が問題かを入力してください。',
+}
+const UNACCEPTABLE = {
+  en: 'This cannot be sent. Enter it again.',
+  ja: 'この内容は送信できません。入力し直してください。',
+}
+const CHECK_AGAIN = {
+  en: 'Check what you entered and try again.',
+  ja: '入力した内容を確かめて、もう一度お試しください。',
+}
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+const NOT_SENT = {
+  en: 'It could not be sent. Check your connection and try again.',
+  ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+
 const user = (role: ModelsUserRoleType): ModelsUserResponse => ({
   id: '0193a5b2-7c4e-7d1a-9f3b-2a6c8e4d1f07',
   email: 'hanako@example.com',
@@ -105,7 +134,10 @@ describe('REASONS', () => {
   })
 
   it('should offer the reason that needs words last', () => {
-    expect(REASONS.at(-1)).toEqual({ value: 'other', label: 'その他' })
+    expect(REASONS.at(-1)).toEqual({
+      value: 'other',
+      label: { en: 'Other', ja: 'その他' },
+    })
   })
 
   it('should name the controls after the properties of the request', () => {
@@ -154,7 +186,7 @@ describe('readReport', () => {
   ])('should say that a reason is missing when %s', (_case, reason) => {
     expect(readReport(formOf(reason, '何かがおかしいです'))).toEqual({
       type: 'invalid',
-      errors: { reason: '通報の理由を選んでください。' },
+      errors: { reason: REASON_MISSING },
     })
   })
 
@@ -167,7 +199,7 @@ describe('readReport', () => {
       expect(readReport(formOf('other', details))).toEqual({
         type: 'invalid',
         errors: {
-          details: '「その他」を選んだときは、何が問題かを入力してください。',
+          details: DETAILS_MISSING,
         },
       })
     },
@@ -187,7 +219,7 @@ describe('readReport', () => {
       readReport(formOf('spam', 'あ'.repeat(MAX_DETAILS_LENGTH + 1))),
     ).toEqual({
       type: 'invalid',
-      errors: { details: '2,000 文字以内で入力してください。' },
+      errors: { details: DETAILS_TOO_LONG },
     })
   })
 
@@ -196,7 +228,7 @@ describe('readReport', () => {
       readReport(formOf(undefined, 'あ'.repeat(MAX_DETAILS_LENGTH + 1))),
     ).toEqual({
       type: 'invalid',
-      errors: { reason: '通報の理由を選んでください。' },
+      errors: { reason: REASON_MISSING },
     })
   })
 
@@ -213,17 +245,9 @@ describe('readReport', () => {
 
 describe('afterReport', () => {
   it.each([
-    [
-      'the rule that ties them to the reason',
-      'custom',
-      '「その他」を選んだときは、何が問題かを入力してください。',
-    ],
-    ['their length', 'too_big', '2,000 文字以内で入力してください。'],
-    [
-      'another rule',
-      'too_small',
-      'この内容は送信できません。入力し直してください。',
-    ],
+    ['the rule that ties them to the reason', 'custom', DETAILS_MISSING],
+    ['their length', 'too_big', DETAILS_TOO_LONG],
+    ['another rule', 'too_small', UNACCEPTABLE],
   ])(
     'should say at the details what the API did not take, for %s',
     (_case, rule, message) => {
@@ -244,7 +268,7 @@ describe('afterReport', () => {
       }),
     ).toEqual({
       message: undefined,
-      errors: { reason: '通報の理由を選んでください。' },
+      errors: { reason: REASON_MISSING },
     })
   })
 
@@ -260,8 +284,8 @@ describe('afterReport', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        reason: '通報の理由を選んでください。',
-        details: '2,000 文字以内で入力してください。',
+        reason: REASON_MISSING,
+        details: DETAILS_TOO_LONG,
       },
     })
   })
@@ -276,7 +300,7 @@ describe('afterReport', () => {
     'should say about the attempt that it is to be looked at when the API %s',
     (_case, values) => {
       expect(afterReport({ type: 'invalid', values })).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: CHECK_AGAIN,
         errors: {},
       })
     },
@@ -284,16 +308,14 @@ describe('afterReport', () => {
 
   it('should say that there were too many requests, and to wait', () => {
     expect(afterReport({ type: 'tooManyRequests' })).toEqual({
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS,
       errors: {},
     })
   })
 
   it('should say that the report was not sent, and to look at the connection', () => {
     expect(afterReport({ type: 'failed' })).toEqual({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT,
       errors: {},
     })
   })
