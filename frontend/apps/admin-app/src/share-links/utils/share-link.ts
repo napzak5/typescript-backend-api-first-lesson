@@ -14,6 +14,7 @@ import {
   NONE,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type {
   ShareLinkIssue,
@@ -109,7 +110,7 @@ const lengthOf = (password: string): number =>
 
 const PERIOD_MISSING = '有効期間を選んでください。'
 
-const LIMIT_ERROR = `回数の上限は、1 から ${MOST_DOWNLOADS.toLocaleString('ja-JP')} までの整数で入力してください。上限を付けないときは、空のままにしてください。`
+const LIMIT_ERROR = `回数の上限は、1 から ${inJapanese(formats.numberOf(MOST_DOWNLOADS))} までの整数で入力してください。上限を付けないときは、空のままにしてください。`
 
 const PASSWORD_LENGTH_ERROR =
   'パスワードは、8 文字から 128 文字で入力してください。パスワードを付けないときは、空のままにしてください。'
@@ -246,7 +247,8 @@ export const stateNameOf = (state: ShareLinkState): string =>
     .with('usedUp', () => '回数の上限に達した')
     .exhaustive()
 
-const timesOf = (count: number): string => `${count.toLocaleString('ja-JP')} 回`
+const timesOf = (count: number): string =>
+  `${inJapanese(formats.numberOf(count))} 回`
 
 /** The limit of downloads in words: 「3 回」, 「上限なし」. */
 export const limitNameOf = (maxDownloads: number | null): string =>

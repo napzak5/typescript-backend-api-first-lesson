@@ -1,8 +1,9 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { Carried, Purpose } from './product-ledger'
+import { quantityOf } from './quantity'
 
 /*
  * How the products of a salon are named on the screens.
@@ -31,11 +32,9 @@ export const usesNameOf = ({
 export const carriedNameOf = (isActive: boolean): string =>
   isActive ? '取り扱い中' : '取り扱いをやめた'
 
-const QUANTITY = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 })
-
 /** A level of the stock in the unit of the product: 「10 bottle」, or 「決めていない」. */
 export const levelNameOf = (level: number | null, unit: string): string =>
-  level === null ? '決めていない' : `${QUANTITY.format(level)} ${unit}`
+  level === null ? '決めていない' : `${inJapanese(quantityOf(level))} ${unit}`
 
 /** The days a delivery takes: 「3 日」, or `null` when they are not recorded. */
 export const leadTimeNameOf = (days: number | null): string | null =>

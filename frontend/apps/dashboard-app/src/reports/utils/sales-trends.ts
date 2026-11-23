@@ -8,7 +8,8 @@ import {
   type Period,
   periodQueryOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { textOf } from '@beauty-salon-frontend/ui'
+import { inJapanese, textOf } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 
 /*
@@ -149,9 +150,5 @@ const SHORT_FROM = 10_000
  */
 export const axisAmountOf = (amount: number, currency: string): string =>
   amount >= SHORT_FROM
-    ? new Intl.NumberFormat('ja-JP', {
-        style: 'currency',
-        currency,
-        notation: 'compact',
-      }).format(amount)
+    ? inJapanese(formats.shortAmountOf(amount, currency))
     : amountOf(amount, currency)

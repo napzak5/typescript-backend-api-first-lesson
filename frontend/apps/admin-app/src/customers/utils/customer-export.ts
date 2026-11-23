@@ -1,5 +1,7 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { DataExport, LedgerExport } from '../api/customer-export-api'
 
@@ -39,7 +41,7 @@ export const afterLedgerExport = (outcome: LedgerExport): ExportSays =>
     .with({ type: 'tooMany' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: `条件に合うお客様が ${MOST_EXPORTED.toLocaleString('ja-JP')} 人を超えるため、出力できません。条件を絞ってから、もう一度出力してください。`,
+      message: `条件に合うお客様が ${inJapanese(formats.numberOf(MOST_EXPORTED))} 人を超えるため、出力できません。条件を絞ってから、もう一度出力してください。`,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'said',

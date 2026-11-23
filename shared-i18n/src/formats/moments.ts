@@ -1,4 +1,6 @@
+import type { Locale } from '../languages/locale'
 import type { LocalizedText } from '../languages/localized-text'
+import { dateTimeFormatIn } from './formatters'
 import { inEachLanguage } from './in-each-language'
 
 /*
@@ -8,24 +10,45 @@ import { inEachLanguage } from './in-each-language'
  * a day (`10:00`).
  */
 
+const TIME: Intl.DateTimeFormatOptions = {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+}
+
+const written = (
+  language: Locale,
+  moment: string,
+  options: Intl.DateTimeFormatOptions,
+): string => dateTimeFormatIn(language, options).format(new Date(moment))
+
 /** The time of day, with two digits for the hour: 「09:05」. */
 export const timeOfDayAt = (moment: string, timeZone: string): LocalizedText =>
-  inEachLanguage((language) =>
-    new Intl.DateTimeFormat(language, {
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-      timeZone,
-    }).format(new Date(moment)),
-  )
+  inEachLanguage((language) => written(language, moment, { ...TIME, timeZone }))
 
 /** The day and the time: 「2026年11月20日 9:05」, "November 20, 2026 at 09:05". */
 export const momentAt = (moment: string, timeZone: string): LocalizedText =>
   inEachLanguage((language) =>
-    new Intl.DateTimeFormat(language, {
+    written(language, moment, {
       dateStyle: 'long',
       timeStyle: 'short',
       hourCycle: 'h23',
       timeZone,
-    }).format(new Date(moment)),
+    }),
   )
+
+/** The day with its day of the week, and the time: 「2026年11月20日（金） 09:05」, "Fri, November 20, 2026 at 09:05". */
+export const momentWithWeekdayAt = (
+  moment: string,
+  timeZone: string,
+): LocalizedText => ({
+  en: written('en', moment, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    ...TIME,
+    timeZone,
+  }),
+  ja: `${written('ja', moment, { dateStyle: 'long', timeZone })}（${written('ja', moment, { weekday: 'short', timeZone })}） ${written('ja', moment, { ...TIME, timeZone })}`,
+})

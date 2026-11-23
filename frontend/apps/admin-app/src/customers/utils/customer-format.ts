@@ -17,6 +17,7 @@ import {
   inJapanese,
   NONE,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
 
 /*
@@ -221,11 +222,11 @@ export const contactsNameOf = ({
 
 /** A share in percent, as the API rounds it: 「12.5%」. */
 export const rateNameOf = (rate: number): string =>
-  `${new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 1 }).format(rate)}%`
+  inJapanese(formats.percentOf(rate, { most: 1 }))
 
 /** A count, with what it counts: 「3 回」. */
 export const countNameOf = (count: number, unit: string): string =>
-  `${new Intl.NumberFormat('ja-JP').format(count)} ${unit}`
+  `${inJapanese(formats.numberOf(count))} ${unit}`
 
 /**
  * The members of the staff with the given IDs, by the names the salons

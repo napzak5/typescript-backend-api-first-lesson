@@ -5,11 +5,12 @@ export {
   monthDayOf,
   shortDayOf,
 } from './days'
-export { momentAt, timeOfDayAt } from './moments'
+export { momentAt, momentWithWeekdayAt, timeOfDayAt } from './moments'
 export {
   amountOf,
   currencyNameOf,
   type Decimals,
   numberOf,
+  percentOf,
   shortAmountOf,
 } from './numbers'

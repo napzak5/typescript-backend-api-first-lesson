@@ -1,5 +1,6 @@
 import type { Locale } from '../languages/locale'
 import type { LocalizedText } from '../languages/localized-text'
+import { dateTimeFormatIn } from './formatters'
 import { inEachLanguage } from './in-each-language'
 
 /*
@@ -13,7 +14,7 @@ const written = (
   day: string,
   options: Intl.DateTimeFormatOptions,
 ): string =>
-  new Intl.DateTimeFormat(language, { ...options, timeZone: 'UTC' }).format(
+  dateTimeFormatIn(language, { ...options, timeZone: 'UTC' }).format(
     new Date(`${day}T00:00:00Z`),
   )
 

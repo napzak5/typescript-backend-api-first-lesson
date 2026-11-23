@@ -6,9 +6,10 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../../customers/api/customers-api'
+import { quantityOf } from '../../products/utils/quantity'
 import type { TreatmentRemoval } from '../api/treatments-api'
 
 /*
@@ -44,14 +45,12 @@ export const NOT_ANSWERED = '未回答'
 /** How long a treatment took: 「75 分」. */
 export const minutesNameOf = (minutes: number): string => `${minutes} 分`
 
-const QUANTITY = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 })
-
 /** How much of a product was used: 「0.5 bottle」. */
 export const quantityNameOf = ({
   quantity,
   unit,
 }: Pick<ModelsTreatmentMaterial, 'quantity' | 'unit'>): string =>
-  `${QUANTITY.format(quantity)} ${unit}`
+  `${inJapanese(quantityOf(quantity))} ${unit}`
 
 /** A product as the screens name it: 「Developer 6% 1000ml（DEVELOPER001）」. */
 export const productNameOf = ({

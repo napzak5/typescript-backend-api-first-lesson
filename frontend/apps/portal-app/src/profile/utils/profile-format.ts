@@ -8,7 +8,8 @@ import type {
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
 import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 
 const TIER_NAMES: Record<ModelsMembershipTierType, string> = {
   regular: 'レギュラー',
@@ -73,12 +74,7 @@ const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, string> = {
 
 /** A day of the calendar, as it is written: 「2026年11月9日」. It is read in no time zone. */
 export const calendarDayOf = (date: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`))
+  inJapanese(formats.dayOf(date))
 
 /**
  * The calendar date it is where the browser is: `2026-11-19`. It is the
@@ -94,11 +90,11 @@ export const localDateOf = (moment: Date): string =>
 
 /** A number of points: 「2,500 ポイント」. */
 export const pointsOf = (points: number): string =>
-  `${new Intl.NumberFormat('ja-JP').format(points)} ポイント`
+  `${inJapanese(formats.numberOf(points))} ポイント`
 
 /** How often a customer came: 「12 回」. */
 export const visitsOf = (count: number): string =>
-  `${new Intl.NumberFormat('ja-JP').format(count)} 回`
+  `${inJapanese(formats.numberOf(count))} 回`
 
 /** The name of a customer, the family name first. */
 export const fullNameOf = ({

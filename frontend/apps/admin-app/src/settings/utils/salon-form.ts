@@ -24,10 +24,12 @@ import {
   type ChoiceOption,
   errorAt,
   type FormSays,
+  inJapanese,
   same,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import { numberOf } from '../../treatments/utils/treatment-form'
@@ -114,7 +116,6 @@ export const NEW_SALON: SalonShown = {
 
 const TIME_ZONES: readonly string[] = Intl.supportedValuesOf('timeZone')
 const CURRENCIES: readonly string[] = Intl.supportedValuesOf('currency')
-const currencyNames = new Intl.DisplayNames('ja', { type: 'currency' })
 
 /** The time zones a salon may be given: those the browser knows, by their names (「Asia/Tokyo」). */
 export const TIME_ZONE_CHOICES: readonly ChoiceOption[] = TIME_ZONES.map(
@@ -123,7 +124,10 @@ export const TIME_ZONE_CHOICES: readonly ChoiceOption[] = TIME_ZONES.map(
 
 /** The currencies a salon may be given: those the browser knows, by their codes and names (「JPY（日本円）」). */
 export const CURRENCY_CHOICES: readonly ChoiceOption[] = CURRENCIES.map(
-  (code) => ({ value: code, label: `${code}（${currencyNames.of(code)}）` }),
+  (code) => ({
+    value: code,
+    label: `${code}（${inJapanese(formats.currencyNameOf(code))}）`,
+  }),
 )
 
 /** A place on the map as the form shows it: its digits, never an exponent (「0.0000001」, not 「1e-7」), or nothing. */

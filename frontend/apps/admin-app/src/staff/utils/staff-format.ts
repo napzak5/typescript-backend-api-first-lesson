@@ -4,6 +4,7 @@ import {
   type ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type ChoiceOption, inJapanese, NONE } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { StaffRemoval } from '../api/staff-api'
@@ -74,7 +75,7 @@ export const bookingsNameOf = ({
 
 /** A share of the sales, as the ledger keeps it to two decimal places: 「12.5%」. */
 export const commissionNameOf = (rate: number): string =>
-  `${new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 }).format(rate)}%`
+  inJapanese(formats.percentOf(rate, { most: 2 }))
 
 /** A time kept before or after each booking: 「15 分」, or none. */
 export const bufferNameOf = (minutes: number): string =>

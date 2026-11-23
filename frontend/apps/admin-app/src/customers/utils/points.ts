@@ -20,9 +20,11 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match, P } from 'ts-pattern'
 import type { SaleRead } from '../../sales/api/sales-api'
 import type { CustomerRead } from '../api/customers-api'
@@ -80,8 +82,7 @@ const TRANSACTION_NAMES: Record<ModelsPointTransactionType, string> = {
 export const transactionNameOf = (type: ModelsPointTransactionType): string =>
   TRANSACTION_NAMES[type]
 
-const format = (count: number): string =>
-  new Intl.NumberFormat('ja-JP').format(count)
+const format = (count: number): string => inJapanese(formats.numberOf(count))
 
 /** How a transaction moved the balance, with its sign: 「+500」, 「−200」. */
 export const movementOf = (points: number): string =>

@@ -7,6 +7,8 @@ import type {
   ModelsStaffLevelType,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 
 /** The days of a week in the order a timetable lists them, with their names. */
 const WEEKDAYS: readonly { day: ModelsDayOfWeekType; name: string }[] = [
@@ -43,7 +45,7 @@ export const addressOf = (
 
 /** An amount in the currency of the salon: 「￥5,500」. */
 export const amountOf = (amount: number, currency: string): string =>
-  new Intl.NumberFormat('ja-JP', { style: 'currency', currency }).format(amount)
+  inJapanese(formats.amountOf(amount, currency))
 
 /** How long a service takes: 「45 分」, 「1 時間」, 「1 時間 30 分」. */
 export const durationOf = (minutes: number): string => {
@@ -72,14 +74,7 @@ const slotsOf = (slots: readonly ModelsTimeSlot[]): string =>
  * written in.
  */
 export const calendarDateOf = (date: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-    timeZone: 'UTC',
-  })
-    .format(new Date(`${date}T00:00:00Z`))
-    .replace(/\((.)\)/, '（$1）')
+  inJapanese(formats.monthDayOf(date))
 
 /** The calendar date it is at the salon at a moment: `2026-11-23`. */
 export const dateAt = (moment: Date, timezone: string): string =>
@@ -92,26 +87,15 @@ export const dateAt = (moment: Date, timezone: string): string =>
 
 /** The day a moment falls on at the salon: 「2026年11月19日」. */
 export const dayOf = (moment: string, timezone: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'long',
-    timeZone: timezone,
-  }).format(new Date(moment))
+  inJapanese(formats.dayOf(dateAt(new Date(moment), timezone)))
 
 /** The day a moment falls on at the salon, with its day of the week: 「2026年11月20日金曜日」. */
 export const weekdayOf = (moment: string, timezone: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'full',
-    timeZone: timezone,
-  }).format(new Date(moment))
+  inJapanese(formats.fullDayOf(dateAt(new Date(moment), timezone)))
 
 /** The time of day it is at the salon at a moment: 「10:00」. */
 export const timeOfDayAt = (moment: string, timezone: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone,
-  }).format(new Date(moment))
+  inJapanese(formats.timeOfDayAt(moment, timezone))
 
 /**
  * The days of the calendar of a salon from a date on, the nearest first. A

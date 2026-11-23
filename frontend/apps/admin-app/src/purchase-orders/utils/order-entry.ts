@@ -14,9 +14,11 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { levelOf } from '../../products/utils/product-form'
@@ -108,7 +110,7 @@ const orderedRowOf = (
       type: 'wrong',
       errors: {
         [unitPriceControlOf(id)]:
-          `この数量では、単価は ${largestUnitPriceOf(quantity).toLocaleString('ja-JP')} 円までです。明細の金額は 2,147,483,647 円までです。`,
+          `この数量では、単価は ${inJapanese(formats.numberOf(largestUnitPriceOf(quantity)))} 円までです。明細の金額は 2,147,483,647 円までです。`,
       },
     }
   }

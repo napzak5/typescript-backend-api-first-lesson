@@ -11,7 +11,9 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 
 /*
@@ -50,7 +52,7 @@ export const sizeNameOf = (size: number): string => {
       ? `${Math.round(size / KILOBYTE)} KB`
       : `${(size / MEGABYTE).toFixed(1)} MB`
 
-  return `${rounded}（${size.toLocaleString('ja-JP')} バイト）`
+  return `${rounded}（${inJapanese(formats.numberOf(size))} バイト）`
 }
 
 /** What is said of the file before it is loaded */

@@ -4,6 +4,8 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -68,20 +70,8 @@ export const weekIn = (query: URLSearchParams, today: string): string => {
 }
 
 /** A day as a column of a week names it: 「11/16（月）」. */
-export const shortDayNameOf = (day: string): string => {
-  const moment = new Date(`${day}T00:00:00Z`)
-  const date = new Intl.DateTimeFormat('ja-JP', {
-    month: 'numeric',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(moment)
-  const weekday = new Intl.DateTimeFormat('ja-JP', {
-    weekday: 'short',
-    timeZone: 'UTC',
-  }).format(moment)
-
-  return `${date}（${weekday}）`
-}
+export const shortDayNameOf = (day: string): string =>
+  inJapanese(formats.shortDayOf(day))
 
 /** A week as a heading names it: 「2026年11月16日（月）〜2026年11月22日（日）」. */
 export const weekNameOf = (monday: string): string =>

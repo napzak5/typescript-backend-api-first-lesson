@@ -5,6 +5,7 @@ import {
   currencyNameOf,
   type Decimals,
   numberOf,
+  percentOf,
   shortAmountOf,
 } from './numbers'
 
@@ -24,6 +25,32 @@ describe('numberOf', () => {
     (value, decimals, expected) => {
       // Act
       const written = numberOf(value, decimals)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+
+  it('should write a big integer to its last digit', () => {
+    // Act
+    const written = numberOf(214_748_364_749n)
+
+    // Assert
+    expect(written).toEqual({ en: '214,748,364,749', ja: '214,748,364,749' })
+  })
+})
+
+describe('percentOf', () => {
+  it.each<[number, Decimals | undefined, LocalizedText]>([
+    [12.5, undefined, { en: '12.5%', ja: '12.5%' }],
+    [12.345, { most: 2 }, { en: '12.35%', ja: '12.35%' }],
+    [40, { most: 1, least: 1 }, { en: '40.0%', ja: '40.0%' }],
+    [1250, { most: 1 }, { en: '1,250%', ja: '1,250%' }],
+  ])(
+    'should write %d percent with %o decimals in each language',
+    (percentage, decimals, expected) => {
+      // Act
+      const written = percentOf(percentage, decimals)
 
       // Assert
       expect(written).toEqual(expected)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../languages/localized-text'
-import { momentAt, timeOfDayAt } from './moments'
+import { momentAt, momentWithWeekdayAt, timeOfDayAt } from './moments'
 
 describe('timeOfDayAt', () => {
   it.each<[string, string, LocalizedText]>([
@@ -48,6 +48,52 @@ describe('momentAt', () => {
     (moment, timeZone, expected) => {
       // Act
       const written = momentAt(moment, timeZone)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+})
+
+describe('momentWithWeekdayAt', () => {
+  it.each<[string, string, LocalizedText]>([
+    [
+      '2026-11-20T00:05:00Z',
+      'Asia/Tokyo',
+      {
+        en: 'Fri, November 20, 2026 at 09:05',
+        ja: '2026年11月20日（金） 09:05',
+      },
+    ],
+    [
+      '2026-11-20T15:00:00Z',
+      'Asia/Tokyo',
+      {
+        en: 'Sat, November 21, 2026 at 00:00',
+        ja: '2026年11月21日（土） 00:00',
+      },
+    ],
+    [
+      '2026-11-20T15:00:00Z',
+      'UTC',
+      {
+        en: 'Fri, November 20, 2026 at 15:00',
+        ja: '2026年11月20日（金） 15:00',
+      },
+    ],
+    [
+      '2026-11-21T03:30:00Z',
+      'America/Los_Angeles',
+      {
+        en: 'Fri, November 20, 2026 at 19:30',
+        ja: '2026年11月20日（金） 19:30',
+      },
+    ],
+  ])(
+    'should write the day, its day of the week and the time of %s on the clock of %s',
+    (moment, timeZone, expected) => {
+      // Act
+      const written = momentWithWeekdayAt(moment, timeZone)
 
       // Assert
       expect(written).toEqual(expected)
