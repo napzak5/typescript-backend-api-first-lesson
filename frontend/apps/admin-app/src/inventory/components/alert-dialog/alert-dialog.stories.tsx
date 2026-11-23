@@ -1,3 +1,4 @@
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { expiredColourAlert, outOfGlovesAlert } from '../examples'
@@ -37,8 +38,7 @@ export const Acknowledging: Story = {
 /** The acknowledgement failed, and may be tried again */
 export const Failed: Story = {
   args: {
-    message:
-      'アラートを確認済みにできませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminInventoryMessages.alerts.failed,
   },
 }
 

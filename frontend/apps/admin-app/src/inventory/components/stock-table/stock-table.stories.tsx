@@ -1,3 +1,4 @@
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -9,7 +10,7 @@ const meta: Meta<typeof StockTable> = {
   title: 'Admin/Inventory/StockTable',
   component: StockTable,
   args: {
-    caption: '在庫',
+    caption: adminInventoryMessages.stock.all.caption,
     rows: STOCK_OF_THE_SALON,
     products: PRODUCTS_OF_THE_SALON,
     today: TODAY,

@@ -6,12 +6,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -20,10 +20,11 @@ import { readValueReport, valueReportKeyOf } from '../api/count-api'
 import { ValueReport } from '../components/value-report/value-report'
 import { StockForbidden, useKeepsStock } from './keeps-stock'
 
-const TITLE = '在庫評価額'
+const { count, names, titles, words } = adminInventoryMessages
 
 /** What the stock of the salon is worth now: read whenever the screen opens, since stock moves all day. */
 const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const report = useQuery({
     queryKey: valueReportKeyOf(salon.id),
     queryFn: () => readValueReport(salon.id),
@@ -32,19 +33,17 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.value)} description={salon.name} />
       {match(report.data)
         .with(undefined, () => (
-          <LoadingIndicator label='在庫評価額を読み込んでいます' />
+          <LoadingIndicator label={say(count.value.loading)} />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what={writtenInJapanese('在庫')} />
+          <OtherSalonNotice what={names.inventoryOfTheSalon} />
         ))
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫評価額'), reason),
-            )}
+            message={say(unreadMessageOf(names.value, reason))}
             onRetry={() => void report.refetch()}
             pending={report.isFetching}
           />
@@ -53,26 +52,29 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ValueReport report={found} currency={salon.currency} />
         ))
         .exhaustive()}
-      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
+      <ButtonLink href={inventoryHrefOf(salon.id)}>
+        {say(words.toInventory)}
+      </ButtonLink>
     </>
   )
 }
 
 /** What the stock of the salon of the address is worth, for its owner, a manager and an administrator. */
 export const StockValueScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsStock()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.value)}>
       {(salon) =>
         keeps ? (
           <ValuePart key={salon.id} salon={salon} />
         ) : (
           <StockForbidden
             salon={salon}
-            title={TITLE}
-            message='このアカウントでは、在庫評価額を見られません。在庫評価額を見られるのは、サロンのオーナーとマネージャーと、管理者です。'
+            title={titles.value}
+            message={count.value.forbidden}
           />
         )
       }

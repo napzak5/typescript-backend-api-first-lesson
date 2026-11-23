@@ -1,3 +1,4 @@
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { MovementFilter } from './movement-filter'
@@ -30,7 +31,7 @@ export const Narrowed: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+      to: salonScreenMessages.period.endBeforeStart,
     },
   },
 }

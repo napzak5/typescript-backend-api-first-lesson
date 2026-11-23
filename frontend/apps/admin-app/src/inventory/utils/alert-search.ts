@@ -2,7 +2,8 @@ import type {
   ModelsInventoryAlertSeverityType,
   ModelsInventoryAlertType,
 } from '@beauty-salon-frontend/api-client'
-import { type ChoiceOption, textOf } from '@beauty-salon-frontend/ui'
+import { type NamedChoice, textOf } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { alertKindIn, severityIn } from './alert-format'
 
@@ -29,9 +30,9 @@ const acknowledgedIn = (text: string): boolean | undefined =>
     .otherwise(() => undefined)
 
 /** Whether somebody saw to the alerts, to narrow them by it */
-export const ACKNOWLEDGED_OPTIONS: readonly ChoiceOption[] = [
-  { value: 'false', label: '未確認' },
-  { value: 'true', label: '確認済み' },
+export const ACKNOWLEDGED_CHOICES: readonly NamedChoice[] = [
+  { value: 'false', label: adminInventoryMessages.alerts.notAcknowledged },
+  { value: 'true', label: adminInventoryMessages.alerts.acknowledged },
 ]
 
 /** The conditions a query or a form holds. What the API does not take is no condition. */

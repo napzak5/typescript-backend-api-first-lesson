@@ -1,3 +1,4 @@
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon, staff } from '../../../bookings/components/examples'
@@ -13,7 +14,7 @@ const meta: Meta<typeof AlertTable> = {
   title: 'Admin/Inventory/AlertTable',
   component: AlertTable,
   args: {
-    caption: '在庫のアラート',
+    caption: adminInventoryMessages.alerts.list.caption,
     alerts: ALERTS_OF_THE_SALON,
     staff,
     timezone: salon.timezone,

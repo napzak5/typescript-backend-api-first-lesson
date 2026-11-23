@@ -130,7 +130,10 @@ export const OrderForm = ({
           const unitPrice = unitPriceControlOf(row.id)
 
           return (
-            <FormRow key={row.id} label={stockRowNameOf(row, product)}>
+            <FormRow
+              key={row.id}
+              label={inJapanese(stockRowNameOf(row, product))}
+            >
               <FieldRow>
                 <TextField
                   label='数量'
@@ -138,7 +141,7 @@ export const OrderForm = ({
                   inputMode='decimal'
                   autoComplete='off'
                   defaultValue={starting.quantities[row.id]}
-                  description={`在庫数 ${quantityNameOf(row.currentStock, product)}`}
+                  description={`在庫数 ${inJapanese(quantityNameOf(row.currentStock, product))}`}
                   error={errors[quantity]}
                 />
                 <TextField

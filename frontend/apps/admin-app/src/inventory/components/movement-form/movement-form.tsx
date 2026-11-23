@@ -13,7 +13,11 @@ import {
   RadioGroup,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useState } from 'react'
 import { match } from 'ts-pattern'
 import {
@@ -24,10 +28,14 @@ import {
 } from '../../utils/movement-format'
 import { quantityNameOf, stockRowNameOf } from '../../utils/stock-format'
 
+const { form: words } = adminInventoryMessages.movements
+
 export type MovementFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /** The row whose stock moves, as it was read */
   row: ModelsInventoryResponse
   /** The product of the row; `undefined` when it was removed */
@@ -35,19 +43,17 @@ export type MovementFormProps = Pick<
   /** The kinds the account records, in the order they are offered */
   offered: readonly ModelsInventoryTransactionType[]
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 /** What is said of the way a kind that moves either way goes */
-const wayDescriptionOf = (type: ModelsInventoryTransactionType): string =>
+const wayDescriptionOf = (
+  type: ModelsInventoryTransactionType,
+): LocalizedText =>
   match(type)
-    .with('return', () => '仕入先に返すと減り、お客様から戻ると増えます。')
-    .with(
-      'transfer',
-      () =>
-        'ほかのサロンへ送ると減り、ほかのサロンから受け取ると増えます。受け取ったサロンでも、記録します。',
-    )
-    .otherwise(() => '帳簿の在庫数を、実際の数に合わせます。')
+    .with('return', () => words.ways.return)
+    .with('transfer', () => words.ways.transfer)
+    .otherwise(() => words.ways.adjustment)
 
 /**
  * A movement of the stock of a row: its kind, and for a kind that moves
@@ -59,82 +65,89 @@ export const MovementForm = ({
   row,
   product,
   offered,
+  message,
   errors = NO_ERRORS,
   ...form
 }: MovementFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const [chosen, setChosen] = useState('')
   const type = movementTypeIn(chosen)
   const available = Math.max(row.currentStock - row.reservedStock, 0)
 
   return (
-    <Form {...form} errors={errors}>
+    <Form {...form} message={said.message} errors={errors}>
       <FormPart
-        label='在庫の移動'
-        description={`${stockRowNameOf(row, product)}。いまの在庫数は ${quantityNameOf(row.currentStock, product)}、そのうち使える数は ${quantityNameOf(available, product)} です。`}
+        label={say(words.part)}
+        description={say(
+          words.about(
+            stockRowNameOf(row, product),
+            quantityNameOf(row.currentStock, product),
+            quantityNameOf(available, product),
+          ),
+        )}
       >
         <RadioGroup
-          label='区分'
+          label={say(words.kind)}
           name='transactionType'
           required
           options={offered.map((kind) => ({
             value: kind,
-            label: movementTypeNameOf(kind),
+            label: say(movementTypeNameOf(kind)),
           }))}
           description={
-            offered.includes('adjustment')
-              ? undefined
-              : '在庫の調整、廃棄、サロン間の移動は、オーナーとマネージャーが記録します。'
+            offered.includes('adjustment') ? undefined : say(words.keepersKinds)
           }
           value={chosen}
           onChange={(event) => setChosen(event.target.value)}
-          error={errors['transactionType']}
+          error={said.errors['transactionType']}
         />
         {type !== undefined && wayOf(type) === 'either' && (
           <RadioGroup
-            label='向き'
+            label={say(words.direction)}
             name='direction'
             required
             options={[
-              { value: 'in', label: '在庫が増える' },
-              { value: 'out', label: '在庫が減る' },
+              { value: 'in', label: say(words.in) },
+              { value: 'out', label: say(words.out) },
             ]}
-            description={wayDescriptionOf(type)}
-            error={errors['direction']}
+            description={say(wayDescriptionOf(type))}
+            error={said.errors['direction']}
           />
         )}
         <FieldRow>
           <TextField
-            label='数量'
+            label={say(words.quantity)}
             name='quantity'
             required
             inputMode='decimal'
             autoComplete='off'
-            description={
+            description={say(
               product === undefined
-                ? '小数は 2 桁まで。'
-                : `${product.unit} で数えます。小数は 2 桁まで。`
-            }
-            error={errors['quantity']}
+                ? words.decimals
+                : words.countedIn(product.unit),
+            )}
+            error={said.errors['quantity']}
           />
           <TextField
-            label='単価（円）'
+            label={say(words.unitCost)}
             name='unitCost'
             inputMode='numeric'
             autoComplete='off'
-            description='任意。金額は、単価 × 数量を四捨五入した円です。'
-            error={errors['unitCost']}
+            description={say(words.unitCostDescription)}
+            error={said.errors['unitCost']}
           />
         </FieldRow>
         <TextArea
-          label='理由'
+          label={say(words.reason)}
           name='reason'
           required={type !== undefined && needsReason(type)}
-          description={
+          description={say(
             type !== undefined && needsReason(type)
-              ? '在庫数を変える理由を、次に数える人のために書きます。'
-              : '任意。'
-          }
-          error={errors['reason']}
+              ? words.reasonNeeded
+              : words.optional,
+          )}
+          error={said.errors['reason']}
         />
       </FormPart>
     </Form>

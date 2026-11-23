@@ -1,6 +1,10 @@
 import type { ModelsInventoryAlertSummaryResponse } from '@beauty-salon-frontend/api-client'
-import { DescriptionList } from '@beauty-salon-frontend/ui'
+import { DescriptionList, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import styles from './alert-summary.module.css'
+
+const { severities, summary: words } = adminInventoryMessages.alerts
 
 export type AlertSummaryProps = {
   summary: ModelsInventoryAlertSummaryResponse
@@ -10,31 +14,44 @@ export type AlertSummaryProps = {
 const sentenceOf = ({
   totalAlerts,
   unacknowledged,
-}: ModelsInventoryAlertSummaryResponse): string => {
+}: ModelsInventoryAlertSummaryResponse): LocalizedText => {
   if (totalAlerts === 0) {
-    return '今出ているアラートはありません。'
+    return words.none
   }
 
   return unacknowledged === 0
-    ? `今出ているアラートは ${totalAlerts} 件で、どれも確認済みです。`
-    : `今出ているアラートは ${totalAlerts} 件で、そのうち ${unacknowledged} 件が未確認です。`
+    ? words.allAcknowledged(totalAlerts)
+    : words.someNotAcknowledged(totalAlerts, unacknowledged)
 }
 
 /**
  * How many alerts the stock of a salon has now: how many nobody saw to,
  * then how many there are of each severity, the heaviest first.
  */
-export const AlertSummary = ({ summary }: AlertSummaryProps) => (
-  <div className={styles['summary']}>
-    <p>{sentenceOf(summary)}</p>
-    {summary.totalAlerts > 0 && (
-      <DescriptionList
-        items={[
-          { term: '緊急', description: `${summary.criticalAlerts} 件` },
-          { term: '注意', description: `${summary.warningAlerts} 件` },
-          { term: '情報', description: `${summary.infoAlerts} 件` },
-        ]}
-      />
-    )}
-  </div>
-)
+export const AlertSummary = ({ summary }: AlertSummaryProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['summary']}>
+      <p>{say(sentenceOf(summary))}</p>
+      {summary.totalAlerts > 0 && (
+        <DescriptionList
+          items={[
+            {
+              term: say(severities.critical),
+              description: say(words.alertsOf(summary.criticalAlerts)),
+            },
+            {
+              term: say(severities.warning),
+              description: say(words.alertsOf(summary.warningAlerts)),
+            },
+            {
+              term: say(severities.info),
+              description: say(words.alertsOf(summary.infoAlerts)),
+            },
+          ]}
+        />
+      )}
+    </div>
+  )
+}

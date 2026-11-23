@@ -1,4 +1,5 @@
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   colour,
@@ -34,8 +35,10 @@ const rowForm = (
     }),
   )
 
-const LOT_ERROR =
-  'ロット番号を、100 文字以内で入力してください。この商品は、在庫をロット番号で分けます。'
+const LOT_ERROR = {
+  en: 'Lot number: enter 1 to 100 characters. This product keeps its stock by lot numbers.',
+  ja: 'ロット番号を、100 文字以内で入力してください。この商品は、在庫をロット番号で分けます。',
+}
 
 describe('showsLot', () => {
   it.each<[string, string | null, boolean | undefined, boolean]>([
@@ -150,7 +153,9 @@ describe('readStockEntry', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { productId: '商品を選んでください。' },
+      errors: {
+        productId: { en: 'Choose a product.', ja: '商品を選んでください。' },
+      },
     })
     expect(
       readStockEntry(
@@ -181,10 +186,18 @@ describe('readStockEntry', () => {
       type: 'invalid',
       errors: {
         lotNumber: LOT_ERROR,
-        expiryDate:
-          '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
-        location: '保管場所は、100 文字以内で入力してください。',
-        shelf: '棚は、50 文字以内で入力してください。',
+        expiryDate: {
+          en: 'Enter the expiry date as a date from January 1, 1900 to December 31, 2999.',
+          ja: '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
+        },
+        location: {
+          en: 'Storage location: enter up to 100 characters.',
+          ja: '保管場所は、100 文字以内で入力してください。',
+        },
+        shelf: {
+          en: 'Shelf: enter up to 50 characters.',
+          ja: '棚は、50 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -298,8 +311,10 @@ describe('readStockChange', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        lotNumber:
-          'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。',
+        lotNumber: {
+          en: 'This product does not keep its stock by lot numbers. The lot number can only be cleared.',
+          ja: 'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。',
+        },
       },
     })
     expect(
@@ -310,7 +325,12 @@ describe('readStockChange', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
+      errors: {
+        lotNumber: {
+          en: 'Lot number: enter up to 100 characters.',
+          ja: 'ロット番号は、100 文字以内で入力してください。',
+        },
+      },
     })
   })
 
@@ -340,8 +360,10 @@ describe('readStockChange', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        expiryDate:
-          '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
+        expiryDate: {
+          en: 'Enter the expiry date as a date from January 1, 1900 to December 31, 2999.',
+          ja: '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
+        },
       },
     })
   })
@@ -364,9 +386,18 @@ describe('afterStockWrite', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        productId: 'この商品は、削除されました。ほかの商品を選んでください。',
-        lotNumber: 'ロット番号は、100 文字以内で入力してください。',
-        shelf: '棚は、50 文字以内で入力してください。',
+        productId: {
+          en: 'This product was removed. Choose another product.',
+          ja: 'この商品は、削除されました。ほかの商品を選んでください。',
+        },
+        lotNumber: {
+          en: 'Lot number: enter up to 100 characters.',
+          ja: 'ロット番号は、100 文字以内で入力してください。',
+        },
+        shelf: {
+          en: 'Shelf: enter up to 50 characters.',
+          ja: '棚は、50 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -384,9 +415,16 @@ describe('afterStockWrite', () => {
         false,
       ),
     ).toEqual({
-      message:
-        'この商品の「在庫をロット番号で分ける」の印が、変わっていました。いまの印で読み直したので、ロット番号を確かめて、もう一度お試しください。',
-      errors: { shelf: '棚は、50 文字以内で入力してください。' },
+      message: {
+        en: 'The mark “Keep the stock by lot numbers” of this product changed. The products were loaded again with the mark as it is now: check the lot number and try again.',
+        ja: 'この商品の「在庫をロット番号で分ける」の印が、変わっていました。いまの印で読み直したので、ロット番号を確かめて、もう一度お試しください。',
+      },
+      errors: {
+        shelf: {
+          en: 'Shelf: enter up to 50 characters.',
+          ja: '棚は、50 文字以内で入力してください。',
+        },
+      },
     })
   })
 
@@ -397,23 +435,31 @@ describe('afterStockWrite', () => {
         false,
       ),
     ).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[boolean, string | undefined, Record<string, string>]>([
+  it.each<[boolean, LocalizedText | undefined, Record<string, LocalizedText>]>([
     [
       true,
       undefined,
       {
-        lotNumber:
-          'このロット番号の在庫の行は、この商品にすでにあります。同じロットの在庫は、その行で記録してください。',
+        lotNumber: {
+          en: 'This product already has a stock row with this lot number. Record the stock of that lot on that row.',
+          ja: 'このロット番号の在庫の行は、この商品にすでにあります。同じロットの在庫は、その行で記録してください。',
+        },
       },
     ],
     [
       false,
-      'ロット番号のない在庫の行は、この商品にすでにあります。ロット番号のない在庫は、その行で記録してください。',
+      {
+        en: 'This product already has a stock row without a lot number. Record the stock without a lot number on that row.',
+        ja: 'ロット番号のない在庫の行は、この商品にすでにあります。ロット番号のない在庫は、その行で記録してください。',
+      },
       {},
     ],
   ])(
@@ -426,14 +472,20 @@ describe('afterStockWrite', () => {
     },
   )
 
-  it.each<['forbidden' | 'tooManyRequests' | 'failed', string]>([
+  it.each<['forbidden' | 'tooManyRequests' | 'failed', LocalizedText]>([
     [
       'forbidden',
-      'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The stock of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its stock rows.',
+        ja: 'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       'failed',
-      '在庫の行を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The stock row could not be saved. Check your connection and try again.',
+        ja: '在庫の行を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form why it was not saved: %s', (type, message) => {
     expect(afterStockWrite({ type }, false)).toEqual({ message, errors: {} })
@@ -461,13 +513,24 @@ describe('afterStockRemoval', () => {
       ReturnType<typeof afterStockRemoval>,
     ]
   >([
-    ['removed', { type: 'done', message: '在庫の行「LOT-1」を削除しました。' }],
+    [
+      'removed',
+      {
+        type: 'done',
+        message: {
+          en: 'Removed the stock row “LOT-1”.',
+          ja: '在庫の行「LOT-1」を削除しました。',
+        },
+      },
+    ],
     [
       'inStock',
       {
         type: 'refused',
-        message:
-          '在庫の行「LOT-1」は、在庫数が 0 でないので、削除できません。在庫の移動で在庫数を 0 にしてから、削除してください。',
+        message: {
+          en: 'The stock row “LOT-1” still has stock, so it cannot be removed. Bring its stock to 0 with a stock movement, then remove it.',
+          ja: '在庫の行「LOT-1」は、在庫数が 0 でないので、削除できません。在庫の移動で在庫数を 0 にしてから、削除してください。',
+        },
       },
     ],
     ['notFound', { type: 'gone' }],
@@ -475,27 +538,35 @@ describe('afterStockRemoval', () => {
       'forbidden',
       {
         type: 'refused',
-        message:
-          'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        message: {
+          en: 'The stock of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its stock rows.',
+          ja: 'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        },
       },
     ],
     [
       'tooManyRequests',
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
       'failed',
       {
         type: 'again',
-        message:
-          '在庫の行を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The stock row could not be removed. Check your connection and try again.',
+          ja: '在庫の行を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what became of the row after %s', (type, says) => {
-    expect(afterStockRemoval({ type }, 'LOT-1')).toEqual(says)
+    expect(afterStockRemoval({ type }, { en: 'LOT-1', ja: 'LOT-1' })).toEqual(
+      says,
+    )
   })
 })

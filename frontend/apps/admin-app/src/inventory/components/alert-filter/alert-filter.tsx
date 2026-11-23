@@ -3,13 +3,18 @@ import {
   FilterForm,
   Select,
   useFilterValues,
+  useSaidChoices,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { ALERT_KIND_OPTIONS, SEVERITY_OPTIONS } from '../../utils/alert-format'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { ALERT_KIND_CHOICES, SEVERITY_CHOICES } from '../../utils/alert-format'
 import {
-  ACKNOWLEDGED_OPTIONS,
+  ACKNOWLEDGED_CHOICES,
   type AlertConditions,
   alertQueryOf,
 } from '../../utils/alert-search'
+
+const { filter: words } = adminInventoryMessages.alerts
 
 export type AlertFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -46,6 +51,8 @@ export const AlertFilter = ({
   clearHref,
   onSubmit,
 }: AlertFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(
     alertQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -53,7 +60,7 @@ export const AlertFilter = ({
 
   return (
     <FilterForm
-      label='在庫のアラートを絞り込む'
+      label={say(words.label)}
       purpose='view'
       clearHref={clearHref}
       onSubmit={onSubmit}
@@ -61,26 +68,26 @@ export const AlertFilter = ({
       conditions={
         <>
           <Select
-            label='種類'
+            label={say(words.kind)}
             name='alert'
-            options={ALERT_KIND_OPTIONS}
-            placeholder='すべて'
+            options={options(ALERT_KIND_CHOICES)}
+            placeholder={say(words.all)}
             value={values.alert}
             onChange={(event) => hold('alert', event.target.value)}
           />
           <Select
-            label='重要度'
+            label={say(words.severity)}
             name='severity'
-            options={SEVERITY_OPTIONS}
-            placeholder='すべて'
+            options={options(SEVERITY_CHOICES)}
+            placeholder={say(words.all)}
             value={values.severity}
             onChange={(event) => hold('severity', event.target.value)}
           />
           <Select
-            label='確認'
+            label={say(words.acknowledgement)}
             name='acknowledged'
-            options={ACKNOWLEDGED_OPTIONS}
-            placeholder='すべて'
+            options={options(ACKNOWLEDGED_CHOICES)}
+            placeholder={say(words.all)}
             value={values.acknowledged}
             onChange={(event) => hold('acknowledged', event.target.value)}
           />

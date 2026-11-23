@@ -18,15 +18,16 @@ import {
   Alert,
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -67,7 +68,8 @@ import {
   readAlertConditions,
 } from '../utils/alert-search'
 
-const TITLE = '在庫のアラート'
+const { alerts: words, names, titles } = adminInventoryMessages
+const { list } = words
 
 /** An alert to be seen to, with the notes of the dialog */
 type Seen = { alert: ModelsInventoryAlertResponse; values: FormData }
@@ -79,6 +81,7 @@ type Seen = { alert: ModelsInventoryAlertResponse; values: FormData }
  * are read again before it closes, as they are then.
  */
 const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const focusHeading = useScreenHeadingFocus()
@@ -106,9 +109,9 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   /** The alert the dialog sees to */
   const [seeing, setSeeing] = useState<ModelsInventoryAlertResponse>()
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What changed meanwhile: said under the heading */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   /** How many times the dialog closed on what it changed: the heading takes the focus each time */
   const [moves, setMoves] = useState(0)
 
@@ -157,23 +160,20 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('在庫')} />
+        <PageHeader title={say(titles.alerts)} description={salon.name} />
+        <OtherSalonNotice what={names.inventoryOfTheSalon} />
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
-      {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
-      <p>
-        在庫僅少と在庫過剰は、商品のすべての在庫の行を合わせた在庫数を、最低在庫数と最大在庫数に比べて出ます。期限切れ間近（使用期限まで
-        30 日以内）と期限切れは、在庫の行ごとに出ます。
-      </p>
+      <PageHeader title={say(titles.alerts)} description={salon.name} />
+      {refusal !== undefined && <Alert tone='warning'>{say(refusal)}</Alert>}
+      <p>{say(words.about)}</p>
       {match(summary.data)
         .with(undefined, () => (
-          <LoadingIndicator label='アラートの件数を読み込んでいます' />
+          <LoadingIndicator label={say(words.summary.loading)} />
         ))
         .with({ type: 'found' }, ({ summary: counted }) => (
           <AlertSummary summary={counted} />
@@ -182,9 +182,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'forbidden' }, () => null)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('アラートの件数'), reason),
-            )}
+            message={say(unreadMessageOf(names.alertCount, reason))}
             onRetry={() => void summary.refetch()}
             pending={summary.isFetching}
           />
@@ -204,14 +202,10 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='在庫のアラートを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(list.loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫のアラート'), reason),
-            )}
+            message={say(unreadMessageOf(names.alerts, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -219,13 +213,13 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合う在庫のアラートはありません'
-              description='条件を変えて、見直してください。'
+              title={say(list.noneMatch)}
+              description={say(list.noneMatchDescription)}
             />
           ) : (
             <EmptyState
-              title='在庫のアラートはありません'
-              description='在庫数が最低在庫数以下か最大在庫数より多くなった商品と、使用期限が近いか過ぎた在庫の行が、ここに出ます。'
+              title={say(list.empty)}
+              description={say(list.emptyDescription)}
             />
           ),
         )
@@ -233,7 +227,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <AlertTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合う在庫のアラート' : TITLE}
+            caption={narrowed ? list.narrowedCaption : list.caption}
             alerts={items}
             staff={match(staff.data)
               .with({ type: 'found' }, ({ items: members }) => members)
@@ -255,7 +249,9 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           />
         ))
         .exhaustive()}
-      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
+      <ButtonLink href={inventoryHrefOf(salon.id)}>
+        {say(list.toInventory)}
+      </ButtonLink>
       <AlertDialog
         alert={seeing}
         onClose={() => setSeeing(undefined)}
@@ -273,10 +269,11 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The alerts of the stock of the salon of the address, for every member of its staff and an administrator. */
 export const StockAlertsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.alerts)}>
       {(salon) => <AlertsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

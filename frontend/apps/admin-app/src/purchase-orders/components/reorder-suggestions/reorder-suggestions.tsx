@@ -66,21 +66,21 @@ export const ReorderSuggestions = ({
               header: '在庫',
               align: 'end',
               cell: ({ currentStock, unit }) =>
-                quantityNameOf(currentStock, { unit }),
+                inJapanese(quantityNameOf(currentStock, { unit })),
             },
             {
               key: 'onOrderQuantity',
               header: '発注中',
               align: 'end',
               cell: ({ onOrderQuantity, unit }) =>
-                quantityNameOf(onOrderQuantity, { unit }),
+                inJapanese(quantityNameOf(onOrderQuantity, { unit })),
             },
             {
               key: 'reorderPoint',
               header: '発注点',
               align: 'end',
               cell: ({ reorderPoint, unit }) =>
-                quantityNameOf(reorderPoint, { unit }),
+                inJapanese(quantityNameOf(reorderPoint, { unit })),
             },
             {
               key: 'maximumStock',
@@ -89,14 +89,16 @@ export const ReorderSuggestions = ({
               cell: ({ maximumStock, unit }) =>
                 maximumStock === null
                   ? '設定なし'
-                  : quantityNameOf(maximumStock, { unit }),
+                  : inJapanese(quantityNameOf(maximumStock, { unit })),
             },
             {
               key: 'suggestedQuantity',
               header: '提案する数量',
               align: 'end',
               cell: ({ suggestedQuantity, unit }) => (
-                <strong>{quantityNameOf(suggestedQuantity, { unit })}</strong>
+                <strong>
+                  {inJapanese(quantityNameOf(suggestedQuantity, { unit }))}
+                </strong>
               ),
             },
             {

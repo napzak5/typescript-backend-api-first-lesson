@@ -1,4 +1,6 @@
+import { tooLongOf } from '@beauty-salon-frontend/fields'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -8,6 +10,7 @@ import {
   PRODUCTS_OF_THE_SALON,
   shampoo,
 } from '../../../products/components/examples'
+import { LONGEST_SHELF } from '../../utils/stock-form'
 import { colourLot, shampooRow } from '../examples'
 
 import { StockForm } from './stock-form'
@@ -66,10 +69,9 @@ export const LotToClear: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      productId: '商品を選んでください。',
-      expiryDate:
-        '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
-      shelf: '棚は、50 文字以内で入力してください。',
+      productId: adminInventoryMessages.errors.product,
+      expiryDate: adminInventoryMessages.errors.expiry,
+      shelf: tooLongOf(adminInventoryMessages.form.shelf, LONGEST_SHELF),
     },
   },
 }
@@ -80,7 +82,6 @@ export const Refused: Story = {
     row: colourLot,
     products: PRODUCTS_OF_THE_SALON,
     submitLabel: '変更を保存する',
-    message:
-      'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+    message: adminInventoryMessages.forbidden,
   },
 }

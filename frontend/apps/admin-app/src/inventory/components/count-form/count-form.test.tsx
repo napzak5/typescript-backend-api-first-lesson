@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { countedControlOf } from '../../utils/stock-count'
 import { colourLot, expiredColour, glovesRow, shampooRow } from '../examples'
 import * as formStories from './count-form.stories'
@@ -114,6 +115,73 @@ describe('CountForm', () => {
     expect(
       screen.getByText(
         '数えた在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+      ),
+    ).toBeVisible()
+  })
+})
+
+describe('CountForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every row, and say what the books hold of it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Rows.run()
+
+    // Assert
+    expect(
+      screen.getByRole('group', { name: 'Counted' }),
+    ).toHaveAccessibleDescription(
+      'Enter the count on the rows you counted. A row left empty is not counted, and its stock does not change. Up to 2 decimal places.',
+    )
+    expect(
+      count('ヘアカラー ナチュラルブラウン (lot LOT-2026-041)'),
+    ).toHaveAccessibleDescription(
+      'On the books: 12 本, stored at バックヤード (shelf B-2)',
+    )
+    expect(
+      count('プロフェッショナル シャンプー 500ml'),
+    ).toHaveAccessibleDescription(
+      'On the books: 8 本 (2 本 reserved), stored at 店頭の棚',
+    )
+    expect(count('ニトリル手袋 M')).toHaveAccessibleDescription(
+      'On the books: 0 箱',
+    )
+    expect(count('Reason')).toHaveAccessibleDescription(
+      'Optional. It becomes the reason of the adjustment that corrects the difference from the books. When it is empty, the adjustment is recorded as a stock count difference.',
+    )
+  })
+
+  it('should say in English what is wrong under the rows, and that the rows were read anew', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      count('ヘアカラー ナチュラルブラウン (lot LOT-2025-112)'),
+    ).toHaveAccessibleDescription(
+      /Enter the count as a number from 0 to 99,999,999\.99 \(up to 2 decimal places\)\./,
+    )
+    expect(
+      count('プロフェッショナル シャンプー 500ml'),
+    ).toHaveAccessibleDescription(
+      /This is below the 2 本 reserved\. Count the reserved stock as well\./,
+    )
+
+    // Act
+    await stories.RowsChanged.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'One of the counted stock rows was removed meanwhile. The stock rows were loaded again. Check the counts and record them again.',
       ),
     ).toBeVisible()
   })

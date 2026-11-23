@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as stockRecordStories from './stock-record.stories'
 
 const stories = composeStories(stockRecordStories)
@@ -92,5 +93,61 @@ describe('StockRecord', () => {
     // Assert
     expect(terms('在庫の行')[0]).toEqual(['商品', '削除した商品'])
     expect(terms('在庫')[0]).toEqual(['在庫数', '12'])
+  })
+})
+
+describe('StockRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what the row is and how much of it there is in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Counted.run()
+
+    // Assert
+    expect(terms('Stock row')).toEqual([
+      ['Product', 'ヘアカラー ナチュラルブラウン (COLOR001)'],
+      ['Lot number', 'LOT-2026-041'],
+      ['Expiry date', 'March 31, 2027'],
+      ['Storage location', 'バックヤード'],
+      ['Shelf', 'B-2'],
+      ['Notes', 'Not recorded'],
+    ])
+    expect(terms('Stock')).toEqual([
+      ['In stock', '12 本'],
+      ['Reserved', '0 本'],
+      ['Available', '12 本'],
+      ['Last counted', 'Sun, November 1, 2026 at 10:00 (佐藤 健)'],
+    ])
+  })
+
+  it('should mark an expiry that is past, and say that a row was never counted, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Expired.run()
+
+    // Assert
+    expect(terms('Stock row')[2]).toEqual([
+      'Expiry date',
+      'December 31, 2025 Expired',
+    ])
+    expect(terms('Stock')[3]).toEqual(['Last counted', 'Not counted yet'])
+  })
+
+  it('should name a product that was removed in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfARemovedProduct.run()
+
+    // Assert
+    expect(terms('Stock row')[0]).toEqual(['Product', 'Removed product'])
   })
 })

@@ -87,14 +87,17 @@ export const customerCalled = (
     ? '台帳から削除されたお客様'
     : `${customerNameOf(customer)} 様`
 
-/** What a removal comes to on the screen. */
-export type TreatmentRemovalSays =
+/**
+ * What a removal comes to on the screen. An area whose texts are messages
+ * says messages (`TreatmentRemovalSays<LocalizedText>`).
+ */
+export type TreatmentRemovalSays<Text = string> =
   /** The record was removed: said in a notification on the list */
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: Text }
   /** Nothing was removed, and another attempt may: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: Text }
   /** What another attempt does not change: said above the record */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: Text }
   /** The record was removed meanwhile: the screen says it is not found */
   | { type: 'gone' }
 

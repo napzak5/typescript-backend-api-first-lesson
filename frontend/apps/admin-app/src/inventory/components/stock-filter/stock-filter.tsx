@@ -7,9 +7,16 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { EXPIRY_OPTIONS, productOptionsOf } from '../../utils/stock-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { EXPIRY_CHOICES, productChoicesOf } from '../../utils/stock-format'
 import { type StockView, stockQueryOf } from '../../utils/stock-view'
+
+const { filter: words } = adminInventoryMessages
 
 export type StockFilterProps = {
   /** The view that is shown, from the address: every row, or the rows that expire soon */
@@ -17,7 +24,7 @@ export type StockFilterProps = {
   /** The products of the salon, to narrow every row to one of them */
   products: readonly ModelsProductResponse[]
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of every row, when the conditions narrow them */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -52,13 +59,16 @@ export const StockFilter = ({
   clearHref,
   onSubmit,
 }: StockFilterProps) => {
+  const say = useSay()
+  const said = useSaidForm(undefined, errors)
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(stockQueryOf(view).toString(), () =>
     valuesOf(view),
   )
 
   return view.type === 'all' ? (
     <FilterForm
-      label='在庫を探す'
+      label={say(words.label)}
       errors={errors}
       clearHref={clearHref}
       onSubmit={onSubmit}
@@ -66,20 +76,20 @@ export const StockFilter = ({
       conditions={
         <>
           <Select
-            label='商品'
+            label={say(words.product)}
             name='productId'
-            options={productOptionsOf(products, view.productId)}
-            placeholder='すべて'
+            options={options(productChoicesOf(products, view.productId))}
+            placeholder={say(words.all)}
             value={values.productId}
             onChange={(event) => hold('productId', event.target.value)}
           />
           <TextField
-            label='ロット番号'
+            label={say(words.lot)}
             name='lotNumber'
             autoComplete='off'
-            description='ロット番号のすべて。大文字と小文字を区別します。'
+            description={say(words.lotDescription)}
             value={values.lotNumber}
-            error={errors['lotNumber']}
+            error={said.errors['lotNumber']}
             onChange={(event) => hold('lotNumber', event.target.value)}
           />
         </>
@@ -87,17 +97,17 @@ export const StockFilter = ({
     />
   ) : (
     <FilterForm
-      label='使用期限で絞る'
+      label={say(words.expiryLabel)}
       purpose='view'
       errors={errors}
       clearHref={clearHref}
       onSubmit={onSubmit}
     >
       <Select
-        label='使用期限'
+        label={say(words.expiry)}
         name='days'
-        options={EXPIRY_OPTIONS}
-        description='今日から、選んだ日までに使用期限が来る在庫です。期限が過ぎたものも出ます。'
+        options={options(EXPIRY_CHOICES)}
+        description={say(words.expiryDescription)}
         value={values.days}
         onChange={(event) => hold('days', event.target.value)}
       />

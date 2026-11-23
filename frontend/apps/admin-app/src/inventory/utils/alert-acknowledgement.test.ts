@@ -10,6 +10,7 @@ import {
 
 describe('acknowledgementOf', () => {
   it('should name the alert as it was read, with the notes trimmed', () => {
+    // Act, Assert
     expect(
       acknowledgementOf(
         expiredColourAlert,
@@ -24,6 +25,7 @@ describe('acknowledgementOf', () => {
   })
 
   it('should send no notes when they are blank', () => {
+    // Act, Assert
     expect(
       acknowledgementOf(outOfGlovesAlert, formOf({ notes: ' \n ' })),
     ).toEqual({
@@ -42,7 +44,10 @@ describe('afterAcknowledgement', () => {
       { type: 'acknowledged', alert: outOfGlovesAlert },
       {
         type: 'done',
-        message: 'ニトリル手袋 M（SUP-GLOVE）の在庫僅少を確認済みにしました。',
+        message: {
+          en: 'Acknowledged the alert “Low stock” for ニトリル手袋 M (SUP-GLOVE).',
+          ja: 'ニトリル手袋 M（SUP-GLOVE）の在庫僅少を確認済みにしました。',
+        },
       },
     ],
     [
@@ -50,8 +55,10 @@ describe('afterAcknowledgement', () => {
       { type: 'gone' },
       {
         type: 'refused',
-        message:
-          'ニトリル手袋 M（SUP-GLOVE）の在庫僅少は、もう出ていません。その間に、在庫が動いたか、商品が変わりました。アラートを読み直しました。',
+        message: {
+          en: 'The alert “Low stock” for ニトリル手袋 M (SUP-GLOVE) is no longer raised. Meanwhile the stock moved or the product changed. The alerts were loaded again.',
+          ja: 'ニトリル手袋 M（SUP-GLOVE）の在庫僅少は、もう出ていません。その間に、在庫が動いたか、商品が変わりました。アラートを読み直しました。',
+        },
       },
     ],
     [
@@ -59,8 +66,10 @@ describe('afterAcknowledgement', () => {
       { type: 'acknowledgedAlready' },
       {
         type: 'refused',
-        message:
-          'ニトリル手袋 M（SUP-GLOVE）の在庫僅少は、その間に、ほかの人が確認済みにしました。アラートを読み直しました。',
+        message: {
+          en: 'Someone else acknowledged the alert “Low stock” for ニトリル手袋 M (SUP-GLOVE) meanwhile. The alerts were loaded again.',
+          ja: 'ニトリル手袋 M（SUP-GLOVE）の在庫僅少は、その間に、ほかの人が確認済みにしました。アラートを読み直しました。',
+        },
       },
     ],
     [
@@ -68,8 +77,10 @@ describe('afterAcknowledgement', () => {
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このアカウントでは、このサロンのアラートを確認済みにできません。',
+        message: {
+          en: 'This account cannot acknowledge the alerts of this salon.',
+          ja: 'このアカウントでは、このサロンのアラートを確認済みにできません。',
+        },
       },
     ],
     [
@@ -77,8 +88,10 @@ describe('afterAcknowledgement', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
@@ -86,11 +99,14 @@ describe('afterAcknowledgement', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'アラートを確認済みにできませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The alert could not be acknowledged. Check your connection and try again.',
+          ja: 'アラートを確認済みにできませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what became of %s', (_, outcome, says) => {
+    // Act, Assert
     expect(afterAcknowledgement(outcome, outOfGlovesAlert)).toEqual(says)
   })
 })

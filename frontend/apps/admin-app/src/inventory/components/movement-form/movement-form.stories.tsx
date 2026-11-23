@@ -1,4 +1,5 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -6,6 +7,8 @@ import { colour, shampoo } from '../../../products/components/examples'
 import { recordedKindsOf } from '../../utils/movement-format'
 import { colourLot, shampooRow } from '../examples'
 import { MovementForm } from './movement-form'
+
+const { errors } = adminInventoryMessages.movements
 
 const meta: Meta<typeof MovementForm> = {
   title: 'Admin/Inventory/MovementForm',
@@ -47,10 +50,9 @@ export const ForAStylist: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      transactionType: '区分を選んでください。',
-      quantity:
-        '数量は、0.01 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
-      unitCost: '単価は、0 以上の円の整数で入力してください。',
+      transactionType: errors.kind,
+      quantity: errors.quantity,
+      unitCost: errors.unitCost,
     },
   },
 }
@@ -59,7 +61,6 @@ export const WithErrors: Story = {
 export const Refused: Story = {
   args: {
     offered: recordedKindsOf(false),
-    message:
-      'このアカウントでは、この在庫の移動を記録できません。在庫の調整、廃棄、サロン間の移動を記録できるのは、サロンのオーナーとマネージャーと、管理者です。',
+    message: adminInventoryMessages.movements.forbidden,
   },
 }

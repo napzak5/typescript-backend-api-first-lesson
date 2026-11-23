@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { colour, gloves } from '../../../products/components/examples'
 import * as formStories from './stock-form.stories'
 
@@ -200,5 +201,105 @@ describe('StockForm', () => {
 
     // Assert
     expect(text(label)).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('StockForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the products, and say what a new row is, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    const chosen = screen.getByRole('combobox', { name: /^Product/ })
+    expect(optionsOf(chosen)).toEqual([
+      'Choose',
+      'ヘアカラー ナチュラルブラウン (COLOR001)',
+      'プロフェッショナル シャンプー 500ml (SHMP001)',
+      'ニトリル手袋 M (SUP-GLOVE)',
+    ])
+    expect(chosen).toHaveAccessibleDescription(
+      'The products carried. When a product kept by lot numbers is chosen, the lot number is entered.',
+    )
+    expect(
+      screen.getByRole('group', { name: 'Stock row' }),
+    ).toHaveAccessibleDescription(
+      'It is added as a row with a stock of 0. The stock changes with receipts and counts.',
+    )
+    expect(screen.getByLabelText('Expiry date')).toHaveAccessibleDescription(
+      'Leave it empty for stock without an expiry date.',
+    )
+    expect(text('Storage location')).toHaveAccessibleDescription(
+      'Up to 100 characters.',
+    )
+    expect(text('Shelf')).toHaveAccessibleDescription('Up to 50 characters.')
+
+    // Act
+    await userEvent.selectOptions(
+      chosen,
+      'ヘアカラー ナチュラルブラウン (COLOR001)',
+    )
+
+    // Assert
+    expect(text(/^Lot number/)).toHaveAccessibleDescription(
+      'Up to 100 characters. A lot number another stock row of this product has cannot be used.',
+    )
+  })
+
+  it('should name the product of a row, and the lot that can only be cleared, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(
+      screen.getByText('ヘアカラー ナチュラルブラウン (COLOR001)'),
+    ).toBeVisible()
+    expect(screen.getByText('Product')).toBeVisible()
+
+    // Act
+    await stories.LotToClear.run()
+
+    // Assert
+    expect(text('Lot number')).toHaveAccessibleDescription(
+      'This product does not keep its stock by lot numbers. The lot number can only be cleared.',
+    )
+  })
+
+  it('should say in English what is wrong, and why the account was refused', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: /^Product/ }),
+    ).toHaveAccessibleDescription(
+      'The products carried. When a product kept by lot numbers is chosen, the lot number is entered. Choose a product.',
+    )
+    expect(screen.getByLabelText('Expiry date')).toHaveAccessibleDescription(
+      'Leave it empty for stock without an expiry date. Enter the expiry date as a date from January 1, 1900 to December 31, 2999.',
+    )
+    expect(text('Shelf')).toHaveAccessibleDescription(
+      'Up to 50 characters. Shelf: enter up to 50 characters.',
+    )
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The stock of this salon cannot be changed.',
+    )
   })
 })

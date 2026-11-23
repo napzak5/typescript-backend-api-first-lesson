@@ -9,12 +9,15 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
   NO_ERRORS,
   Select,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useState } from 'react'
 import { LONGEST_LOT } from '../../utils/lot-number'
 import {
@@ -22,13 +25,17 @@ import {
   LONGEST_SHELF,
   showsLot,
 } from '../../utils/stock-form'
-import { productOf, REMOVED_PRODUCT } from '../../utils/stock-format'
+import { productNameOf, productOf } from '../../utils/stock-format'
 import styles from './stock-form.module.css'
+
+const { errors: refusals, form: words } = adminInventoryMessages
 
 export type StockFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /** The row the form opens with; `null` for a new one, whose product is chosen */
   row: ModelsInventoryResponse | null
   /**
@@ -37,12 +44,8 @@ export type StockFormProps = Pick<
    */
   products: readonly ModelsProductResponse[]
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
-
-const LOT_KEPT = `${inJapanese(upTo(LONGEST_LOT))}この商品のほかの在庫の行と同じロット番号は使えません。`
-const LOT_TO_CLEAR =
-  'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
 
 /**
  * A stock row: the product it is of and its lot, its expiry, and where it
@@ -54,94 +57,91 @@ const LOT_TO_CLEAR =
 export const StockForm = ({
   row,
   products,
+  message,
   errors = NO_ERRORS,
   ...form
 }: StockFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const [chosen, setChosen] = useState('')
   const product = productOf(products, row?.productId ?? chosen)
   const tracked = product?.requiresLotTracking === true
 
   return (
-    <Form {...form} errors={errors}>
+    <Form {...form} message={said.message} errors={errors}>
       <FormPart
-        label='在庫の行'
-        description={
-          row === null
-            ? '在庫数 0 の行として足します。在庫数は、入庫と棚卸しで変わります。'
-            : undefined
-        }
+        label={say(words.part)}
+        description={row === null ? say(words.newDescription) : undefined}
       >
         {row === null ? (
           <Select
-            label='商品'
+            label={say(words.product)}
             name='productId'
             required
-            placeholder='選んでください'
-            options={products.map(({ id, name, productCode }) => ({
-              value: id,
-              label: `${name}（${productCode}）`,
+            placeholder={say(words.choose)}
+            options={products.map((choice) => ({
+              value: choice.id,
+              label: say(productNameOf(choice)),
             }))}
-            description='取り扱い中の商品です。ロット番号で分ける商品を選ぶと、ロット番号を入力します。'
+            description={say(words.productDescription)}
             value={chosen}
             onChange={(event) => setChosen(event.target.value)}
-            error={errors['productId']}
+            error={said.errors['productId']}
           />
         ) : (
           <dl className={styles['product']}>
-            <dt className={styles['term']}>商品</dt>
-            <dd>
-              {product === undefined
-                ? REMOVED_PRODUCT
-                : `${product.name}（${product.productCode}）`}
-            </dd>
+            <dt className={styles['term']}>{say(words.product)}</dt>
+            <dd>{say(productNameOf(product))}</dd>
           </dl>
         )}
         {showsLot(row, product) && (
           <TextField
-            label='ロット番号'
+            label={say(words.lot)}
             name='lotNumber'
             autoComplete='off'
             required={tracked}
-            description={tracked ? LOT_KEPT : LOT_TO_CLEAR}
+            description={say(
+              tracked ? words.lotDescription(LONGEST_LOT) : refusals.lotNotKept,
+            )}
             defaultValue={row?.lotNumber ?? undefined}
-            error={errors['lotNumber']}
+            error={said.errors['lotNumber']}
           />
         )}
         <TextField
           width='short'
-          label='使用期限'
+          label={say(words.expiry)}
           name='expiryDate'
           type='date'
           autoComplete='off'
           min={EARLIEST_DAY}
           max={LATEST_DAY}
-          description='使用期限のないものは、空にします。'
+          description={say(words.expiryDescription)}
           defaultValue={row?.expiryDate ?? undefined}
-          error={errors['expiryDate']}
+          error={said.errors['expiryDate']}
         />
         <FieldRow>
           <TextField
-            label='保管場所'
+            label={say(words.location)}
             name='location'
             autoComplete='off'
-            description={inJapanese(upTo(LONGEST_LOCATION))}
+            description={say(upTo(LONGEST_LOCATION))}
             defaultValue={row?.location ?? undefined}
-            error={errors['location']}
+            error={said.errors['location']}
           />
           <TextField
-            label='棚'
+            label={say(words.shelf)}
             name='shelf'
             autoComplete='off'
-            description={inJapanese(upTo(LONGEST_SHELF))}
+            description={say(upTo(LONGEST_SHELF))}
             defaultValue={row?.shelf ?? undefined}
-            error={errors['shelf']}
+            error={said.errors['shelf']}
           />
         </FieldRow>
         <TextArea
-          label='メモ'
+          label={say(words.notes)}
           name='notes'
           defaultValue={row?.notes ?? undefined}
-          error={errors['notes']}
+          error={said.errors['notes']}
         />
       </FormPart>
     </Form>

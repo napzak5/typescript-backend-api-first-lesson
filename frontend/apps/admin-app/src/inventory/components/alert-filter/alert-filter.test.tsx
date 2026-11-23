@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as filterStories from './alert-filter.stories'
 
 const stories = composeStories(filterStories)
@@ -100,5 +101,44 @@ describe('AlertFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('AlertFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer every kind, every severity, and whether somebody saw to the alert, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(choice('Kind').closest('search')).toHaveAttribute(
+      'aria-label',
+      'Narrow the inventory alerts',
+    )
+    expect(optionsOf(choice('Kind'))).toEqual([
+      'All',
+      'Low stock',
+      'Overstock',
+      'Expiring soon',
+      'Expired',
+    ])
+    expect(optionsOf(choice('Severity'))).toEqual([
+      'All',
+      'Critical',
+      'Warning',
+      'Info',
+    ])
+    expect(optionsOf(choice('Acknowledgement'))).toEqual([
+      'All',
+      'Not acknowledged',
+      'Acknowledged',
+    ])
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toBeVisible()
   })
 })

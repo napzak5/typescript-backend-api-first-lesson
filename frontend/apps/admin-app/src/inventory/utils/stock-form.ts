@@ -13,21 +13,20 @@ import type {
 import {
   isDay,
   lengthOf,
-  neededWithin,
   tooLongError,
   tooLongOf,
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { StockRowRemoval, StockRowWrite } from '../api/inventory-api'
@@ -45,25 +44,11 @@ export const LONGEST_LOCATION = 100
 /** The longest shelf */
 export const LONGEST_SHELF = 50
 
-const PRODUCT_ERROR = '商品を選んでください。'
-const LOT_ERROR = `${inJapanese(neededWithin(writtenInJapanese('ロット番号'), LONGEST_LOT))}この商品は、在庫をロット番号で分けます。`
-const LOT_NOT_KEPT =
-  'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
-const EXPIRY_ERROR =
-  '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。'
-const LOCATION_ERROR = tooLongOf(
-  writtenInJapanese('保管場所'),
-  LONGEST_LOCATION,
-)
-const SHELF_ERROR = tooLongOf(writtenInJapanese('棚'), LONGEST_SHELF)
-const LOT_TAKEN =
-  'このロット番号の在庫の行は、この商品にすでにあります。同じロットの在庫は、その行で記録してください。'
-const ROW_TAKEN =
-  'ロット番号のない在庫の行は、この商品にすでにあります。ロット番号のない在庫は、その行で記録してください。'
-const LOT_MARK_CHANGED =
-  'この商品の「在庫をロット番号で分ける」の印が、変わっていました。いまの印で読み直したので、ロット番号を確かめて、もう一度お試しください。'
-const FORBIDDEN_MESSAGE =
-  'このサロンの在庫は、変えられません。在庫の行を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
+const { errors: words, form, removal } = adminInventoryMessages
+
+const LOT_ERROR = words.lotNeeded(LONGEST_LOT)
+const LOCATION_ERROR = tooLongOf(form.location, LONGEST_LOCATION)
+const SHELF_ERROR = tooLongOf(form.shelf, LONGEST_SHELF)
 
 /** The controls of the forms, under the names of the properties of the requests */
 const CONTROLS: readonly string[] = [
@@ -92,7 +77,7 @@ type Place = Pick<
 /** The expiry, the place and the notes of a row, or what is wrong with them. */
 const readPlace = (
   values: FormData,
-): { place: Place; errors: [string, string][] } => {
+): { place: Place; errors: [string, LocalizedText][] } => {
   const expiry = textOf(values, 'expiryDate').trim()
   const location = textOrNull(textOf(values, 'location'))
   const shelf = textOrNull(textOf(values, 'shelf'))
@@ -107,18 +92,13 @@ const readPlace = (
     errors: [
       ...errorAt(
         'expiryDate',
-        expiry === '' || isDay(expiry) ? undefined : EXPIRY_ERROR,
+        expiry === '' || isDay(expiry) ? undefined : words.expiry,
       ),
       ...errorAt(
         'location',
-        inJapaneseIfAny(
-          tooLongError(location, LONGEST_LOCATION, LOCATION_ERROR),
-        ),
+        tooLongError(location, LONGEST_LOCATION, LOCATION_ERROR),
       ),
-      ...errorAt(
-        'shelf',
-        inJapaneseIfAny(tooLongError(shelf, LONGEST_SHELF, SHELF_ERROR)),
-      ),
+      ...errorAt('shelf', tooLongError(shelf, LONGEST_SHELF, SHELF_ERROR)),
     ],
   }
 }
@@ -132,12 +112,12 @@ export const readStockEntry = (
   values: FormData,
   salonId: string,
   products: readonly ModelsProductResponse[],
-): FormRead<ModelsInventoryCreateRequest> => {
+): FormRead<ModelsInventoryCreateRequest, FormErrors<LocalizedText>> => {
   const product = productOf(products, textOf(values, 'productId'))
   const lot = textOrNull(textOf(values, 'lotNumber'))
   const { place, errors: placeErrors } = readPlace(values)
   const errors = Object.fromEntries([
-    ...errorAt('productId', product === undefined ? PRODUCT_ERROR : undefined),
+    ...errorAt('productId', product === undefined ? words.product : undefined),
     ...errorAt(
       'lotNumber',
       product?.requiresLotTracking === true &&
@@ -164,14 +144,14 @@ export const readStockEntry = (
 
 /** What a change of a row asks for: nothing, when nothing was changed. */
 type StockRowChange =
-  | FormRead<ModelsInventoryUpdateRequest>
+  | FormRead<ModelsInventoryUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 /** The lot that was sent, or what is wrong with it; `undefined` when the form has no lot. */
 const readLot = (
   values: FormData,
   row: ModelsInventoryResponse,
   product: ModelsProductResponse | undefined,
-): { lot: string | null | undefined; error: string | undefined } => {
+): { lot: string | null | undefined; error: LocalizedText | undefined } => {
   if (!showsLot(row, product)) {
     return { lot: undefined, error: undefined }
   }
@@ -181,9 +161,9 @@ const readLot = (
     required && (lot === null || lengthOf(lot) > LONGEST_LOT)
       ? LOT_ERROR
       : lot !== null && lengthOf(lot) > LONGEST_LOT
-        ? inJapanese(LOT_TOO_LONG)
+        ? LOT_TOO_LONG
         : !required && lot !== null && lot !== textOrNull(row.lotNumber)
-          ? LOT_NOT_KEPT
+          ? words.lotNotKept
           : undefined
 
   return { lot, error }
@@ -241,18 +221,16 @@ export const productsChanged = (values: readonly RefusedValue[]): boolean =>
   values.some((value) => value.field === 'productId' || isLotMarkRefusal(value))
 
 /** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)
     .with('productId', () =>
-      rule === 'not_found'
-        ? 'この商品は、削除されました。ほかの商品を選んでください。'
-        : PRODUCT_ERROR,
+      rule === 'not_found' ? words.productRemoved : words.product,
     )
-    .with('lotNumber', () => inJapanese(LOT_TOO_LONG))
-    .with('expiryDate', () => EXPIRY_ERROR)
-    .with('location', () => inJapanese(LOCATION_ERROR))
-    .with('shelf', () => inJapanese(SHELF_ERROR))
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with('lotNumber', () => LOT_TOO_LONG)
+    .with('expiryDate', () => words.expiry)
+    .with('location', () => LOCATION_ERROR)
+    .with('shelf', () => SHELF_ERROR)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says after the API did not take it. A lot that another
@@ -268,9 +246,9 @@ export const afterStockWrite = (
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
   lotSent: boolean,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.filter(({ field }) => CONTROLS.includes(field))
       const atControls = said.filter((value) => !isLotMarkRefusal(value))
@@ -278,9 +256,9 @@ export const afterStockWrite = (
       return {
         message:
           said.length === 0
-            ? inJapanese(CHECK_THE_VALUES_MESSAGE)
+            ? CHECK_THE_VALUES_MESSAGE
             : said.length > atControls.length
-              ? LOT_MARK_CHANGED
+              ? words.lotMarkChanged
               : undefined,
         errors: Object.fromEntries(
           atControls.map(({ field, rule }) => [field, refusalAt(field, rule)]),
@@ -289,17 +267,17 @@ export const afterStockWrite = (
     })
     .with({ type: 'lotTaken' }, () =>
       lotSent
-        ? { message: undefined, errors: { lotNumber: LOT_TAKEN } }
-        : aboutTheAttempt(ROW_TAKEN),
+        ? { message: undefined, errors: { lotNumber: words.lotTaken } }
+        : aboutTheAttempt(words.rowTaken),
     )
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(adminInventoryMessages.forbidden),
+    )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
     .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '在庫の行を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
+      aboutTheAttempt(adminInventoryMessages.saveFailed),
     )
     .exhaustive()
 
@@ -309,30 +287,29 @@ export const afterStockWrite = (
  */
 export const afterStockRemoval = (
   outcome: StockRowRemoval,
-  name: string,
-): TreatmentRemovalSays =>
+  name: LocalizedText,
+): TreatmentRemovalSays<LocalizedText> =>
   match(outcome)
-    .returnType<TreatmentRemovalSays>()
+    .returnType<TreatmentRemovalSays<LocalizedText>>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `在庫の行「${name}」を削除しました。`,
+      message: removal.done(name),
     }))
     .with({ type: 'inStock' }, () => ({
       type: 'refused',
-      message: `在庫の行「${name}」は、在庫数が 0 でないので、削除できません。在庫の移動で在庫数を 0 にしてから、削除してください。`,
+      message: removal.inStock(name),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: FORBIDDEN_MESSAGE,
+      message: adminInventoryMessages.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '在庫の行を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -7,7 +8,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { colour, gloves } from '../../../products/components/examples'
 import { StockFilter, type StockFilterProps } from './stock-filter'
 import * as stockFilterStories from './stock-filter.stories'
@@ -199,5 +200,76 @@ describe('StockFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('StockFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer every product of the salon and a lot, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Everything.run()
+
+    // Assert
+    const chosen = screen.getByRole('combobox', { name: 'Product' })
+    expect(chosen.closest('search')).toHaveAttribute('aria-label', 'Find stock')
+    expect(optionsOf(chosen)).toEqual([
+      'All',
+      'ヘアカラー ナチュラルブラウン (COLOR001)',
+      'プロフェッショナル シャンプー 500ml (SHMP001)',
+      'ニトリル手袋 M (SUP-GLOVE)',
+      'スタイリングワックス 80g (WAX001), no longer carried',
+    ])
+    expect(
+      screen.getByRole('textbox', { name: 'Lot number' }),
+    ).toHaveAccessibleDescription(
+      'The whole lot number. Upper and lower case are told apart.',
+    )
+    expect(screen.getByRole('button', { name: 'Search' })).toBeVisible()
+  })
+
+  it('should say in English what is wrong at the lot', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Lot number' }),
+    ).toHaveAccessibleDescription(
+      'The whole lot number. Upper and lower case are told apart. Lot number: enter up to 100 characters.',
+    )
+  })
+
+  it('should offer the windows of the rows that expire soon in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Expiring.run()
+
+    // Assert
+    const days = screen.getByRole('combobox', { name: 'Expiry date' })
+    expect(days.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Narrow by expiry date',
+    )
+    expect(optionsOf(days)).toEqual([
+      'By today',
+      'Within 7 days',
+      'Within 30 days',
+      'Within 90 days',
+    ])
+    expect(days).toHaveAccessibleDescription(
+      'Stock whose expiry date comes between today and the day chosen. Stock past its expiry date is shown too.',
+    )
+    expect(screen.getByRole('button', { name: 'Show' })).toBeVisible()
   })
 })

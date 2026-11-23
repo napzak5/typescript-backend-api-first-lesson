@@ -1,3 +1,4 @@
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon, staff } from '../../../bookings/components/examples'
@@ -9,7 +10,7 @@ const meta: Meta<typeof MovementTable> = {
   title: 'Admin/Inventory/MovementTable',
   component: MovementTable,
   args: {
-    caption: '在庫の移動',
+    caption: adminInventoryMessages.movements.history.caption,
     movements: MOVEMENTS_OF_THE_LOT,
     product: colour,
     staff,

@@ -1,6 +1,9 @@
 import type { ModelsInventoryValueReportResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { EmptyState, inJapanese, Table } from '@beauty-salon-frontend/ui'
+import { EmptyState, Table, useSay } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
+
+const { value: words } = adminInventoryMessages.count
 
 export type ValueReportProps = {
   report: ModelsInventoryValueReportResponse
@@ -13,41 +16,46 @@ export type ValueReportProps = {
  * products, by their categories, the most valuable first: the total above,
  * then each category with how many of its products are in stock.
  */
-export const ValueReport = ({ report, currency }: ValueReportProps) =>
-  report.categories.length === 0 ? (
+export const ValueReport = ({ report, currency }: ValueReportProps) => {
+  const say = useSay()
+
+  return report.categories.length === 0 ? (
     <EmptyState
-      title='在庫のある商品はありません'
-      description='在庫の移動か棚卸しで在庫数が 0 より多くなった商品が、ここに出ます。'
+      title={say(words.empty)}
+      description={say(words.emptyDescription)}
     />
   ) : (
     <>
       <p>
-        {`在庫評価額の合計は ${inJapanese(amountOf(report.totalValue, currency))}（${report.totalItems} 品目）です。在庫数に商品の仕入価格を掛けた額で、仕入価格のない商品は 0 円として数えます。`}
+        {say(
+          words.total(amountOf(report.totalValue, currency), report.totalItems),
+        )}
       </p>
       <Table
-        caption='カテゴリーごとの在庫評価額'
+        caption={say(words.caption)}
         columns={[
           {
             key: 'category',
-            header: 'カテゴリー',
-            cell: ({ category }) => category ?? 'カテゴリーなし',
+            header: say(words.category),
+            cell: ({ category }) => category ?? say(words.noCategory),
           },
           {
             key: 'itemCount',
-            header: '品目数',
+            header: say(words.itemCount),
             align: 'end',
-            cell: ({ itemCount }) => `${itemCount} 品目`,
+            cell: ({ itemCount }) => say(words.itemsOf(itemCount)),
           },
           {
             key: 'value',
-            header: '在庫評価額',
+            header: say(words.value),
             align: 'end',
-            cell: ({ value }) => inJapanese(amountOf(value, currency)),
+            cell: ({ value }) => say(amountOf(value, currency)),
           },
         ]}
         rows={report.categories}
         rowKey={({ category }) => category ?? ''}
-        emptyMessage='在庫のある商品はありません'
+        emptyMessage={say(words.empty)}
       />
     </>
   )
+}

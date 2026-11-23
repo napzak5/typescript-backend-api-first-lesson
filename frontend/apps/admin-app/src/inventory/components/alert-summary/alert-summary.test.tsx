@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as summaryStories from './alert-summary.stories'
 
 const stories = composeStories(summaryStories)
@@ -52,5 +53,48 @@ describe('AlertSummary', () => {
     // Assert
     expect(screen.getByText('今出ているアラートはありません。')).toBeVisible()
     expect(terms()).toEqual([])
+  })
+})
+
+describe('AlertSummary on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say how many alerts nobody saw to, and how many there are of each severity, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Alerts.run()
+
+    // Assert
+    expect(
+      screen.getByText('Alerts raised now: 2, of which 1 not acknowledged.'),
+    ).toBeVisible()
+    expect(terms()).toEqual([
+      ['Critical', '2 alerts'],
+      ['Warning', '0 alerts'],
+      ['Info', '0 alerts'],
+    ])
+  })
+
+  it('should say in English that somebody saw to every alert, and that there are none', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.AllAcknowledged.run()
+
+    // Assert
+    expect(
+      screen.getByText('Alerts raised now: 2, all of them acknowledged.'),
+    ).toBeVisible()
+
+    // Act
+    await stories.NoAlerts.run()
+
+    // Assert
+    expect(screen.getByText('No alerts are raised now.')).toBeVisible()
   })
 })

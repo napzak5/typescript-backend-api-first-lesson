@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { STOCK_OF_THE_SALON } from '../examples'
 import * as stockTableStories from './stock-table.stories'
@@ -94,5 +95,79 @@ describe('StockTable', () => {
     expect(screen.getByRole('status').textContent).toBe(
       '45 行（4 行を表示しています）',
     )
+  })
+})
+
+describe('StockTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its columns, and say the rows and their count, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Stock.run()
+
+    // Assert
+    const stock = screen.getByRole('table', { name: 'Inventory' })
+    expect(
+      within(stock)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Product code',
+      'Product name',
+      'Lot number',
+      'Expiry date',
+      'Storage location',
+      'In stock',
+    ])
+    expect(rowsOf(stock).slice(0, 3)).toEqual([
+      [
+        'COLOR001',
+        'ヘアカラー ナチュラルブラウン',
+        'LOT-2025-112',
+        'December 31, 2025 Expired',
+        'バックヤード (shelf B-2)',
+        '2.5 本',
+      ],
+      [
+        'COLOR001',
+        'ヘアカラー ナチュラルブラウン',
+        'LOT-2026-041',
+        'March 31, 2027',
+        'バックヤード (shelf B-2)',
+        '12 本',
+      ],
+      [
+        'SHMP001',
+        'プロフェッショナル シャンプー 500ml',
+        'Not recorded',
+        'No expiry',
+        '店頭の棚',
+        '8 本',
+      ],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('4 rows')
+  })
+
+  it('should name a removed product, and say how many are shown, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.OfARemovedProduct.run()
+
+    // Assert
+    expect(
+      rowsOf(screen.getByRole('table', { name: 'Inventory' }))[0]?.[1],
+    ).toBe('Removed product')
+
+    // Act
+    await stories.WithMore.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeVisible()
+    expect(screen.getByRole('status').textContent).toBe('45 rows (showing 4)')
   })
 })

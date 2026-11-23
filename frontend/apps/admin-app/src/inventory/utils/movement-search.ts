@@ -9,10 +9,11 @@ import {
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
 import {
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { movementTypeIn } from './movement-format'
 
 /*
@@ -54,13 +55,11 @@ export const movementConditionsIn = (
 /** The conditions that were filled in: each may be left empty. */
 export const readMovementConditions = (
   values: FormData,
-): FormRead<MovementConditions> => {
+): FormRead<MovementConditions, FormErrors<LocalizedText>> => {
   const type = movementTypeIn(textOf(values, 'type'))
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
-  const errors = {
-    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
-  }
+  const errors = daysErrorsOf(from, to, 'optional')
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }

@@ -18,14 +18,15 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   Navigation,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -53,38 +54,29 @@ import {
 } from '../utils/stock-view'
 import { useKeepsStock } from './keeps-stock'
 
-const TITLE = '在庫'
+const { names, stock, titles } = adminInventoryMessages
 
 /** What a view is called above its rows, and what it says when it has none */
-type ViewWords = { caption: string; empty: string; emptyDescription: string }
+type ViewWords = {
+  caption: LocalizedText
+  empty: LocalizedText
+  emptyDescription: LocalizedText
+}
 
 const wordsOf = (view: StockView, keeps: boolean): ViewWords =>
   match(view)
     .returnType<ViewWords>()
-    .with({ type: 'lowStock' }, () => ({
-      caption: '在庫僅少',
-      empty: '在庫僅少の商品はありません',
-      emptyDescription:
-        '在庫数が最低在庫数以下になった商品の在庫の行は、ここに出ます。',
-    }))
-    .with({ type: 'expiring' }, () => ({
-      caption: '期限切れ間近',
-      empty: '期限切れ間近の在庫はありません',
-      emptyDescription: '期間を変えて、見直してください。',
-    }))
+    .with({ type: 'lowStock' }, () => stock.lowStock)
+    .with({ type: 'expiring' }, () => stock.expiring)
     .with({ type: 'all' }, (all) =>
       isNarrowed(all)
-        ? {
-            caption: '条件に合う在庫の行',
-            empty: '条件に合う在庫の行はありません',
-            emptyDescription: '条件を変えて探してください。',
-          }
+        ? stock.narrowed
         : {
-            caption: TITLE,
-            empty: '在庫の行はありません',
+            caption: stock.all.caption,
+            empty: stock.all.empty,
             emptyDescription: keeps
-              ? '在庫を数える商品の、在庫の行を足してください。'
-              : '在庫の行を足せるのは、サロンのオーナーとマネージャーと、管理者です。',
+              ? stock.all.keeperDescription
+              : stock.all.staffDescription,
           },
     )
     .exhaustive()
@@ -102,9 +94,12 @@ type StockLedgerProps = { salon: ModelsSalonResponse }
  * opens, and the rows are shown once the products that name them are there.
  */
 const StockLedger = ({ salon }: StockLedgerProps) => {
+  const say = useSay()
   const keeps = useKeepsStock()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const view = stockViewIn(query)
   const asked = stockQueryOf(view).toString()
   const words = wordsOf(view, keeps)
@@ -150,12 +145,14 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
 
   const entry = keeps ? (
     <ButtonLink href={stockEntryHrefOf(salon.id)} variant='primary'>
-      在庫の行を足す
+      {say(stock.addRow)}
     </ButtonLink>
   ) : undefined
   // Every member of the staff sees to the alerts
   const alerts = (
-    <ButtonLink href={stockAlertsHrefOf(salon.id)}>在庫のアラート</ButtonLink>
+    <ButtonLink href={stockAlertsHrefOf(salon.id)}>
+      {say(stock.alerts)}
+    </ButtonLink>
   )
   // Who keeps the stock adds rows to it, and has the alerts, the count and
   // the value as other actions
@@ -166,10 +163,10 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
           <>
             {alerts}
             <ButtonLink href={stockCountHrefOf(salon.id)}>
-              棚卸しする
+              {say(stock.count)}
             </ButtonLink>
             <ButtonLink href={stockValueHrefOf(salon.id)}>
-              在庫評価額
+              {say(stock.value)}
             </ButtonLink>
           </>
         ),
@@ -179,8 +176,8 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('在庫')} />
+        <PageHeader title={say(titles.inventory)} description={salon.name} />
+        <OtherSalonNotice what={names.inventoryOfTheSalon} />
       </>
     )
   }
@@ -188,11 +185,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
   const shown = (named: readonly ModelsProductResponse[]): ReactNode => (
     <>
       {match(view)
-        .with({ type: 'lowStock' }, () => (
-          <p>
-            取り扱い中の商品のうち、すべてのロットを合わせた在庫数が最低在庫数以下の商品の、在庫の行です。
-          </p>
-        ))
+        .with({ type: 'lowStock' }, () => <p>{say(stock.lowStockAbout)}</p>)
         .with({ type: P.union('all', 'expiring') }, (narrowing) => (
           <StockFilter
             view={narrowing}
@@ -212,22 +205,18 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='在庫を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(stock.loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫'), reason),
-            )}
+            message={say(unreadMessageOf(names.inventory, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
           <EmptyState
-            title={words.empty}
-            description={words.emptyDescription}
+            title={say(words.empty)}
+            description={say(words.emptyDescription)}
             actions={view.type === 'all' ? entry : undefined}
           />
         ))
@@ -257,28 +246,27 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.inventory)}
         description={salon.name}
         actions={header.actions}
         otherActions={header.otherActions}
       />
       <Navigation
-        label='在庫の見かた'
-        items={viewItemsOf(view, inventoryHrefOf(salon.id))}
+        label={say(stock.viewsLabel)}
+        items={viewItemsOf(view, inventoryHrefOf(salon.id)).map((item) => ({
+          ...item,
+          label: say(item.label),
+        }))}
       />
       {match(products.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='在庫を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(stock.loading)} />)
         .with({ type: 'found' }, ({ items }) => shown(items))
         // The salon was removed meanwhile, or the products could not be read
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -291,10 +279,11 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
 
 /** The stock of the salon of the address, for everybody who works there and an administrator. */
 export const InventoryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.inventory)}>
       {(salon) => <StockLedger key={salon.id} salon={salon} />}
     </WithSalon>
   )

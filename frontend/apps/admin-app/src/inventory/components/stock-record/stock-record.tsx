@@ -7,17 +7,21 @@ import {
   Badge,
   Card,
   DescriptionList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { performerNameOf } from '../../utils/movement-format'
 import {
   countedNameOf,
   expiryNameOf,
   isExpired,
+  productNameOf,
   quantityNameOf,
-  REMOVED_PRODUCT,
 } from '../../utils/stock-format'
 import styles from './stock-record.module.css'
+
+const { record, words } = adminInventoryMessages
 
 export type StockRecordProps = {
   row: ModelsInventoryResponse
@@ -45,66 +49,69 @@ export const StockRecord = ({
   today,
   timezone,
   staff,
-}: StockRecordProps) => (
-  <div className={styles['record']}>
-    <Card title='在庫の行'>
-      <DescriptionList
-        items={[
-          {
-            term: '商品',
-            description:
-              product === undefined
-                ? REMOVED_PRODUCT
-                : `${product.name}（${product.productCode}）`,
-          },
-          { term: 'ロット番号', description: row.lotNumber },
-          {
-            term: '使用期限',
-            description: isExpired(row.expiryDate, today) ? (
-              <>
-                {expiryNameOf(row.expiryDate)}{' '}
-                <Badge tone='danger'>期限切れ</Badge>
-              </>
-            ) : (
-              expiryNameOf(row.expiryDate)
-            ),
-          },
-          { term: '保管場所', description: row.location },
-          { term: '棚', description: row.shelf },
-          {
-            term: 'メモ',
-            description: <WrittenText>{row.notes}</WrittenText>,
-          },
-        ]}
-      />
-    </Card>
-    <Card title='在庫'>
-      <DescriptionList
-        items={[
-          {
-            term: '在庫数',
-            description: quantityNameOf(row.currentStock, product),
-          },
-          {
-            term: '引き当てた数',
-            description: quantityNameOf(row.reservedStock, product),
-          },
-          {
-            term: '使える数',
-            description: quantityNameOf(row.availableStock, product),
-          },
-          {
-            term: '最後の棚卸し',
-            description: countedNameOf(
-              row.lastCountedAt,
-              timezone,
-              row.lastCountedBy === null || staff === undefined
-                ? undefined
-                : performerNameOf(row.lastCountedBy, staff),
-            ),
-          },
-        ]}
-      />
-    </Card>
-  </div>
-)
+}: StockRecordProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['record']}>
+      <Card title={say(record.row)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(record.product),
+              description: say(productNameOf(product)),
+            },
+            { term: say(record.lot), description: row.lotNumber },
+            {
+              term: say(record.expiry),
+              description: isExpired(row.expiryDate, today) ? (
+                <>
+                  {say(expiryNameOf(row.expiryDate))}{' '}
+                  <Badge tone='danger'>{say(words.expired)}</Badge>
+                </>
+              ) : (
+                say(expiryNameOf(row.expiryDate))
+              ),
+            },
+            { term: say(record.location), description: row.location },
+            { term: say(record.shelf), description: row.shelf },
+            {
+              term: say(record.notes),
+              description: <WrittenText>{row.notes}</WrittenText>,
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(record.stock)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(record.inStock),
+              description: say(quantityNameOf(row.currentStock, product)),
+            },
+            {
+              term: say(record.reserved),
+              description: say(quantityNameOf(row.reservedStock, product)),
+            },
+            {
+              term: say(record.available),
+              description: say(quantityNameOf(row.availableStock, product)),
+            },
+            {
+              term: say(record.lastCounted),
+              description: say(
+                countedNameOf(
+                  row.lastCountedAt,
+                  timezone,
+                  row.lastCountedBy === null || staff === undefined
+                    ? undefined
+                    : performerNameOf(row.lastCountedBy, staff),
+                ),
+              ),
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}
