@@ -501,10 +501,12 @@ that a schema cannot check with a message too (`ruleMessages.aSalon`): what
 an issue says is a `LocalizedText`, and a string does not compile. A
 `notFound` and an `alreadyExists` error carry the name of what they are
 about as a message (`entityMessages.salon`), and the sentence is made here,
-in the language of the answer. An error of which the domain writes a text
-in English alone (`conflict`) is told in English as a whole, title
-included, whatever was asked for:
-no answer is in two languages. `sendProblem` names the language of the answer in
+in the language of the answer. A `conflict` error carries why the state
+does not allow the operation as a message of its domain
+(`saleMessages.alreadyVoid`), and that is its detail as it is. A validation
+error whose headline is a string in English alone is told in English as a
+whole, title included, whatever was asked for: no answer is in two
+languages, and no request has such a headline. `sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend
 on it at all. See [i18n](./i18n.md).

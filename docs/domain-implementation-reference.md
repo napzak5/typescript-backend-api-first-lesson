@@ -1442,12 +1442,12 @@ export type DomainError =
       field: string
       value: string
     }
-  | { type: 'conflict'; message: string }
+  | { type: 'conflict'; message: LocalizedText }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile. So is the `entity` of `notFound` and of `alreadyExists`, the name of what the error is about (`entityMessages.salon`); the `id` of `notFound` is what the thing was looked for by, and null where that is not to be repeated (the token of a share link).
+`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile. So is the `entity` of `notFound` and of `alreadyExists`, the name of what the error is about (`entityMessages.salon`); the `id` of `notFound` is what the thing was looked for by, and null where that is not to be repeated (the token of a share link). The `message` of `conflict` is a `LocalizedText` too: why the state does not allow the operation, a message of the file of the domain (`saleMessages.alreadyVoid`), with the values it names (a status, an ID) as they are in every language.
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 
