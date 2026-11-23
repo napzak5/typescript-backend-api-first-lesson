@@ -1,5 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
+import { followed } from '../written'
 
 /*
  * What the screens of the sales say in the dashboard: the sales report of
@@ -31,13 +32,6 @@ const TREND_PARTS = text({
   en: 'The first and the last week or month count only the days within the period.',
   ja: '最初と最後の週や月は、期間の中の日だけを数えます。',
 })
-
-/** Sentences said one after the other: English puts a space between them, Japanese none */
-const followed = (...sentences: LocalizedText[]): LocalizedText =>
-  text({
-    en: sentences.map(({ en }) => en).join(' '),
-    ja: sentences.map(({ ja }) => ja).join(''),
-  })
 
 export const dashboardReportMessages = {
   /** The title of each screen, which the links of the header name too */

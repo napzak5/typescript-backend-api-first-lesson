@@ -1,37 +1,19 @@
 import type {
-  ModelsCustomerGenderType,
   ModelsCustomerProfileResponse,
   ModelsHairThicknessType,
   ModelsHairType,
   ModelsScalpConditionType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
-import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
+import { SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 const { details, membership } = portalProfileMessages
 
-const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
-  termMessages.gender
-
 const CATEGORY_NAMES: Record<ModelsServiceCategoryType, LocalizedText> =
   termMessages.serviceCategory
-
-/** A choice of the form: the value it sends, and its name, which the form says */
-export type NamedChoice = { value: string; label: LocalizedText }
-
-/** What the form offers as a gender, in the order of the contract. */
-export const GENDER_CHOICES: readonly NamedChoice[] = GENDERS.map((gender) => ({
-  value: gender,
-  label: GENDER_NAMES[gender],
-}))
-
-/** The kinds of service the form offers, in the order of the contract. */
-export const CATEGORY_CHOICES: readonly NamedChoice[] = SERVICE_CATEGORIES.map(
-  (category) => ({ value: category, label: CATEGORY_NAMES[category] }),
-)
 
 const HAIR_TYPE_NAMES: Record<ModelsHairType, LocalizedText> =
   termMessages.hairType

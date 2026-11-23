@@ -9,12 +9,12 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -29,7 +29,9 @@ import {
 import { RemovedCustomer } from './removed-customer'
 import { WithCustomer } from './with-customer'
 
-const TITLE = '変更履歴'
+const { history: words, names, titles } = adminCustomerMessages
+
+const TITLE = titles.history
 
 type HistoryPartProps = {
   salon: ModelsSalonResponse
@@ -47,6 +49,7 @@ const HistoryPart = ({
   customerId,
   customerAccount,
 }: HistoryPartProps) => {
+  const say = useSay()
   const session = useSession()
   const keeper =
     session.type === 'signedIn' && mayKeepCustomers(session.user.role)
@@ -64,18 +67,16 @@ const HistoryPart = ({
   return (
     <>
       <ButtonLink href={customerHrefOf(salon.id, customerId)}>
-        お客様の台帳へ
+        {say(words.backToCustomer)}
       </ButtonLink>
       {keeper ? (
         match(read.data === undefined ? undefined : listingOf(read.data.pages))
           .with(undefined, () => (
-            <LoadingIndicator label='変更履歴を読み込んでいます' />
+            <LoadingIndicator label={say(words.loading)} />
           ))
           .with({ type: 'unread' }, ({ reason }) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('変更履歴'), reason),
-              )}
+              message={say(unreadMessageOf(names.history, reason))}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />
@@ -102,7 +103,7 @@ const HistoryPart = ({
           ))
           .exhaustive()
       ) : (
-        <p>{KEPT_BY_OTHERS}</p>
+        <p>{say(KEPT_BY_OTHERS)}</p>
       )}
     </>
   )
@@ -112,32 +113,40 @@ type CustomerHistoryPageProps = {
   salon: ModelsSalonResponse
 }
 
-const CustomerHistoryPage = ({ salon }: CustomerHistoryPageProps) => (
-  <WithCustomer
-    salon={salon}
-    title={TITLE}
-    fresh={false}
-    removed={(customerId) => (
-      <RemovedCustomer salon={salon} customerId={customerId} title={TITLE}>
-        {() => (
-          <HistoryPart
-            salon={salon}
-            customerId={customerId}
-            customerAccount={null}
-          />
-        )}
-      </RemovedCustomer>
-    )}
-  >
-    {(customer) => (
-      <HistoryPart
-        salon={salon}
-        customerId={customer.id}
-        customerAccount={customer.userId}
-      />
-    )}
-  </WithCustomer>
-)
+const CustomerHistoryPage = ({ salon }: CustomerHistoryPageProps) => {
+  const say = useSay()
+
+  return (
+    <WithCustomer
+      salon={salon}
+      title={say(TITLE)}
+      fresh={false}
+      removed={(customerId) => (
+        <RemovedCustomer
+          salon={salon}
+          customerId={customerId}
+          title={say(TITLE)}
+        >
+          {() => (
+            <HistoryPart
+              salon={salon}
+              customerId={customerId}
+              customerAccount={null}
+            />
+          )}
+        </RemovedCustomer>
+      )}
+    >
+      {(customer) => (
+        <HistoryPart
+          salon={salon}
+          customerId={customer.id}
+          customerAccount={customer.userId}
+        />
+      )}
+    </WithCustomer>
+  )
+}
 
 /**
  * The history of a customer: who changed the ledger, when, and which items.
@@ -145,10 +154,11 @@ const CustomerHistoryPage = ({ salon }: CustomerHistoryPageProps) => (
  * who left it; a member of the staff is told who does.
  */
 export const CustomerHistoryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => <CustomerHistoryPage key={salon.id} salon={salon} />}
     </WithSalon>
   )

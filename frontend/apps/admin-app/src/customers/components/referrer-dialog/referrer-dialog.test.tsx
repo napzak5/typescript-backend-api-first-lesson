@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { screen, userEvent, within } from 'storybook/test'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as referrerDialogStories from './referrer-dialog.stories'
 
 const stories = composeStories(referrerDialogStories)
@@ -71,5 +72,31 @@ describe('ReferrerDialog', () => {
 
     // Assert
     expect(onClose).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ReferrerDialog on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what is chosen and how the ledger is searched, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.BeforeASearch.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', { name: 'Choose the referrer' })
+    expect(dialog).toHaveAccessibleDescription(
+      'Search the ledger for the customer who referred this one, and choose them.',
+    )
+    const search = within(dialog).getByRole('searchbox', { name: 'Keyword' })
+    expect(search.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Search for the referrer',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeVisible()
   })
 })

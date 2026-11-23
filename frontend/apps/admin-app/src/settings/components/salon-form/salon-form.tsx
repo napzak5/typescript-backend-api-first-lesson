@@ -225,7 +225,7 @@ export const SalonForm = ({
           name='features'
           autoComplete='off'
           description='「、」か「,」で区切って書きます。お客様がサロンを探すときに使います。'
-          defaultValue={tagsTextOf(salon.features)}
+          defaultValue={inJapanese(tagsTextOf(salon.features))}
           error={errors['features']}
         />
         <TextField
@@ -233,7 +233,7 @@ export const SalonForm = ({
           name='amenities'
           autoComplete='off'
           description='Wi-Fi や駐車場など。「、」か「,」で区切って書きます。'
-          defaultValue={tagsTextOf(salon.amenities)}
+          defaultValue={inJapanese(tagsTextOf(salon.amenities))}
           error={errors['amenities']}
         />
       </FormPart>

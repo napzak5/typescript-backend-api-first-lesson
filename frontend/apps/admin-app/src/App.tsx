@@ -4,7 +4,8 @@ import {
 } from '@beauty-salon-frontend/app-frame'
 import { applications } from '@beauty-salon-frontend/brand'
 import { StartScreen } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { ButtonLink, useSay } from '@beauty-salon-frontend/ui'
+import { adminFrameMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { Route } from 'react-router'
 import { AttachmentScreen } from './attachments/screens/attachment-screen'
 import { AttachmentsScreen } from './attachments/screens/attachments-screen'
@@ -112,337 +113,344 @@ const ROLES: StaffApplicationProps['roles'] = [
   'admin',
 ]
 
-export const App = () => (
-  <StaffApplication
-    title={applications.admin.name}
-    roles={ROLES}
-    navigationFor={navigationFor}
-    environment={import.meta.env.VITE_MODE}
-    portalUrl={import.meta.env.VITE_PORTAL_APP_URL}
-  >
-    <Route
-      path='/'
-      element={
-        <StartScreen
-          title={applications.admin.name}
-          choice='予約台帳を開くサロンを選びます。'
-          salonHref={bookingsHrefOf}
-          choiceActions={
-            <ButtonLink href={SALON_ENTRY_PATH} variant='primary'>
-              サロンを登録する
-            </ButtonLink>
-          }
-        />
-      }
-    />
-    <Route path={SALON_ENTRY_PATH} element={<SalonEntryScreen />} />
-    <Route path='/users/:userId' element={<UserAccountScreen />} />
-    <Route path={OPERATIONS_PATH} element={<OperationsScreen />} />
-    <Route path='/salons/:salonId/bookings' element={<DayBookingsScreen />} />
-    <Route
-      path='/salons/:salonId/bookings/new'
-      element={<BookingEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId'
-      element={<BookingScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/edit'
-      element={<BookingNotesScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/reschedule'
-      element={<BookingMoveScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/services/new'
-      element={<BookingLineEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/services/:lineId'
-      element={<BookingLineScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/checkout'
-      element={<CheckoutScreen />}
-    />
-    <Route
-      path='/salons/:salonId/bookings/:bookingId/treatment/new'
-      element={<TreatmentEntryScreen />}
-    />
-    <Route path='/salons/:salonId/sales' element={<SalesLedgerScreen />} />
-    <Route path='/salons/:salonId/sales/:saleId' element={<SaleScreen />} />
-    <Route
-      path='/salons/:salonId/sales/:saleId/payments/new'
-      element={<PaymentEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/sales/:saleId/receipt'
-      element={<ReceiptScreen />}
-    />
-    <Route
-      path='/salons/:salonId/sales/:saleId/edit'
-      element={<SaleChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/sales/:saleId/payments/:paymentId/refund'
-      element={<RefundScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers'
-      element={<CustomerLedgerScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/new'
-      element={<CustomerEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/import'
-      element={<CustomerImportScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId'
-      element={<CustomerScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/edit'
-      element={<CustomerChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/preferences'
-      element={<CustomerPreferencesScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/history'
-      element={<CustomerHistoryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/history/:version'
-      element={<CustomerVersionScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/merge'
-      element={<CustomerMergeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/points'
-      element={<CustomerPointsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/points/new'
-      element={<PointEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/chart'
-      element={<ChartScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/chart/new'
-      element={<ChartEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/chart/edit'
-      element={<ChartChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/chart/allergies/new'
-      element={<AllergyEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/:customerId/chart/allergies/:allergyId/edit'
-      element={<AllergyChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/customers/charts'
-      element={<ChartSearchScreen />}
-    />
-    <Route path='/salons/:salonId/treatments' element={<TreatmentsScreen />} />
-    <Route
-      path='/salons/:salonId/treatments/statistics'
-      element={<TreatmentStatisticsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/treatments/:treatmentId'
-      element={<TreatmentScreen />}
-    />
-    <Route
-      path='/salons/:salonId/treatments/:treatmentId/edit'
-      element={<TreatmentChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/treatments/:treatmentId/photos/new'
-      element={<TreatmentPhotosScreen />}
-    />
-    <Route path='/salons/:salonId/staff' element={<StaffLedgerScreen />} />
-    <Route path='/salons/:salonId/staff/new' element={<StaffEntryScreen />} />
-    <Route
-      path='/salons/:salonId/staff/:staffId'
-      element={<StaffMemberScreen />}
-    />
-    <Route
-      path='/salons/:salonId/staff/:staffId/edit'
-      element={<StaffChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/staff/:staffId/account'
-      element={<StaffAccountScreen />}
-    />
-    <Route path='/salons/:salonId/shifts' element={<ShiftsScreen />} />
-    <Route
-      path='/salons/:salonId/shifts/:staffId'
-      element={<ScheduleScreen />}
-    />
-    <Route
-      path='/salons/:salonId/shifts/:staffId/edit'
-      element={<ScheduleChangeScreen />}
-    />
-    <Route path='/salons/:salonId/menu' element={<MenuScreen />} />
-    <Route
-      path='/salons/:salonId/menu/services/new'
-      element={<ServiceEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/menu/services/bulk'
-      element={<ServicesChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/menu/services/:serviceId'
-      element={<ServiceScreen />}
-    />
-    <Route
-      path='/salons/:salonId/menu/services/:serviceId/edit'
-      element={<ServiceChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/menu/categories/new'
-      element={<CategoryEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/menu/categories/:categoryId/edit'
-      element={<CategoryChangeScreen />}
-    />
-    <Route path='/salons/:salonId/products' element={<ProductsScreen />} />
-    <Route
-      path='/salons/:salonId/products/new'
-      element={<ProductEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/products/:productId'
-      element={<ProductScreen />}
-    />
-    <Route
-      path='/salons/:salonId/products/:productId/edit'
-      element={<ProductChangeScreen />}
-    />
-    <Route path='/salons/:salonId/inventory' element={<InventoryScreen />} />
-    <Route
-      path='/salons/:salonId/inventory/new'
-      element={<StockEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/count'
-      element={<StockCountScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/value'
-      element={<StockValueScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/alerts'
-      element={<StockAlertsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/:inventoryId'
-      element={<StockRowScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/:inventoryId/edit'
-      element={<StockChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/:inventoryId/movements'
-      element={<MovementsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/inventory/:inventoryId/movements/new'
-      element={<MovementEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders'
-      element={<PurchaseOrdersScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders/new'
-      element={<PurchaseOrderEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders/:purchaseOrderId'
-      element={<PurchaseOrderScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders/suggestions'
-      element={<ReorderSuggestionsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders/:purchaseOrderId/edit'
-      element={<PurchaseOrderChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/purchase-orders/:purchaseOrderId/receive'
-      element={<PurchaseOrderReceiptScreen />}
-    />
-    <Route path='/salons/:salonId/reviews' element={<ReviewsScreen />} />
-    <Route
-      path='/salons/:salonId/reviews/reports'
-      element={<ReviewReportsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/reviews/:reviewId'
-      element={<ReviewScreen />}
-    />
-    <Route
-      path='/salons/:salonId/reviews/:reviewId/response'
-      element={<ReviewResponseScreen />}
-    />
-    <Route path='/salons/:salonId/files' element={<AttachmentsScreen />} />
-    <Route
-      path='/salons/:salonId/files/:attachmentId'
-      element={<AttachmentScreen />}
-    />
-    <Route
-      path='/salons/:salonId/files/:attachmentId/share-links/new'
-      element={<ShareLinkEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/files/:attachmentId/share-links/:shareLinkId'
-      element={<ShareLinkScreen />}
-    />
-    <Route path='/salons/:salonId/settings' element={<SettingsScreen />} />
-    <Route
-      path='/salons/:salonId/settings/edit'
-      element={<SalonChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/settings/hours'
-      element={<HoursChangeScreen />}
-    />
-    <Route
-      path='/salons/:salonId/settings/payment-methods'
-      element={<PaymentMethodsScreen />}
-    />
-    <Route
-      path='/salons/:salonId/settings/payment-methods/new'
-      element={<PaymentMethodEntryScreen />}
-    />
-    <Route
-      path='/salons/:salonId/settings/payment-methods/:paymentMethodId'
-      element={<PaymentMethodScreen />}
-    />
-    <Route
-      path='/salons/:salonId/settings/payment-methods/:paymentMethodId/edit'
-      element={<PaymentMethodChangeScreen />}
-    />
-    <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
-  </StaffApplication>
-)
+export const App = () => {
+  const say = useSay()
+
+  return (
+    <StaffApplication
+      title={applications.admin.name}
+      roles={ROLES}
+      navigationFor={navigationFor}
+      environment={import.meta.env.VITE_MODE}
+      portalUrl={import.meta.env.VITE_PORTAL_APP_URL}
+    >
+      <Route
+        path='/'
+        element={
+          <StartScreen
+            title={applications.admin.name}
+            choice={say(adminFrameMessages.choice)}
+            salonHref={bookingsHrefOf}
+            choiceActions={
+              <ButtonLink href={SALON_ENTRY_PATH} variant='primary'>
+                {say(adminFrameMessages.registerSalon)}
+              </ButtonLink>
+            }
+          />
+        }
+      />
+      <Route path={SALON_ENTRY_PATH} element={<SalonEntryScreen />} />
+      <Route path='/users/:userId' element={<UserAccountScreen />} />
+      <Route path={OPERATIONS_PATH} element={<OperationsScreen />} />
+      <Route path='/salons/:salonId/bookings' element={<DayBookingsScreen />} />
+      <Route
+        path='/salons/:salonId/bookings/new'
+        element={<BookingEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId'
+        element={<BookingScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/edit'
+        element={<BookingNotesScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/reschedule'
+        element={<BookingMoveScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/services/new'
+        element={<BookingLineEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/services/:lineId'
+        element={<BookingLineScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/checkout'
+        element={<CheckoutScreen />}
+      />
+      <Route
+        path='/salons/:salonId/bookings/:bookingId/treatment/new'
+        element={<TreatmentEntryScreen />}
+      />
+      <Route path='/salons/:salonId/sales' element={<SalesLedgerScreen />} />
+      <Route path='/salons/:salonId/sales/:saleId' element={<SaleScreen />} />
+      <Route
+        path='/salons/:salonId/sales/:saleId/payments/new'
+        element={<PaymentEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/sales/:saleId/receipt'
+        element={<ReceiptScreen />}
+      />
+      <Route
+        path='/salons/:salonId/sales/:saleId/edit'
+        element={<SaleChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/sales/:saleId/payments/:paymentId/refund'
+        element={<RefundScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers'
+        element={<CustomerLedgerScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/new'
+        element={<CustomerEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/import'
+        element={<CustomerImportScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId'
+        element={<CustomerScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/edit'
+        element={<CustomerChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/preferences'
+        element={<CustomerPreferencesScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/history'
+        element={<CustomerHistoryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/history/:version'
+        element={<CustomerVersionScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/merge'
+        element={<CustomerMergeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/points'
+        element={<CustomerPointsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/points/new'
+        element={<PointEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/chart'
+        element={<ChartScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/chart/new'
+        element={<ChartEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/chart/edit'
+        element={<ChartChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/chart/allergies/new'
+        element={<AllergyEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/:customerId/chart/allergies/:allergyId/edit'
+        element={<AllergyChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/customers/charts'
+        element={<ChartSearchScreen />}
+      />
+      <Route
+        path='/salons/:salonId/treatments'
+        element={<TreatmentsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/treatments/statistics'
+        element={<TreatmentStatisticsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/treatments/:treatmentId'
+        element={<TreatmentScreen />}
+      />
+      <Route
+        path='/salons/:salonId/treatments/:treatmentId/edit'
+        element={<TreatmentChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/treatments/:treatmentId/photos/new'
+        element={<TreatmentPhotosScreen />}
+      />
+      <Route path='/salons/:salonId/staff' element={<StaffLedgerScreen />} />
+      <Route path='/salons/:salonId/staff/new' element={<StaffEntryScreen />} />
+      <Route
+        path='/salons/:salonId/staff/:staffId'
+        element={<StaffMemberScreen />}
+      />
+      <Route
+        path='/salons/:salonId/staff/:staffId/edit'
+        element={<StaffChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/staff/:staffId/account'
+        element={<StaffAccountScreen />}
+      />
+      <Route path='/salons/:salonId/shifts' element={<ShiftsScreen />} />
+      <Route
+        path='/salons/:salonId/shifts/:staffId'
+        element={<ScheduleScreen />}
+      />
+      <Route
+        path='/salons/:salonId/shifts/:staffId/edit'
+        element={<ScheduleChangeScreen />}
+      />
+      <Route path='/salons/:salonId/menu' element={<MenuScreen />} />
+      <Route
+        path='/salons/:salonId/menu/services/new'
+        element={<ServiceEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/menu/services/bulk'
+        element={<ServicesChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/menu/services/:serviceId'
+        element={<ServiceScreen />}
+      />
+      <Route
+        path='/salons/:salonId/menu/services/:serviceId/edit'
+        element={<ServiceChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/menu/categories/new'
+        element={<CategoryEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/menu/categories/:categoryId/edit'
+        element={<CategoryChangeScreen />}
+      />
+      <Route path='/salons/:salonId/products' element={<ProductsScreen />} />
+      <Route
+        path='/salons/:salonId/products/new'
+        element={<ProductEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/products/:productId'
+        element={<ProductScreen />}
+      />
+      <Route
+        path='/salons/:salonId/products/:productId/edit'
+        element={<ProductChangeScreen />}
+      />
+      <Route path='/salons/:salonId/inventory' element={<InventoryScreen />} />
+      <Route
+        path='/salons/:salonId/inventory/new'
+        element={<StockEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/count'
+        element={<StockCountScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/value'
+        element={<StockValueScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/alerts'
+        element={<StockAlertsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/:inventoryId'
+        element={<StockRowScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/:inventoryId/edit'
+        element={<StockChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/:inventoryId/movements'
+        element={<MovementsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/inventory/:inventoryId/movements/new'
+        element={<MovementEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders'
+        element={<PurchaseOrdersScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders/new'
+        element={<PurchaseOrderEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders/:purchaseOrderId'
+        element={<PurchaseOrderScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders/suggestions'
+        element={<ReorderSuggestionsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders/:purchaseOrderId/edit'
+        element={<PurchaseOrderChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/purchase-orders/:purchaseOrderId/receive'
+        element={<PurchaseOrderReceiptScreen />}
+      />
+      <Route path='/salons/:salonId/reviews' element={<ReviewsScreen />} />
+      <Route
+        path='/salons/:salonId/reviews/reports'
+        element={<ReviewReportsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/reviews/:reviewId'
+        element={<ReviewScreen />}
+      />
+      <Route
+        path='/salons/:salonId/reviews/:reviewId/response'
+        element={<ReviewResponseScreen />}
+      />
+      <Route path='/salons/:salonId/files' element={<AttachmentsScreen />} />
+      <Route
+        path='/salons/:salonId/files/:attachmentId'
+        element={<AttachmentScreen />}
+      />
+      <Route
+        path='/salons/:salonId/files/:attachmentId/share-links/new'
+        element={<ShareLinkEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/files/:attachmentId/share-links/:shareLinkId'
+        element={<ShareLinkScreen />}
+      />
+      <Route path='/salons/:salonId/settings' element={<SettingsScreen />} />
+      <Route
+        path='/salons/:salonId/settings/edit'
+        element={<SalonChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/settings/hours'
+        element={<HoursChangeScreen />}
+      />
+      <Route
+        path='/salons/:salonId/settings/payment-methods'
+        element={<PaymentMethodsScreen />}
+      />
+      <Route
+        path='/salons/:salonId/settings/payment-methods/new'
+        element={<PaymentMethodEntryScreen />}
+      />
+      <Route
+        path='/salons/:salonId/settings/payment-methods/:paymentMethodId'
+        element={<PaymentMethodScreen />}
+      />
+      <Route
+        path='/salons/:salonId/settings/payment-methods/:paymentMethodId/edit'
+        element={<PaymentMethodChangeScreen />}
+      />
+      <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
+    </StaffApplication>
+  )
+}

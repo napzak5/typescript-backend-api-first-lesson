@@ -5,6 +5,7 @@ import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import * as catalogues from './index'
 import {
   answerMessages,
+  customerMessages,
   fieldMessages,
   preferenceMessages,
   salonScreenMessages,
@@ -41,6 +42,16 @@ const ratingOf = (value: number): LocalizedText =>
 
 /** Every message that is made from a value, with a value and what it then says. */
 const MADE: [string, LocalizedText, LocalizedText][] = [
+  [
+    'customerMessages.visitsOf',
+    customerMessages.visitsOf(1),
+    { en: '1 visit', ja: '1 回' },
+  ],
+  [
+    'customerMessages.pointsOf',
+    customerMessages.pointsOf(2500),
+    { en: '2,500 points', ja: '2,500 ポイント' },
+  ],
   [
     'uiMessages.counted.items',
     counted.items(12),

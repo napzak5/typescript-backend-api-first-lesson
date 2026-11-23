@@ -18,7 +18,10 @@ import {
 import { aboutTheAttempt, inJapanese } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { CANNOT_HANDLE_CUSTOMERS, readCustomerEntry } from './customer-form'
+import {
+  CANNOT_HANDLE_CUSTOMERS_MESSAGE,
+  readCustomerEntry,
+} from './customer-form'
 import {
   CUSTOMER_STATUSES,
   HAIR_THICKNESSES,
@@ -582,7 +585,9 @@ export const readCustomerFile = async (
           row,
           column: column === undefined ? null : labelOf(column),
           message:
-            column === undefined ? message : fileMessageOf(column, message),
+            column === undefined
+              ? inJapanese(message)
+              : fileMessageOf(column, inJapanese(message)),
         })
       }
       continue
@@ -750,7 +755,7 @@ export const afterRegistration = (
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: CANNOT_HANDLE_CUSTOMERS.message,
+      message: inJapanese(CANNOT_HANDLE_CUSTOMERS_MESSAGE),
       problems: [],
     }))
     .with({ type: 'tooManyRequests' }, () => ({

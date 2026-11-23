@@ -25,10 +25,10 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 import type { SaleRead } from '../../sales/api/sales-api'
 import type { CustomerRead } from '../api/customers-api'
-import { countNameOf } from './customer-format'
 
 /*
  * The points of a customer: what a form records, what is said about the
@@ -342,7 +342,7 @@ export const recordedMessageOf = ({
   ModelsPointTransactionResponse,
   'transactionType' | 'points' | 'balance'
 >): string => {
-  const moved = countNameOf(Math.abs(points), 'ポイント')
+  const moved = inJapanese(customerMessages.pointsOf(Math.abs(points)))
   const done = match(transactionType)
     .with('earned', () => `${moved}を付与しました。`)
     .with('used', () => `${moved}を使いました。`)
@@ -354,7 +354,7 @@ export const recordedMessageOf = ({
     .with(P.union('expired', 'transferred'), () => 'ポイントを記録しました。')
     .exhaustive()
 
-  return `${done}残高は ${countNameOf(balance, 'ポイント')}です。`
+  return `${done}残高は ${inJapanese(customerMessages.pointsOf(balance))}です。`
 }
 
 /** What is said of a refusal: at the count when it is the count that does not fit the balance. */
@@ -367,13 +367,13 @@ const refusalSays = (why: PointRefusal): FormSays =>
     .with({ type: 'short' }, ({ balance }) => ({
       message: undefined,
       errors: {
-        points: `残高（${countNameOf(balance, 'ポイント')}）より多くは減らせません。`,
+        points: `残高（${inJapanese(customerMessages.pointsOf(balance))}）より多くは減らせません。`,
       },
     }))
     .with({ type: 'over' }, () => ({
       message: undefined,
       errors: {
-        points: `残高が上限（${countNameOf(MOST_POINTS, 'ポイント')}）を超えるため、記録できません。`,
+        points: `残高が上限（${inJapanese(customerMessages.pointsOf(MOST_POINTS))}）を超えるため、記録できません。`,
       },
     }))
     .with({ type: 'recordedAlready', recording: 'earn' }, () =>

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as referrerFieldStories from './referrer-field.stories'
 
 const stories = composeStories(referrerFieldStories)
@@ -88,6 +89,43 @@ describe('ReferrerField', () => {
       expect.stringContaining(
         '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
       ),
+    )
+  })
+})
+
+describe('ReferrerField on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the referrer and what is wrong with them, and offer the choice, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithError.run()
+
+    // Assert
+    const referrer = screen.getByRole('textbox', { name: 'Referred by' })
+    expect(referrer).toHaveValue('鈴木 一郎')
+    expect(referrer).toHaveAccessibleDescription(
+      'The customer who referred this one, searched for in the ledger. The customer you chose is not in the ledger. Choose the referrer again, or remove it.',
+    )
+    expect(
+      screen.getAllByRole('button').map((button) => button.textContent),
+    ).toEqual(['Choose the referrer', 'Remove the referrer'])
+  })
+
+  it('should say of a referrer who was removed that they are not in the ledger, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Gone.run()
+
+    // Assert
+    expect(screen.getByRole('textbox', { name: 'Referred by' })).toHaveValue(
+      'A customer no longer in the ledger',
     )
   })
 })

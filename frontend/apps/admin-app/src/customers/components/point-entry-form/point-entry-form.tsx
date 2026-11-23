@@ -4,12 +4,13 @@ import {
   Checkbox,
   Form,
   type FormProps,
+  inJapanese,
   RadioGroup,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useState } from 'react'
-import { countNameOf } from '../../utils/customer-format'
 import {
   kindNameOf,
   type OfferedSale,
@@ -81,7 +82,7 @@ export const PointEntryForm = ({
           description={`1 以上の整数で入れます。減らすときも、減らす数を入れます。${
             balance === undefined
               ? ''
-              : `いまの残高は ${countNameOf(balance, 'ポイント')}です。`
+              : `いまの残高は ${inJapanese(customerMessages.pointsOf(balance))}です。`
           }`}
           error={errors['points']}
         />

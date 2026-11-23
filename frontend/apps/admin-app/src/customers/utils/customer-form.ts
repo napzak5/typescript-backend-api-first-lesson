@@ -30,16 +30,15 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
-  errorsInJapanese,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   NONE,
   same,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../api/customers-api'
 import {
@@ -50,6 +49,8 @@ import {
   TIERS,
 } from './customer-format'
 import { tagsIn } from './customer-ledger'
+
+const { naming, referrer: referrerMessages, refusals } = adminCustomerMessages
 
 /*
  * The form of a customer of the ledger: what it sends to register one and
@@ -82,16 +83,19 @@ export const referrerIdOf = (referrer: Referrer): string =>
   referrer.type === 'none' ? '' : referrer.id
 
 /** How a referrer is named: 「山田 花子 様」. */
-export const referrerNameOf = (referrer: Referrer): string =>
+export const referrerNameOf = (referrer: Referrer): LocalizedText =>
   match(referrer)
-    .returnType<string>()
-    .with({ type: 'none' }, () => inJapanese(NONE))
-    .with({ type: 'customer' }, ({ name }) => `${name} 様`)
-    .with({ type: 'gone' }, () => '台帳にいないお客様')
+    .returnType<LocalizedText>()
+    .with({ type: 'none' }, () => NONE)
+    .with({ type: 'customer' }, ({ name }) => naming.honored(name))
+    .with({ type: 'gone' }, () => referrerMessages.gone)
     .exhaustive()
 
 /** What the form holds: every property of a customer */
 type Whole = ModelsCustomerCreateRequest
+
+/** What is wrong with the values, under the names of their controls */
+type CustomerErrors = Record<string, LocalizedText>
 
 /** The lengths of the values that may be left empty, under the names of their controls: those of a customer, and the referral code that the ledger alone holds */
 const LENGTHS: Readonly<Record<string, number>> = {
@@ -107,7 +111,7 @@ const LENGTHS: Readonly<Record<string, number>> = {
 const readWhole = (
   values: FormData,
   today: string,
-): FormRead<Whole, Record<string, string>> => {
+): FormRead<Whole, CustomerErrors> => {
   const text = (name: string): string => textOf(values, name).trim()
   const optional = (name: string): string | null => textOrNull(text(name))
   const lastName = text('lastName')
@@ -122,39 +126,29 @@ const readWhole = (
   const hairType = choiceOf(HAIR_TYPES, text('hairType'))
   const hairThickness = choiceOf(HAIR_THICKNESSES, text('hairThickness'))
   const scalpCondition = choiceOf(SCALP_CONDITIONS, text('scalpCondition'))
-  const found: Record<string, string | undefined> = {
-    lastName: inJapaneseIfAny(lastNameError(lastName)),
-    firstName: inJapaneseIfAny(firstNameError(firstName)),
-    email: inJapaneseIfAny(emailError(email)),
-    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
-    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
-    birthDate: inJapaneseIfAny(birthDateError(birthDate, today)),
-    gender: inJapaneseIfAny(
-      gender === undefined ? UNLISTED_MESSAGE : undefined,
-    ),
-    membershipTier: inJapaneseIfAny(
+  const found: Record<string, LocalizedText | undefined> = {
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
+    email: emailError(email),
+    phoneNumber: phoneError(phoneNumber),
+    alternativePhone: alternativePhoneError(alternativePhone),
+    birthDate: birthDateError(birthDate, today),
+    gender: gender === undefined ? UNLISTED_MESSAGE : undefined,
+    membershipTier:
       membershipTier === undefined || membershipTier === null
         ? UNLISTED_MESSAGE
         : undefined,
-    ),
-    customerStatus: inJapaneseIfAny(
+    customerStatus:
       customerStatus === undefined || customerStatus === null
         ? UNLISTED_MESSAGE
         : undefined,
-    ),
-    hairType: inJapaneseIfAny(
-      hairType === undefined ? UNLISTED_MESSAGE : undefined,
-    ),
-    hairThickness: inJapaneseIfAny(
-      hairThickness === undefined ? UNLISTED_MESSAGE : undefined,
-    ),
-    scalpCondition: inJapaneseIfAny(
-      scalpCondition === undefined ? UNLISTED_MESSAGE : undefined,
-    ),
-    ...errorsInJapanese(lengthErrors(LENGTHS, optional)),
+    hairType: hairType === undefined ? UNLISTED_MESSAGE : undefined,
+    hairThickness: hairThickness === undefined ? UNLISTED_MESSAGE : undefined,
+    scalpCondition: scalpCondition === undefined ? UNLISTED_MESSAGE : undefined,
+    ...lengthErrors(LENGTHS, optional),
   }
-  const errors = Object.fromEntries(
-    Object.entries(found).flatMap(([name, error]): [string, string][] =>
+  const errors: CustomerErrors = Object.fromEntries(
+    Object.entries(found).flatMap(([name, error]): [string, LocalizedText][] =>
       error === undefined ? [] : [[name, error]],
     ),
   )
@@ -213,7 +207,7 @@ const readWhole = (
 export const readCustomerEntry = (
   values: FormData,
   today: string,
-): FormRead<ModelsCustomerCreateRequest, Record<string, string>> =>
+): FormRead<ModelsCustomerCreateRequest, CustomerErrors> =>
   readWhole(values, today)
 /**
  * The properties a form was sent with other values for than the customer
@@ -301,7 +295,7 @@ const changesOf = (
 
 /** What a change of a customer asks for: nothing, when nothing was changed. */
 export type CustomerChange =
-  | FormRead<ModelsCustomerUpdateRequest>
+  | FormRead<ModelsCustomerUpdateRequest, CustomerErrors>
   | { type: 'unchanged' }
 
 /**
@@ -388,40 +382,35 @@ const CONTROLS: readonly string[] = [
  * broke. A referrer is a customer who is not in the ledger (removed while
  * the form was open), or the customer themselves.
  */
-const messageAt = (control: string, rule: string): string =>
+const messageAt = (control: string, rule: string): LocalizedText =>
   match(control)
     .with(REFERRER, () =>
       rule === 'circular'
-        ? 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。'
-        : '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+        ? referrerMessages.themselves
+        : referrerMessages.absent,
     )
-    .otherwise(() =>
-      inJapanese(customerRefusalOf(control, rule) ?? REFUSED_VALUE_MESSAGE),
-    )
+    .otherwise(() => customerRefusalOf(control, rule) ?? REFUSED_VALUE_MESSAGE)
 
-const DUPLICATES: Record<'email' | 'referralCode', string> = {
-  email:
-    'このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
-  referralCode:
-    'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを入力してください。',
+const DUPLICATES: Record<'email' | 'referralCode', LocalizedText> = {
+  email: refusals.emailTaken,
+  referralCode: refusals.referralCodeTaken,
 }
 
 /** What a form of the ledger says when the API refuses the account: it no longer belongs to a salon. */
-export const CANNOT_HANDLE_CUSTOMERS_MESSAGE =
-  'このアカウントでは、顧客台帳を扱えません。'
+export const CANNOT_HANDLE_CUSTOMERS_MESSAGE: LocalizedText =
+  refusals.cannotHandle
 
-export const CANNOT_HANDLE_CUSTOMERS: FormSays = aboutTheAttempt(
+/** The same, as what the form says of the attempt */
+const CANNOT_HANDLE_CUSTOMERS: FormSays<LocalizedText> = aboutTheAttempt(
   CANNOT_HANDLE_CUSTOMERS_MESSAGE,
 )
 
 /** Which write a form makes: the words of its failure differ. */
 export type CustomerWrite = 'entry' | 'change'
 
-const FAILED_WRITES: Record<CustomerWrite, string> = {
-  entry:
-    'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-  change:
-    '台帳を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+const FAILED_WRITES: Record<CustomerWrite, LocalizedText> = {
+  entry: refusals.entryFailed,
+  change: refusals.changeFailed,
 }
 
 /**
@@ -434,18 +423,16 @@ export const afterCustomerWrite = (
     { type: 'written' } | { type: 'notFound' }
   >,
   write: CustomerWrite,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values
         .map(({ field, rule }) => ({ control: controlOf(field), rule }))
         .filter(({ control }) => CONTROLS.includes(control))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(
           said
@@ -460,7 +447,7 @@ export const afterCustomerWrite = (
     }))
     .with({ type: 'forbidden' }, () => CANNOT_HANDLE_CUSTOMERS)
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

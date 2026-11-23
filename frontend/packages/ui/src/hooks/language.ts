@@ -1,6 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { type LocalizedText, textIn } from '@beauty-salon-shared/i18n'
 import { useCallback, useSyncExternalStore } from 'react'
+import type { ChoiceOption, NamedChoice } from '../components/field/choice'
 import type { FormErrors } from '../components/form/error-focus'
 import type { FormSays } from '../components/form/form-values'
 
@@ -25,6 +26,24 @@ export const useSay = (): ((message: LocalizedText) => string) => {
   return useCallback(
     (message: LocalizedText) => textIn(message, language),
     [language],
+  )
+}
+
+/**
+ * How a component says the options of a choice whose words are messages:
+ * `const options = useSaidChoices()`, then
+ * `<Select options={options(GENDER_CHOICES)} />`, in the language of the
+ * page, and anew when another language is chosen.
+ */
+export const useSaidChoices = (): ((
+  choices: readonly NamedChoice[],
+) => ChoiceOption[]) => {
+  const say = useSay()
+
+  return useCallback(
+    (choices: readonly NamedChoice[]) =>
+      choices.map(({ value, label }) => ({ value, label: say(label) })),
+    [say],
   )
 }
 

@@ -49,7 +49,11 @@ export {
   EnvironmentBanner,
   type EnvironmentBannerProps,
 } from './components/environment-banner/environment-banner'
-export type { ChoiceLayout, ChoiceOption } from './components/field/choice'
+export type {
+  ChoiceLayout,
+  ChoiceOption,
+  NamedChoice,
+} from './components/field/choice'
 export type { ControlWidth } from './components/field/field'
 export { FieldRow, type FieldRowProps } from './components/field-row/field-row'
 export {
@@ -179,7 +183,7 @@ export {
   WrittenText,
   type WrittenTextProps,
 } from './components/written-text/written-text'
-export { useSaidForm, useSay } from './hooks/language'
+export { useSaidChoices, useSaidForm, useSay } from './hooks/language'
 export { useWideScreen } from './hooks/wide-screen'
 export { classNames } from './utils/class-names'
 export {

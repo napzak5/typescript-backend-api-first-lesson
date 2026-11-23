@@ -1,8 +1,8 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
 import { fieldMessages } from '../ui/fields'
+import { countedIn } from '../written'
 import { portalBookingMessages } from './bookings'
-import { countedIn } from './written'
 
 const { characters } = fieldMessages
 

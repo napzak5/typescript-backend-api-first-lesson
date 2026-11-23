@@ -31,7 +31,7 @@ export const IntroductionFields = ({
       name='specialties'
       autoComplete='off'
       description='得意なメニューや技術を、「、」か「,」で区切って書きます。'
-      defaultValue={tagsTextOf(shown?.specialties ?? [])}
+      defaultValue={inJapanese(tagsTextOf(shown?.specialties ?? []))}
       error={errors['specialties']}
     />
     <TextField
@@ -39,7 +39,7 @@ export const IntroductionFields = ({
       name='certifications'
       autoComplete='off'
       description='「、」か「,」で区切って書きます。'
-      defaultValue={tagsTextOf(shown?.certifications ?? [])}
+      defaultValue={inJapanese(tagsTextOf(shown?.certifications ?? []))}
       error={errors['certifications']}
     />
     <TextField

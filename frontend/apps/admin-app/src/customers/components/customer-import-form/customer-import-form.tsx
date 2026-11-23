@@ -5,6 +5,7 @@ import {
   Button,
   FileField,
   type FormProps,
+  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   Table,
@@ -145,7 +146,8 @@ export const CustomerImportForm = ({
             {
               key: 'membershipTier',
               header: '会員ランク',
-              cell: ({ request }) => tierNameOf(request.membershipTier),
+              cell: ({ request }) =>
+                inJapanese(tierNameOf(request.membershipTier)),
             },
           ]}
           rowHeader='name'

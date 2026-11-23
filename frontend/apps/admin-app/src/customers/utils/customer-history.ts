@@ -3,7 +3,8 @@ import type {
   ModelsCustomerResponse,
   ModelsCustomerVersionOperationType,
 } from '@beauty-salon-frontend/api-client'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import type {
   CustomerRemoval,
@@ -18,24 +19,26 @@ const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
 export const mayKeepCustomers = (role: string): boolean =>
   KEEPERS.includes(role)
 
-/** What a member of the staff is told where the ledger would be kept. */
-export const KEPT_BY_OTHERS =
-  '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。'
+const {
+  history,
+  removal: removalMessages,
+  removed,
+  restoration,
+} = adminCustomerMessages
 
-const OPERATION_NAMES: Record<ModelsCustomerVersionOperationType, string> = {
-  baseline: '記録の開始',
-  create: '登録',
-  update: '更新',
-  delete: '削除',
-  restore: '復元',
-  merge: '統合',
-  erase: '消去',
-}
+/** What a member of the staff is told where the ledger would be kept. */
+export const KEPT_BY_OTHERS: LocalizedText =
+  adminCustomerMessages.keeping.keptByOthers
+
+const OPERATION_NAMES: Record<
+  ModelsCustomerVersionOperationType,
+  LocalizedText
+> = history.operations
 
 /** What made a version, in a word: 「更新」. */
 export const operationNameOf = (
   operation: ModelsCustomerVersionOperationType,
-): string => OPERATION_NAMES[operation]
+): LocalizedText => OPERATION_NAMES[operation]
 
 /** Whose accounts a screen can name. */
 export type KnownAccounts = {
@@ -48,28 +51,29 @@ export type KnownAccounts = {
 /**
  * Who made a version, as far as the salon can tell: the API names an
  * account by its ID, and a salon cannot read the name of an account. The
- * values the history began with were made by nobody.
+ * values the history began with were made by nobody: `null`.
  */
 export const changerNameOf = (
   changedBy: string | null,
   { me, customer }: KnownAccounts,
-): string =>
+): LocalizedText | null =>
   match(changedBy)
-    .with(null, () => '')
-    .with(me, () => 'あなた')
+    .returnType<LocalizedText | null>()
+    .with(null, () => null)
+    .with(me, () => history.changers.you)
     .when(
       (id) => id === customer,
-      () => 'お客様ご本人',
+      () => history.changers.customer,
     )
-    .otherwise(() => 'ほかのアカウント')
+    .otherwise(() => history.changers.another)
 
 /** Why a removed customer cannot come back, in a sentence; `undefined` when they can. */
-export const whyUnrestorable = (removal: Removal): string | undefined =>
+export const whyUnrestorable = (removal: Removal): LocalizedText | undefined =>
   match(removal)
-    .returnType<string | undefined>()
+    .returnType<LocalizedText | undefined>()
     .with('deleted', () => undefined)
-    .with('merged', () => 'ほかのお客様に統合されたため、台帳に戻せません。')
-    .with('erased', () => '削除の依頼で消去されたため、台帳に戻せません。')
+    .with('merged', () => removed.merged)
+    .with('erased', () => removed.erased)
     .exhaustive()
 
 /** What follows an attempt to take a customer out of the ledger. */
@@ -77,9 +81,9 @@ export type RemovalSays =
   /** The customer left the ledger: the page shows them as removed */
   | { type: 'done' }
   /** Nothing was done, and nothing is known to have changed: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** The customer stays, and will: the dialog closes, and the page says why */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
   /** The customer had left already: the page shows them as removed */
   | { type: 'gone' }
 
@@ -89,22 +93,20 @@ export const afterRemoval = (outcome: CustomerRemoval): RemovalSays =>
     .with({ type: 'removed' }, () => ({ type: 'done' }))
     .with({ type: 'unfinished' }, () => ({
       type: 'refused',
-      message:
-        '終わっていない予約があるため、削除できませんでした。予約を完了、キャンセル、または削除してから、もう一度お試しください。',
+      message: removalMessages.unfinished,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、お客様を台帳から削除できません。${KEPT_BY_OTHERS}`,
+      message: removalMessages.forbidden,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'お客様を台帳から削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removalMessages.failed,
     }))
     .exhaustive()
 
@@ -115,9 +117,9 @@ export type RestorationSays =
   /** The customer is not what the page shows any more: it is read again */
   | { type: 'changed' }
   /** Another customer has their address of mail: said, with the way to that customer */
-  | { type: 'emailTaken'; message: string }
+  | { type: 'emailTaken'; message: LocalizedText }
   /** Nothing was done: said on the page */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
 export const afterRestoration = (
   outcome: CustomerRestoration,
@@ -131,19 +133,18 @@ export const afterRestoration = (
     }))
     .with({ type: 'emailTaken' }, () => ({
       type: 'emailTaken',
-      message: `このお客様のメールアドレス（${email}）は、削除のあとに登録されたお客様が使っています。そのお客様のメールアドレスを変えてから、台帳に戻してください。`,
+      message: restoration.emailTaken(email),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、お客様を台帳に戻せません。${KEPT_BY_OTHERS}`,
+      message: restoration.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'refused',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'refused',
-      message:
-        'お客様を台帳に戻せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: restoration.failed,
     }))
     .exhaustive()

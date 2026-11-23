@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
@@ -12,7 +13,7 @@ const meta: Meta<typeof RemovedRecord> = {
   args: {
     version: aVersion({ version: 5, operation: 'delete' }),
     removal: 'deleted',
-    changer: 'あなた',
+    changer: adminCustomerMessages.history.changers.you,
     timezone: salon.timezone,
     historyHref: `${customers}/${aCustomer().id}/history`,
     customerHref: (customerId) => `${customers}/${customerId}`,
@@ -47,11 +48,12 @@ export const Restoring: Story = {
 export const EmailTaken: Story = {
   args: {
     refusal: {
-      message:
-        'このお客様のメールアドレス（hanako.yamada@example.com）は、削除のあとに登録されたお客様が使っています。そのお客様のメールアドレスを変えてから、台帳に戻してください。',
+      message: adminCustomerMessages.restoration.emailTaken(
+        'hanako.yamada@example.com',
+      ),
       link: {
         href: `${customers}?search=hanako.yamada%40example.com`,
-        label: 'そのお客様を台帳で探す',
+        label: adminCustomerMessages.restoration.findThem,
       },
     },
   },
@@ -62,7 +64,7 @@ export const Merged: Story = {
   args: {
     version: aVersion({ version: 5, operation: 'merge' }),
     removal: 'merged',
-    changer: 'ほかのアカウント',
+    changer: adminCustomerMessages.history.changers.another,
   },
 }
 
@@ -81,6 +83,6 @@ export const Erased: Story = {
       tags: [],
     }),
     removal: 'erased',
-    changer: 'ほかのアカウント',
+    changer: adminCustomerMessages.history.changers.another,
   },
 }

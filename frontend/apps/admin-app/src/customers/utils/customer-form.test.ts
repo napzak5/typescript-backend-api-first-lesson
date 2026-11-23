@@ -3,6 +3,7 @@ import {
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
 } from '@beauty-salon-frontend/fields'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aCustomer } from '../../bookings/components/examples'
 import {
@@ -20,6 +21,89 @@ import {
 const REFERRER_ID = '7c1e4b9a-3d52-4f86-a0b7-9e2d6c8f1a45'
 
 const TODAY = '2026-11-20'
+
+const LAST_NAME_MISSING = {
+  en: 'Enter the last name.',
+  ja: '姓を入力してください。',
+}
+const FIRST_NAME_MISSING = {
+  en: 'Enter the first name.',
+  ja: '名を入力してください。',
+}
+const EMAIL_MISSING = {
+  en: 'Enter an email address.',
+  ja: 'メールアドレスを入力してください。',
+}
+const PHONE_MISSING = {
+  en: 'Enter a phone number.',
+  ja: '電話番号を入力してください。',
+}
+const EMAIL_MALFORMED = {
+  en: 'Enter an email address in a form such as hanako@example.com.',
+  ja: 'メールアドレスは、hanako@example.com のような形で入力してください。',
+}
+const PHONE_MALFORMED = {
+  en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+  ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+}
+const BIRTH_DATE_OUT_OF_RANGE = {
+  en: 'Enter a date of birth from January 1, 1900 to today.',
+  ja: '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+}
+const UNLISTED = {
+  en: 'Choose one of the options.',
+  ja: '選択肢から選んでください。',
+}
+const REFUSED_VALUE = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
+const CHECK_THE_VALUES = {
+  en: 'Check what you entered and try again.',
+  ja: '入力した内容を確かめて、もう一度お試しください。',
+}
+const REFERRER_ABSENT = {
+  en: 'The customer you chose is not in the ledger. Choose the referrer again, or remove it.',
+  ja: '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+}
+const REFERRER_THEMSELVES = {
+  en: 'A customer cannot be their own referrer. Choose another customer.',
+  ja: 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。',
+}
+const EMAIL_TAKEN = {
+  en: 'A customer with this email address is already in the ledger. Search for them in the ledger, or enter another email address.',
+  ja: 'このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
+}
+const CODE_TAKEN = {
+  en: 'Another customer uses this referral code (customers removed from the ledger included). Enter another code.',
+  ja: 'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを入力してください。',
+}
+const CANNOT_HANDLE = {
+  en: 'This account cannot work with the customer ledger.',
+  ja: 'このアカウントでは、顧客台帳を扱えません。',
+}
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+const ENTRY_FAILED = {
+  en: 'The customer could not be registered. Check your connection and try again.',
+  ja: 'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+const CHANGE_FAILED = {
+  en: 'The record could not be changed. Check your connection and try again.',
+  ja: '台帳を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+const GONE_REFERRER = {
+  en: 'A customer no longer in the ledger',
+  ja: '台帳にいないお客様',
+}
+
+/** What is said of a text longer than a control takes */
+const upTo = (most: number): LocalizedText => ({
+  en: `Enter up to ${most} characters.`,
+  ja: `${most} 文字以内で入力してください。`,
+})
 
 /** The controls of the form as a new one holds them, with what a test fills in */
 const FILLED: [string, string][] = [
@@ -258,21 +342,21 @@ describe('readCustomerEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        lastName: '姓を入力してください。',
-        firstName: '名を入力してください。',
-        email: 'メールアドレスを入力してください。',
-        phoneNumber: '電話番号を入力してください。',
+        lastName: LAST_NAME_MISSING,
+        firstName: FIRST_NAME_MISSING,
+        email: EMAIL_MISSING,
+        phoneNumber: PHONE_MISSING,
       },
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'names too long',
       { lastName: 'あ'.repeat(101), firstNameKana: 'ア'.repeat(101) },
       {
-        lastName: '100 文字以内で入力してください。',
-        firstNameKana: '100 文字以内で入力してください。',
+        lastName: upTo(100),
+        firstNameKana: upTo(100),
       },
     ],
     ['a name of the longest length', { lastName: 'あ'.repeat(100) }, {}],
@@ -280,23 +364,20 @@ describe('readCustomerEntry', () => {
       'an address of mail that is none',
       { email: 'hanako@' },
       {
-        email:
-          'メールアドレスは、hanako@example.com のような形で入力してください。',
+        email: EMAIL_MALFORMED,
       },
     ],
     [
       'an address of mail too long',
       { email: `${'a'.repeat(244)}@example.com` },
-      { email: '255 文字以内で入力してください。' },
+      { email: upTo(255) },
     ],
     [
       'phone numbers that are none',
       { phoneNumber: '090-1234', alternativePhone: '03-1234-567a' },
       {
-        phoneNumber:
-          '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
-        alternativePhone:
-          '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+        phoneNumber: PHONE_MALFORMED,
+        alternativePhone: PHONE_MALFORMED,
       },
     ],
     [
@@ -309,35 +390,33 @@ describe('readCustomerEntry', () => {
         building: 'あ'.repeat(256),
       },
       {
-        postalCode: '10 文字以内で入力してください。',
-        prefecture: '50 文字以内で入力してください。',
-        city: '100 文字以内で入力してください。',
-        address: '255 文字以内で入力してください。',
-        building: '255 文字以内で入力してください。',
+        postalCode: upTo(10),
+        prefecture: upTo(50),
+        city: upTo(100),
+        address: upTo(255),
+        building: upTo(255),
       },
     ],
     [
       'an occupation and a referral code too long',
       { occupation: 'あ'.repeat(101), referralCode: 'A'.repeat(51) },
       {
-        occupation: '100 文字以内で入力してください。',
-        referralCode: '50 文字以内で入力してください。',
+        occupation: upTo(100),
+        referralCode: upTo(50),
       },
     ],
     [
       'a day of birth to come',
       { birthDate: '2026-11-21' },
       {
-        birthDate:
-          '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+        birthDate: BIRTH_DATE_OUT_OF_RANGE,
       },
     ],
     [
       'a day of birth before 1900',
       { birthDate: '1899-12-31' },
       {
-        birthDate:
-          '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+        birthDate: BIRTH_DATE_OUT_OF_RANGE,
       },
     ],
     [
@@ -351,12 +430,12 @@ describe('readCustomerEntry', () => {
         scalpCondition: 'y',
       },
       {
-        gender: '選択肢から選んでください。',
-        membershipTier: '選択肢から選んでください。',
-        customerStatus: '選択肢から選んでください。',
-        hairType: '選択肢から選んでください。',
-        hairThickness: '選択肢から選んでください。',
-        scalpCondition: '選択肢から選んでください。',
+        gender: UNLISTED,
+        membershipTier: UNLISTED,
+        customerStatus: UNLISTED,
+        hairType: UNLISTED,
+        hairThickness: UNLISTED,
+        scalpCondition: UNLISTED,
       },
     ],
   ])('should say what is wrong with %s', (_case, values, errors) => {
@@ -560,7 +639,7 @@ describe('readCustomerChange', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { email: 'メールアドレスを入力してください。' },
+      errors: { email: EMAIL_MISSING },
     })
   })
 })
@@ -589,13 +668,11 @@ describe('afterCustomerWrite', () => {
       {
         message: undefined,
         errors: {
-          birthDate:
-            '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
-          tags: 'この値は受け付けられませんでした。入力を確かめてください。',
-          [PREFERRED_SERVICES]: '選択肢から選んでください。',
-          city: '100 文字以内で入力してください。',
-          referralCode:
-            'この値は受け付けられませんでした。入力を確かめてください。',
+          birthDate: BIRTH_DATE_OUT_OF_RANGE,
+          tags: REFUSED_VALUE,
+          [PREFERRED_SERVICES]: UNLISTED,
+          city: upTo(100),
+          referralCode: REFUSED_VALUE,
         },
       },
     ],
@@ -604,7 +681,7 @@ describe('afterCustomerWrite', () => {
       { type: 'invalid', values: [{ field: 'preferences', rule: 'custom' }] },
       {
         message: undefined,
-        errors: { [PREFERRED_SERVICES]: '選択肢から選んでください。' },
+        errors: { [PREFERRED_SERVICES]: UNLISTED },
       },
     ],
     [
@@ -613,8 +690,7 @@ describe('afterCustomerWrite', () => {
       {
         message: undefined,
         errors: {
-          referredBy:
-            '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+          referredBy: REFERRER_ABSENT,
         },
       },
     ],
@@ -624,8 +700,7 @@ describe('afterCustomerWrite', () => {
       {
         message: undefined,
         errors: {
-          referredBy:
-            'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。',
+          referredBy: REFERRER_THEMSELVES,
         },
       },
     ],
@@ -636,7 +711,7 @@ describe('afterCustomerWrite', () => {
         values: [{ field: 'loyaltyPoints', rule: 'unrecognized_keys' }],
       },
       {
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: CHECK_THE_VALUES,
         errors: {},
       },
     ],
@@ -646,8 +721,7 @@ describe('afterCustomerWrite', () => {
       {
         message: undefined,
         errors: {
-          email:
-            'このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
+          email: EMAIL_TAKEN,
         },
       },
     ],
@@ -657,22 +731,20 @@ describe('afterCustomerWrite', () => {
       {
         message: undefined,
         errors: {
-          referralCode:
-            'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを入力してください。',
+          referralCode: CODE_TAKEN,
         },
       },
     ],
     [
       'a refusal of the account',
       { type: 'forbidden' },
-      { message: 'このアカウントでは、顧客台帳を扱えません。', errors: {} },
+      { message: CANNOT_HANDLE, errors: {} },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
       {
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: TOO_MANY_REQUESTS,
         errors: {},
       },
     ],
@@ -681,15 +753,9 @@ describe('afterCustomerWrite', () => {
     expect(afterCustomerWrite(outcome, 'entry')).toEqual(said)
   })
 
-  it.each<['entry' | 'change', string]>([
-    [
-      'entry',
-      'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-    ],
-    [
-      'change',
-      '台帳を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-    ],
+  it.each<['entry' | 'change', LocalizedText]>([
+    ['entry', ENTRY_FAILED],
+    ['change', CHANGE_FAILED],
   ])('should say that the %s failed', (write, message) => {
     // Act, Assert
     expect(afterCustomerWrite({ type: 'failed' }, write)).toEqual({
@@ -700,19 +766,19 @@ describe('afterCustomerWrite', () => {
 })
 
 describe('the referrer', () => {
-  it.each<[string, Referrer, string, string]>([
-    ['nobody', NO_REFERRER, '', 'なし'],
+  it.each<[string, Referrer, string, LocalizedText]>([
+    ['nobody', NO_REFERRER, '', { en: 'None', ja: 'なし' }],
     [
       'a customer of the ledger',
       { type: 'customer', id: REFERRER_ID, name: '山田 花子' },
       REFERRER_ID,
-      '山田 花子 様',
+      { en: '山田 花子', ja: '山田 花子 様' },
     ],
     [
       'a customer who was removed',
       { type: 'gone', id: REFERRER_ID },
       REFERRER_ID,
-      '台帳にいないお客様',
+      GONE_REFERRER,
     ],
   ])('should hold and name %s', (_case, referrer, id, name) => {
     // Act, Assert

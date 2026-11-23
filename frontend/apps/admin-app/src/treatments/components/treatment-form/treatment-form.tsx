@@ -16,6 +16,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   Note,
   type RepeatedRow,
@@ -218,7 +219,7 @@ export const TreatmentForm = ({
           name='techniques'
           autoComplete='off'
           description='技法の名前を、「、」か「,」で区切って書きます。20 件までです。'
-          defaultValue={tagsTextOf(record?.techniques ?? [])}
+          defaultValue={inJapanese(tagsTextOf(record?.techniques ?? []))}
           error={errors['techniques']}
         />
         <TextField

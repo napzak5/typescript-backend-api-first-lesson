@@ -1,6 +1,5 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import type { NavigationOf } from '@beauty-salon-frontend/app-frame'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import {
   attachmentHrefOf,
@@ -85,7 +84,7 @@ import {
 const navigationFor = (...address: Parameters<NavigationOf>) =>
   linksFor(...address).map(({ label, ...link }) => ({
     ...link,
-    label: inJapanese(label),
+    label: label.ja,
   }))
 
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
@@ -125,6 +124,37 @@ const NO_LINKS: [string, Role | undefined][] = [
 ]
 
 describe('navigationFor', () => {
+  it('should name the links in English too, in the order of the header', () => {
+    // Act
+    const names = linksFor('owner', BOOKINGS).map(({ label }) => label.en)
+
+    // Assert
+    expect(names).toEqual([
+      'Bookings',
+      'Sales',
+      'Customers',
+      'Reviews',
+      'Files',
+      'Treatment records',
+      'Shifts',
+      'Menu',
+      'Products',
+      'Inventory',
+      'Purchase orders',
+      'Staff',
+      'Settings',
+      'Profile',
+    ])
+  })
+
+  it('should name the links of an administrator in English too', () => {
+    // Act
+    const names = linksFor('admin', '/').map(({ label }) => label.en)
+
+    // Assert
+    expect(names).toEqual(['Choose a salon', 'Operations'])
+  })
+
   it('should lead an administrator to the choice of a salon, to the operations, and to the bookings, the sales, the customers, the treatment records, the shifts and the staff of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },

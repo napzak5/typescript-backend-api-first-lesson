@@ -29,7 +29,7 @@ export type ChartTableProps = {
 
 /** The names of products, as the form takes them */
 const productsOrNone = (names: readonly string[]) =>
-  names.length === 0 ? inJapanese(NONE) : tagsTextOf(names)
+  inJapanese(names.length === 0 ? NONE : tagsTextOf(names))
 
 /**
  * The charts that were found: each by the name of its customer, which

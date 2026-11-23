@@ -7,19 +7,26 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { STATUS_OPTIONS, TIER_OPTIONS } from '../../utils/customer-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { STATUS_CHOICES, TIER_CHOICES } from '../../utils/customer-format'
 import {
   type CustomerConditions,
   customerQueryOf,
   tagsTextOf,
 } from '../../utils/customer-ledger'
 
+const { filter: words } = adminCustomerMessages
+
 export type CustomerFilterProps = {
   /** The conditions that are shown: those of the address */
   conditions: CustomerConditions
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of the whole ledger, when the conditions narrow it */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -29,9 +36,12 @@ export type CustomerFilterProps = {
 /** What the controls hold, under the names of the conditions */
 type Values = Record<keyof CustomerConditions, string>
 
-const valuesOf = (conditions: CustomerConditions): Values => ({
+const valuesOf = (
+  conditions: CustomerConditions,
+  say: (message: LocalizedText) => string,
+): Values => ({
   search: conditions.search ?? '',
-  tags: tagsTextOf(conditions.tags),
+  tags: say(tagsTextOf(conditions.tags)),
   from: conditions.from ?? '',
   to: conditions.to ?? '',
   customerStatus: conditions.customerStatus ?? '',
@@ -58,64 +68,67 @@ export const CustomerFilter = ({
   clearHref,
   onSubmit,
 }: CustomerFilterProps) => {
+  const say = useSay()
+  const said = useSaidForm(undefined, errors)
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(
     customerQueryOf(conditions).toString(),
-    () => valuesOf(conditions),
+    () => valuesOf(conditions, say),
   )
 
   return (
     <FilterForm
-      label='お客様を探す'
+      label={say(words.label)}
       errors={errors}
       clearHref={clearHref}
       onSubmit={onSubmit}
-      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditionCount={countNarrowing(valuesOf(conditions, say), COUNTED)}
       conditions={
         <>
           <TextField
-            label='タグ'
+            label={say(words.tags)}
             name='tags'
             autoComplete='off'
-            description='「、」か「,」で区切ると、すべてのタグを持つお客様を探します。'
+            description={say(words.tagsDescription)}
             value={values.tags}
-            error={errors['tags']}
+            error={said.errors['tags']}
             onChange={(event) => hold('tags', event.target.value)}
           />
           <TextField
-            label='登録日（から）'
+            label={say(words.from)}
             name='from'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.from}
-            error={errors['from']}
+            error={said.errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
           <TextField
-            label='登録日（まで）'
+            label={say(words.to)}
             name='to'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.to}
-            error={errors['to']}
+            error={said.errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
           <Select
-            label='ステータス'
+            label={say(words.status)}
             name='customerStatus'
-            options={STATUS_OPTIONS}
-            placeholder='すべて'
+            options={options(STATUS_CHOICES)}
+            placeholder={say(words.all)}
             value={values.customerStatus}
             onChange={(event) => hold('customerStatus', event.target.value)}
           />
           <Select
-            label='会員ランク'
+            label={say(words.tier)}
             name='membershipTier'
-            options={TIER_OPTIONS}
-            placeholder='すべて'
+            options={options(TIER_CHOICES)}
+            placeholder={say(words.all)}
             value={values.membershipTier}
             onChange={(event) => hold('membershipTier', event.target.value)}
           />
@@ -123,13 +136,13 @@ export const CustomerFilter = ({
       }
     >
       <TextField
-        label='キーワード'
+        label={say(words.keyword)}
         name='search'
         autoComplete='off'
         type='search'
-        description='お名前（カナでも）、メールアドレス、電話番号の一部。'
+        description={say(words.keywordDescription)}
         value={values.search}
-        error={errors['search']}
+        error={said.errors['search']}
         onChange={(event) => hold('search', event.target.value)}
       />
     </FilterForm>

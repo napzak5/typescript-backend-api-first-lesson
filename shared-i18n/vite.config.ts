@@ -15,5 +15,6 @@ export default bundledLibrary(manifest, 'browser', {
   'messages/api/index': 'src/messages/api/index.ts',
   'messages/ui/index': 'src/messages/ui/index.ts',
   'messages/portal/index': 'src/messages/portal/index.ts',
+  'messages/admin/index': 'src/messages/admin/index.ts',
   'messages/dashboard/index': 'src/messages/dashboard/index.ts',
 })

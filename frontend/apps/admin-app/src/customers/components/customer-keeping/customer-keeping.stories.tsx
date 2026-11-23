@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
@@ -48,15 +49,13 @@ export const Removing: Story = {
 export const NotSent: Story = {
   args: {
     open: true,
-    message:
-      'お客様を台帳から削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminCustomerMessages.removal.failed,
   },
 }
 
 /** The API refused: said here, as another attempt changes nothing */
 export const Refused: Story = {
   args: {
-    refusal:
-      '終わっていない予約があるため、削除できませんでした。予約を完了、キャンセル、または削除してから、もう一度お試しください。',
+    refusal: adminCustomerMessages.removal.unfinished,
   },
 }

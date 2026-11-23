@@ -6,12 +6,12 @@ import {
 } from '@beauty-salon-frontend/answers'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
 import { CUSTOMER_LISTS, findCustomers } from '../api/customers-api'
@@ -19,6 +19,8 @@ import {
   type ChooseCustomer,
   CustomerChoices,
 } from '../components/customer-choices/customer-choices'
+
+const { names, choices } = adminCustomerMessages
 
 /** The key of the customers a keyword finds: the search of a booking reads the same pages */
 export const searchKeyOf = (keyword: string): string[] => [
@@ -38,6 +40,7 @@ type FoundCustomersProps = {
  * name: the referrer of a customer, the customer to merge one with.
  */
 export const FoundCustomers = ({ keyword, choose }: FoundCustomersProps) => {
+  const say = useSay()
   const found = useInfiniteQuery({
     queryKey: searchKeyOf(keyword),
     queryFn: ({ pageParam }) => findCustomers(keyword, pageParam),
@@ -50,20 +53,18 @@ export const FoundCustomers = ({ keyword, choose }: FoundCustomersProps) => {
   return match(
     found.data === undefined ? undefined : listingOf(found.data.pages),
   )
-    .with(undefined, () => <LoadingIndicator label='お客様を探しています' />)
+    .with(undefined, () => <LoadingIndicator label={say(choices.searching)} />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('お客様'), reason),
-        )}
+        message={say(unreadMessageOf(names.customers, reason))}
         onRetry={() => void found.refetch()}
         pending={found.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () => (
       <EmptyState
-        title='キーワードに合うお客様が見つかりませんでした'
-        description='キーワードを変えて、もう一度お探しください。'
+        title={say(choices.noneFound)}
+        description={say(choices.noneFoundDescription)}
       />
     ))
     .with({ type: 'listed' }, ({ items, total, rest }) => (

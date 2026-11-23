@@ -13,11 +13,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
-  inJapaneseIfAny,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**
@@ -51,14 +52,15 @@ const distinctTags = (tags: readonly string[]): string[] => [
 
 /**
  * The tags of a text that holds them: separated by commas, of either
- * width. Nothing between two commas is no tag, and a tag written twice is
- * one.
+ * width, or by the comma of Japanese (「、」). Nothing between two commas
+ * is no tag, and a tag written twice is one.
  */
 export const tagsIn = (text: string): string[] =>
-  distinctTags(text.split(/[,、，]/))
+  distinctTags(text.split(/[,\u3001\uff0c]/))
 
-/** The tags as a person writes them, the way they are read: 「VIP、常連」. */
-export const tagsTextOf = (tags: readonly string[]): string => tags.join('、')
+/** The tags as a person writes them, the way they are read: 「VIP、常連」, "VIP, 常連". */
+export const tagsTextOf = (tags: readonly string[]): LocalizedText =>
+  adminCustomerMessages.items.listed(tags)
 
 /** The days of a range that are days, the end not before the start. */
 const rangeOf = (
@@ -97,15 +99,13 @@ export const customerConditionsIn = (
 /** The conditions that were filled in: every one may be left empty, and the end comes not before the start. */
 export const readCustomerConditions = (
   values: FormData,
-): FormRead<CustomerConditions> => {
+): FormRead<CustomerConditions, FormErrors<LocalizedText>> => {
   const search = textOf(values, 'search').trim()
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
-  const errors = {
-    ...Object.fromEntries(
-      errorAt('search', inJapaneseIfAny(keywordError(search))),
-    ),
-    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
+  const errors: FormErrors<LocalizedText> = {
+    ...Object.fromEntries(errorAt('search', keywordError(search))),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

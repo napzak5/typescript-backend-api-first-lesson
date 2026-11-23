@@ -1,6 +1,8 @@
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
+  CATEGORY_CHOICES,
   EARLIEST_DAY,
+  GENDER_CHOICES,
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
 } from '@beauty-salon-frontend/fields'
@@ -17,16 +19,12 @@ import {
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
   useSaidForm,
   useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
-import {
-  CATEGORY_CHOICES,
-  GENDER_CHOICES,
-  type NamedChoice,
-} from '../../utils/profile-format'
 
 const { controls, parts, email } = portalProfileMessages
 
@@ -70,8 +68,7 @@ export const ProfileForm = ({
 }: ProfileFormProps) => {
   const say = useSay()
   const said = useSaidForm(message, errors)
-  const options = (choices: readonly NamedChoice[]) =>
-    choices.map(({ value, label }) => ({ value, label: say(label) }))
+  const options = useSaidChoices()
 
   return (
     <Form {...form} message={said.message} errors={errors}>

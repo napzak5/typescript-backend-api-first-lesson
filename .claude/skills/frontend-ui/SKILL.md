@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the words of the business (`termMessages`: the names of the values of the enums of the contract), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
+| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
@@ -35,7 +35,7 @@ this one: a component is not done without its stories and its test.
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
 | What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/components/`, `src/utils/` |
-| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressError`, `webAddressLinesError`, `WEB_ADDRESS_ERROR`, `notWebAddress`, `LONGEST_WEB_ADDRESS`, `WEB_ADDRESS_DESCRIPTION`, and `webAddressOf` for a link), a list written a line each (`linesOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
+| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressError`, `webAddressLinesError`, `WEB_ADDRESS_ERROR`, `notWebAddress`, `LONGEST_WEB_ADDRESS`, `WEB_ADDRESS_DESCRIPTION`, and `webAddressOf` for a link), a list written a line each (`linesOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, the choices of its form under their names `GENDER_CHOICES` and `CATEGORY_CHOICES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | What the screens of the portal share about the session: where a visitor signs in and where they go on to from there (`utils/sign-in-path.ts`), the roles a screen is for (`utils/roles.ts`), how the functions of the screens behind the guard read an answer that says nothing (`utils/behind-the-session.ts`), and the ways on for somebody who cannot sign in (`screens/sign-in-help.tsx`) | `frontend/apps/portal-app/src/session/` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
@@ -326,10 +326,10 @@ is in `docs/i18n.md` (「画面の言語」).
 The texts become messages a package at a time, and in an application an
 area at a time. `ui`, `fields`, `answers`, `session`, `app-frame`,
 `salon-screens` and `preferences` are done, and so are `io` and
-`api-client`, which say nothing. Of the portal, the areas `account`,
-`salons`, `bookings`, `session` and `security` and the links of its header
-(`navigation.ts`) are done; its other areas, the admin application and the
-dashboard still write their texts in Japanese, in the source, and no
+`api-client`, which say nothing. Every area of the portal and of the
+dashboard is done. Of the admin application, the frame (the links of the
+header) and the first part of the ledger of the customers are done; its
+other areas still write their texts in Japanese, in the source, and no
 application shows a control that chooses the language yet.
 
 In a package that is done:
@@ -342,7 +342,9 @@ In a package that is done:
   `answerMessages` (the reading of `answers`), `sessionMessages` and
   `securityMessages` (the screens of `session`), `frameMessages`
   (`app-frame`), `salonScreenMessages` (`salon-screens`) and
-  `preferenceMessages` (`preferences`). `fields` and `answers` hand
+  `preferenceMessages` (`preferences`), and the names of what the record
+  of a customer holds, which the portal and the admin application say
+  alike, are `customerMessages`. `fields` and `answers` hand
   them on under their own names (`TOO_MANY_REQUESTS_MESSAGE`,
   `emailError(email)`), and take as a message the name a sentence speaks
   of: in English a control is named as a label (`Supplier: enter up to 100
@@ -356,6 +358,12 @@ In a package that is done:
   constant) hands the message on as it is, a `LocalizedText`, and makes no
   string of it: `NO_CHANGE_MESSAGE`, `NOT_RECORDED`, `NONE` and what
   `countOf` returns are messages.
+- The options of a choice whose names are messages (the values of an enum
+  under their names) are `NamedChoice`s of `ui`, which a module offers
+  (`GENDER_CHOICES` and `CATEGORY_CHOICES` of `fields`, for the forms of a
+  customer in the portal and in the admin application), and the component
+  says them: `const options = useSaidChoices()`, then
+  `<Select options={options(GENDER_CHOICES)} />`.
 - A component of `ui` says its own texts and no other. What a screen gives
   it (`label`, `title`, `description`, the children of a button) is a string
   the screen has said. A notification is the exception: `notify` takes a
@@ -406,9 +414,12 @@ In an area of an application that is done, the same rules hold, and:
   `@beauty-salon-shared/i18n/messages/portal`; the frame of the portal
   (the links of the header, the ways on under the sign-in form, the screens
   of the security, the way back to the page of the customer and the button
-  that saves a change) is `portalFrameMessages`, and how the catalogues of
-  the portal write a count, a list and a postal code is in `written.ts`.
-  Every area of the portal is done.
+  that saves a change) is `portalFrameMessages`. The admin application has
+  `admin/`: its frame (`adminFrameMessages`), the ledger of the customers
+  (`adminCustomerMessages`) and the words a screen names a member of the
+  staff with (`adminStaffMessages`). How the catalogues write a count, a
+  list, sentences one after the other and a postal code is in
+  `messages/written.ts`, which every catalogue shares.
 - What it writes (`booking-format.ts`, `salon-format.ts`,
   `review-format.ts`) and what its forms read (`booking-flow.ts`,
   `account-flow.ts`, `profile-flow.ts`, `review-flow.ts`) are messages, and
@@ -427,9 +438,8 @@ In an area of an application that is done, the same rules hold, and:
   link as a link. Every language writes the parts so that they make one
   sentence in that order.
 - The links of the header are named by messages: `navigationFor` returns
-  `FrameLink`s of `app-frame`, and `AppFrame` says their names. The admin
-  application, which is still written in Japanese, gives
-  `writtenInJapanese('…')`.
+  `FrameLink`s of `app-frame`, and `AppFrame` says their names; those of
+  the admin application are `adminFrameMessages.navigation`.
 - A name that a message of another catalogue puts into its sentence (what
   was not read) is in `names` of the catalogue
   (`portalBookingMessages.names.freeTimes`), and what parts a list of
@@ -440,10 +450,17 @@ In an area of an application that is done, the same rules hold, and:
   areas are all done checks the whole of its source, as a package does
   (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal
   and of the dashboard); what the tests share (`__tests__`) is not read.
+  An area that is done in parts names the folders and files inside it
+  that are done (`'customers/components/customer-form'`,
+  `'customers/screens/customer-screen.tsx'`), until the whole area is.
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese`, and an area that is done hands on the
   strings of one that is not as they are. The portal and the dashboard
   have neither any more.
+- An area that is done in two parts splits a file of both, so that the
+  file of the part that is done holds none of the texts of the other (the
+  export and the erasure requests of the page of a customer are
+  `customers/screens/customer-requests-part.tsx`).
 
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its

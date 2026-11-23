@@ -1,5 +1,9 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
-import { upTo, WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
+import {
+  CATEGORY_CHOICES,
+  upTo,
+  WEB_ADDRESS_DESCRIPTION,
+} from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -10,7 +14,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { CATEGORY_OPTIONS } from '../../../customers/utils/customer-format'
 import { LONGEST_NAME } from '../../utils/category-form'
 import { categoriesById, categoryPathOf } from '../../utils/menu-format'
 
@@ -77,7 +80,10 @@ export const CategoryForm = ({
           name='category'
           required
           placeholder='選んでください'
-          options={CATEGORY_OPTIONS}
+          options={CATEGORY_CHOICES.map(({ value, label }) => ({
+            value,
+            label: inJapanese(label),
+          }))}
           defaultValue={category?.category ?? ''}
           error={errors['category']}
         />

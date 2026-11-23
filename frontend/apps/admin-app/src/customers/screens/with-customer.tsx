@@ -5,12 +5,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -23,9 +24,11 @@ import {
   readCustomer,
 } from '../api/customers-api'
 
+const { names, naming, notFound, customer: words } = adminCustomerMessages
+
 export type WithCustomerProps = {
   salon: ModelsSalonResponse
-  /** The title of the screen */
+  /** The title of the screen, said in the language of the page */
   title: string
   /**
    * Whether the screen shows the customer only once they were read anew:
@@ -54,33 +57,37 @@ type CustomerNotFoundProps = {
 export const CustomerNotFound = ({
   salon,
   removedShown = false,
-}: CustomerNotFoundProps) => (
-  <>
-    <PageHeader
-      title='お客様が見つかりません'
-      description={
-        removedShown
-          ? 'アドレスが正しいか、お確かめください。'
-          : 'アドレスが正しいか、お確かめください。台帳から削除されたお客様は、表示できません。'
-      }
-    />
-    <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
-  </>
-)
+}: CustomerNotFoundProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(notFound.title)}
+        description={say(
+          removedShown ? notFound.checkTheAddress : notFound.removedNotShown,
+        )}
+      />
+      <ButtonLink href={customersHrefOf(salon.id)}>
+        {say(notFound.toLedger)}
+      </ButtonLink>
+    </>
+  )
+}
+
+/** What a name is made of: the name, and how it is read */
+type Named = Pick<
+  ModelsCustomerResponse,
+  'firstName' | 'lastName' | 'firstNameKana' | 'lastNameKana'
+>
 
 /** The name of a customer, with its kana when there is one: 「山田 花子（ヤマダ ハナコ）」. */
-export const fullNameOf = (
-  customer: Pick<
-    ModelsCustomerResponse,
-    'firstName' | 'lastName' | 'firstNameKana' | 'lastNameKana'
-  >,
-): string => {
-  const kana = customerKanaOf(customer)
+export const fullNameOf = (customer: Named): LocalizedText =>
+  naming.full(customerNameOf(customer), customerKanaOf(customer))
 
-  return kana === ''
-    ? customerNameOf(customer)
-    : `${customerNameOf(customer)}（${kana}）`
-}
+/** The same below the heading of a screen of the customer: 「山田 花子（ヤマダ ハナコ） 様」. */
+export const honoredNameOf = (customer: Named): LocalizedText =>
+  naming.honoredFull(customerNameOf(customer), customerKanaOf(customer))
 
 /**
  * A screen of a customer of the ledger, below the salon of the address.
@@ -97,6 +104,7 @@ export const WithCustomer = ({
   children,
   removed,
 }: WithCustomerProps) => {
+  const say = useSay()
   const { customerId = '' } = useParams()
   const read = useQuery({
     queryKey: customerKeyOf(customerId),
@@ -111,13 +119,13 @@ export const WithCustomer = ({
     .with(undefined, () => (
       <>
         <PageHeader title={title} description={salon.name} />
-        <LoadingIndicator label='お客様を読み込んでいます' />
+        <LoadingIndicator label={say(words.loading)} />
       </>
     ))
     .with({ type: 'found' }, ({ customer }) => (
       <>
         <PageHeader title={title} description={salon.name} />
-        <p>{`${fullNameOf(customer)} 様`}</p>
+        <p>{say(honoredNameOf(customer))}</p>
         {children(customer)}
       </>
     ))
@@ -132,9 +140,7 @@ export const WithCustomer = ({
       <>
         <PageHeader title={title} description={salon.name} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('お客様'), reason),
-          )}
+          message={say(unreadMessageOf(names.customer, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

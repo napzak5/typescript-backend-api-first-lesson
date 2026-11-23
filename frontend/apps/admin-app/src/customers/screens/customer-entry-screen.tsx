@@ -9,7 +9,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -30,7 +33,9 @@ import {
 } from '../utils/customer-form'
 import { ReferrerChoice } from './referrer-choice'
 
-const TITLE = 'お客様を登録する'
+const { form, notices, titles } = adminCustomerMessages
+
+const TITLE = titles.entry
 
 type CustomerEntryProps = {
   salon: ModelsSalonResponse
@@ -42,10 +47,11 @@ type CustomerEntryProps = {
  * read are dropped, since the new one belongs in them.
  */
 const CustomerEntry = ({ salon }: CustomerEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsCustomerCreateRequest) =>
       attemptCustomerEntry(request),
@@ -57,7 +63,7 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
           queryClient.removeQueries({ queryKey: CUSTOMER_LISTS })
           notify({
             tone: 'success',
-            message: `${customerNameOf(customer)} 様を台帳に登録しました。`,
+            message: notices.registered(customerNameOf(customer)),
           })
           void navigate(customerHrefOf(salon.id, customer.id))
         })
@@ -95,14 +101,14 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
       chooseReferrer={(choice) => (
         <ReferrerChoice {...choice} excluded={undefined} />
       )}
-      submitLabel='登録する'
+      submitLabel={say(form.register)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={customersHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(form.cancel)}
         </ButtonLink>
       }
     />
@@ -114,13 +120,14 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
  * in without a booking, and who referred them when somebody did.
  */
 export const CustomerEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={say(TITLE)} description={salon.name} />
           <CustomerEntry key={salon.id} salon={salon} />
         </>
       )}

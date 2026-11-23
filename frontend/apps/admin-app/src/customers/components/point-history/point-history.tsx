@@ -6,8 +6,8 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
 import { COUNTED, countOf, inJapanese } from '@beauty-salon-frontend/ui'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
-import { countNameOf } from '../../utils/customer-format'
 import { movementOf, transactionNameOf } from '../../utils/points'
 
 export type PointHistoryProps = {
@@ -60,7 +60,7 @@ export const PointHistory = ({
       {
         key: 'balance',
         header: '残高',
-        cell: ({ balance }) => countNameOf(balance, 'ポイント'),
+        cell: ({ balance }) => inJapanese(customerMessages.pointsOf(balance)),
         align: 'end',
       },
       {

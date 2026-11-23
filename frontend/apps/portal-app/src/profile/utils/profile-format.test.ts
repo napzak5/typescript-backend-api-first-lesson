@@ -7,11 +7,9 @@ import { describe, expect, it } from 'vitest'
 import { newProfile, profile } from '../components/examples'
 import {
   addressLinesOf,
-  CATEGORY_CHOICES,
   categoryNamesOf,
   contactsOf,
   fullNameOf,
-  GENDER_CHOICES,
   hairOf,
   kanaOf,
   localDateOf,
@@ -29,38 +27,6 @@ const MARKETING: Said = {
   en: 'News such as campaigns',
   ja: 'キャンペーンなどのお知らせ',
 }
-
-describe('GENDER_CHOICES', () => {
-  it('should offer every gender of the contract, in its order', () => {
-    expect(GENDER_CHOICES).toEqual([
-      { value: 'male', label: { en: 'Male', ja: '男性' } },
-      { value: 'female', label: { en: 'Female', ja: '女性' } },
-      { value: 'other', label: { en: 'Other', ja: 'その他' } },
-      {
-        value: 'prefer_not_to_say',
-        label: { en: 'Prefer not to say', ja: '回答しない' },
-      },
-    ])
-  })
-})
-
-describe('CATEGORY_CHOICES', () => {
-  it('should offer every kind of service of the contract, in its order', () => {
-    expect(CATEGORY_CHOICES).toEqual([
-      { value: 'cut', label: { en: 'Cut', ja: 'カット' } },
-      { value: 'color', label: { en: 'Color', ja: 'カラー' } },
-      { value: 'perm', label: { en: 'Perm', ja: 'パーマ' } },
-      { value: 'treatment', label: { en: 'Treatment', ja: 'トリートメント' } },
-      { value: 'spa', label: { en: 'Spa', ja: 'スパ' } },
-      { value: 'styling', label: { en: 'Styling', ja: 'スタイリング' } },
-      {
-        value: 'extension',
-        label: { en: 'Extensions', ja: 'エクステンション' },
-      },
-      { value: 'other', label: { en: 'Other', ja: 'その他' } },
-    ])
-  })
-})
 
 describe('localDateOf', () => {
   it.each([

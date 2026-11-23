@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as customerKeepingStories from './customer-keeping.stories'
 
 const stories = composeStories(customerKeepingStories)
@@ -108,5 +109,54 @@ describe('CustomerKeeping', () => {
       '終わっていない予約があるため、削除できませんでした。',
     )
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('CustomerKeeping on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the history, the merge and the removal, and ask before the removal, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: 'Change history' })).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Merge with another customer' }),
+    ).toBeVisible()
+    const asking = screen.getByRole('dialog', {
+      name: 'Remove 山田 花子 from the ledger?',
+    })
+    expect(asking).toHaveAccessibleDescription(
+      'The customer can no longer be chosen in the customer ledger and in bookings. Their bookings and sales are kept. They can be brought back to the ledger afterwards.',
+    )
+    expect(within(asking).getByRole('alert')).toHaveTextContent(
+      'The customer could not be removed from the ledger. Check your connection and try again.',
+    )
+    expect(
+      within(asking)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Back', 'Remove'])
+  })
+
+  it('should tell a member of the staff in English who keeps the ledger', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ByOthers.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Owners and managers remove customers from the ledger, merge them and read the change history.',
+      ),
+    ).toBeVisible()
   })
 })

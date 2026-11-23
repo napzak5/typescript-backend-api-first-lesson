@@ -171,7 +171,7 @@ export const ServiceForm = ({
             name='tags'
             autoComplete='off'
             description='「、」か「,」で区切って書きます。'
-            defaultValue={tagsTextOf(service?.tags ?? [])}
+            defaultValue={inJapanese(tagsTextOf(service?.tags ?? []))}
             error={errors['tags']}
           />
           <TextField

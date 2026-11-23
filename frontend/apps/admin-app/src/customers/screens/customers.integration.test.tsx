@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -23,10 +24,11 @@ import {
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
 import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, refuse } from '../../bookings/__tests__/arrangements'
 import {
   arrangeCustomers,
@@ -71,10 +73,13 @@ const describedIn = (name: string): Record<string, string> =>
   )
 
 /** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email = STYLIST) => {
+const openAt = async (
+  path: (tokyo: string) => string,
+  email = STYLIST,
+  language: Locale = 'ja',
+) => {
   const tokyo = await salonIdOf(TOKYO)
-  renderAt(path(tokyo))
-  await signInAs(email)
+  await openAs(path(tokyo), email, language)
 
   return tokyo
 }
@@ -1045,5 +1050,312 @@ describe('the ledger of the customers, against the API', () => {
       )
       expect(text('電話番号')).toHaveValue('080-1111-2222')
     })
+  })
+})
+
+describe('the ledger of the customers on a page in English, against the API', () => {
+  /** Waits for the page of a customer, as a page in English names its parts. */
+  const theCustomerInEnglish = async (): Promise<void> => {
+    await heading('Customer record')
+    await screen.findByRole('region', { name: 'Ledger' })
+    await within(part('Preferences')).findAllByRole('term')
+    await within(part('Use of this salon')).findAllByRole('term')
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should show the customers of the ledger in English, with their ranks, states and visits', async () => {
+    // Arrange
+    const lastVisit = await dayFromToday(-5)
+
+    // Act
+    await openAt((salon) => `/salons/${salon}/customers`, STYLIST, 'en')
+
+    // Assert
+    await heading('Customer ledger')
+    await screen.findByRole('table', { name: 'Customer ledger' })
+    expect(rowsOf('Customer ledger')).toContainEqual([
+      `Select ${KENJI.name}`,
+      KENJI.name,
+      'ヤマモト ケンジ',
+      '+81-80-9876-5432',
+      'Silver',
+      'Normal',
+      '2 visits',
+      dayNameOf(lastVisit).en,
+    ])
+    expect(screen.getByText('4 people')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Customers' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should say in English what is wrong with the conditions, and that no customer meets them', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt((salon) => `/salons/${salon}/customers`, STYLIST, 'en')
+    await screen.findByRole('table', { name: 'Customer ledger' })
+
+    // Act
+    await user.type(field('Registered from'), '2026-11-20')
+    await user.type(field('Registered until'), '2026-11-19')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    // Assert
+    expect(field('Registered until')).toHaveAccessibleDescription(
+      'Make the last day the same as the first day, or later.',
+    )
+    expect(field('Registered until')).toHaveFocus()
+
+    // Act
+    await user.clear(field('Registered from'))
+    await user.clear(field('Registered until'))
+    await user.selectOptions(field('Status'), 'Suspended')
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    // Assert
+    expect(
+      await screen.findByText('No customers match these filters'),
+    ).toBeVisible()
+    expect(
+      screen.getByText(
+        'Change the filters, or register the customer as a new one.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English what is missing at each control, register the customer, and show them on their page', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt((salon) => `/salons/${salon}/customers/new`, STYLIST, 'en')
+    await heading('Register a customer')
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    expect(text('Last name')).toHaveFocus()
+    expect(text('Last name')).toHaveAccessibleDescription(
+      'Enter the last name.',
+    )
+    expect(text('Phone number')).toHaveAccessibleDescription(
+      'Enter a phone number.',
+    )
+
+    // Act
+    await user.type(text('Last name'), '山田')
+    await user.type(text('First name'), '花子')
+    await user.type(text('Email address'), NEW_EMAIL)
+    await user.type(text('Phone number'), '090-1234-5678')
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Messages by email' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    await theCustomerInEnglish()
+    expect(firstSight()[1]).toContain('山田 花子')
+    expect(notifications()).toContain('山田 花子 was registered in the ledger.')
+    expect(describedIn('Ledger')).toMatchObject({
+      'Email address': NEW_EMAIL,
+      'Membership rank': 'Regular',
+      Status: 'Normal',
+      'Messages allowed': 'Email',
+    })
+    expect(describedIn('Visits and points')).toMatchObject({
+      Visits: '0 visits',
+      Points: '0 points',
+    })
+  })
+
+  it('should choose the referrer in English, and name them on the page of the customer', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const kenji = await customerIdOf(KENJI.email)
+    const tokyo = await openAt(
+      (salon) => `/salons/${salon}/customers/new`,
+      STYLIST,
+      'en',
+    )
+    await heading('Register a customer')
+    await user.type(text('Last name'), '山田')
+    await user.type(text('First name'), '花子')
+    await user.type(text('Email address'), NEW_EMAIL)
+    await user.type(text('Phone number'), '090-1234-5678')
+    expect(text('Referred by')).toHaveValue('None')
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Choose the referrer' }),
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Choose the referrer' })
+    await user.type(
+      within(dialog).getByRole('searchbox', { name: 'Keyword' }),
+      'walk-in{Enter}',
+    )
+
+    // Assert
+    expect(
+      await within(dialog).findByText('No customers have this keyword'),
+    ).toBeVisible()
+
+    // Act
+    await user.clear(within(dialog).getByRole('searchbox', { name: 'Keyword' }))
+    await user.type(
+      within(dialog).getByRole('searchbox', { name: 'Keyword' }),
+      'yamamoto{Enter}',
+    )
+    await user.click(
+      await within(dialog).findByRole('button', { name: KENJI.name }),
+    )
+
+    // Assert
+    expect(text('Referred by')).toHaveValue(KENJI.name)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    await theCustomerInEnglish()
+    expect(
+      await within(part('Ledger')).findByRole('link', { name: KENJI.name }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/customers/${kenji}`)
+  })
+
+  it('should show a customer in English: the record, the preferences and the use of the salon over the last year', async () => {
+    // Arrange
+    await arrangePreferences(SAKURA.email)
+    const sakura = await customerIdOf(SAKURA.email)
+    const [visit, today, yearAgo] = await Promise.all([
+      dayFromToday(-20),
+      dayFromToday(0),
+      dayFromToday(-365),
+    ])
+
+    // Act
+    await openAt(
+      (salon) => `/salons/${salon}/customers/${sakura}`,
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    await theCustomerInEnglish()
+    expect(screen.getByText('Sato Sakura (サトウ サクラ)')).toBeVisible()
+    expect(describedIn('Ledger')).toMatchObject({
+      'Phone number': '+81-70-1111-2222',
+      Address: '160-0022 Tokyo Shinjuku-ku 5-6-7 Shinjuku Shinjuku Tower 15F',
+      'Date of birth': dayNameOf('1995-03-10').en,
+      'Favorite services': 'Color, Treatment, Spa',
+      'Notes on preferences': 'Sensitive skin, requires patch test',
+      'Membership rank': 'Regular',
+    })
+    expect(describedIn('Visits and points')).toMatchObject({
+      'First visit': dayNameOf(visit).en,
+      'Last visit': dayNameOf(visit).en,
+      Visits: '1 visit',
+      Points: '300 points',
+    })
+    expect(describedIn('Preferences')).toMatchObject({
+      'Preferred staff': 'Hiroshi Tanaka',
+      'Staff to avoid': 'Mika Suzuki, Staff member not listed',
+    })
+    expect(
+      screen.getByText(
+        `Figures for ${dayNameOf(yearAgo).en} – ${dayNameOf(today).en}`,
+      ),
+    ).toBeVisible()
+    expect(describedIn('Use of this salon')).toMatchObject({
+      Bookings: '2 bookings',
+      'Cancellation rate': '0%',
+      'No-show rate': '50%',
+    })
+    expect(rowsOf('Most booked services')).toEqual([['Mens Cut', '1 booking']])
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should say in English to a member of another salon that its use of the salon is not theirs to see', async () => {
+    // Arrange
+    const osaka = await salonIdOf(OSAKA)
+    const sakura = await customerIdOf(SAKURA.email)
+
+    // Act
+    await openAs(`/salons/${osaka}/customers/${sakura}`, STYLIST, 'en')
+
+    // Assert
+    await heading('Customer record')
+    expect(
+      await within(
+        await screen.findByRole('region', { name: 'Use of this salon' }),
+      ).findByText(
+        'You cannot see the usage figures of this salon. Only the staff of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should change a customer in English, and say at its control that another customer has the address of mail', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const kenji = await customerIdOf(KENJI.email)
+    await openAt(
+      (salon) => `/salons/${salon}/customers/${kenji}/edit`,
+      OWNER,
+      'en',
+    )
+    await heading('Edit the record')
+    await screen.findByRole('textbox', { name: 'Last name' })
+
+    // Act
+    await user.clear(text('Email address'))
+    await user.type(text('Email address'), YUKI.email)
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    await waitFor(() => expect(text('Email address')).toHaveFocus())
+    expect(text('Email address')).toHaveAccessibleDescription(
+      'No two customers of the ledger can have the same address. A customer with this email address is already in the ledger. Search for them in the ledger, or enter another email address.',
+    )
+
+    // Act
+    await user.clear(text('Email address'))
+    await user.type(text('Email address'), KENJI.email)
+    await user.clear(text('Phone number'))
+    await user.type(text('Phone number'), '080-1111-2222')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    await theCustomerInEnglish()
+    expect(notifications()).toContain('The record was changed.')
+    expect(describedIn('Ledger')['Phone number']).toBe('080-1111-2222')
+  })
+
+  it('should say in English that a customer who is not in the ledger is not found, and lead to the ledger', async () => {
+    // Arrange
+    const kenji = await customerIdOf(KENJI.email)
+    await removeMeanwhile(KENJI.email)
+
+    // Act
+    const tokyo = await openAt(
+      (salon) => `/salons/${salon}/customers/${kenji}`,
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    await heading('Customer not found')
+    expect(
+      screen.getByRole('link', { name: 'Back to the customer ledger' }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/customers`)
   })
 })

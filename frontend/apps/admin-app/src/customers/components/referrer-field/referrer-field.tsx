@@ -1,4 +1,6 @@
-import { Actions, Button, TextField } from '@beauty-salon-frontend/ui'
+import { Actions, Button, TextField, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useRef } from 'react'
 import {
   REFERRER,
@@ -8,11 +10,13 @@ import {
 } from '../../utils/customer-form'
 import styles from './referrer-field.module.css'
 
+const { referrer: words } = adminCustomerMessages
+
 export type ReferrerFieldProps = {
   /** The customer who referred this one, as the form holds them now */
   referrer: Referrer
   /** What the API said of the referrer that was sent */
-  error?: string | undefined
+  error?: LocalizedText | undefined
   /** Opens the choice of a customer of the ledger */
   onChoose: () => void
   /** Takes the referrer away */
@@ -32,6 +36,7 @@ export const ReferrerField = ({
   onChoose,
   onRemove,
 }: ReferrerFieldProps) => {
+  const say = useSay()
   const choose = useRef<HTMLButtonElement>(null)
 
   const remove = (): void => {
@@ -43,20 +48,20 @@ export const ReferrerField = ({
     <div className={styles['referrer']}>
       <input type='hidden' name={REFERRER} value={referrerIdOf(referrer)} />
       <TextField
-        label='紹介元'
+        label={say(words.label)}
         autoComplete='off'
         readOnly
-        value={referrerNameOf(referrer)}
-        description='このお客様を紹介したお客様です。台帳から探して選びます。'
-        error={error}
+        value={say(referrerNameOf(referrer))}
+        description={say(words.description)}
+        error={error === undefined ? undefined : say(error)}
       />
       <Actions>
         <Button ref={choose} onClick={onChoose}>
-          紹介元を選ぶ
+          {say(words.choose)}
         </Button>
         {referrer.type !== 'none' && (
           <Button variant='quiet' onClick={remove}>
-            紹介元を外す
+            {say(words.remove)}
           </Button>
         )}
       </Actions>

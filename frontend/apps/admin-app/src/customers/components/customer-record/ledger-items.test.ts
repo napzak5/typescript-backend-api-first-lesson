@@ -1,8 +1,13 @@
+import { type LocalizedText, textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aCustomer } from '../../../bookings/components/examples'
 import { changedItemsOf, changedTermsOf } from './ledger-items'
 
 const noReferrer = (): null => null
+
+/** How a screen in Japanese says the items, and one in English */
+const inJapanese = (message: LocalizedText): string => textIn(message, 'ja')
+const inEnglish = (message: LocalizedText): string => textIn(message, 'en')
 
 describe('changedTermsOf', () => {
   it('should name the items that show the values, in the order of the page, and a value the ledger does not know as the API names it', () => {
@@ -17,9 +22,9 @@ describe('changedTermsOf', () => {
 
     // Assert
     expect(terms).toEqual([
-      'お名前',
-      '住所',
-      'スタッフ間の申し送り',
+      { en: 'Name', ja: 'お名前' },
+      { en: 'Address', ja: '住所' },
+      { en: 'Notes between staff', ja: 'スタッフ間の申し送り' },
       'visitCount',
     ])
   })
@@ -27,8 +32,8 @@ describe('changedTermsOf', () => {
   it('should name both items that show the preferences', () => {
     // Act, Assert
     expect(changedTermsOf(['preferences'])).toEqual([
-      '好みのメニュー',
-      '好みについてのメモ',
+      { en: 'Favorite services', ja: '好みのメニュー' },
+      { en: 'Notes on preferences', ja: '好みについてのメモ' },
     ])
   })
 
@@ -48,6 +53,7 @@ describe('changedItemsOf', () => {
         alternativePhone: '03-1234-5678',
       }),
       noReferrer,
+      inJapanese,
     )
 
     // Assert
@@ -70,6 +76,7 @@ describe('changedItemsOf', () => {
         },
       }),
       noReferrer,
+      inJapanese,
     )
 
     // Assert
@@ -82,6 +89,7 @@ describe('changedItemsOf', () => {
       aCustomer({ preferences: null }),
       aCustomer({ preferences: { preferredServices: [], notes: null } }),
       noReferrer,
+      inJapanese,
     )
 
     // Assert
@@ -94,6 +102,7 @@ describe('changedItemsOf', () => {
       aCustomer({ referredBy: null }),
       aCustomer({ referredBy: 'c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5' }),
       ({ referredBy }) => `紹介: ${referredBy}`,
+      inJapanese,
     )
 
     // Assert
@@ -103,6 +112,35 @@ describe('changedItemsOf', () => {
         before: 'なし',
         after: '紹介: c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
       },
+    ])
+  })
+
+  it('should say the items and what they show in the language it is given', () => {
+    // Act
+    const changed = changedItemsOf(
+      aCustomer({
+        membershipTier: 'regular',
+        isActive: true,
+        referralCode: null,
+      }),
+      aCustomer({
+        membershipTier: 'gold',
+        isActive: false,
+        referralCode: 'HANAKO-2026',
+      }),
+      noReferrer,
+      inEnglish,
+    )
+
+    // Assert
+    expect(changed).toEqual([
+      { term: 'Membership rank', before: 'Regular', after: 'Gold' },
+      {
+        term: 'Active',
+        before: 'Active',
+        after: 'Inactive (cannot book by themselves)',
+      },
+      { term: 'Referral code', before: 'Not issued', after: 'HANAKO-2026' },
     ])
   })
 })

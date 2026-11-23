@@ -9,47 +9,48 @@ import {
   type ModelsServiceCategoryType,
   type ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
-import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
+import { SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
 import {
   type BadgeTone,
-  type ChoiceOption,
-  inJapanese,
+  type NamedChoice,
   NONE,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminCustomerMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
-import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
+
+const { items } = adminCustomerMessages
 
 /*
  * How the screens of the ledger of the customers name what it holds: the
- * values of its enums, and what a few properties come to together.
+ * values of its enums, and what a few properties come to together. A name
+ * is a message, which the component that shows it says in the language of
+ * the page.
  */
 
 const TIER_NAMES: Record<ModelsMembershipTierType, LocalizedText> =
   termMessages.membershipTier
 
 /** The rank of a member, in a word. */
-export const tierNameOf = (tier: ModelsMembershipTierType): string =>
-  inJapanese(TIER_NAMES[tier])
+export const tierNameOf = (tier: ModelsMembershipTierType): LocalizedText =>
+  TIER_NAMES[tier]
 
 /** The ranks, in the order of the contract: from the first to the highest. */
 export const TIERS: readonly ModelsMembershipTierType[] = Object.values(
   ModelsMembershipTierType,
 )
 
-const STATUS_NAMES: Record<ModelsCustomerStatusType, string> = {
-  active: '通常',
-  inactive: '休眠',
-  vip: 'VIP',
-  blacklisted: '利用停止',
-}
+const STATUS_NAMES: Record<ModelsCustomerStatusType, LocalizedText> =
+  adminCustomerMessages.statuses
 
 /** The state of a customer in the ledger, in a word. */
 export const customerStatusNameOf = (
   status: ModelsCustomerStatusType,
-): string => STATUS_NAMES[status]
+): LocalizedText => STATUS_NAMES[status]
 
 const STATUS_TONES: Record<ModelsCustomerStatusType, BadgeTone> = {
   active: 'success',
@@ -70,6 +71,9 @@ export const CUSTOMER_STATUSES: readonly ModelsCustomerStatusType[] =
 const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
   termMessages.gender
 
+const CATEGORY_NAMES: Record<ModelsServiceCategoryType, LocalizedText> =
+  termMessages.serviceCategory
+
 const HAIR_TYPE_NAMES: Record<ModelsHairType, LocalizedText> =
   termMessages.hairType
 
@@ -88,63 +92,53 @@ const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, LocalizedText> =
 export const SCALP_CONDITIONS: readonly ModelsScalpConditionType[] =
   Object.values(ModelsScalpConditionType)
 
-/** What the forms offer of each enum, under the names of its values. */
-export const TIER_OPTIONS: readonly ChoiceOption[] = TIERS.map((tier) => ({
-  value: tier,
-  label: inJapanese(TIER_NAMES[tier]),
-}))
+/** The choices of an enum, under the names of its values, in the order of the contract */
+const choicesOf = <Value extends string>(
+  values: readonly Value[],
+  names: Record<Value, LocalizedText>,
+): readonly NamedChoice[] =>
+  values.map((value) => ({ value, label: names[value] }))
 
-export const STATUS_OPTIONS: readonly ChoiceOption[] = CUSTOMER_STATUSES.map(
-  (status) => ({ value: status, label: STATUS_NAMES[status] }),
+/** What the forms offer of each enum, under the names of its values. The gender and the kinds of service are the choices of `fields`. */
+export const TIER_CHOICES: readonly NamedChoice[] = choicesOf(TIERS, TIER_NAMES)
+
+export const STATUS_CHOICES: readonly NamedChoice[] = choicesOf(
+  CUSTOMER_STATUSES,
+  STATUS_NAMES,
 )
 
-export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
-  (gender) => ({
-    value: gender,
-    label: inJapanese(GENDER_NAMES[gender]),
-  }),
+export const HAIR_TYPE_CHOICES: readonly NamedChoice[] = choicesOf(
+  HAIR_TYPES,
+  HAIR_TYPE_NAMES,
 )
 
-export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
-  (category) => ({
-    value: category,
-    label: inJapanese(categoryNameOf(category)),
-  }),
+export const HAIR_THICKNESS_CHOICES: readonly NamedChoice[] = choicesOf(
+  HAIR_THICKNESSES,
+  HAIR_THICKNESS_NAMES,
 )
 
-export const HAIR_TYPE_OPTIONS: readonly ChoiceOption[] = HAIR_TYPES.map(
-  (hairType) => ({
-    value: hairType,
-    label: inJapanese(HAIR_TYPE_NAMES[hairType]),
-  }),
+export const SCALP_CONDITION_CHOICES: readonly NamedChoice[] = choicesOf(
+  SCALP_CONDITIONS,
+  SCALP_CONDITION_NAMES,
 )
-
-export const HAIR_THICKNESS_OPTIONS: readonly ChoiceOption[] =
-  HAIR_THICKNESSES.map((thickness) => ({
-    value: thickness,
-    label: inJapanese(HAIR_THICKNESS_NAMES[thickness]),
-  }))
-
-export const SCALP_CONDITION_OPTIONS: readonly ChoiceOption[] =
-  SCALP_CONDITIONS.map((condition) => ({
-    value: condition,
-    label: inJapanese(SCALP_CONDITION_NAMES[condition]),
-  }))
 
 /** The gender of a customer, or `null` when they did not give it. */
 export const genderNameOf = (
   gender: ModelsCustomerGenderType | null,
-): string | null => (gender === null ? null : inJapanese(GENDER_NAMES[gender]))
+): LocalizedText | null => (gender === null ? null : GENDER_NAMES[gender])
 
-/** The kinds of service a customer likes, in the order of the contract. */
+/** The kinds of service a customer likes, in the order of the contract: 「カット、カラー」, or that there is none. */
 export const categoriesNameOf = (
   categories: readonly ModelsServiceCategoryType[],
-): string =>
-  categories.length === 0
-    ? inJapanese(NONE)
-    : SERVICE_CATEGORIES.filter((category) => categories.includes(category))
-        .map((category) => inJapanese(categoryNameOf(category)))
-        .join('、')
+): LocalizedText => {
+  const liked = SERVICE_CATEGORIES.filter((category) =>
+    categories.includes(category),
+  )
+
+  return liked.length === 0
+    ? NONE
+    : items.listed(liked.map((category) => CATEGORY_NAMES[category]))
+}
 
 /** The hair and the scalp of a customer, what of them was recorded: 「ストレート、細い髪、頭皮は乾燥」, or `null` when none was. */
 export const hairNameOf = ({
@@ -154,19 +148,12 @@ export const hairNameOf = ({
 }: Pick<
   ModelsCustomerResponse,
   'hairType' | 'hairThickness' | 'scalpCondition'
->): string | null => {
-  const parts = [
-    hairType === null ? null : inJapanese(HAIR_TYPE_NAMES[hairType]),
-    hairThickness === null
-      ? null
-      : `${inJapanese(HAIR_THICKNESS_NAMES[hairThickness])}髪`,
-    scalpCondition === null
-      ? null
-      : `頭皮は${inJapanese(SCALP_CONDITION_NAMES[scalpCondition])}`,
-  ].filter((part) => part !== null)
-
-  return parts.length === 0 ? null : parts.join('、')
-}
+>): LocalizedText | null =>
+  items.hairOf(
+    hairType === null ? null : HAIR_TYPE_NAMES[hairType],
+    hairThickness === null ? null : HAIR_THICKNESS_NAMES[hairThickness],
+    scalpCondition === null ? null : SCALP_CONDITION_NAMES[scalpCondition],
+  )
 
 /** Where a customer lives, as an envelope says it: 「〒150-0001 東京都渋谷区神宮前 4-1-1 ハイツ 101」, or `null` when nothing of it was recorded. */
 export const addressNameOf = ({
@@ -178,18 +165,12 @@ export const addressNameOf = ({
 }: Pick<
   ModelsCustomerResponse,
   'postalCode' | 'prefecture' | 'city' | 'address' | 'building'
->): string | null => {
-  const place = [prefecture, city, address]
-    .filter((part) => part !== null)
-    .join('')
-  const parts = [
-    postalCode === null ? null : `〒${postalCode}`,
-    place === '' ? null : place,
+>): LocalizedText | null =>
+  items.addressOf(
+    postalCode,
+    [prefecture, city, address].filter((part) => part !== null),
     building,
-  ].filter((part) => part !== null)
-
-  return parts.length === 0 ? null : parts.join(' ')
-}
+  )
 
 /** How a customer may be reached: the ways they allowed, or that there is none. */
 export const contactsNameOf = ({
@@ -199,31 +180,32 @@ export const contactsNameOf = ({
 }: Pick<
   ModelsCustomerResponse,
   'allowEmail' | 'allowSms' | 'allowMarketing'
->): string => {
-  const allowed = [
-    allowEmail ? 'メール' : null,
-    allowSms ? 'SMS' : null,
-    allowMarketing ? 'キャンペーンなどのお知らせ' : null,
-  ].filter((way) => way !== null)
-
-  return allowed.length === 0 ? '受け取らない' : allowed.join('、')
-}
+>): LocalizedText =>
+  items.contactsOf([
+    ...(allowEmail ? [items.byEmail] : []),
+    ...(allowSms ? [items.bySms] : []),
+    ...(allowMarketing ? [items.marketing] : []),
+  ])
 
 /** A share in percent, as the API rounds it: 「12.5%」. */
-export const rateNameOf = (rate: number): string =>
-  inJapanese(formats.percentOf(rate, { most: 1 }))
-
-/** A count, with what it counts: 「3 回」. */
-export const countNameOf = (count: number, unit: string): string =>
-  `${inJapanese(formats.numberOf(count))} ${unit}`
+export const rateNameOf = (rate: number): LocalizedText =>
+  formats.percentOf(rate, { most: 1 })
 
 /**
  * The members of the staff with the given IDs, by the names the salons
  * show them under, in the order of the IDs. One who has no profile among
  * `staff` is shown by no salon any more (removed, or not working there
- * now): the ledger says that there is one.
+ * now): the ledger says that there is one. A name stands as it was
+ * written, in every language.
  */
 export const staffNamesOf = (
   ids: readonly string[],
   staff: ReadonlyMap<string, Pick<ModelsStaffProfileResponse, 'displayName'>>,
-): string[] => ids.map((id) => staff.get(id)?.displayName ?? UNLISTED_STAFF)
+): LocalizedText[] =>
+  ids.map((id) => {
+    const name = staff.get(id)?.displayName
+
+    return name === undefined
+      ? adminStaffMessages.unlisted
+      : adminStaffMessages.named(name)
+  })

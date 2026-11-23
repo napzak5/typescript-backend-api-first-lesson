@@ -166,19 +166,29 @@ export const sourcesBelow = (directory: string): SourceFile[] =>
       content: fs.readFileSync(path.join(directory, relative), 'utf8'),
     }))
 
-/** The part of `directory` a source is in: the folder or the file right below it */
-const partOf = (source: SourceFile): string =>
-  source.path.split(path.sep)[0] ?? source.path
+/**
+ * Whether a source is in a part: the file the part names, or one below the
+ * folder it names. A part is written with `/` (`customers/components/form`),
+ * and a folder is none of those whose names begin with its name.
+ */
+const isIn = (source: SourceFile, part: string): boolean => {
+  const below = path.join(...part.split('/'))
+
+  return source.path === below || source.path.startsWith(`${below}${path.sep}`)
+}
 
 /**
  * The sources below `directory` that are in the parts it names: folders and
- * files right below it, as the areas of an application are.
+ * files right below it, as the areas of an application are, or deeper,
+ * where an area is done in parts.
  */
 export const sourcesIn = (
   directory: string,
   parts: readonly string[],
 ): SourceFile[] =>
-  sourcesBelow(directory).filter((source) => parts.includes(partOf(source)))
+  sourcesBelow(directory).filter((source) =>
+    parts.some((part) => isIn(source, part)),
+  )
 
 /**
  * The parts named that have no source below `directory`: a name written
@@ -188,9 +198,9 @@ export const partsWithoutSources = (
   directory: string,
   parts: readonly string[],
 ): string[] => {
-  const found = new Set(sourcesBelow(directory).map(partOf))
+  const sources = sourcesBelow(directory)
 
-  return parts.filter((part) => !found.has(part))
+  return parts.filter((part) => !sources.some((source) => isIn(source, part)))
 }
 
 /**
@@ -206,6 +216,8 @@ export const partsWithoutSources = (
  *
  * An application becomes messages an area at a time, and names the parts of
  * its `src` that are done (`['account', 'navigation.ts']`), until all are.
+ * An area that is done in parts names the folders and files inside it that
+ * are (`'customers/components/customer-form'`), until the whole area is.
  * A part it names that has no source fails the test, which would otherwise
  * read nothing there.
  */

@@ -1,6 +1,7 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
@@ -16,6 +17,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -27,7 +29,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs } from '../../__tests__/screens'
 import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   changedMeanwhile,
@@ -76,10 +78,13 @@ const describedIn = (name: string): Record<string, string> =>
   )
 
 /** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
+const openAt = async (
+  path: (tokyo: string) => string,
+  email = OWNER,
+  language: Locale = 'ja',
+) => {
   const tokyo = await salonIdOf(TOKYO)
-  renderAt(path(tokyo))
-  await signInAs(email)
+  await openAs(path(tokyo), email, language)
 
   return tokyo
 }
@@ -530,5 +535,286 @@ describe('removing customers, bringing them back, and their history, against the
         ),
       ).toEqual([])
     })
+  })
+})
+
+describe('removing customers, bringing them back, and their history on a page in English, against the API', () => {
+  /** Waits for the page of a customer, as a page in English names its parts. */
+  const theCustomerInEnglish = async (): Promise<void> => {
+    await heading('Customer record')
+    await screen.findByRole('region', { name: 'Ledger' })
+    await screen.findByRole('region', { name: 'Record keeping' })
+  }
+
+  /** Waits for the page of a customer who left the ledger, in English. */
+  const theRemovedInEnglish = async (): Promise<void> => {
+    await heading('Customer record')
+    await screen.findByRole('region', { name: 'The record when removed' })
+  }
+
+  /** The rows of the history without the times, as a page in English shows them. */
+  const versionsInEnglish = (): string[][] =>
+    rowsOf('Versions').map(([version, operation, , changer, items]) => [
+      version ?? '',
+      operation ?? '',
+      changer ?? '',
+      items ?? '',
+    ])
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should remove a customer in English once the dialog asked, say who removed them, and bring them back', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await finishBookingsOf(KENJI.email)
+    const kenji = await customerIdOf(KENJI.email)
+    await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`, OWNER, 'en')
+    await theCustomerInEnglish()
+    await user.click(
+      within(part('Record keeping')).getByRole('button', {
+        name: 'Remove from the ledger',
+      }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: `Remove ${KENJI.name} from the ledger?`,
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'The customer can no longer be chosen in the customer ledger and in bookings. Their bookings and sales are kept. They can be brought back to the ledger afterwards.',
+    )
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    await theRemovedInEnglish()
+    expect(notifications()).toContain(
+      `${KENJI.name} was removed from the ledger.`,
+    )
+    expect(
+      screen.getByText(/^You removed this customer from the ledger on .+\.$/),
+    ).toBeVisible()
+    expect(describedIn('The record when removed')).toMatchObject({
+      Name: KENJI.name,
+      'Email address': KENJI.email,
+    })
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Bring back to the ledger' }),
+    )
+
+    // Assert
+    await theCustomerInEnglish()
+    expect(notifications()).toContain(
+      `${KENJI.name} was brought back to the ledger.`,
+    )
+    expect(await isInLedger(kenji)).toBe(true)
+  })
+
+  it('should say in English beside the buttons that a customer with a booking that is not finished stays', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt((tokyo) => `/salons/${tokyo}/customers/${yuki}`, OWNER, 'en')
+    await theCustomerInEnglish()
+    await user.click(
+      within(part('Record keeping')).getByRole('button', {
+        name: 'Remove from the ledger',
+      }),
+    )
+
+    // Act
+    await user.click(
+      within(
+        screen.getByRole('dialog', {
+          name: `Remove ${YUKI.name} from the ledger?`,
+        }),
+      ).getByRole('button', { name: 'Remove' }),
+    )
+
+    // Assert
+    expect(
+      await within(part('Record keeping')).findByRole('alert'),
+    ).toHaveTextContent(
+      'The customer has bookings that are not finished, so they could not be removed. Complete, cancel or delete those bookings, then try again.',
+    )
+    expect(await isInLedger(yuki)).toBe(true)
+  })
+
+  it('should say in English that a customer whose address of mail another customer took does not come back, and lead to that customer', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const kenji = await customerIdOf(KENJI.email)
+    await removedMeanwhile(kenji, OWNER)
+    await registeredMeanwhile(
+      { lastName: 'Kobayashi', firstName: 'Ken', email: KENJI.email },
+      MANAGER,
+    )
+    await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`, OWNER, 'en')
+    await theRemovedInEnglish()
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Bring back to the ledger' }),
+    )
+
+    // Assert
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      `A customer registered after the removal uses this customer's email address (${KENJI.email}). Change that customer's email address, then bring this one back to the ledger.`,
+    )
+
+    // Act
+    await user.click(
+      within(alert).getByRole('link', {
+        name: 'Find that customer in the ledger',
+      }),
+    )
+
+    // Assert
+    await heading('Customer ledger')
+    expect(
+      await screen.findByRole('link', { name: 'Kobayashi Ken' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a customer who was merged into another cannot come back', async () => {
+    // Arrange
+    const kenji = await customerIdOf(KENJI.email)
+    await removedMeanwhile(kenji, MANAGER, 'merge')
+
+    // Act
+    await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`, OWNER, 'en')
+
+    // Assert
+    await theRemovedInEnglish()
+    expect(
+      screen.getByText(
+        /^Another account merged this customer into another on .+\.$/,
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByText(
+        'This customer was merged into another, so they cannot be brought back to the ledger.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: 'Bring back to the ledger' }),
+    ).toBeNull()
+  })
+
+  it('should show the history in English, name who made each version and the items it changed, and a version beside the one before', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const kenji = await customerIdOf(KENJI.email)
+    await changedMeanwhile(kenji, MANAGER, {
+      phoneNumber: '080-3333-4444',
+      city: '渋谷区',
+    })
+    await changedMeanwhile(kenji, KENJI.email, {
+      phoneNumber: '080-5555-6666',
+      city: '渋谷区',
+    })
+    await openAt(
+      (tokyo) => `/salons/${tokyo}/customers/${kenji}/history`,
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    await heading('Change history')
+    await screen.findByRole('table', { name: 'Versions' })
+    expect(versionsInEnglish()).toEqual([
+      ['Version 3', 'Updated', 'The customer', 'Phone number'],
+      ['Version 2', 'Updated', 'Another account', 'Phone number, Address'],
+      ['Version 1', 'Start of the record', '', ''],
+    ])
+    expect(screen.getByText('3 items')).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the customer' }),
+    ).toBeVisible()
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Version 2' }))
+
+    // Assert
+    await heading('Record version')
+    await screen.findByRole('table', {
+      name: 'Items changed from the version before',
+    })
+    expect(
+      screen.getByText(/^Version 2 · Updated · .+ · Another account$/),
+    ).toBeVisible()
+    expect(
+      rowsOf('Items changed from the version before').map(([term, , after]) => [
+        term,
+        after,
+      ]),
+    ).toEqual([
+      ['Phone number', '080-3333-4444'],
+      ['Address', '105-0001 Tokyo 渋谷区 2-3-4 Minato'],
+    ])
+    expect(describedIn('The record in this version')).toMatchObject({
+      'Phone number': '080-3333-4444',
+    })
+
+    // Act
+    await user.click(
+      screen.getByRole('link', { name: 'Back to the change history' }),
+    )
+
+    // Assert
+    await heading('Change history')
+  })
+
+  it('should say in English that the customer has no version of a number', async () => {
+    // Arrange
+    const kenji = await customerIdOf(KENJI.email)
+
+    // Act
+    await openAt(
+      (tokyo) => `/salons/${tokyo}/customers/${kenji}/history/9`,
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    await heading('Record version')
+    expect(
+      await screen.findByText(
+        'There is no version of this number. Check that the address is right.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should tell a member of the staff in English who removes customers and reads their history', async () => {
+    // Arrange
+    const yuki = await customerIdOf(YUKI.email)
+
+    // Act
+    await openAt(
+      (tokyo) => `/salons/${tokyo}/customers/${yuki}/history`,
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    await heading('Change history')
+    expect(
+      await screen.findByText(
+        'Owners and managers remove customers from the ledger, merge them and read the change history.',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('table')).toBeNull()
   })
 })

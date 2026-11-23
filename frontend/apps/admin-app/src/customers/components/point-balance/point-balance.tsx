@@ -1,5 +1,5 @@
-import { ButtonLink, Card } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../utils/customer-format'
+import { ButtonLink, Card, inJapanese } from '@beauty-salon-frontend/ui'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './point-balance.module.css'
 
 export type PointBalanceProps = {
@@ -23,7 +23,9 @@ export const PointBalance = ({ balance, entryHref }: PointBalanceProps) => (
       </ButtonLink>
     }
   >
-    <p className={styles['balance']}>{countNameOf(balance, 'ポイント')}</p>
+    <p className={styles['balance']}>
+      {inJapanese(customerMessages.pointsOf(balance))}
+    </p>
     <p>ポイントは、どのサロンで貯めたものも、どのサロンでも使えます。</p>
   </Card>
 )

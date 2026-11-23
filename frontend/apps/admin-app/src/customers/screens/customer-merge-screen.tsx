@@ -160,7 +160,7 @@ const MergeWith = ({
 
       return (
         <>
-          <p>{`${fullNameOf(found.other)} 様（${found.other.email}）`}</p>
+          <p>{`${inJapanese(fullNameOf(found.other))} 様（${found.other.email}）`}</p>
           <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
           <CustomerMerge
             customer={customer}
@@ -292,7 +292,7 @@ export const CustomerMergeScreen = () => {
                 />
               </>
             ) : (
-              <p>{KEPT_BY_OTHERS}</p>
+              <p>{inJapanese(KEPT_BY_OTHERS)}</p>
             )
           }
         </WithCustomer>

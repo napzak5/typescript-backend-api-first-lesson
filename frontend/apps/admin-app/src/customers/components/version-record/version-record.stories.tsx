@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { salon } from '../../../bookings/components/examples'
 import { aVersion } from '../examples'
@@ -18,7 +19,7 @@ const meta: Meta<typeof VersionRecord> = {
       referredBy: 'c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
     }),
     previous: aVersion({ version: 3, tags: ['VIP'] }),
-    changer: 'あなた',
+    changer: adminCustomerMessages.history.changers.you,
     timezone: salon.timezone,
     customerHref: (customerId) => `/salons/${salon.id}/customers/${customerId}`,
   },
@@ -36,7 +37,7 @@ export const Unchanged: Story = {
   args: {
     version: aVersion({ version: 4 }),
     previous: aVersion({ version: 3 }),
-    changer: 'ほかのアカウント',
+    changer: adminCustomerMessages.history.changers.another,
   },
 }
 
@@ -53,6 +54,6 @@ export const Baseline: Story = {
   args: {
     version: aVersion({ version: 1, operation: 'baseline', changedBy: null }),
     previous: undefined,
-    changer: '',
+    changer: null,
   },
 }

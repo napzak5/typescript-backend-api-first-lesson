@@ -5,12 +5,12 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
@@ -21,12 +21,14 @@ import {
 } from '../api/customer-history-api'
 import { customerKeyOf } from '../api/customers-api'
 import { mayKeepCustomers } from '../utils/customer-history'
-import { CustomerNotFound, fullNameOf } from './with-customer'
+import { CustomerNotFound, honoredNameOf } from './with-customer'
+
+const { names, customer: words, removed: removedWords } = adminCustomerMessages
 
 export type RemovedCustomerProps = {
   salon: ModelsSalonResponse
   customerId: string
-  /** The title of the screen */
+  /** The title of the screen, said in the language of the page */
   title: string
   /** The screen, below its heading, for the customer as their latest version keeps them */
   children: (removed: {
@@ -47,6 +49,7 @@ export const RemovedCustomer = ({
   title,
   children,
 }: RemovedCustomerProps) => {
+  const say = useSay()
   const session = useSession()
   const keeper =
     session.type === 'signedIn' && mayKeepCustomers(session.user.role)
@@ -68,13 +71,13 @@ export const RemovedCustomer = ({
       .with(undefined, () => (
         <>
           {header}
-          <LoadingIndicator label='お客様を読み込んでいます' />
+          <LoadingIndicator label={say(words.loading)} />
         </>
       ))
       .with({ type: 'removed' }, (removed) => (
         <>
           {header}
-          <p>{`${fullNameOf(removed.version)} 様`}</p>
+          <p>{say(honoredNameOf(removed.version))}</p>
           {children(removed)}
         </>
       ))
@@ -87,7 +90,7 @@ export const RemovedCustomer = ({
         <>
           {header}
           <UnreadNotice
-            message='このお客様は、その間に台帳に戻されました。読み込み直してください。'
+            message={say(removedWords.restoredMeanwhile)}
             onRetry={() =>
               void queryClient.invalidateQueries({
                 queryKey: customerKeyOf(customerId),
@@ -102,9 +105,7 @@ export const RemovedCustomer = ({
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('お客様'), reason),
-            )}
+            message={say(unreadMessageOf(names.customer, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

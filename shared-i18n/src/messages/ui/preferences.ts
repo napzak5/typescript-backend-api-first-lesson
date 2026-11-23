@@ -1,5 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { text } from '../../languages/localized-text'
+import { listed } from '../written'
 import { fieldMessages } from './fields'
 
 /**
@@ -120,8 +121,7 @@ export const preferenceMessages = {
     unset: text({ en: 'Not specified', ja: '指定なし' }),
     inspirationImages: text({ en: 'Reference images', ja: '参考の画像' }),
     /** The entries of a list, as a sentence lists them */
-    listed: (entries: readonly string[]) =>
-      text({ en: entries.join(', '), ja: entries.join('、') }),
+    listed: (entries: readonly string[]) => listed(entries),
   },
   /** A member of the staff where staff of several salons stand together: 「田中 美咲（Beauty Salon Tokyo）」 */
   staffOfSalon: (displayName: string, salonName: string) =>

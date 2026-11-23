@@ -9,7 +9,10 @@ import {
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import { fieldMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import {
+  fieldMessages,
+  termMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import { UNLISTED_MESSAGE } from './choices'
 import { isDay } from './days'
@@ -25,6 +28,27 @@ export const GENDERS: readonly ModelsCustomerGenderType[] = Object.values(
 /** The kinds of service, in the order of the contract */
 export const SERVICE_CATEGORIES: readonly ModelsServiceCategoryType[] =
   Object.values(ModelsServiceCategoryType)
+
+const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
+  termMessages.gender
+
+const CATEGORY_NAMES: Record<ModelsServiceCategoryType, LocalizedText> =
+  termMessages.serviceCategory
+
+/** What a form of a customer offers as a gender, in the order of the contract, under the name the form says */
+export const GENDER_CHOICES: readonly {
+  value: ModelsCustomerGenderType
+  label: LocalizedText
+}[] = GENDERS.map((gender) => ({ value: gender, label: GENDER_NAMES[gender] }))
+
+/** The kinds of service a form of a customer offers, in the order of the contract, under the name the form says */
+export const CATEGORY_CHOICES: readonly {
+  value: ModelsServiceCategoryType
+  label: LocalizedText
+}[] = SERVICE_CATEGORIES.map((category) => ({
+  value: category,
+  label: CATEGORY_NAMES[category],
+}))
 
 /** The lengths of the texts of a customer that may be left empty, under the names of their controls */
 export const CUSTOMER_LENGTHS: Readonly<Record<string, number>> = {

@@ -7,22 +7,25 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
-  inJapanese,
   Link,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { match } from 'ts-pattern'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Removal } from '../../api/customer-history-api'
 import { whyUnrestorable } from '../../utils/customer-history'
 import { ledgerItemsOf } from '../customer-record/ledger-items'
 import styles from './removed-record.module.css'
+
+const { removed: words, referrer } = adminCustomerMessages
 
 export type RemovedRecordProps = {
   /** The latest version of the customer: what the ledger held when they left */
   version: ModelsCustomerVersionResponse
   /** How the customer left the ledger */
   removal: Removal
-  /** Who took them out, as the salon can tell: 「あなた」 */
-  changer: string
+  /** Who took them out, as the salon can tell: 「あなた」; `null` for nobody it can name */
+  changer: LocalizedText | null
   /** The time zone of the salon: the time is that of its clock */
   timezone: string
   /** The address of the history of the customer */
@@ -31,7 +34,7 @@ export type RemovedRecordProps = {
   customerHref: (customerId: string) => string
   /** Why the customer did not come back; `link` leads to what is to be changed first */
   refusal?:
-    | { message: string; link?: { href: string; label: string } }
+    | { message: LocalizedText; link?: { href: string; label: LocalizedText } }
     | undefined
   /** The customer is being brought back */
   pending?: boolean | undefined
@@ -56,25 +59,28 @@ export const RemovedRecord = ({
   pending = false,
   onRestore,
 }: RemovedRecordProps) => {
-  const when = inJapanese(momentNameAt(version.changedAt, timezone))
+  const say = useSay()
   const why = whyUnrestorable(removal)
-  const done = match(removal)
-    .with('deleted', () => '台帳から削除しました')
-    .with('merged', () => 'ほかのお客様に統合しました')
-    .with('erased', () => '削除の依頼で消去しました')
-    .exhaustive()
 
   return (
     <div className={styles['removed']}>
-      <p>{`${when} に、${changer}が${done}。`}</p>
-      {why !== undefined && <p>{why}</p>}
+      <p>
+        {say(
+          words.done(
+            momentNameAt(version.changedAt, timezone),
+            changer,
+            removal,
+          ),
+        )}
+      </p>
+      {why !== undefined && <p>{say(why)}</p>}
       {refusal !== undefined && (
         <Alert tone='danger'>
-          {refusal.message}
+          {say(refusal.message)}
           {refusal.link !== undefined && (
             <>
               {' '}
-              <Link href={refusal.link.href}>{refusal.link.label}</Link>
+              <Link href={refusal.link.href}>{say(refusal.link.label)}</Link>
             </>
           )}
         </Alert>
@@ -82,20 +88,21 @@ export const RemovedRecord = ({
       <Actions>
         {why === undefined && (
           <Button variant='primary' pending={pending} onClick={onRestore}>
-            台帳に戻す
+            {say(words.restore)}
           </Button>
         )}
-        <ButtonLink href={historyHref}>変更履歴</ButtonLink>
+        <ButtonLink href={historyHref}>{say(words.history)}</ButtonLink>
       </Actions>
-      <Card title='削除されたときの台帳'>
+      <Card title={say(words.recordTitle)}>
         <DescriptionList
           items={ledgerItemsOf(
             version,
             version.referredBy === null ? null : (
               <Link href={customerHref(version.referredBy)}>
-                紹介したお客様
+                {say(referrer.link)}
               </Link>
             ),
+            say,
           )}
         />
       </Card>

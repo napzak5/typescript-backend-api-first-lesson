@@ -14,15 +14,16 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -71,7 +72,9 @@ import {
   readCustomerConditions,
 } from '../utils/customer-ledger'
 
-const TITLE = '顧客台帳'
+const { names, ledger: words, titles } = adminCustomerMessages
+
+const TITLE = titles.ledger
 
 /** What a dialog of the chosen customers says */
 type DialogSays = { message: string | undefined; errors: FormErrors }
@@ -105,11 +108,14 @@ type CustomerLedgerProps = {
  * to the conditions it was asked for, as the choice does.
  */
 const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
+  const say = useSay()
   const session = useSession()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = customerConditionsIn(query)
   const asked = customerQueryOf(conditions).toString()
   const narrowed = isNarrowed(conditions)
@@ -221,30 +227,30 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
 
   const entry = (
     <ButtonLink href={customerEntryHrefOf(salon.id)} variant='primary'>
-      お客様を登録する
+      {say(words.register)}
     </ButtonLink>
   )
 
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(TITLE)}
         description={salon.name}
         actions={entry}
         otherActions={
           <>
             <ButtonLink href={customerImportHrefOf(salon.id)}>
-              CSV から登録する
+              {say(words.importFile)}
             </ButtonLink>
             <ButtonLink href={chartSearchHrefOf(salon.id)}>
-              カルテを探す
+              {say(words.searchCharts)}
             </ButtonLink>
             {mayKeep && (
               <Button
                 pending={exporting.isPending}
                 onClick={() => exporting.mutate(conditions)}
               >
-                CSV に出力する
+                {say(words.exportFile)}
               </Button>
             )}
           </>
@@ -260,14 +266,10 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
         onSubmit={filter}
       />
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))
-        .with(undefined, () => (
-          <LoadingIndicator label='お客様を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('顧客台帳'), reason),
-            )}
+            message={say(unreadMessageOf(names.ledger, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -275,14 +277,14 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合うお客様はいません'
-              description='条件を変えて探すか、新しいお客様として登録してください。'
+              title={say(words.noneMatch)}
+              description={say(words.noneMatchDescription)}
               actions={entry}
             />
           ) : (
             <EmptyState
-              title='台帳にお客様はいません'
-              description='最初のお客様を登録してください。'
+              title={say(words.empty)}
+              description={say(words.emptyDescription)}
               actions={entry}
             />
           ),
@@ -311,7 +313,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
             <CustomerTable
               // Other conditions are another list
               key={asked}
-              caption={narrowed ? '条件に合うお客様' : TITLE}
+              caption={narrowed ? words.matching : TITLE}
               rows={items}
               total={total}
               more={moreOf(rest, {
@@ -337,10 +339,11 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
 
 /** The ledger of the customers, below the salon of the address. */
 export const CustomerLedgerScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => <CustomerLedger key={salon.id} salon={salon} />}
     </WithSalon>
   )
