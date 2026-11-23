@@ -10,6 +10,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   Note,
   Select,
@@ -96,7 +97,7 @@ export const ChartForm = ({
           name='preferredProducts'
           autoComplete='off'
           description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-          defaultValue={tagsTextOf(chart?.preferredProducts ?? [])}
+          defaultValue={inJapanese(tagsTextOf(chart?.preferredProducts ?? []))}
           error={errors['preferredProducts']}
         />
         <TextField
@@ -104,7 +105,7 @@ export const ChartForm = ({
           name='avoidProducts'
           autoComplete='off'
           description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-          defaultValue={tagsTextOf(chart?.avoidProducts ?? [])}
+          defaultValue={inJapanese(tagsTextOf(chart?.avoidProducts ?? []))}
           error={errors['avoidProducts']}
         />
       </FormPart>

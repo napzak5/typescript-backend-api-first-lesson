@@ -5,13 +5,14 @@ import {
   Button,
   Dialog,
   FieldRow,
+  inJapanese,
   Link,
   RadioGroup,
   Table,
 } from '@beauty-salon-frontend/ui'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { customerNameOf } from '../../api/customers-api'
-import { countNameOf } from '../../utils/customer-format'
 import {
   MERGE_WAYS,
   type MergeObstacle,
@@ -98,6 +99,7 @@ export const CustomerMerge = ({
     pair.secondary,
     mergedLedgerOf(pair, way),
     referrerOf,
+    inJapanese,
   )
   const points = pair.primary.loyaltyPoints + pair.secondary.loyaltyPoints
 
@@ -165,7 +167,7 @@ export const CustomerMerge = ({
         />
       )}
       <p>
-        {`予約、売上、施術記録、レビューは、${primary} 様のものになります。好み設定、カルテ、アレルギーは、2 人のものを合わせます。ポイントは、2 人の残高を合わせて ${countNameOf(points, 'ポイント')}になります。`}
+        {`予約、売上、施術記録、レビューは、${primary} 様のものになります。好み設定、カルテ、アレルギーは、2 人のものを合わせます。ポイントは、2 人の残高を合わせて ${inJapanese(customerMessages.pointsOf(points))}になります。`}
       </p>
       {obstacles.length > 0 ? (
         <Alert tone='warning' title='まとめられません'>

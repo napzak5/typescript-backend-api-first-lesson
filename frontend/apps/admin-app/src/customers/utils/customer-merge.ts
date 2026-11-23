@@ -9,10 +9,10 @@ import type {
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
 import { inJapanese, same } from '@beauty-salon-frontend/ui'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../api/customers-api'
 import type { LedgerValues } from '../components/customer-record/ledger-items'
-import { countNameOf } from './customer-format'
 import { KEPT_BY_OTHERS } from './customer-history'
 
 /*
@@ -259,7 +259,7 @@ export const obstacleTextOf = (obstacle: MergeObstacle): string =>
     .with(
       { type: 'points' },
       ({ total }) =>
-        `2 人のポイントを合わせると ${countNameOf(total, 'ポイント')}になり、1 人が持てる ${countNameOf(LARGEST_BALANCE, 'ポイント')}を超えます。`,
+        `2 人のポイントを合わせると ${inJapanese(customerMessages.pointsOf(total))}になり、1 人が持てる ${inJapanese(customerMessages.pointsOf(LARGEST_BALANCE))}を超えます。`,
     )
     .with(
       { type: 'chart' },
@@ -320,7 +320,7 @@ export const afterMerge = (
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、お客様をまとめられません。${KEPT_BY_OTHERS}`,
+      message: `このアカウントでは、お客様をまとめられません。${inJapanese(KEPT_BY_OTHERS)}`,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',

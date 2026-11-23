@@ -7,8 +7,12 @@ import {
   Dialog,
   FilterForm,
   TextField,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
+
+const { referrer: words, form } = adminCustomerMessages
 
 export type ReferrerDialogProps = {
   open: boolean
@@ -36,27 +40,29 @@ export const ReferrerDialog = ({
   onSearch,
   children,
 }: ReferrerDialogProps) => {
+  const say = useSay()
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title='紹介元を選ぶ'
-      description='このお客様を紹介したお客様を、台帳から探して選びます。'
+      title={say(words.choose)}
+      description={say(words.dialogDescription)}
       size='wide'
-      actions={<Button onClick={onClose}>やめる</Button>}
+      actions={<Button onClick={onClose}>{say(form.cancel)}</Button>}
     >
       <FilterForm
-        label='紹介元を探す'
+        label={say(words.search)}
         onSubmit={(values) => onSearch(keywordOf(values))}
       >
         <TextField
-          label='キーワード'
+          label={say(words.keyword)}
           name='keyword'
           type='search'
           autoComplete='off'
           maxLength={LONGEST_KEYWORD}
           defaultValue={keyword}
-          description='お名前（カナでも）、メールアドレス、電話番号の一部。'
+          description={say(words.keywordDescription)}
         />
       </FilterForm>
       {children}

@@ -5,21 +5,24 @@ import {
   Checkbox,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
-  countNameOf,
   customerStatusNameOf,
   customerStatusToneOf,
   tierNameOf,
 } from '../../utils/customer-format'
 
+const { record, table } = adminCustomerMessages
+
 export type CustomerTableProps = {
   /** What the table lists: 「顧客台帳」, or 「条件に合うお客様」 */
-  caption: string
+  caption: LocalizedText
   /** The customers that were read so far, the latest registered first; at least one */
   rows: readonly ModelsCustomerResponse[]
   /** How many customers there are; `null` when the API did not count them */
@@ -53,80 +56,86 @@ export const CustomerTable = ({
   onMore,
   customerHref,
   choice,
-}: CustomerTableProps) => (
-  <PagedTable
-    caption={caption}
-    rowHeader='name'
-    columns={[
-      ...(choice === undefined
-        ? []
-        : [
-            {
-              key: 'chosen',
-              header: '選ぶ',
-              cell: (customer: ModelsCustomerResponse) => (
-                <Checkbox
-                  label={`${customerNameOf(customer)} 様を選ぶ`}
-                  labelHidden
-                  checked={choice.chosen.has(customer.id)}
-                  onChange={(event) =>
-                    choice.onChoose(customer, event.currentTarget.checked)
-                  }
-                />
-              ),
-            },
-          ]),
-      {
-        key: 'name',
-        header: 'お名前',
-        cell: (customer) => (
-          <Link href={customerHref(customer)}>{customerNameOf(customer)}</Link>
-        ),
-      },
-      {
-        key: 'kana',
-        header: 'フリガナ',
-        cell: (customer) => customerKanaOf(customer),
-      },
-      {
-        key: 'phoneNumber',
-        header: '電話番号',
-        cell: ({ phoneNumber }) => phoneNumber,
-      },
-      {
-        key: 'membershipTier',
-        header: '会員ランク',
-        cell: ({ membershipTier }) => tierNameOf(membershipTier),
-      },
-      {
-        key: 'customerStatus',
-        header: 'ステータス',
-        cell: ({ customerStatus }) => (
-          <Badge tone={customerStatusToneOf(customerStatus)}>
-            {customerStatusNameOf(customerStatus)}
-          </Badge>
-        ),
-      },
-      {
-        key: 'visitCount',
-        header: '来店回数',
-        align: 'end',
-        cell: ({ visitCount }) => countNameOf(visitCount, '回'),
-      },
-      {
-        key: 'lastVisitDate',
-        header: '最終来店日',
-        cell: ({ lastVisitDate }) =>
-          lastVisitDate === null
-            ? '来店なし'
-            : inJapanese(dayNameOf(lastVisitDate)),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ id }) => id}
-    emptyMessage='お客様はいません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.people))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: CustomerTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(caption)}
+      rowHeader='name'
+      columns={[
+        ...(choice === undefined
+          ? []
+          : [
+              {
+                key: 'chosen',
+                header: say(table.choose),
+                cell: (customer: ModelsCustomerResponse) => (
+                  <Checkbox
+                    label={say(table.chooseCustomer(customerNameOf(customer)))}
+                    labelHidden
+                    checked={choice.chosen.has(customer.id)}
+                    onChange={(event) =>
+                      choice.onChoose(customer, event.currentTarget.checked)
+                    }
+                  />
+                ),
+              },
+            ]),
+        {
+          key: 'name',
+          header: say(table.name),
+          cell: (customer) => (
+            <Link href={customerHref(customer)}>
+              {customerNameOf(customer)}
+            </Link>
+          ),
+        },
+        {
+          key: 'kana',
+          header: say(table.kana),
+          cell: (customer) => customerKanaOf(customer),
+        },
+        {
+          key: 'phoneNumber',
+          header: say(table.phoneNumber),
+          cell: ({ phoneNumber }) => phoneNumber,
+        },
+        {
+          key: 'membershipTier',
+          header: say(table.tier),
+          cell: ({ membershipTier }) => say(tierNameOf(membershipTier)),
+        },
+        {
+          key: 'customerStatus',
+          header: say(table.status),
+          cell: ({ customerStatus }) => (
+            <Badge tone={customerStatusToneOf(customerStatus)}>
+              {say(customerStatusNameOf(customerStatus))}
+            </Badge>
+          ),
+        },
+        {
+          key: 'visitCount',
+          header: say(table.visits),
+          align: 'end',
+          cell: ({ visitCount }) => say(record.visits.visitsOf(visitCount)),
+        },
+        {
+          key: 'lastVisitDate',
+          header: say(table.lastVisit),
+          cell: ({ lastVisitDate }) =>
+            say(
+              lastVisitDate === null ? table.noVisit : dayNameOf(lastVisitDate),
+            ),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ id }) => id}
+      emptyMessage={say(table.empty)}
+      count={say(countOf(total, rows.length, COUNTED.people))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

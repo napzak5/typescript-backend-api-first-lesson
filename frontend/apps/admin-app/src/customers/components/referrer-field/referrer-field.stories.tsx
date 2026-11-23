@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ReferrerField } from './referrer-field'
@@ -41,7 +42,6 @@ export const Gone: Story = {
 export const WithError: Story = {
   args: {
     ...Chosen.args,
-    error:
-      '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+    error: adminCustomerMessages.referrer.absent,
   },
 }

@@ -12,14 +12,15 @@ import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -43,7 +44,15 @@ import {
 import { ReferrerChoice } from './referrer-choice'
 import { WithCustomer } from './with-customer'
 
-const TITLE = '台帳を直す'
+const {
+  form,
+  names,
+  notices,
+  referrer: referrerWords,
+  titles,
+} = adminCustomerMessages
+
+const TITLE = titles.change
 
 type CustomerChangeProps = {
   salon: ModelsSalonResponse
@@ -61,10 +70,11 @@ type CustomerChangeProps = {
  * are dropped, since the customer may now meet other conditions.
  */
 const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = customerKeyOf(customer.id)
   const back = customerHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
@@ -77,7 +87,7 @@ const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
           const read: CustomerRead = { type: 'found', customer: changed }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: CUSTOMER_LISTS })
-          notify({ tone: 'success', message: '台帳を直しました。' })
+          notify({ tone: 'success', message: notices.changed })
           void navigate(back)
         })
         // The customer was removed from the ledger meanwhile
@@ -122,14 +132,14 @@ const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
       chooseReferrer={(choice) => (
         <ReferrerChoice {...choice} excluded={customer.id} />
       )}
-      submitLabel='変更を保存する'
+      submitLabel={say(form.save)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(form.cancel)}
         </ButtonLink>
       }
     />
@@ -147,6 +157,7 @@ type CustomerToChangeProps = {
  * missing, and stays the referrer unless another is chosen.
  */
 const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
+  const say = useSay()
   const { referredBy } = customer
   const read = useQuery({
     queryKey: customerKeyOf(referredBy ?? ''),
@@ -165,15 +176,13 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
-      <LoadingIndicator label='紹介元を読み込んでいます' />
+      <LoadingIndicator label={say(referrerWords.loading)} />
     ))
     .with({ type: 'found' }, ({ customer: found }) => opened(referrerOf(found)))
     .with({ type: 'notFound' }, () => opened({ type: 'gone', id: referredBy }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('紹介元'), reason),
-        )}
+        message={say(unreadMessageOf(names.referrer, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -183,12 +192,13 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
 
 /** Changes what the ledger keeps of a customer, below the salon of the address. */
 export const CustomerChangeScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer key={salon.id} salon={salon} title={say(TITLE)} fresh>
           {(customer) => (
             <CustomerToChange
               key={customer.id}

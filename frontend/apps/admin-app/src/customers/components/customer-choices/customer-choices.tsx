@@ -4,12 +4,15 @@ import {
   Button,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerKanaOf, customerNameOf } from '../../api/customers-api'
+
+const { choices: words } = adminCustomerMessages
 
 /**
  * How a customer is chosen by their name: a link that leads on (to the
@@ -48,42 +51,50 @@ export const CustomerChoices = ({
   more,
   onMore,
   choose,
-}: CustomerChoicesProps) => (
-  <PagedTable
-    caption='見つかったお客様'
-    columns={[
-      {
-        key: 'name',
-        header: 'お名前',
-        cell: (customer) =>
-          match(choose)
-            .when(
-              ({ excluded }) => customer.id === excluded,
-              () => `${customerNameOf(customer)}（このお客様）`,
-            )
-            .with({ type: 'link' }, ({ hrefOf }) => (
-              <Link href={hrefOf(customer)}>{customerNameOf(customer)}</Link>
-            ))
-            .with({ type: 'button' }, ({ onChoose }) => (
-              <Button size='small' onClick={() => onChoose(customer)}>
-                {customerNameOf(customer)}
-              </Button>
-            ))
-            .exhaustive(),
-      },
-      { key: 'kana', header: 'フリガナ', cell: customerKanaOf },
-      {
-        key: 'phoneNumber',
-        header: '電話番号',
-        cell: ({ phoneNumber }) => phoneNumber,
-      },
-      { key: 'email', header: 'メールアドレス', cell: ({ email }) => email },
-    ]}
-    rows={customers}
-    rowKey={({ id }) => id}
-    emptyMessage='お客様はいません'
-    count={inJapanese(countOf(total, customers.length, COUNTED.people))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: CustomerChoicesProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(words.caption)}
+      columns={[
+        {
+          key: 'name',
+          header: say(words.name),
+          cell: (customer) =>
+            match(choose)
+              .when(
+                ({ excluded }) => customer.id === excluded,
+                () => say(words.thisCustomer(customerNameOf(customer))),
+              )
+              .with({ type: 'link' }, ({ hrefOf }) => (
+                <Link href={hrefOf(customer)}>{customerNameOf(customer)}</Link>
+              ))
+              .with({ type: 'button' }, ({ onChoose }) => (
+                <Button size='small' onClick={() => onChoose(customer)}>
+                  {customerNameOf(customer)}
+                </Button>
+              ))
+              .exhaustive(),
+        },
+        { key: 'kana', header: say(words.kana), cell: customerKanaOf },
+        {
+          key: 'phoneNumber',
+          header: say(words.phoneNumber),
+          cell: ({ phoneNumber }) => phoneNumber,
+        },
+        {
+          key: 'email',
+          header: say(words.email),
+          cell: ({ email }) => email,
+        },
+      ]}
+      rows={customers}
+      rowKey={({ id }) => id}
+      emptyMessage={say(words.empty)}
+      count={say(countOf(total, customers.length, COUNTED.people))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

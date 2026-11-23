@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,9 +6,9 @@ import {
 } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { useState } from 'react'
+import { act, useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CustomerConditions } from '../../utils/customer-ledger'
 import { CustomerFilter, type CustomerFilterProps } from './customer-filter'
 import * as customerFilterStories from './customer-filter.stories'
@@ -192,5 +193,83 @@ describe('CustomerFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('CustomerFilter on a page in English', () => {
+  /** What an English screen says of a range whose end comes first */
+  const END_BEFORE_START =
+    'Make the last day the same as the first day, or later.'
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every condition and its choices in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    const search = screen.getByRole('searchbox', { name: 'Keyword' })
+    expect(search.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Search for customers',
+    )
+    expect(search).toHaveAccessibleDescription(
+      'Part of a name (also phonetic), an email address or a phone number.',
+    )
+    expect(screen.getByRole('textbox', { name: 'Tags' })).toHaveValue(
+      'VIP, 常連',
+    )
+    expect(screen.getByLabelText('Registered from')).toHaveValue('2026-11-01')
+    expect(screen.getByLabelText('Registered until')).toHaveValue('2026-11-20')
+    expect(optionsOf('Status')).toEqual([
+      'All',
+      'Normal',
+      'Dormant',
+      'VIP',
+      'Suspended',
+    ])
+    expect(optionsOf('Membership rank')).toEqual([
+      'All',
+      'Regular',
+      'Silver',
+      'Gold',
+      'Platinum',
+      'VIP',
+    ])
+  })
+
+  it('should say in English what is wrong at the control', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Registered until'),
+    ).toHaveAccessibleDescription(END_BEFORE_START)
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run()
+    to().blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      screen.getByLabelText('Registered until'),
+    ).toHaveAccessibleDescription(END_BEFORE_START)
+    expect(screen.getByLabelText('Registered until')).not.toHaveFocus()
   })
 })

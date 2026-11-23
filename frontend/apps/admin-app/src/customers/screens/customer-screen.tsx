@@ -4,12 +4,10 @@ import {
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
-  ModelsCustomerDeletionRequestCreateRequest,
   ModelsCustomerResponse,
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { saveFile } from '@beauty-salon-frontend/io'
 import { PreferencesDetails } from '@beauty-salon-frontend/preferences'
 import {
   dayAt,
@@ -28,14 +26,14 @@ import {
   ButtonLink,
   Card,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   type QueryClient,
   useMutation,
@@ -60,13 +58,6 @@ import {
 } from '../../navigation'
 import { useAdministersAccounts } from '../../user-accounts/hooks/administers-accounts'
 import {
-  askForErasure,
-  cancelErasureRequest,
-  erasureKeyOf,
-  readErasureRequest,
-} from '../api/customer-erasure-api'
-import { exportCustomerData } from '../api/customer-export-api'
-import {
   type Removal,
   removeCustomer,
   removedKeyOf,
@@ -83,29 +74,16 @@ import {
   readStatistics,
   statisticsKeyOf,
 } from '../api/customers-api'
-import {
-  CustomerErasure,
-  type ErasureDialog,
-  type ErasureShown,
-} from '../components/customer-erasure/customer-erasure'
 import { CustomerKeeping } from '../components/customer-keeping/customer-keeping'
 import {
   CustomerRecord,
   type CustomerRecordProps,
 } from '../components/customer-record/customer-record'
-import { CustomerRequests } from '../components/customer-requests/customer-requests'
 import { CustomerStatistics } from '../components/customer-statistics/customer-statistics'
 import {
   RemovedRecord,
   type RemovedRecordProps,
 } from '../components/removed-record/removed-record'
-import {
-  afterErasureAsk,
-  afterErasureCancel,
-  type ErasureSays,
-  readErasureAsk,
-} from '../utils/customer-erasure'
-import { ANSWERED_BY_OTHERS, afterDataExport } from '../utils/customer-export'
 import { type Referrer, referrerOf } from '../utils/customer-form'
 import { staffNamesOf } from '../utils/customer-format'
 import {
@@ -115,13 +93,22 @@ import {
   mayKeepCustomers,
 } from '../utils/customer-history'
 import { customerQueryOf } from '../utils/customer-ledger'
+import { RemovedRequestsPart, RequestsPart } from './customer-requests-part'
 import { RemovedCustomer } from './removed-customer'
 import { WithCustomer } from './with-customer'
 
-const TITLE = 'お客様の台帳'
+const {
+  account,
+  gone,
+  names,
+  notices,
+  preferences: preferencesWords,
+  restoration: restorationWords,
+  titles,
+  use,
+} = adminCustomerMessages
 
-/** What a part says of a customer who was removed while the page was open */
-const GONE = 'このお客様は、台帳から削除されました。'
+const TITLE = titles.customer
 
 type PartProps = {
   salon: ModelsSalonResponse
@@ -164,6 +151,7 @@ const RecordPart = ({
  * change it from the portal at any time, and the salon from here.
  */
 const PreferencesPart = ({ salon, customer }: PartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: preferencesKeyOf(customer.id),
     queryFn: () => readPreferences(customer.id),
@@ -172,31 +160,27 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
 
   return (
     <Card
-      title='好み設定'
+      title={say(preferencesWords.title)}
       actions={
         <ButtonLink href={customerPreferencesHrefOf(salon.id, customer.id)}>
-          好み設定を直す
+          {say(preferencesWords.change)}
         </ButtonLink>
       }
     >
       {match(read.data)
         .with(undefined, () => (
-          <LoadingIndicator label='好み設定を読み込んでいます' />
+          <LoadingIndicator label={say(preferencesWords.loading)} />
         ))
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <PreferencesDetails
             preferences={preferences}
-            staffNames={(ids) =>
-              staffNamesOf(ids, staff).map(writtenInJapanese)
-            }
+            staffNames={(ids) => staffNamesOf(ids, staff)}
           />
         ))
-        .with({ type: 'notFound' }, () => <p>{GONE}</p>)
+        .with({ type: 'notFound' }, () => <p>{say(gone)}</p>)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('好み設定'), reason),
-            )}
+            message={say(unreadMessageOf(names.preferences, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -211,24 +195,24 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
  * is led to the account: its lock is lifted, and its second factor reset,
  * there.
  */
-const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => (
-  <Card
-    title='ログインアカウント'
-    actions={
-      customer.userId === null ? undefined : (
-        <ButtonLink href={userAccountHrefOf(customer.userId)}>
-          アカウントの状態を見る
-        </ButtonLink>
-      )
-    }
-  >
-    <p>
-      {customer.userId === null
-        ? 'このお客様は、ポータルのアカウントを持っていません。'
-        : 'このお客様は、ポータルにログインするアカウントを持っています。ロックの解除と 2 要素認証のリセットは、アカウントの画面で行います。'}
-    </p>
-  </Card>
-)
+const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => {
+  const say = useSay()
+
+  return (
+    <Card
+      title={say(account.title)}
+      actions={
+        customer.userId === null ? undefined : (
+          <ButtonLink href={userAccountHrefOf(customer.userId)}>
+            {say(account.open)}
+          </ButtonLink>
+        )
+      }
+    >
+      <p>{say(customer.userId === null ? account.none : account.some)}</p>
+    </Card>
+  )
+}
 
 /**
  * What the customer did at the salon over a period: the year up to today
@@ -236,6 +220,7 @@ const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => (
  * another address, so the way back shows the period that was shown.
  */
 const UsePart = ({ salon, customer }: PartProps) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
     undefined,
@@ -267,24 +252,22 @@ const UsePart = ({ salon, customer }: PartProps) => {
 
   return (
     <Card
-      title='このサロンでの利用'
+      title={say(use.title)}
       actions={
         <ButtonLink href={treatmentsOfCustomerHrefOf(salon.id, customer.id)}>
-          施術記録を見る
+          {say(use.treatments)}
         </ButtonLink>
       }
     >
       <StatisticsPeriod
         period={period}
-        description='366 日まで集計できます。'
+        description={say(use.periodDescription)}
         errors={errors}
         onSubmit={count}
       />
-      <p>{`${inJapanese(periodNameOf(period))}の集計`}</p>
+      <p>{say(use.of(periodNameOf(period)))}</p>
       {match(read.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='利用を集計しています' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(use.counting)} />)
         .with({ type: 'found' }, ({ statistics }) => (
           <CustomerStatistics
             statistics={statistics}
@@ -292,15 +275,13 @@ const UsePart = ({ salon, customer }: PartProps) => {
             currency={salon.currency}
           />
         ))
-        .with({ type: 'notFound' }, () => <p>{GONE}</p>)
+        .with({ type: 'notFound' }, () => <p>{say(gone)}</p>)
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what={writtenInJapanese('利用の集計')} />
+          <OtherSalonNotice what={names.usage} />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('利用の集計'), reason),
-            )}
+            message={say(unreadMessageOf(names.usage, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -375,9 +356,9 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
   const { notify } = useNotifications()
   const [open, setOpen] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What the API refused: said beside the buttons */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const name = customerNameOf(customer)
 
   const left = (): void => showRemoved(queryClient, customer.id, moved)
@@ -388,10 +369,7 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
       match(afterRemoval(outcome))
         .with({ type: 'done' }, () => {
           left()
-          notify({
-            tone: 'success',
-            message: `${name} 様を台帳から削除しました。`,
-          })
+          notify({ tone: 'success', message: notices.removed(name) })
         })
         .with({ type: 'again' }, ({ message: said }) => setMessage(said))
         .with({ type: 'refused' }, ({ message: said }) => {
@@ -426,202 +404,6 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
   )
 }
 
-type ErasurePartProps = {
-  customerId: string
-  /** The name of the customer, as the dialogs and the notifications say it */
-  name: string
-  timezone: string
-  /**
-   * Given for a customer in the ledger, whose new request is taken: called
-   * when they turn out to have left it meanwhile
-   */
-  onLeft?: (() => void) | undefined
-}
-
-/**
- * The latest request of the customer to have their data erased, a new
- * one taken and a pending one called off. What the API refused, or what
- * changed meanwhile, closes the dialog: the customer is read again, the
- * part says why under its heading, and its heading takes the focus. So
- * does what was done, whose button went with it.
- */
-const ErasurePart = ({
-  customerId,
-  name,
-  timezone,
-  onLeft,
-}: ErasurePartProps) => {
-  const queryClient = useQueryClient()
-  const { notify } = useNotifications()
-  const heading = useRef<HTMLHeadingElement>(null)
-  const read = useQuery({
-    queryKey: erasureKeyOf(customerId),
-    queryFn: () => readErasureRequest(customerId),
-    staleTime: 0,
-  })
-  const [dialog, setDialog] = useState<ErasureDialog>('none')
-  /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
-  const [errors, setErrors] = useState<FormErrors>()
-  /** What the API refused, or what changed meanwhile: said under the heading */
-  const [refusal, setRefusal] = useState<string>()
-  /** How many times a dialog closed on what it changed: the heading takes the focus each time */
-  const [moves, setMoves] = useState(0)
-
-  useLayoutEffect(() => {
-    if (moves > 0) {
-      heading.current?.focus()
-    }
-  }, [moves])
-
-  const follow = (says: ErasureSays): void =>
-    match(says)
-      .with({ type: 'done' }, ({ request, message: said }) => {
-        queryClient.setQueryData(erasureKeyOf(customerId), {
-          type: 'read',
-          request,
-        })
-        setDialog('none')
-        setRefusal(undefined)
-        setMoves((count) => count + 1)
-        notify({ tone: 'success', message: said })
-      })
-      .with({ type: 'again' }, ({ message: said, errors: wrong }) => {
-        setMessage(said)
-        setErrors(wrong)
-      })
-      .with({ type: 'refused' }, ({ message: said }) => {
-        setDialog('none')
-        setRefusal(said)
-        setMoves((count) => count + 1)
-        // The request, and the customer, whom an erasure takes out of the ledger
-        void queryClient.invalidateQueries({
-          queryKey: customerKeyOf(customerId),
-        })
-      })
-      .with({ type: 'gone' }, () => onLeft?.())
-      .exhaustive()
-
-  const asking = useMutation({
-    mutationFn: (request: ModelsCustomerDeletionRequestCreateRequest) =>
-      askForErasure(customerId, request),
-    onMutate: () => setMessage(undefined),
-    onSuccess: (outcome) => follow(afterErasureAsk(outcome, name, timezone)),
-  })
-
-  const cancelling = useMutation({
-    mutationFn: () => cancelErasureRequest(customerId),
-    onMutate: () => setMessage(undefined),
-    onSuccess: (outcome) => follow(afterErasureCancel(outcome, name)),
-  })
-
-  const ask = (values: FormData): void => {
-    const filled = readErasureAsk(values)
-    if (filled.type === 'invalid') {
-      setErrors(filled.errors)
-      return
-    }
-    setErrors(undefined)
-    asking.mutate(filled.value)
-  }
-
-  const shown = match(read.data)
-    .returnType<ErasureShown>()
-    .with(undefined, () => ({ type: 'reading' }))
-    .with({ type: 'read' }, ({ request }) => ({ type: 'read', request }))
-    // The role of the account changed meanwhile
-    .with({ type: 'forbidden' }, () => ({
-      type: 'unread',
-      message: `このアカウントでは、消去の依頼を読み込めません。${ANSWERED_BY_OTHERS}`,
-      retrying: read.isFetching,
-    }))
-    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
-      type: 'unread',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('消去の依頼'), reason),
-      ),
-      retrying: read.isFetching,
-    }))
-    .exhaustive()
-
-  return (
-    <CustomerErasure
-      name={name}
-      timezone={timezone}
-      shown={shown}
-      onRetry={() => void read.refetch()}
-      requestable={onLeft !== undefined}
-      refusal={refusal}
-      headingRef={heading}
-      dialog={dialog}
-      onOpen={(opened) => {
-        setMessage(undefined)
-        setErrors(undefined)
-        setDialog(opened)
-      }}
-      onClose={() => setDialog('none')}
-      message={message}
-      errors={errors}
-      pending={asking.isPending || cancelling.isPending}
-      onAsk={ask}
-      onCancel={() => cancelling.mutate()}
-    />
-  )
-}
-
-type RequestsPartProps = PartProps & HeadingAfterMoveProps
-
-/**
- * What the salon answers when the customer asks about the data held of
- * them: the data is saved as a file, and their request to have it erased
- * is taken. A customer who left the ledger meanwhile is shown as removed,
- * as after a removal by another account.
- */
-const RequestsPart = ({ salon, customer, moved }: RequestsPartProps) => {
-  const session = useSession()
-  const queryClient = useQueryClient()
-  const { notify } = useNotifications()
-  /** Why no file was saved: said above the button */
-  const [message, setMessage] = useState<string>()
-  const name = customerNameOf(customer)
-
-  const exporting = useMutation({
-    mutationFn: () => exportCustomerData(customer.id),
-    onMutate: () => setMessage(undefined),
-    onSuccess: (outcome) =>
-      match(afterDataExport(outcome, name))
-        .with({ type: 'saved' }, ({ file, message: said }) => {
-          saveFile(file)
-          notify({ tone: 'success', message: said })
-        })
-        .with({ type: 'said' }, ({ message: said }) => setMessage(said))
-        .with({ type: 'gone' }, () =>
-          showRemoved(queryClient, customer.id, moved),
-        )
-        .exhaustive(),
-  })
-
-  return (
-    <CustomerRequests
-      answerable={
-        session.type === 'signedIn' && mayKeepCustomers(session.user.role)
-      }
-      dataExport={{
-        exporting: exporting.isPending,
-        message,
-        onExport: () => exporting.mutate(),
-      }}
-    >
-      <ErasurePart
-        customerId={customer.id}
-        name={name}
-        timezone={salon.timezone}
-        onLeft={() => showRemoved(queryClient, customer.id, moved)}
-      />
-    </CustomerRequests>
-  )
-}
-
 type RemovedPartProps = HeadingAfterMoveProps & {
   salon: ModelsSalonResponse
   version: ModelsCustomerVersionResponse
@@ -652,7 +434,7 @@ const RemovedPart = ({ salon, version, removal, moved }: RemovedPartProps) => {
           queryClient.setQueryData(customerKeyOf(customerId), read)
           notify({
             tone: 'success',
-            message: `${customerNameOf(customer)} 様を台帳に戻しました。`,
+            message: notices.restored(customerNameOf(customer)),
           })
         })
         .with({ type: 'emailTaken' }, ({ message }) =>
@@ -660,7 +442,7 @@ const RemovedPart = ({ salon, version, removal, moved }: RemovedPartProps) => {
             message,
             link: {
               href: `${customersHrefOf(salon.id)}?${customerQueryOf({ search: version.email, tags: [] })}`,
-              label: 'そのお客様を台帳で探す',
+              label: restorationWords.findThem,
             },
           }),
         )
@@ -703,17 +485,23 @@ type CustomerPageProps = {
 }
 
 const CustomerPage = ({ salon }: CustomerPageProps) => {
+  const say = useSay()
+  const queryClient = useQueryClient()
   const moved = useRef(false)
   const administers = useAdministersAccounts()
 
   return (
     <WithCustomer
       salon={salon}
-      title={TITLE}
+      title={say(TITLE)}
       fresh={false}
       removed={(customerId) => (
         <>
-          <RemovedCustomer salon={salon} customerId={customerId} title={TITLE}>
+          <RemovedCustomer
+            salon={salon}
+            customerId={customerId}
+            title={say(TITLE)}
+          >
             {({ version, removal }) => (
               <>
                 <RemovedPart
@@ -723,15 +511,12 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
                   removal={removal}
                   moved={moved}
                 />
-                {/* The request of one who left is called off, never taken */}
-                <CustomerRequests answerable>
-                  <ErasurePart
-                    key={`erasure-${customerId}`}
-                    customerId={customerId}
-                    name={customerNameOf(version)}
-                    timezone={salon.timezone}
-                  />
-                </CustomerRequests>
+                <RemovedRequestsPart
+                  key={`erasure-${customerId}`}
+                  customerId={customerId}
+                  name={customerNameOf(version)}
+                  timezone={salon.timezone}
+                />
               </>
             )}
           </RemovedCustomer>
@@ -773,7 +558,7 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
             key={`requests-${customer.id}`}
             salon={salon}
             customer={customer}
-            moved={moved}
+            onLeft={() => showRemoved(queryClient, customer.id, moved)}
           />
           <KeepingPart
             key={`keeping-${customer.id}`}
@@ -802,10 +587,11 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
  * it is pending.
  */
 export const CustomerScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => <CustomerPage key={salon.id} salon={salon} />}
     </WithSalon>
   )

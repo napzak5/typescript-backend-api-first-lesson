@@ -4,10 +4,12 @@ import {
   Card,
   DescriptionList,
   EmptyState,
-  inJapanese,
   Link,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { operationNameOf } from '../../utils/customer-history'
 import {
@@ -17,6 +19,8 @@ import {
 } from '../customer-record/ledger-items'
 import styles from './version-record.module.css'
 
+const { history, referrer, version: words } = adminCustomerMessages
+
 export type VersionRecordProps = {
   version: ModelsCustomerVersionResponse
   /**
@@ -25,8 +29,8 @@ export type VersionRecordProps = {
    * before is not read
    */
   previous: ModelsCustomerVersionResponse | undefined
-  /** Who made the version, as the salon can tell; empty for the values the history began with */
-  changer: string
+  /** Who made the version, as the salon can tell; `null` for the values the history began with */
+  changer: LocalizedText | null
   /** The time zone of the salon: the time is that of its clock */
   timezone: string
   /** The address of the page of another customer: the one who referred this one */
@@ -45,41 +49,60 @@ export const VersionRecord = ({
   timezone,
   customerHref,
 }: VersionRecordProps) => {
+  const say = useSay()
   const referrerOf = ({ referredBy }: LedgerValues): ReactNode =>
     referredBy === null ? null : (
-      <Link href={customerHref(referredBy)}>紹介したお客様</Link>
+      <Link href={customerHref(referredBy)}>{say(referrer.link)}</Link>
     )
   const changed =
-    previous === undefined ? [] : changedItemsOf(previous, version, referrerOf)
+    previous === undefined
+      ? []
+      : changedItemsOf(previous, version, referrerOf, say)
 
   return (
     <div className={styles['version']}>
       <p>
-        {[
-          `版 ${version.version}`,
-          operationNameOf(version.operation),
-          inJapanese(momentNameAt(version.changedAt, timezone)),
-          ...(changer === '' ? [] : [changer]),
-        ].join('・')}
+        {say(
+          words.line([
+            history.versionOf(version.version),
+            operationNameOf(version.operation),
+            momentNameAt(version.changedAt, timezone),
+            ...(changer === null ? [] : [changer]),
+          ]),
+        )}
       </p>
       {previous !== undefined &&
         (changed.length === 0 ? (
-          <EmptyState kind='part' title='前の版から、値は変わっていません。' />
+          <EmptyState kind='part' title={say(words.unchanged)} />
         ) : (
           <Table
-            caption='前の版から変えた項目'
+            caption={say(words.changedCaption)}
             columns={[
-              { key: 'term', header: '項目', cell: ({ term }) => term },
-              { key: 'before', header: '前の版', cell: ({ before }) => before },
-              { key: 'after', header: 'この版', cell: ({ after }) => after },
+              {
+                key: 'term',
+                header: say(words.item),
+                cell: ({ term }) => term,
+              },
+              {
+                key: 'before',
+                header: say(words.before),
+                cell: ({ before }) => before,
+              },
+              {
+                key: 'after',
+                header: say(words.after),
+                cell: ({ after }) => after,
+              },
             ]}
             rows={changed}
             rowKey={({ term }) => term}
-            emptyMessage='変えた項目はありません'
+            emptyMessage={say(words.noChangedItems)}
           />
         ))}
-      <Card title='この版の台帳'>
-        <DescriptionList items={ledgerItemsOf(version, referrerOf(version))} />
+      <Card title={say(words.recordTitle)}>
+        <DescriptionList
+          items={ledgerItemsOf(version, referrerOf(version), say)}
+        />
       </Card>
     </div>
   )

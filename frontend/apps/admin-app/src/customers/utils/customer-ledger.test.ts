@@ -1,4 +1,5 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   type CustomerConditions,
@@ -37,9 +38,14 @@ describe('tagsIn', () => {
     expect(tagsIn(text)).toEqual(tags)
   })
 
-  it('should write tags the way they are read', () => {
-    // Act, Assert
-    expect(tagsIn(tagsTextOf(['VIP', '常連']))).toEqual(['VIP', '常連'])
+  it('should write tags the way each language lists them, and read them back', () => {
+    // Act
+    const written = tagsTextOf(['VIP', '常連'])
+
+    // Assert
+    expect(written).toEqual({ en: 'VIP, 常連', ja: 'VIP、常連' })
+    expect(tagsIn(written.en)).toEqual(['VIP', '常連'])
+    expect(tagsIn(written.ja)).toEqual(['VIP', '常連'])
   })
 })
 
@@ -125,21 +131,33 @@ describe('readCustomerConditions', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  const DAY_MISSING = { en: 'Enter a date.', ja: '日付を入力してください。' }
+
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'an end before the start',
       { from: '2026-11-20', to: '2026-11-19' },
-      { to: '終わりの日は、始まりの日と同じか、その後にしてください。' },
+      {
+        to: {
+          en: 'Make the last day the same as the first day, or later.',
+          ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        },
+      },
     ],
     [
       'days that are none',
       { from: '2026-02-30', to: '20261120' },
-      { from: '日付を入力してください。', to: '日付を入力してください。' },
+      { from: DAY_MISSING, to: DAY_MISSING },
     ],
     [
       'a keyword too long',
       { search: 'a'.repeat(101) },
-      { search: 'キーワードは、100 文字以内で入力してください。' },
+      {
+        search: {
+          en: 'Keyword: enter up to 100 characters.',
+          ja: 'キーワードは、100 文字以内で入力してください。',
+        },
+      },
     ],
   ])('should say what is wrong with %s', (_case, values, errors) => {
     // Act, Assert

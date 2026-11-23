@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as customerHistoryStories from './customer-history.stories'
 
 const stories = composeStories(customerHistoryStories)
@@ -61,5 +62,59 @@ describe('CustomerHistory', () => {
 
     // Assert
     expect(stories.More.args.onMore).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CustomerHistory on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show each version, what made it, when, by whom and what it changed, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Versions.run()
+
+    // Assert
+    expect(columnsOf('Versions')).toEqual([
+      'Version',
+      'Operation',
+      'Date and time',
+      'Changed by',
+      'Changed items',
+    ])
+    expect(rowsOf('Versions')).toEqual([
+      [
+        'Version 4',
+        'Updated',
+        'Thu, November 19, 2026 at 10:15',
+        'You',
+        'Phone number, Address',
+      ],
+      [
+        'Version 3',
+        'Updated',
+        'Wed, November 18, 2026 at 18:00',
+        'Another account',
+        'None',
+      ],
+      [
+        'Version 2',
+        'Updated',
+        'Wed, November 18, 2026 at 14:30',
+        'The customer',
+        'Favorite services, Notes on preferences',
+      ],
+      [
+        'Version 1',
+        'Start of the record',
+        'Sun, November 1, 2026 at 09:00',
+        '',
+        '',
+      ],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('4 items')
   })
 })

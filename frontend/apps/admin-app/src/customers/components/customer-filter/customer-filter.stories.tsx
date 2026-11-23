@@ -1,3 +1,4 @@
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { CustomerFilter } from './customer-filter'
@@ -37,8 +38,6 @@ export const Narrowed: Story = {
 export const WithErrors: Story = {
   args: {
     conditions: { tags: [], from: '2026-11-10' },
-    errors: {
-      to: '終わりの日は、始まりの日と同じか、その後にしてください。',
-    },
+    errors: { to: salonScreenMessages.period.endBeforeStart },
   },
 }

@@ -1,12 +1,8 @@
 import type { ModelsCustomerStatisticsResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import {
-  DescriptionList,
-  inJapanese,
-  NONE,
-  Table,
-} from '@beauty-salon-frontend/ui'
-import { countNameOf, rateNameOf } from '../../utils/customer-format'
+import { DescriptionList, NONE, Table, useSay } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { rateNameOf } from '../../utils/customer-format'
 import styles from './customer-statistics.module.css'
 
 export type CustomerStatisticsProps = {
@@ -17,7 +13,7 @@ export type CustomerStatisticsProps = {
   currency: string
 }
 
-const NO_VISIT = 'この期間に完了した予約はありません'
+const { use: words } = adminCustomerMessages
 
 /**
  * What a customer did at the salon over a period: how often they booked,
@@ -29,74 +25,79 @@ export const CustomerStatistics = ({
   statistics,
   timezone,
   currency,
-}: CustomerStatisticsProps) => (
-  <div className={styles['statistics']}>
-    <DescriptionList
-      items={[
-        {
-          term: '予約',
-          description: countNameOf(statistics.totalBookings, '件'),
-        },
-        {
-          term: '利用額',
-          description: inJapanese(amountOf(statistics.totalSpent, currency)),
-        },
-        {
-          term: '予約 1 件あたりの会計',
-          description: inJapanese(
-            amountOf(statistics.averageBookingValue, currency),
-          ),
-        },
-        {
-          term: '最後の来店',
-          description:
-            statistics.lastVisit === null
-              ? inJapanese(NONE)
-              : inJapanese(momentNameAt(statistics.lastVisit, timezone)),
-        },
-        {
-          term: 'キャンセル率',
-          description: rateNameOf(statistics.cancellationRate),
-        },
-        {
-          term: '無断キャンセル率',
-          description: rateNameOf(statistics.noShowRate),
-        },
-      ]}
-    />
-    <Table
-      caption='よく受けたメニュー'
-      columns={[
-        { key: 'name', header: 'メニュー', cell: ({ name }) => name },
-        {
-          key: 'bookingCount',
-          header: '予約',
-          align: 'end',
-          cell: ({ bookingCount }) => countNameOf(bookingCount, '件'),
-        },
-      ]}
-      rows={statistics.favoriteServices}
-      rowKey={({ serviceId }) => serviceId}
-      emptyMessage={NO_VISIT}
-    />
-    <Table
-      caption='よく担当したスタッフ'
-      columns={[
-        {
-          key: 'displayName',
-          header: 'スタッフ',
-          cell: ({ displayName }) => displayName,
-        },
-        {
-          key: 'bookingCount',
-          header: '予約',
-          align: 'end',
-          cell: ({ bookingCount }) => countNameOf(bookingCount, '件'),
-        },
-      ]}
-      rows={statistics.favoriteStaff}
-      rowKey={({ staffId }) => staffId}
-      emptyMessage={NO_VISIT}
-    />
-  </div>
-)
+}: CustomerStatisticsProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['statistics']}>
+      <DescriptionList
+        items={[
+          {
+            term: say(words.bookings),
+            description: say(words.bookingsOf(statistics.totalBookings)),
+          },
+          {
+            term: say(words.spent),
+            description: say(amountOf(statistics.totalSpent, currency)),
+          },
+          {
+            term: say(words.averagePerBooking),
+            description: say(
+              amountOf(statistics.averageBookingValue, currency),
+            ),
+          },
+          {
+            term: say(words.lastVisit),
+            description: say(
+              statistics.lastVisit === null
+                ? NONE
+                : momentNameAt(statistics.lastVisit, timezone),
+            ),
+          },
+          {
+            term: say(words.cancellationRate),
+            description: say(rateNameOf(statistics.cancellationRate)),
+          },
+          {
+            term: say(words.noShowRate),
+            description: say(rateNameOf(statistics.noShowRate)),
+          },
+        ]}
+      />
+      <Table
+        caption={say(words.favoriteServices)}
+        columns={[
+          { key: 'name', header: say(words.service), cell: ({ name }) => name },
+          {
+            key: 'bookingCount',
+            header: say(words.bookings),
+            align: 'end',
+            cell: ({ bookingCount }) => say(words.bookingsOf(bookingCount)),
+          },
+        ]}
+        rows={statistics.favoriteServices}
+        rowKey={({ serviceId }) => serviceId}
+        emptyMessage={say(words.noVisit)}
+      />
+      <Table
+        caption={say(words.favoriteStaff)}
+        columns={[
+          {
+            key: 'displayName',
+            header: say(words.staff),
+            cell: ({ displayName }) => displayName,
+          },
+          {
+            key: 'bookingCount',
+            header: say(words.bookings),
+            align: 'end',
+            cell: ({ bookingCount }) => say(words.bookingsOf(bookingCount)),
+          },
+        ]}
+        rows={statistics.favoriteStaff}
+        rowKey={({ staffId }) => staffId}
+        emptyMessage={say(words.noVisit)}
+      />
+    </div>
+  )
+}

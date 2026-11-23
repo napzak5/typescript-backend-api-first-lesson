@@ -4,14 +4,18 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
-  inJapanese,
   Link,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { type Referrer, referrerNameOf } from '../../utils/customer-form'
-import { countNameOf } from '../../utils/customer-format'
 import styles from './customer-record.module.css'
 import { ledgerItemsOf } from './ledger-items'
+
+const { record: words, referrer: referrerWords } = adminCustomerMessages
+const { visits, chart } = words
 
 export type CustomerRecordProps = {
   customer: ModelsCustomerResponse
@@ -43,22 +47,25 @@ const referrerShownOf = (
   referredBy: string | null,
   referrer: Referrer | undefined,
   customerHref: (customerId: string) => string,
+  say: (message: LocalizedText) => string,
 ) =>
   referredBy === null
     ? null
     : match(referrer)
         .with({ type: 'customer' }, (named) => (
-          <Link href={customerHref(named.id)}>{referrerNameOf(named)}</Link>
+          <Link href={customerHref(named.id)}>
+            {say(referrerNameOf(named))}
+          </Link>
         ))
-        .with({ type: 'gone' }, (gone) => referrerNameOf(gone))
+        .with({ type: 'gone' }, (gone) => say(referrerNameOf(gone)))
         .with(undefined, { type: 'none' }, () => (
-          <Link href={customerHref(referredBy)}>紹介したお客様</Link>
+          <Link href={customerHref(referredBy)}>{say(referrerWords.link)}</Link>
         ))
         .exhaustive()
 
-/** A day the ledger keeps, or that there is none. */
-const dayOrNone = (day: string | null, none: string): string =>
-  day === null ? none : inJapanese(dayNameOf(day))
+/** A day the ledger keeps, or that there was no visit. */
+const dayOrNone = (day: string | null): LocalizedText =>
+  day === null ? visits.none : dayNameOf(day)
 
 /**
  * What the ledger keeps of a customer: who they are and how to reach them,
@@ -75,76 +82,83 @@ export const CustomerRecord = ({
   chartHref,
   customerHref,
   referrer,
-}: CustomerRecordProps) => (
-  <div className={styles['record']}>
-    <Card
-      title='台帳'
-      actions={
-        <>
-          <ButtonLink href={bookingHref} variant='primary'>
-            予約を入れる
-          </ButtonLink>
-          <ButtonLink href={changeHref}>台帳を直す</ButtonLink>
-        </>
-      }
-    >
-      <DescriptionList
-        items={[
-          ...ledgerItemsOf(
-            customer,
-            referrerShownOf(customer.referredBy, referrer, customerHref),
-          ),
-          {
-            term: '登録日時',
-            description: inJapanese(momentNameAt(customer.createdAt, timezone)),
-          },
-          {
-            term: '最後に直した日時',
-            description: inJapanese(momentNameAt(customer.updatedAt, timezone)),
-          },
-        ]}
-      />
-    </Card>
-    <Card
-      title='来店とポイント'
-      actions={<ButtonLink href={pointsHref}>ポイントの履歴</ButtonLink>}
-    >
-      <DescriptionList
-        items={[
-          {
-            term: '初回来店日',
-            description: dayOrNone(customer.firstVisitDate, '来店なし'),
-          },
-          {
-            term: '最終来店日',
-            description: dayOrNone(customer.lastVisitDate, '来店なし'),
-          },
-          {
-            term: '来店回数',
-            description: countNameOf(customer.visitCount, '回'),
-          },
-          {
-            term: '無断キャンセル',
-            description: countNameOf(customer.noShowCount, '回'),
-          },
-          {
-            term: 'キャンセル',
-            description: countNameOf(customer.cancellationCount, '回'),
-          },
-          {
-            term: 'ポイント',
-            description: countNameOf(customer.loyaltyPoints, 'ポイント'),
-          },
-        ]}
-      />
-    </Card>
-    <Card
-      title='カルテ'
-      actions={<ButtonLink href={chartHref}>カルテを見る</ButtonLink>}
-    >
-      <p>
-        施術の前に確かめる持病や体調、好みの商材と避ける商材、ほかのサロンで受けた施術は、カルテに書きます。
-      </p>
-    </Card>
-  </div>
-)
+}: CustomerRecordProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['record']}>
+      <Card
+        title={say(words.title)}
+        actions={
+          <>
+            <ButtonLink href={bookingHref} variant='primary'>
+              {say(words.book)}
+            </ButtonLink>
+            <ButtonLink href={changeHref}>{say(words.change)}</ButtonLink>
+          </>
+        }
+      >
+        <DescriptionList
+          items={[
+            ...ledgerItemsOf(
+              customer,
+              referrerShownOf(customer.referredBy, referrer, customerHref, say),
+              say,
+            ),
+            {
+              term: say(words.createdAt),
+              description: say(momentNameAt(customer.createdAt, timezone)),
+            },
+            {
+              term: say(words.updatedAt),
+              description: say(momentNameAt(customer.updatedAt, timezone)),
+            },
+          ]}
+        />
+      </Card>
+      <Card
+        title={say(visits.title)}
+        actions={
+          <ButtonLink href={pointsHref}>{say(visits.pointHistory)}</ButtonLink>
+        }
+      >
+        <DescriptionList
+          items={[
+            {
+              term: say(visits.firstVisit),
+              description: say(dayOrNone(customer.firstVisitDate)),
+            },
+            {
+              term: say(visits.lastVisit),
+              description: say(dayOrNone(customer.lastVisitDate)),
+            },
+            {
+              term: say(visits.visits),
+              description: say(visits.visitsOf(customer.visitCount)),
+            },
+            {
+              term: say(visits.noShows),
+              description: say(visits.noShowsOf(customer.noShowCount)),
+            },
+            {
+              term: say(visits.cancellations),
+              description: say(
+                visits.cancellationsOf(customer.cancellationCount),
+              ),
+            },
+            {
+              term: say(visits.points),
+              description: say(visits.pointsOf(customer.loyaltyPoints)),
+            },
+          ]}
+        />
+      </Card>
+      <Card
+        title={say(chart.title)}
+        actions={<ButtonLink href={chartHref}>{say(chart.open)}</ButtonLink>}
+      >
+        <p>{say(chart.about)}</p>
+      </Card>
+    </div>
+  )
+}

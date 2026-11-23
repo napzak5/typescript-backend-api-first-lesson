@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as customerChoicesStories from './customer-choices.stories'
 
 const stories = composeStories(customerChoicesStories)
@@ -86,5 +87,29 @@ describe('CustomerChoices', () => {
       '42 人（3 人を表示しています）',
     )
     expect(screen.getByRole('button', { name: 'さらに表示' })).toBeVisible()
+  })
+})
+
+describe('CustomerChoices on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the customers found, name the one the screen is about, and count them, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithTheCustomerThemselves.run()
+
+    // Assert
+    expect(columnsOf('Customers found')).toEqual([
+      'Name',
+      'Phonetic name',
+      'Phone number',
+      'Email address',
+    ])
+    expect(screen.getByText('山田 花子 (this customer)')).toBeVisible()
+    expect(screen.getByRole('status').textContent).toBe('3 people')
   })
 })

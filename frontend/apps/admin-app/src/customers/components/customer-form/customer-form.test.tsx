@@ -1,11 +1,13 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   readCustomerChange,
   readCustomerEntry,
@@ -246,10 +248,19 @@ describe('CustomerForm', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        lastName: '姓を入力してください。',
-        firstName: '名を入力してください。',
-        email: 'メールアドレスを入力してください。',
-        phoneNumber: '電話番号を入力してください。',
+        lastName: { en: 'Enter the last name.', ja: '姓を入力してください。' },
+        firstName: {
+          en: 'Enter the first name.',
+          ja: '名を入力してください。',
+        },
+        email: {
+          en: 'Enter an email address.',
+          ja: 'メールアドレスを入力してください。',
+        },
+        phoneNumber: {
+          en: 'Enter a phone number.',
+          ja: '電話番号を入力してください。',
+        },
       },
     })
   })
@@ -414,5 +425,103 @@ describe('CustomerForm', () => {
     // Assert
     expect(button).toHaveAttribute('aria-busy', 'true')
     expect(stories.Pending.args.onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('CustomerForm on a page in English', () => {
+  /** What an English screen says of an address of mail another customer has */
+  const EMAIL_TAKEN =
+    'No two customers of the ledger can have the same address. A customer with this email address is already in the ledger. Search for them in the ledger, or enter another email address.'
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts and its controls, and offer the values of the contract, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Change.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual([
+      'Name',
+      'Contact',
+      'Address',
+      'About the customer',
+      'Hair and scalp',
+      'Preferences',
+      'Favorite services',
+      'At the salon',
+      'Referral',
+      'Messages allowed',
+      'Notes',
+    ])
+    expect(
+      within(part('Name'))
+        .getAllByRole('textbox')
+        .map((control) => control.getAttribute('name')),
+    ).toEqual(['lastName', 'firstName', 'lastNameKana', 'firstNameKana'])
+    expect(text('Phonetic last name')).toHaveValue('ヤマダ')
+    expect(text('Street address')).toHaveValue('神宮前 4-1-1')
+    expect(optionsOf('Gender')).toEqual([
+      'Do not record',
+      'Male',
+      'Female',
+      'Other',
+      'Prefer not to say',
+    ])
+    expect(optionsOf('Hair thickness')).toEqual([
+      'Do not record',
+      'Fine',
+      'Medium',
+      'Thick',
+    ])
+    expect(choice('Membership rank')).toHaveValue('gold')
+    expect(choice('Status')).toHaveAccessibleDescription(
+      'Dormant and suspended customers cannot book by themselves.',
+    )
+    expect(box('Active customer')).toBeChecked()
+    expect(text('Tags')).toHaveValue('VIP, 常連')
+    expect(box('Messages by SMS')).toBeChecked()
+    expect(text('Notes between staff')).toHaveAccessibleDescription(
+      'The customer does not see this.',
+    )
+    expect(text('Referred by')).toHaveValue('鈴木 一郎')
+  })
+
+  it('should say in English what is wrong at its control', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('Email address')).toHaveFocus()
+    expect(text('Email address')).toHaveAccessibleDescription(EMAIL_TAKEN)
+    expect(part('Favorite services')).toHaveAccessibleDescription(
+      'This value was not accepted. Check what you entered.',
+    )
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run()
+    text('メールアドレス').blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(text('Email address')).toHaveAccessibleDescription(EMAIL_TAKEN)
+    expect(text('Email address')).not.toHaveFocus()
   })
 })

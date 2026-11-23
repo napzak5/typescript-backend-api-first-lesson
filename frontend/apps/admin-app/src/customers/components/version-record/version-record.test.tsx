@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as versionRecordStories from './version-record.stories'
 
 const stories = composeStories(versionRecordStories)
@@ -56,6 +57,53 @@ describe('VersionRecord', () => {
     // Assert
     expect(
       screen.getByText('版 1・記録の開始・2026年11月18日（水） 14:30'),
+    ).toBeVisible()
+  })
+})
+
+describe('VersionRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what made the version and what it changed, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Update.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Version 4 · Updated · Wed, November 18, 2026 at 14:30 · You',
+      ),
+    ).toBeVisible()
+    expect(columnsOf('Items changed from the version before')).toEqual([
+      'Item',
+      'Version before',
+      'This version',
+    ])
+    expect(rowsOf('Items changed from the version before')).toEqual([
+      ['Phone number', '090-1234-5678', '080-3333-4444'],
+      ['Address', 'Not recorded', '150-0001 東京都 渋谷区 神宮前 4-1-1'],
+      ['Referred by', 'None', 'Referring customer'],
+    ])
+    expect(
+      screen.getByRole('region', { name: 'The record in this version' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that an update changed no value, and name nobody for the start', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unchanged.run()
+
+    // Assert
+    expect(
+      screen.getByText('No value changed from the version before.'),
     ).toBeVisible()
   })
 })

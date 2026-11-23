@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as removedRecordStories from './removed-record.stories'
 
 const stories = composeStories(removedRecordStories)
@@ -101,4 +102,56 @@ describe('RemovedRecord', () => {
       expect(screen.getByRole('link', { name: '変更履歴' })).toBeVisible()
     },
   )
+})
+
+describe('RemovedRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say when and by whom the customer was removed, and bring them back, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.EmailTaken.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'You removed this customer from the ledger on Wed, November 18, 2026 at 14:30.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "A customer registered after the removal uses this customer's email address (hanako.yamada@example.com). Change that customer's email address, then bring this one back to the ledger. Find that customer in the ledger",
+    )
+    expect(
+      screen.getByRole('button', { name: 'Bring back to the ledger' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Change history' })).toBeVisible()
+    expect(
+      screen.getByRole('region', { name: 'The record when removed' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English why a customer who was merged does not come back', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Merged.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Another account merged this customer into another on Wed, November 18, 2026 at 14:30.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByText(
+        'This customer was merged into another, so they cannot be brought back to the ledger.',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
 })

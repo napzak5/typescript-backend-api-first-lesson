@@ -3,11 +3,12 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   type DescriptionListItem,
-  inJapanese,
   NONE,
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
@@ -20,6 +21,15 @@ import {
   hairNameOf,
   tierNameOf,
 } from '../../utils/customer-format'
+
+const { items } = adminCustomerMessages
+
+/** How the items are said: `useSay()` of the screen that shows them */
+type Say = (message: LocalizedText) => string
+
+/** A text or none, said */
+const sayIfAny = (say: Say, message: LocalizedText | null): string | null =>
+  message === null ? null : say(message)
 
 /**
  * The values the ledger keeps of a customer and a version of them keeps
@@ -61,24 +71,27 @@ export type LedgerValues = Pick<
 
 type LedgerItemOf = {
   /** What the item is, as the page of a customer names it */
-  term: string
+  term: LocalizedText
   /** The values the item shows */
   fields: readonly (keyof LedgerValues)[]
   /** What of them the item shows, when it is not the whole of them */
   shows?: (values: LedgerValues) => unknown
-  /** How the item shows them; `referrer` is how the customer who referred them is shown */
-  describe: (values: LedgerValues, referrer: ReactNode) => ReactNode
+  /**
+   * How the item shows them, in the language `say` says: `referrer` is how
+   * the customer who referred them is shown
+   */
+  describe: (values: LedgerValues, referrer: ReactNode, say: Say) => ReactNode
 }
 
 /** The items of the ledger, in the order the page of a customer shows them. */
 const ITEMS: readonly LedgerItemOf[] = [
   {
-    term: 'お名前',
+    term: items.name,
     fields: ['lastName', 'firstName'],
     describe: customerNameOf,
   },
   {
-    term: 'フリガナ',
+    term: items.kana,
     fields: ['lastNameKana', 'firstNameKana'],
     describe: (values) => {
       const kana = customerKanaOf(values)
@@ -86,52 +99,53 @@ const ITEMS: readonly LedgerItemOf[] = [
       return kana === '' ? null : kana
     },
   },
-  { term: 'メールアドレス', fields: ['email'], describe: ({ email }) => email },
+  { term: items.email, fields: ['email'], describe: ({ email }) => email },
   {
-    term: '電話番号',
+    term: items.phoneNumber,
     fields: ['phoneNumber'],
     describe: ({ phoneNumber }) => phoneNumber,
   },
   {
-    term: '予備の電話番号',
+    term: items.alternativePhone,
     fields: ['alternativePhone'],
     describe: ({ alternativePhone }) => alternativePhone,
   },
   {
-    term: '住所',
+    term: items.address,
     fields: ['postalCode', 'prefecture', 'city', 'address', 'building'],
-    describe: addressNameOf,
+    describe: (values, _referrer, say) => sayIfAny(say, addressNameOf(values)),
   },
   {
-    term: '生年月日',
+    term: items.birthDate,
     fields: ['birthDate'],
-    describe: ({ birthDate }) =>
-      birthDate === null ? null : inJapanese(dayNameOf(birthDate)),
+    describe: ({ birthDate }, _referrer, say) =>
+      birthDate === null ? null : say(dayNameOf(birthDate)),
   },
   {
-    term: '性別',
+    term: items.gender,
     fields: ['gender'],
-    describe: ({ gender }) => genderNameOf(gender),
+    describe: ({ gender }, _referrer, say) =>
+      sayIfAny(say, genderNameOf(gender)),
   },
   {
-    term: '職業',
+    term: items.occupation,
     fields: ['occupation'],
     describe: ({ occupation }) => occupation,
   },
   {
-    term: '髪と頭皮',
+    term: items.hair,
     fields: ['hairType', 'hairThickness', 'scalpCondition'],
-    describe: hairNameOf,
+    describe: (values, _referrer, say) => sayIfAny(say, hairNameOf(values)),
   },
   {
-    term: '好みのメニュー',
+    term: items.preferredServices,
     fields: ['preferences'],
     shows: ({ preferences }) => preferences?.preferredServices ?? [],
-    describe: ({ preferences }) =>
-      categoriesNameOf(preferences?.preferredServices ?? []),
+    describe: ({ preferences }, _referrer, say) =>
+      say(categoriesNameOf(preferences?.preferredServices ?? [])),
   },
   {
-    term: '好みについてのメモ',
+    term: items.preferenceNotes,
     fields: ['preferences'],
     shows: ({ preferences }) => preferences?.notes ?? null,
     describe: ({ preferences }) => (
@@ -139,71 +153,76 @@ const ITEMS: readonly LedgerItemOf[] = [
     ),
   },
   {
-    term: '会員ランク',
+    term: items.membershipTier,
     fields: ['membershipTier'],
-    describe: ({ membershipTier }) => tierNameOf(membershipTier),
+    describe: ({ membershipTier }, _referrer, say) =>
+      say(tierNameOf(membershipTier)),
   },
   {
-    term: 'ステータス',
+    term: items.status,
     fields: ['customerStatus'],
-    describe: ({ customerStatus }) => (
+    describe: ({ customerStatus }, _referrer, say) => (
       <Badge tone={customerStatusToneOf(customerStatus)}>
-        {customerStatusNameOf(customerStatus)}
+        {say(customerStatusNameOf(customerStatus))}
       </Badge>
     ),
   },
   {
-    term: '有効',
+    term: items.active,
     fields: ['isActive'],
-    describe: ({ isActive }) =>
-      isActive ? '有効' : '無効（ご自分では予約を入れられません）',
+    describe: ({ isActive }, _referrer, say) =>
+      say(isActive ? items.activeValue : items.inactiveValue),
   },
   {
-    term: 'タグ',
+    term: items.tags,
     fields: ['tags'],
-    describe: ({ tags }) => <TagList label='タグ' items={tags} />,
+    describe: ({ tags }, _referrer, say) => (
+      <TagList label={say(items.tags)} items={tags} />
+    ),
   },
   {
-    term: '紹介コード',
+    term: items.referralCode,
     fields: ['referralCode'],
-    describe: ({ referralCode }) => referralCode ?? '未発行',
+    describe: ({ referralCode }, _referrer, say) =>
+      referralCode ?? say(items.notIssued),
   },
   {
-    term: '紹介元',
+    term: items.referredBy,
     fields: ['referredBy'],
     // The contract says what `null` is: the customer came without a referral
-    describe: ({ referredBy }, referrer) =>
-      referredBy === null ? inJapanese(NONE) : referrer,
+    describe: ({ referredBy }, referrer, say) =>
+      referredBy === null ? say(NONE) : referrer,
   },
   {
-    term: '送ってよい連絡',
+    term: items.contacts,
     fields: ['allowEmail', 'allowSms', 'allowMarketing'],
-    describe: contactsNameOf,
+    describe: (values, _referrer, say) => say(contactsNameOf(values)),
   },
   {
-    term: '備考',
+    term: items.notes,
     fields: ['notes'],
     describe: ({ notes }) => <WrittenText>{notes}</WrittenText>,
   },
   {
-    term: 'スタッフ間の申し送り',
+    term: items.internalNotes,
     fields: ['internalNotes'],
     describe: ({ internalNotes }) => <WrittenText>{internalNotes}</WrittenText>,
   },
 ]
 
 /**
- * What the ledger keeps of a customer, as the items of a description list.
- * `referrer` is how the customer who referred them is shown, when somebody
- * did: their name, or a link to them.
+ * What the ledger keeps of a customer, as the items of a description list,
+ * in the language `say` says. `referrer` is how the customer who referred
+ * them is shown, when somebody did: their name, or a link to them.
  */
 export const ledgerItemsOf = (
   values: LedgerValues,
   referrer: ReactNode,
+  say: Say,
 ): DescriptionListItem[] =>
   ITEMS.map(({ term, describe }) => ({
-    term,
-    description: describe(values, referrer),
+    term: say(term),
+    description: describe(values, referrer, say),
   }))
 
 /**
@@ -211,7 +230,9 @@ export const ledgerItemsOf = (
  * named as the page of a customer names them, in its order. A value the
  * ledger does not know is named as the API names it.
  */
-export const changedTermsOf = (fields: readonly string[]): string[] => {
+export const changedTermsOf = (
+  fields: readonly string[],
+): (string | LocalizedText)[] => {
   const known = ITEMS.flatMap((item) => item.fields)
 
   return [
@@ -240,20 +261,21 @@ const shownBy = (
 
 /**
  * The items of the ledger that differ between two versions, with what each
- * shows in both, in the order of the page of a customer. An item that
- * shows the same in both is left out, though a value it shows a part of
- * changed in another part.
+ * shows in both, in the order of the page of a customer and in the
+ * language `say` says. An item that shows the same in both is left out,
+ * though a value it shows a part of changed in another part.
  */
 export const changedItemsOf = (
   before: LedgerValues,
   after: LedgerValues,
   referrerOf: (values: LedgerValues) => ReactNode,
+  say: Say,
 ): ChangedItem[] =>
   ITEMS.filter((item) => shownBy(item, before) !== shownBy(item, after)).map(
     ({ term, describe }) => ({
-      term,
-      before: describe(before, referrerOf(before)),
-      after: describe(after, referrerOf(after)),
+      term: say(term),
+      before: describe(before, referrerOf(before), say),
+      after: describe(after, referrerOf(after), say),
     }),
   )
 
@@ -268,20 +290,21 @@ export type ComparedItem = {
 /**
  * The items of the ledger that two customers show differently, with what
  * each shows and what the customer made of both shows, in the order of
- * the page of a customer. An item that shows the same for both is left
- * out: a merge keeps it.
+ * the page of a customer and in the language `say` says. An item that
+ * shows the same for both is left out: a merge keeps it.
  */
 export const comparedItemsOf = (
   primary: LedgerValues,
   secondary: LedgerValues,
   merged: LedgerValues,
   referrerOf: (values: LedgerValues) => ReactNode,
+  say: Say,
 ): ComparedItem[] =>
   ITEMS.filter(
     (item) => shownBy(item, primary) !== shownBy(item, secondary),
   ).map(({ term, describe }) => ({
-    term,
-    primary: describe(primary, referrerOf(primary)),
-    secondary: describe(secondary, referrerOf(secondary)),
-    merged: describe(merged, referrerOf(merged)),
+    term: say(term),
+    primary: describe(primary, referrerOf(primary), say),
+    secondary: describe(secondary, referrerOf(secondary), say),
+    merged: describe(merged, referrerOf(merged), say),
   }))

@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import {
@@ -32,7 +33,7 @@ const meta: Meta<typeof CustomerTable> = {
   title: 'Admin/Customers/CustomerTable',
   component: CustomerTable,
   args: {
-    caption: '顧客台帳',
+    caption: adminCustomerMessages.titles.ledger,
     rows: ROWS,
     total: 3,
     more: 'none',

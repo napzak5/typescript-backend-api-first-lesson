@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import * as customerRecordStories from './customer-record.stories'
 
@@ -172,5 +173,72 @@ describe('CustomerRecord', () => {
       '無効（ご自分では予約を入れられません）',
     ])
     expect(itemsOf(card('台帳'))).toContainEqual(['ステータス', '利用停止'])
+  })
+})
+
+describe('CustomerRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every item of the ledger, the visits and the chart, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(itemsOf(card('Ledger'))).toEqual([
+      ['Name', '山田 花子'],
+      ['Phonetic name', 'ヤマダ ハナコ'],
+      ['Email address', 'hanako@example.com'],
+      ['Phone number', '090-1234-5678'],
+      ['Alternative phone number', '03-1234-5678'],
+      ['Address', '150-0001 東京都 渋谷区 神宮前 4-1-1 ハイツ 101'],
+      ['Date of birth', 'Sun, April 1, 1990'],
+      ['Gender', 'Female'],
+      ['Occupation', '会社員'],
+      ['Hair and scalp', 'Type: Wavy; Thickness: Fine; Scalp: Sensitive'],
+      ['Favorite services', 'Cut, Spa'],
+      ['Notes on preferences', '炭酸泉が好き'],
+      ['Membership rank', 'Gold'],
+      ['Status', 'VIP'],
+      ['Active', 'Active'],
+      ['Tags', 'VIP常連'],
+      ['Referral code', 'HANAKO-2026'],
+      ['Referred by', 'Referring customer'],
+      ['Messages allowed', 'Email, SMS'],
+      ['Notes', '駐車場を使う。\n次回は 2 台分。'],
+      ['Notes between staff', '前回、カラーで頭皮がしみた'],
+      ['Registered', 'Sat, January 10, 2026 at 09:00'],
+      ['Last changed', 'Wed, November 18, 2026 at 14:30'],
+    ])
+    expect(itemsOf(card('Visits and points'))).toEqual([
+      ['First visit', 'Thu, January 15, 2026'],
+      ['Last visit', 'Wed, November 18, 2026'],
+      ['Visits', '14 visits'],
+      ['No-shows', '1 no-show'],
+      ['Cancellations', '2 cancellations'],
+      ['Points', '1,250 points'],
+    ])
+    expect(screen.getByRole('link', { name: 'Open the chart' })).toBeVisible()
+    expect(
+      within(card('Chart')).getByText(/^Conditions and health/),
+    ).toBeVisible()
+  })
+
+  it('should say of a customer who is not active that they may not book by themselves, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Inactive.run()
+
+    // Assert
+    expect(itemsOf(card('Ledger'))).toContainEqual([
+      'Active',
+      'Inactive (cannot book by themselves)',
+    ])
   })
 })

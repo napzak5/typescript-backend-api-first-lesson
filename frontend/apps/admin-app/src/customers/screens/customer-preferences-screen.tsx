@@ -20,15 +20,15 @@ import {
   aboutTheAttempt,
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -44,7 +44,17 @@ import {
 import { CANNOT_HANDLE_CUSTOMERS_MESSAGE } from '../utils/customer-form'
 import { WithCustomer } from './with-customer'
 
-const TITLE = '好み設定を直す'
+const {
+  form,
+  gone,
+  names,
+  notFound,
+  notices,
+  preferences: words,
+  titles,
+} = adminCustomerMessages
+
+const TITLE = titles.preferences
 
 type PreferencesChangeProps = {
   salon: ModelsSalonResponse
@@ -68,6 +78,7 @@ const PreferencesChange = ({
   preferences,
   staff,
 }: PreferencesChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
@@ -85,7 +96,7 @@ const PreferencesChange = ({
             queryKey: preferencesKeyOf(customer.id),
             exact: true,
           })
-          notify({ tone: 'success', message: '好み設定を直しました。' })
+          notify({ tone: 'success', message: notices.preferencesChanged })
           void navigate(back)
         })
         // The customer was removed from the ledger meanwhile
@@ -93,9 +104,7 @@ const PreferencesChange = ({
           queryClient.setQueryData(customerKeyOf(customer.id), NOT_FOUND)
         })
         .with({ type: 'forbidden' }, () =>
-          setSaid(
-            aboutTheAttempt(writtenInJapanese(CANNOT_HANDLE_CUSTOMERS_MESSAGE)),
-          ),
+          setSaid(aboutTheAttempt(CANNOT_HANDLE_CUSTOMERS_MESSAGE)),
         )
         .with(
           { type: P.union('invalid', 'tooManyRequests', 'failed') },
@@ -123,14 +132,14 @@ const PreferencesChange = ({
     <PreferencesForm
       preferences={preferences}
       staff={staff}
-      submitLabel='変更を保存する'
+      submitLabel={say(form.save)}
       message={said.message}
       errors={said.errors}
       pending={update.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(form.cancel)}
         </ButtonLink>
       }
     />
@@ -148,6 +157,7 @@ type PreferencesToChangeProps = {
  * away by an answer nobody asked for.
  */
 const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: preferencesToChangeKeyOf(customer.id, salon.id),
     queryFn: () => readPreferencesToChange(customer.id, salon),
@@ -159,9 +169,7 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
   // What the form was opened with a while ago is not what it opens with
   return (
     match(read.isFetchedAfterMount ? read.data : undefined)
-      .with(undefined, () => (
-        <LoadingIndicator label='好み設定を読み込んでいます' />
-      ))
+      .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
       .with({ type: 'found' }, ({ preferences, staff }) => (
         <PreferencesChange
           salon={salon}
@@ -173,15 +181,15 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
       // Removed between the read of the customer and that of the preferences
       .with({ type: 'notFound' }, () => (
         <>
-          <p>このお客様は、台帳から削除されました。</p>
-          <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
+          <p>{say(gone)}</p>
+          <ButtonLink href={customersHrefOf(salon.id)}>
+            {say(notFound.toLedger)}
+          </ButtonLink>
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('好み設定'), reason),
-          )}
+          message={say(unreadMessageOf(names.preferences, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -196,12 +204,13 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
  * the style and how they like to be served.
  */
 export const CustomerPreferencesScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer key={salon.id} salon={salon} title={say(TITLE)} fresh>
           {(customer) => (
             <PreferencesToChange
               key={customer.id}

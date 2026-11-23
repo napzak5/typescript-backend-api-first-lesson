@@ -2,8 +2,10 @@ import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { type FrameLink, isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
 import { worksAtSalon } from '@beauty-salon-frontend/session'
-import { writtenInJapanese } from '@beauty-salon-frontend/ui'
+import { adminFrameMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { mayKeepStaffLedger } from './staff/utils/staff-format'
+
+const names = adminFrameMessages.navigation
 
 /** The screen that adds a salon, for an administrator. */
 export const SALON_ENTRY_PATH = '/salons/new'
@@ -508,12 +510,12 @@ export const navigationFor = (
       ? [
           {
             href: '/',
-            label: writtenInJapanese('サロンを選ぶ'),
+            label: names.chooseSalon,
             current: pathname === '/',
           },
           {
             href: OPERATIONS_PATH,
-            label: writtenInJapanese('運用'),
+            label: names.operations,
             current: pathname === OPERATIONS_PATH,
           },
         ]
@@ -523,7 +525,7 @@ export const navigationFor = (
     ? [
         {
           href: OWN_PROFILE_PATH,
-          label: writtenInJapanese('プロフィール'),
+          label: names.profile,
           current: pathname === OWN_PROFILE_PATH,
         },
       ]
@@ -547,71 +549,71 @@ export const navigationFor = (
       ...choice,
       {
         href: bookings,
-        label: writtenInJapanese('予約'),
+        label: names.bookings,
         current: isAtOrBelow(pathname, bookings),
       },
       {
         href: sales,
-        label: writtenInJapanese('売上'),
+        label: names.sales,
         current: isAtOrBelow(pathname, sales),
       },
       {
         href: customers,
-        label: writtenInJapanese('顧客'),
+        label: names.customers,
         current: isAtOrBelow(pathname, customers),
       },
       {
         href: reviews,
-        label: writtenInJapanese('レビュー'),
+        label: names.reviews,
         current: isAtOrBelow(pathname, reviews),
       },
       {
         href: attachments,
-        label: writtenInJapanese('ファイル'),
+        label: names.files,
         current: isAtOrBelow(pathname, attachments),
       },
       {
         href: treatments,
-        label: writtenInJapanese('施術記録'),
+        label: names.treatments,
         current: isAtOrBelow(pathname, treatments),
       },
       {
         href: shifts,
-        label: writtenInJapanese('シフト'),
+        label: names.shifts,
         current: isAtOrBelow(pathname, shifts),
       },
       {
         href: menu,
-        label: writtenInJapanese('メニュー'),
+        label: names.menu,
         current: isAtOrBelow(pathname, menu),
       },
       {
         href: products,
-        label: writtenInJapanese('商品'),
+        label: names.products,
         current: isAtOrBelow(pathname, products),
       },
       {
         href: inventory,
-        label: writtenInJapanese('在庫'),
+        label: names.inventory,
         current: isAtOrBelow(pathname, inventory),
       },
       {
         href: purchaseOrders,
-        label: writtenInJapanese('発注'),
+        label: names.purchaseOrders,
         current: isAtOrBelow(pathname, purchaseOrders),
       },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [
             {
               href: staff,
-              label: writtenInJapanese('スタッフ'),
+              label: names.staff,
               current: isAtOrBelow(pathname, staff),
             },
           ]
         : []),
       {
         href: settings,
-        label: writtenInJapanese('設定'),
+        label: names.settings,
         current: isAtOrBelow(pathname, settings),
       },
       ...profile,
@@ -621,7 +623,7 @@ export const navigationFor = (
   return member
     ? [
         ...choice,
-        { href: '/', label: writtenInJapanese('予約'), current: false },
+        { href: '/', label: names.bookings, current: false },
         ...profile,
       ]
     : choice

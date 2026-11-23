@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { services, staff } from '../../../bookings/components/examples'
 import * as customerStatisticsStories from './customer-statistics.stories'
 
@@ -56,6 +57,53 @@ describe('CustomerStatistics', () => {
     ])
     expect(rowsOf('よく担当したスタッフ')).toEqual([
       ['この期間に完了した予約はありません'],
+    ])
+  })
+})
+
+describe('CustomerStatistics on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should count what a customer did over the period, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Regular.run()
+
+    // Assert
+    expect(items()).toEqual([
+      ['Bookings', '8 bookings'],
+      ['Total spent', '¥52,800'],
+      ['Average per booking', '¥7,542'],
+      ['Last visit', 'Wed, November 18, 2026 at 10:00'],
+      ['Cancellation rate', '12.5%'],
+      ['No-show rate', '0%'],
+    ])
+    expect(columnsOf('Most booked services')).toEqual(['Service', 'Bookings'])
+    expect(rowsOf('Most booked services')).toEqual([
+      [cut?.name, '6 bookings'],
+      [color?.name, '2 bookings'],
+    ])
+    expect(columnsOf('Staff most often in charge')).toEqual([
+      'Staff',
+      'Bookings',
+    ])
+  })
+
+  it('should say in English that a customer who did not come in the period has nothing to count', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoBooking.run()
+
+    // Assert
+    expect(items()).toContainEqual(['Last visit', 'None'])
+    expect(rowsOf('Staff most often in charge')).toEqual([
+      ['No bookings were completed in this period'],
     ])
   })
 })

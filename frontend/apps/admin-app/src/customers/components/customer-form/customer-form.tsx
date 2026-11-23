@@ -1,6 +1,8 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
 import {
+  CATEGORY_CHOICES,
   EARLIEST_DAY,
+  GENDER_CHOICES,
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
 } from '@beauty-salon-frontend/fields'
@@ -9,25 +11,34 @@ import {
   CheckboxGroup,
   FieldRow,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { customerMessages as record } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ReactNode, useState } from 'react'
 import { REFERRER, type Referrer } from '../../utils/customer-form'
 import {
-  CATEGORY_OPTIONS,
-  GENDER_OPTIONS,
-  HAIR_THICKNESS_OPTIONS,
-  HAIR_TYPE_OPTIONS,
-  SCALP_CONDITION_OPTIONS,
-  STATUS_OPTIONS,
-  TIER_OPTIONS,
+  HAIR_THICKNESS_CHOICES,
+  HAIR_TYPE_CHOICES,
+  SCALP_CONDITION_CHOICES,
+  STATUS_CHOICES,
+  TIER_CHOICES,
 } from '../../utils/customer-format'
 import { tagsTextOf } from '../../utils/customer-ledger'
 import { ReferrerField } from '../referrer-field/referrer-field'
+
+const { form: words } = adminCustomerMessages
+const { parts } = words
 
 /** What the choice of a referrer is given by the form */
 export type ReferrerChoiceProps = {
@@ -40,8 +51,15 @@ export type ReferrerChoiceProps = {
 
 export type CustomerFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * The errors of the controls, under their names. A new object is a new
+   * attempt: the focus goes to the first control with an error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
   /**
    * The customer the form opens with. `null` for a new one: the form then
    * opens with what the ledger gives a customer nobody said more of
@@ -75,232 +93,236 @@ export const CustomerForm = ({
   today,
   referrer: opened,
   chooseReferrer,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: CustomerFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+  const options = useSaidChoices()
   const [referrer, setReferrer] = useState(opened)
   const [choosing, setChoosing] = useState(false)
 
   return (
     <>
-      <Form {...form} errors={errors}>
-        <FormPart label='お名前'>
+      <Form {...form} message={said.message} errors={errors}>
+        <FormPart label={say(parts.name)}>
           <FieldRow>
             <TextField
-              label='姓'
+              label={say(record.lastName)}
               name='lastName'
               autoComplete='off'
               required
               defaultValue={customer?.lastName}
-              error={errors['lastName']}
+              error={said.errors['lastName']}
             />
             <TextField
-              label='名'
+              label={say(record.firstName)}
               name='firstName'
               autoComplete='off'
               required
               defaultValue={customer?.firstName}
-              error={errors['firstName']}
+              error={said.errors['firstName']}
             />
           </FieldRow>
           <FieldRow>
             <TextField
-              label='姓（フリガナ）'
+              label={say(record.lastNameKana)}
               name='lastNameKana'
               autoComplete='off'
               defaultValue={customer?.lastNameKana ?? undefined}
-              error={errors['lastNameKana']}
+              error={said.errors['lastNameKana']}
             />
             <TextField
-              label='名（フリガナ）'
+              label={say(record.firstNameKana)}
               name='firstNameKana'
               autoComplete='off'
               defaultValue={customer?.firstNameKana ?? undefined}
-              error={errors['firstNameKana']}
+              error={said.errors['firstNameKana']}
             />
           </FieldRow>
         </FormPart>
-        <FormPart label='連絡先'>
+        <FormPart label={say(parts.contact)}>
           <TextField
-            label='メールアドレス'
+            label={say(record.email)}
             name='email'
             type='email'
             autoComplete='off'
             required
-            description='台帳のお客様の間で、同じアドレスは使えません。'
+            description={say(words.emailDescription)}
             defaultValue={customer?.email}
-            error={errors['email']}
+            error={said.errors['email']}
           />
           <FieldRow>
             <TextField
-              label='電話番号'
+              label={say(record.phoneNumber)}
               name='phoneNumber'
               type='tel'
               autoComplete='off'
               required
               defaultValue={customer?.phoneNumber}
-              error={errors['phoneNumber']}
+              error={said.errors['phoneNumber']}
             />
             <TextField
-              label='予備の電話番号'
+              label={say(record.alternativePhone)}
               name='alternativePhone'
               type='tel'
               autoComplete='off'
               defaultValue={customer?.alternativePhone ?? undefined}
-              error={errors['alternativePhone']}
+              error={said.errors['alternativePhone']}
             />
           </FieldRow>
         </FormPart>
-        <FormPart label='住所'>
+        <FormPart label={say(parts.address)}>
           <TextField
-            label='郵便番号'
+            label={say(record.postalCode)}
             name='postalCode'
             autoComplete='off'
             defaultValue={customer?.postalCode ?? undefined}
-            error={errors['postalCode']}
+            error={said.errors['postalCode']}
           />
           <FieldRow>
             <TextField
-              label='都道府県'
+              label={say(record.prefecture)}
               name='prefecture'
               autoComplete='off'
               defaultValue={customer?.prefecture ?? undefined}
-              error={errors['prefecture']}
+              error={said.errors['prefecture']}
             />
             <TextField
-              label='市区町村'
+              label={say(record.city)}
               name='city'
               autoComplete='off'
               defaultValue={customer?.city ?? undefined}
-              error={errors['city']}
+              error={said.errors['city']}
             />
           </FieldRow>
           <TextField
-            label='番地'
+            label={say(record.address)}
             name='address'
             autoComplete='off'
             defaultValue={customer?.address ?? undefined}
-            error={errors['address']}
+            error={said.errors['address']}
           />
           <TextField
-            label='建物名・部屋番号'
+            label={say(record.building)}
             name='building'
             autoComplete='off'
             defaultValue={customer?.building ?? undefined}
-            error={errors['building']}
+            error={said.errors['building']}
           />
         </FormPart>
-        <FormPart label='お客様について'>
+        <FormPart label={say(parts.about)}>
           <FieldRow>
             <TextField
-              label='生年月日'
+              label={say(record.birthDate)}
               name='birthDate'
               type='date'
               autoComplete='off'
               min={EARLIEST_DAY}
               max={today}
               defaultValue={customer?.birthDate ?? undefined}
-              error={errors['birthDate']}
+              error={said.errors['birthDate']}
             />
             <Select
-              label='性別'
+              label={say(record.gender)}
               name='gender'
-              placeholder='記録しない'
-              options={GENDER_OPTIONS}
+              placeholder={say(words.unrecorded)}
+              options={options(GENDER_CHOICES)}
               defaultValue={customer?.gender ?? ''}
-              error={errors['gender']}
+              error={said.errors['gender']}
             />
           </FieldRow>
           <TextField
-            label='職業'
+            label={say(record.occupation)}
             name='occupation'
             autoComplete='off'
             defaultValue={customer?.occupation ?? undefined}
-            error={errors['occupation']}
+            error={said.errors['occupation']}
           />
         </FormPart>
-        <FormPart label='髪と頭皮'>
+        <FormPart label={say(parts.hair)}>
           <FieldRow columns={3}>
             <Select
-              label='髪質'
+              label={say(record.hairType)}
               name='hairType'
-              placeholder='記録しない'
-              options={HAIR_TYPE_OPTIONS}
+              placeholder={say(words.unrecorded)}
+              options={options(HAIR_TYPE_CHOICES)}
               defaultValue={customer?.hairType ?? ''}
-              error={errors['hairType']}
+              error={said.errors['hairType']}
             />
             <Select
-              label='髪の太さ'
+              label={say(record.hairThickness)}
               name='hairThickness'
-              placeholder='記録しない'
-              options={HAIR_THICKNESS_OPTIONS}
+              placeholder={say(words.unrecorded)}
+              options={options(HAIR_THICKNESS_CHOICES)}
               defaultValue={customer?.hairThickness ?? ''}
-              error={errors['hairThickness']}
+              error={said.errors['hairThickness']}
             />
             <Select
-              label='頭皮の状態'
+              label={say(record.scalpCondition)}
               name='scalpCondition'
-              placeholder='記録しない'
-              options={SCALP_CONDITION_OPTIONS}
+              placeholder={say(words.unrecorded)}
+              options={options(SCALP_CONDITION_CHOICES)}
               defaultValue={customer?.scalpCondition ?? ''}
-              error={errors['scalpCondition']}
+              error={said.errors['scalpCondition']}
             />
           </FieldRow>
         </FormPart>
-        <FormPart label='好み'>
+        <FormPart label={say(parts.likes)}>
           <CheckboxGroup
-            label='好みのメニュー'
+            label={say(record.preferredServices)}
             name={PREFERRED_SERVICES}
             layout='columns'
-            options={CATEGORY_OPTIONS}
+            options={options(CATEGORY_CHOICES)}
             defaultValue={customer?.preferences?.preferredServices}
-            error={errors[PREFERRED_SERVICES]}
+            error={said.errors[PREFERRED_SERVICES]}
           />
           <TextArea
-            label='好みについてのメモ'
+            label={say(words.preferenceNotes)}
             name={PREFERENCE_NOTES}
-            description='使ってほしい製品や、苦手なことなどです。お客様もプロフィールで書き換えられます。'
+            description={say(words.preferenceNotesDescription)}
             defaultValue={customer?.preferences?.notes ?? undefined}
-            error={errors[PREFERENCE_NOTES]}
+            error={said.errors[PREFERENCE_NOTES]}
           />
         </FormPart>
-        <FormPart label='サロンでの扱い'>
+        <FormPart label={say(parts.treatment)}>
           <FieldRow>
             <Select
-              label='会員ランク'
+              label={say(record.membershipTier)}
               name='membershipTier'
               required
-              options={TIER_OPTIONS}
+              options={options(TIER_CHOICES)}
               defaultValue={customer?.membershipTier ?? 'regular'}
-              error={errors['membershipTier']}
+              error={said.errors['membershipTier']}
             />
             <Select
-              label='ステータス'
+              label={say(words.status)}
               name='customerStatus'
               required
-              options={STATUS_OPTIONS}
-              description='休眠と利用停止のお客様は、ご自分では予約を入れられません。'
+              options={options(STATUS_CHOICES)}
+              description={say(words.statusDescription)}
               defaultValue={customer?.customerStatus ?? 'active'}
-              error={errors['customerStatus']}
+              error={said.errors['customerStatus']}
             />
           </FieldRow>
           <Checkbox
-            label='有効なお客様'
+            label={say(words.active)}
             name='isActive'
-            description='外すと、お客様はご自分では予約を入れたり、日時を変えたりできなくなります。サロンが入れる予約は、どちらでも入れられます。'
+            description={say(words.activeDescription)}
             defaultChecked={customer?.isActive ?? true}
-            error={errors['isActive']}
+            error={said.errors['isActive']}
           />
           <TextField
-            label='タグ'
+            label={say(words.tags)}
             name='tags'
             autoComplete='off'
-            description='「、」か「,」で区切って、いくつでも付けられます。'
-            defaultValue={tagsTextOf(customer?.tags ?? [])}
-            error={errors['tags']}
+            description={say(words.tagsDescription)}
+            defaultValue={say(tagsTextOf(customer?.tags ?? []))}
+            error={said.errors['tags']}
           />
         </FormPart>
-        <FormPart label='紹介'>
+        <FormPart label={say(parts.referral)}>
           <ReferrerField
             referrer={referrer}
             error={errors[REFERRER]}
@@ -308,48 +330,48 @@ export const CustomerForm = ({
             onRemove={() => setReferrer({ type: 'none' })}
           />
           <TextField
-            label='紹介コード'
+            label={say(record.referralCode)}
             name='referralCode'
             autoComplete='off'
-            description='このお客様が、ほかの方を紹介するときのコードです。台帳から削除したお客様のものも含めて、同じコードは使えません。'
+            description={say(words.referralCodeDescription)}
             defaultValue={customer?.referralCode ?? undefined}
-            error={errors['referralCode']}
+            error={said.errors['referralCode']}
           />
         </FormPart>
-        <FormPart label='送ってよい連絡'>
+        <FormPart label={say(parts.contacts)}>
           <Checkbox
-            label='メールでの連絡'
+            label={say(record.byEmail)}
             name='allowEmail'
             defaultChecked={customer?.allowEmail ?? false}
-            error={errors['allowEmail']}
+            error={said.errors['allowEmail']}
           />
           <Checkbox
-            label='SMS での連絡'
+            label={say(record.bySms)}
             name='allowSms'
             defaultChecked={customer?.allowSms ?? false}
-            error={errors['allowSms']}
+            error={said.errors['allowSms']}
           />
           <Checkbox
-            label='キャンペーンなどのお知らせ'
+            label={say(record.marketing)}
             name='allowMarketing'
             defaultChecked={customer?.allowMarketing ?? false}
-            error={errors['allowMarketing']}
+            error={said.errors['allowMarketing']}
           />
         </FormPart>
-        <FormPart label='メモ'>
+        <FormPart label={say(parts.notes)}>
           <TextArea
-            label='備考'
+            label={say(words.notes)}
             name='notes'
-            description='お客様には見えません。'
+            description={say(words.hidden)}
             defaultValue={customer?.notes ?? undefined}
-            error={errors['notes']}
+            error={said.errors['notes']}
           />
           <TextArea
-            label='スタッフ間の申し送り'
+            label={say(words.internalNotes)}
             name='internalNotes'
-            description='お客様には見えません。'
+            description={say(words.hidden)}
             defaultValue={customer?.internalNotes ?? undefined}
-            error={errors['internalNotes']}
+            error={said.errors['internalNotes']}
           />
         </FormPart>
       </Form>

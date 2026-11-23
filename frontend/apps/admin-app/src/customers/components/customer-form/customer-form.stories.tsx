@@ -1,3 +1,5 @@
+import { REFUSED_VALUE_MESSAGE } from '@beauty-salon-frontend/answers'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, customers } from '../../../bookings/components/examples'
@@ -93,10 +95,8 @@ export const WithErrors: Story = {
   args: {
     ...Change.args,
     errors: {
-      email:
-        'このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
-      'preferences.preferredServices':
-        'この値は受け付けられませんでした。入力を確かめてください。',
+      email: adminCustomerMessages.refusals.emailTaken,
+      'preferences.preferredServices': REFUSED_VALUE_MESSAGE,
     },
   },
 }
@@ -105,10 +105,7 @@ export const WithErrors: Story = {
 export const ReferrerRefused: Story = {
   args: {
     ...Change.args,
-    errors: {
-      referredBy:
-        '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
-    },
+    errors: { referredBy: adminCustomerMessages.referrer.absent },
   },
 }
 
