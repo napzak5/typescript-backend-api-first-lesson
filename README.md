@@ -327,10 +327,10 @@ the problem follow the `Accept-Language` header of the request, and
 answer is in English. A value that breaks a rule is told in the language
 asked for, in every domain: the rules that the schema of a request checks,
 and those that only a use case can check (a reference that names nothing, a
-value that the stored row does not allow). The other errors that say what
-was wrong with a request or with what it acts on (something that is not
-there or is there already, a state that does not allow the operation) are
-in English alone as yet. See
+value that the stored row does not allow). An error that says that
+something is not there, or is there already, is told in the language asked
+for too. The error that says that the state of what a request acts on does
+not allow the operation is in English alone as yet. See
 [docs/i18n.md](docs/i18n.md).
 
 ### Probes and Shutdown
