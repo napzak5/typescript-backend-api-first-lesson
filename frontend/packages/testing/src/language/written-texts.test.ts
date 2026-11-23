@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   itShouldWriteItsTextsAsMessages,
   linesWrittenInJapanese,
+  partsWithoutSources,
   sourcesBelow,
+  sourcesIn,
 } from './written-texts'
 
 const linesOf = (content: string): string[] =>
@@ -197,9 +199,58 @@ describe('sourcesBelow', () => {
   })
 })
 
+describe('sourcesIn', () => {
+  it('should read the modules of the folders and the files it names right below the directory, and no other', () => {
+    // Act
+    const paths = sourcesIn(path.join(packages, 'ui/src'), [
+      'hooks',
+      'index.ts',
+    ]).map((source) => source.path)
+
+    // Assert
+    expect(paths).toEqual(
+      expect.arrayContaining(['hooks/language.ts', 'index.ts']),
+    )
+    expect(
+      paths.filter((file) => file !== 'index.ts' && !file.startsWith('hooks/')),
+    ).toEqual([])
+  })
+
+  it('should read nothing of a part that is not there', () => {
+    // Act
+    const sources = sourcesIn(path.join(packages, 'ui/src'), ['no-such-area'])
+
+    // Assert
+    expect(sources).toEqual([])
+  })
+})
+
+describe('partsWithoutSources', () => {
+  it('should name the parts that have no source, and none of those that have', () => {
+    // Act
+    const missing = partsWithoutSources(path.join(packages, 'ui/src'), [
+      'hooks',
+      'no-such-area',
+      'index.ts',
+      'no-such-file.ts',
+    ])
+
+    // Assert
+    expect(missing).toEqual(['no-such-area', 'no-such-file.ts'])
+  })
+})
+
 describe('itShouldWriteItsTextsAsMessages', () => {
   // The check itself writes no text in Japanese: its letters are written by their numbers
   itShouldWriteItsTextsAsMessages(import.meta.dirname)
+
+  describe('of the parts it names', () => {
+    // The parts of this package that write no Japanese, among those that do (`api`)
+    itShouldWriteItsTextsAsMessages(path.join(import.meta.dirname, '..'), [
+      'language',
+      'index.ts',
+    ])
+  })
 
   it('should have something to find below a directory whose sources write Japanese: the labels the sign-in of a test types into', () => {
     // Act
