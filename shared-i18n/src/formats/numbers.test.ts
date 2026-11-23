@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../languages/localized-text'
 import {
   amountOf,
+  bytesOf,
   currencyNameOf,
   type Decimals,
+  fileSizeOf,
   numberOf,
   percentOf,
   shortAmountOf,
@@ -109,5 +111,40 @@ describe('currencyNameOf', () => {
 
     // Assert
     expect(name).toEqual({ en: 'XYZ', ja: 'XYZ' })
+  })
+})
+
+describe('the sizes of files', () => {
+  it.each<[number, LocalizedText]>([
+    [0, { en: '0 bytes', ja: '0 バイト' }],
+    [1, { en: '1 byte', ja: '1 バイト' }],
+    [1023, { en: '1,023 bytes', ja: '1,023 バイト' }],
+    [1_258_291, { en: '1,258,291 bytes', ja: '1,258,291 バイト' }],
+  ])('should write %d bytes to the last byte', (size, expected) => {
+    // Act
+    const written = bytesOf(size)
+
+    // Assert
+    expect(written).toEqual(expected)
+  })
+
+  it.each<[number, LocalizedText]>([
+    [512, { en: '512 bytes', ja: '512 バイト' }],
+    [1023, { en: '1,023 bytes', ja: '1,023 バイト' }],
+    [1024, { en: '1 kB', ja: '1 KB' }],
+    [348_160, { en: '340 kB', ja: '340 KB' }],
+    [1_048_064, { en: '1,024 kB', ja: '1,024 KB' }],
+    [1_048_575, { en: '1,024 kB', ja: '1,024 KB' }],
+    [1_048_576, { en: '1.0 MB', ja: '1.0 MB' }],
+    [1_258_291, { en: '1.2 MB', ja: '1.2 MB' }],
+    [1_310_720, { en: '1.3 MB', ja: '1.3 MB' }],
+    [10_485_760, { en: '10.0 MB', ja: '10.0 MB' }],
+    [2_147_483_648, { en: '2,048.0 MB', ja: '2,048.0 MB' }],
+  ])('should write %d bytes as they are read at a glance', (size, expected) => {
+    // Act
+    const written = fileSizeOf(size)
+
+    // Assert
+    expect(written).toEqual(expected)
   })
 })

@@ -121,7 +121,7 @@ export const AttachmentRecord = ({
           },
           {
             term: 'サイズ',
-            description: `${sizeNameOf(attachment.size)}（${inJapanese(formats.numberOf(attachment.size))} バイト）`,
+            description: `${sizeNameOf(attachment.size)}（${inJapanese(formats.bytesOf(attachment.size))}）`,
           },
           { term: 'アップロードした人', description: uploaderName },
           {

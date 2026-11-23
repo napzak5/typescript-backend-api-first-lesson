@@ -75,7 +75,7 @@ export const trendsQueryOf = (
 
 /** A month the API labels (`2026-11`) in words: 「2026年11月」. */
 const monthNameOf = (label: string): string =>
-  `${Number(label.slice(0, 4))}年${Number(label.slice(5, 7))}月`
+  inJapanese(formats.monthOf(label))
 
 /**
  * A part as the table names it: a day 「2026年11月21日（土）」, the week

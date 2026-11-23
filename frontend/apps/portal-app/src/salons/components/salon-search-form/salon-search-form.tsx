@@ -1,10 +1,12 @@
 import {
   countNarrowing,
   FilterForm,
+  inJapanese,
   Select,
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import {
   LONGEST,
   MIN_RATINGS,
@@ -24,7 +26,7 @@ export type SalonSearchFormProps = {
 
 const RATINGS = MIN_RATINGS.map((rating) => ({
   value: String(rating),
-  label: `${rating.toFixed(1)} 以上`,
+  label: `${inJapanese(formats.numberOf(rating, { most: 1, least: 1 }))} 以上`,
 }))
 
 /** What the controls hold, under the names of the conditions */

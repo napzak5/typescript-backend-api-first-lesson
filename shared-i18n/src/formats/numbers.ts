@@ -63,6 +63,48 @@ export const shortAmountOf = (
     }).format(amount),
   )
 
+const KILOBYTE = 1024
+const MEGABYTE = 1024 * 1024
+
+/** The size of a file to the last byte: 「1,234 バイト」, "1,234 bytes". */
+export const bytesOf = (size: number): LocalizedText =>
+  inEachLanguage((language) =>
+    numberFormatIn(language, {
+      style: 'unit',
+      unit: 'byte',
+      unitDisplay: 'long',
+    }).format(size),
+  )
+
+/**
+ * The size of a file as it is read at a glance: in bytes below a kilobyte
+ * (1,024 bytes), in whole kilobytes below a megabyte, and in megabytes to
+ * one decimal from it on: 「512 バイト」, 「340 KB」, 「1.2 MB」.
+ */
+export const fileSizeOf = (size: number): LocalizedText => {
+  if (size < KILOBYTE) {
+    return bytesOf(size)
+  }
+  if (size < MEGABYTE) {
+    return inEachLanguage((language) =>
+      numberFormatIn(language, {
+        style: 'unit',
+        unit: 'kilobyte',
+        maximumFractionDigits: 0,
+      }).format(size / KILOBYTE),
+    )
+  }
+
+  return inEachLanguage((language) =>
+    numberFormatIn(language, {
+      style: 'unit',
+      unit: 'megabyte',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(size / MEGABYTE),
+  )
+}
+
 /** The name of a currency (an ISO 4217 code): 「日本円」, "Japanese Yen". The code, for one the language has no name for. */
 export const currencyNameOf = (currency: string): LocalizedText =>
   inEachLanguage(

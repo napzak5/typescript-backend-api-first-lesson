@@ -136,4 +136,4 @@ export const ratingNameOf = (
 ): string =>
   rating === null
     ? 'まだありません'
-    : `${rating.toFixed(1)}（${reviewCount} 件のレビュー）`
+    : `${inJapanese(formats.numberOf(rating, { most: 1, least: 1 }))}（${reviewCount} 件のレビュー）`

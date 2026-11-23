@@ -23,7 +23,7 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The language of the page: where the choice is kept (`languageStore`), the hook that says a message in it (`useSay`), the messages of the shared components (`uiMessages`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
-| How a value is written in each language: numbers, shares, amounts, the names of currencies, days of the calendar and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
+| How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
 | The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/screens/`, `src/components/not-found-page/`, `src/utils/addresses.ts` (`@beauty-salon-frontend/app-frame`) |
@@ -358,15 +358,18 @@ In a package that is done:
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its
 decimals (`numberOf`), a share (`percentOf`), an amount and the name of a
-currency (`amountOf`, `shortAmountOf`, `currencyNameOf`), a day of the
-calendar (`dayOf`, `dayWithWeekdayOf`, `fullDayOf`, `monthDayOf`,
-`shortDayOf`) and a moment on the clock of a time zone (`timeOfDayAt`,
-`momentAt`, `momentWithWeekdayAt`). A screen reads them as `formats`
+currency (`amountOf`, `shortAmountOf`, `currencyNameOf`), the size of a
+file (`bytesOf`, `fileSizeOf`), a day and a month of the calendar
+(`dayOf`, `dayWithWeekdayOf`, `fullDayOf`, `monthDayOf`, `shortDayOf`,
+`monthOf`) and a moment on the clock of a time zone (`timeOfDayAt`,
+`momentAt`, `momentWithWeekdayAt`). A message that puts a number into its
+words writes it with them too (the counts of `uiMessages`). A screen reads them as `formats`
 (`import * as formats from '@beauty-salon-shared/i18n/formats'`), so that
 they keep apart from its own functions, and builds no format of `Intl`
-that depends on the language; what does not depend on it stays where it
-is used (the ISO day of `sv-SE`, the offset parts of `en-US`, the time
-zone of the browser, `supportedValuesOf`). A quantity of the admin
+that depends on the language, and writes no number with `toFixed`; what
+does not depend on the language stays where it is used (the ISO day of
+`sv-SE`, the offset parts of `en-US`, the time zone of the browser,
+`supportedValuesOf`, the value a control of a form holds). A quantity of the admin
 application is written by `quantityOf` of `products/utils/quantity.ts`.
 The whole is in `docs/i18n.md` (「値の書き方」).
 

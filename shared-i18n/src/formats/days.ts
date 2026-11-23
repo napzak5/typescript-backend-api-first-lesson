@@ -41,6 +41,12 @@ export const dayWithWeekdayOf = (day: string): LocalizedText => ({
 export const fullDayOf = (day: string): LocalizedText =>
   inEachLanguage((language) => written(language, day, { dateStyle: 'full' }))
 
+/** A month of the calendar, as the API labels one (`2026-11`): 「2026年11月」, "November 2026". */
+export const monthOf = (month: string): LocalizedText =>
+  inEachLanguage((language) =>
+    written(language, `${month}-01`, { year: 'numeric', month: 'long' }),
+  )
+
 /** A day of a year that goes without saying, with its day of the week: 「11月20日（金）」, "Fri, November 20". */
 export const monthDayOf = (day: string): LocalizedText => ({
   en: written('en', day, { weekday: 'short', month: 'long', day: 'numeric' }),

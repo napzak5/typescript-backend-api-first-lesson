@@ -1,3 +1,4 @@
+import { numberOf } from '@beauty-salon-shared/i18n/formats'
 import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useId } from 'react'
 import { useSay } from '../../hooks/language'
@@ -37,7 +38,7 @@ export const Rating = ({ value, count }: RatingProps) => {
     )
   }
 
-  const shown = value.toFixed(1)
+  const shown = numberOf(value, { most: 1, least: 1 })
   const counted = count === undefined ? null : uiMessages.rating.count(count)
 
   return (
@@ -66,7 +67,7 @@ export const Rating = ({ value, count }: RatingProps) => {
         </g>
       </svg>
       <span className={styles['value']} aria-hidden='true'>
-        {shown}
+        {say(shown)}
       </span>
       {counted !== null && (
         <span className={styles['count']} aria-hidden='true'>

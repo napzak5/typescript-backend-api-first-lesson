@@ -112,7 +112,7 @@ const POINTS_ERROR = `ポイント数は、1 から ${format(MOST_POINTS)} ま�
 
 const EXPIRY_IN_THE_PAST = '有効期限は、今日以降の日付にしてください。'
 
-const EXPIRY_ERROR = `有効期限は、今日から${LATEST_DAY.slice(0, 4)}年12月31日までの日付で入力してください。`
+const EXPIRY_ERROR = `有効期限は、今日から${inJapanese(formats.dayOf(LATEST_DAY))}までの日付で入力してください。`
 
 /** The request a form makes, for the operation of its kind. */
 export type PointRecording =

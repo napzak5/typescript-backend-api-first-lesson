@@ -5,6 +5,7 @@ import {
   dayWithWeekdayOf,
   fullDayOf,
   monthDayOf,
+  monthOf,
   shortDayOf,
 } from './days'
 
@@ -59,4 +60,17 @@ describe('the days of the calendar', () => {
       expect(written).toEqual(expected)
     },
   )
+})
+
+describe('monthOf', () => {
+  it.each<[string, LocalizedText]>([
+    ['2026-11', { en: 'November 2026', ja: '2026年11月' }],
+    ['2027-01', { en: 'January 2027', ja: '2027年1月' }],
+  ])('should write the month %s in each language', (month, expected) => {
+    // Act
+    const written = monthOf(month)
+
+    // Assert
+    expect(written).toEqual(expected)
+  })
 })
