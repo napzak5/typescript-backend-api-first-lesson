@@ -2,9 +2,11 @@ export { choiceOf, UNLISTED_MESSAGE } from './choices'
 export {
   basicPreferencesIn,
   birthDateError,
+  CATEGORY_CHOICES,
   CUSTOMER_LENGTHS,
   customerControlOf,
   customerRefusalOf,
+  GENDER_CHOICES,
   GENDERS,
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,

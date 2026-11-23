@@ -4,9 +4,11 @@ import { describe, expect, it } from 'vitest'
 import {
   basicPreferencesIn,
   birthDateError,
+  CATEGORY_CHOICES,
   CUSTOMER_LENGTHS,
   customerControlOf,
   customerRefusalOf,
+  GENDER_CHOICES,
   GENDERS,
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
@@ -65,6 +67,36 @@ describe('the choices of a customer', () => {
       'styling',
       'extension',
       'other',
+    ])
+  })
+
+  it('should offer every gender under its name, in the order of the contract', () => {
+    // Assert
+    expect(GENDER_CHOICES).toEqual([
+      { value: 'male', label: { en: 'Male', ja: '男性' } },
+      { value: 'female', label: { en: 'Female', ja: '女性' } },
+      { value: 'other', label: { en: 'Other', ja: 'その他' } },
+      {
+        value: 'prefer_not_to_say',
+        label: { en: 'Prefer not to say', ja: '回答しない' },
+      },
+    ])
+  })
+
+  it('should offer every kind of service under its name, in the order of the contract', () => {
+    // Assert
+    expect(CATEGORY_CHOICES).toEqual([
+      { value: 'cut', label: { en: 'Cut', ja: 'カット' } },
+      { value: 'color', label: { en: 'Color', ja: 'カラー' } },
+      { value: 'perm', label: { en: 'Perm', ja: 'パーマ' } },
+      { value: 'treatment', label: { en: 'Treatment', ja: 'トリートメント' } },
+      { value: 'spa', label: { en: 'Spa', ja: 'スパ' } },
+      { value: 'styling', label: { en: 'Styling', ja: 'スタイリング' } },
+      {
+        value: 'extension',
+        label: { en: 'Extensions', ja: 'エクステンション' },
+      },
+      { value: 'other', label: { en: 'Other', ja: 'その他' } },
     ])
   })
 })
