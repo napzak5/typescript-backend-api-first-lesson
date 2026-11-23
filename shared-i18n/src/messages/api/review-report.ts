@@ -18,4 +18,8 @@ export const reviewReportMessages = {
     en: 'Must be given when reason is other',
     ja: 'reason が other のときは、指定してください',
   }),
+  aListedReviewReport: text({
+    en: 'Must name a review report that is listed',
+    ja: '一覧にある通報を指定してください',
+  }),
 }

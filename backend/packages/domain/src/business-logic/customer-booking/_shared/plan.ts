@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { match } from 'ts-pattern'
 import { SalonReadMapper } from '../../../mappers/read/salon.mapper'
@@ -233,17 +234,20 @@ export const planCustomerBooking = (
     return { type: 'profileNotFound' }
   }
   if (salon === null) {
-    return { type: 'invalid', issues: [notFound('salonId', 'a salon')] }
+    return {
+      type: 'invalid',
+      issues: [notFound('salonId', ruleMessages.aSalon)],
+    }
   }
   if (service === null || staff === null) {
     return {
       type: 'invalid',
       issues: [
         ...(service === null
-          ? [notFound('serviceId', 'a service of the salon')]
+          ? [notFound('serviceId', ruleMessages.aServiceOfSalon)]
           : []),
         ...(staff === null
-          ? [notFound('staffId', 'a staff member of the salon')]
+          ? [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]
           : []),
       ],
     }

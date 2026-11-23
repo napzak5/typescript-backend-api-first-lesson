@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  staffProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { StaffProfileReadMapper } from '../../mappers/read/staff-profile.mapper'
 import { StaffProfileWriteMapper } from '../../mappers/write/staff-profile.mapper'
 import type { ApiPage } from '../../models/page'
@@ -39,7 +42,7 @@ export class ListStaffProfilesUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a staff member',
+            message: ruleMessages.aStaffMember,
           },
         ]),
       )

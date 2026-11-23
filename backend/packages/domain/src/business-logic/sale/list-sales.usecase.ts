@@ -59,7 +59,7 @@ export class ListSalesUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a sale',
+            message: saleMessages.aSale,
           },
         ]),
       )

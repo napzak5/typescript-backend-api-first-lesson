@@ -1,3 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes, parseISO } from 'date-fns'
 import { match } from 'ts-pattern'
 import type { ClientInfo, UserId } from '../../../models/auth'
@@ -68,11 +73,14 @@ export type BookingPlan =
   | { type: 'invalid'; issues: ValidationIssue[] }
   | { type: 'timeZoneUnknown' }
 
-export const notFound = (field: string, what: string): ValidationIssue => ({
-  field,
-  rule: 'not_found',
-  message: `Must name ${what}`,
-})
+/**
+ * The issue of a property that names what is not there; `message` says
+ * what it has to name.
+ */
+export const notFound = (
+  field: string,
+  message: LocalizedText,
+): ValidationIssue => ({ field, rule: 'not_found', message })
 
 /**
  * The row of a service line: its time, its amounts and whether they
@@ -119,11 +127,11 @@ export const planBooking = (
   const { salon, customerExists } = references
   const customerIssues = customerExists
     ? []
-    : [notFound('customerId', 'a customer')]
+    : [notFound('customerId', ruleMessages.aCustomer)]
   if (salon === null) {
     return {
       type: 'invalid',
-      issues: [notFound('salonId', 'a salon'), ...customerIssues],
+      issues: [notFound('salonId', ruleMessages.aSalon), ...customerIssues],
     }
   }
 
@@ -139,17 +147,22 @@ export const planBooking = (
     ...customerIssues,
     ...(staffById.has(request.staffId)
       ? []
-      : [notFound('staffId', 'a staff member of the salon')]),
+      : [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]),
     ...requested.flatMap(({ line, service }, index) => [
       ...(service === undefined
-        ? [notFound(`services.${index}.serviceId`, 'a service of the salon')]
+        ? [
+            notFound(
+              `services.${index}.serviceId`,
+              ruleMessages.aServiceOfSalon,
+            ),
+          ]
         : []),
       ...(line.staffId === null || staffById.has(line.staffId)
         ? []
         : [
             notFound(
               `services.${index}.staffId`,
-              'a staff member of the salon',
+              ruleMessages.aStaffMemberOfSalon,
             ),
           ]),
     ]),
@@ -170,7 +183,7 @@ export const planBooking = (
         {
           field: 'services',
           rule: 'too_small',
-          message: 'Must have at least one service',
+          message: bookingMessages.atLeastOneService,
         },
       ],
     }
@@ -196,7 +209,7 @@ export const planBooking = (
         {
           field: 'services',
           rule: 'too_big',
-          message: `The amounts of a booking must not exceed ${MAX_INTEGER}`,
+          message: bookingMessages.amountsWithinLimit(MAX_INTEGER),
         },
       ],
     }))

@@ -70,7 +70,7 @@ export class RecordInventoryMovementUseCase {
       .with({ type: 'notFound' }, () =>
         Result.error(
           DomainErrors.validation(MESSAGE, [
-            notFound('inventoryId', 'a stock row'),
+            notFound('inventoryId', inventoryMessages.aStockRow),
           ]),
         ),
       )

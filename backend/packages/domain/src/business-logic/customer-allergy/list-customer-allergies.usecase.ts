@@ -74,7 +74,7 @@ export class ListCustomerAllergiesUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name an allergy of the customer',
+              message: customerAllergyMessages.anAllergyOfCustomer,
             },
           ]),
         ),

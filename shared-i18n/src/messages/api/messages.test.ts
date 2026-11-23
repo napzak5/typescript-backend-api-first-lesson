@@ -6,13 +6,18 @@ import {
   bookingMessages,
   inventoryAlertMessages,
   inventoryMessages,
+  paymentMessages,
+  pointMessages,
   problemMessages,
   purchaseOrderMessages,
   ruleMessages,
   saleMessages,
   salesReportMessages,
   salonMessages,
+  serviceMessages,
+  shareLinkMessages,
   staffScheduleMessages,
+  treatmentRecordMessages,
 } from './index'
 
 const JAPANESE = /[぀-ヿ一-鿿]/
@@ -235,6 +240,94 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     {
       en: 'Must be earlier than closeTime',
       ja: 'closeTime より前にしてください',
+    },
+  ],
+  [
+    'bookingMessages.amountsWithinLimit',
+    bookingMessages.amountsWithinLimit(7000),
+    {
+      en: 'The amounts of a booking must not exceed 7000',
+      ja: '予約の金額は、7000 を超えられません',
+    },
+  ],
+  [
+    'paymentMessages.notLessThanMinimumOfMethod',
+    paymentMessages.notLessThanMinimumOfMethod(500),
+    {
+      en: 'Must not be less than the minimumAmount of the payment method (500)',
+      ja: '支払い方法の minimumAmount（500）より小さくはできません',
+    },
+  ],
+  [
+    'paymentMessages.notMoreThanMaximumOfMethod',
+    paymentMessages.notMoreThanMaximumOfMethod(90000),
+    {
+      en: 'Must not be more than the maximumAmount of the payment method (90000)',
+      ja: '支払い方法の maximumAmount（90000）より大きくはできません',
+    },
+  ],
+  [
+    'paymentMessages.notMoreThanLeftToPay',
+    paymentMessages.notMoreThanLeftToPay(1200),
+    {
+      en: 'Must not be more than what is left to pay (1200)',
+      ja: '未払い残額（1200）より大きくはできません',
+    },
+  ],
+  [
+    'paymentMessages.notMoreThanAmountOfPayment',
+    paymentMessages.notMoreThanAmountOfPayment(3300),
+    {
+      en: 'Must not be more than the amount of the payment (3300)',
+      ja: '支払いの金額（3300）より大きくはできません',
+    },
+  ],
+  [
+    'pointMessages.aReferenceOfCustomer',
+    pointMessages.aReferenceOfCustomer('visit'),
+    {
+      en: 'Must name a visit of the customer',
+      ja: 'この顧客の visit を指定してください',
+    },
+  ],
+  [
+    'purchaseOrderMessages.atMostOrdered',
+    purchaseOrderMessages.atMostOrdered(12),
+    {
+      en: 'Must be at most 12, the quantity the item orders',
+      ja: '12 以下にしてください。明細が発注した数量です',
+    },
+  ],
+  [
+    'saleMessages.amountsWithinLimit',
+    saleMessages.amountsWithinLimit(8000),
+    {
+      en: 'The amounts of a sale must not exceed 8000',
+      ja: '売上の金額は、8000 を超えられません',
+    },
+  ],
+  [
+    'serviceMessages.atLeastPackageMembers',
+    serviceMessages.atLeastPackageMembers(3),
+    {
+      en: 'A package must name at least 3 services',
+      ja: 'パッケージには、サービスを 3 つ以上指定してください',
+    },
+  ],
+  [
+    'shareLinkMessages.withinDaysFromNow',
+    shareLinkMessages.withinDaysFromNow(14),
+    {
+      en: 'Must be within 14 days from now',
+      ja: '現在から 14 日以内にしてください',
+    },
+  ],
+  [
+    'treatmentRecordMessages.notBeforeBookingDate',
+    treatmentRecordMessages.notBeforeBookingDate('2026-11-23'),
+    {
+      en: 'Must not be before the date of the booking, 2026-11-23',
+      ja: '予約の日（2026-11-23）より前にはできません',
     },
   ],
 ]

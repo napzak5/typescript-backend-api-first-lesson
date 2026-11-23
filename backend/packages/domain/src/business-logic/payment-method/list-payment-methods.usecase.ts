@@ -77,7 +77,7 @@ export class ListPaymentMethodsUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a payment method of the salon',
+            message: paymentMethodMessages.aPaymentMethodOfSalon,
           },
         ]),
       )

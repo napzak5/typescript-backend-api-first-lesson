@@ -14,4 +14,8 @@ export const medicalChartMessages = {
     en: 'Invalid medical chart search',
     ja: 'カルテの検索の条件が正しくありません',
   }),
+  aMedicalChartOfList: text({
+    en: 'Must name a medical chart of the list',
+    ja: 'この一覧のカルテを指定してください',
+  }),
 }

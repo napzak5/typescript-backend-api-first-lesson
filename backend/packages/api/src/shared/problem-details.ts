@@ -53,19 +53,15 @@ const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
  * every text of the error is written in it. A text that the domain writes
  * in one language alone is told in that language, and so is the error as a
  * whole: no answer is in two languages, and `Content-Language` names the
- * one it is in. A validation error is written in every language when its
- * headline and what it says of each broken rule are.
+ * one it is in. What a validation error says of each broken rule is
+ * written in every language, so the error is when its headline is.
  * Every kind of error is named, so a new one does not compile until it is
  * said who writes its detail.
  */
 export const languageOf = (error: ApiError, asked: Locale): Locale =>
   match(error)
-    .with({ type: 'validation' }, ({ message, issues }) =>
-      [message, ...issues.map((issue) => issue.message)].every(
-        isToldInEveryLanguage,
-      )
-        ? asked
-        : LANGUAGE_OF_THE_DOMAIN,
+    .with({ type: 'validation' }, ({ message }) =>
+      isToldInEveryLanguage(message) ? asked : LANGUAGE_OF_THE_DOMAIN,
     )
     .with(
       { type: P.union('notFound', 'alreadyExists', 'conflict') },
@@ -107,7 +103,7 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         errors: issues.map(({ field, rule, message: issueMessage }) => ({
           field,
           rule,
-          message: toldIn(issueMessage, language),
+          message: said(issueMessage),
           value: null,
           constraint: null,
         })),

@@ -71,7 +71,7 @@ export class ListTreatmentRecordsUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a treatment record of the list',
+              message: treatmentRecordMessages.aTreatmentRecordOfList,
             },
           ]),
         ),

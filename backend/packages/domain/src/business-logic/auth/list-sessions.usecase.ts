@@ -48,7 +48,7 @@ export class ListSessionsUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'The session this cursor names is not there any more',
+            message: authMessages.sessionOfCursorGone,
           },
         ]),
       )

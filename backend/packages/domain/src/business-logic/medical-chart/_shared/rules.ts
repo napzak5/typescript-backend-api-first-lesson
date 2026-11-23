@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { ValidationIssue } from '../../../shared'
 import { latestDateOf } from '../../customer/_shared/rules'
 
@@ -18,7 +19,7 @@ export const medicalChartRuleIssues = (
           {
             field: `previousTreatments.${index}.date`,
             rule: 'too_big',
-            message: 'Must not be in the future',
+            message: ruleMessages.notInFuture,
           },
         ]
       : [],

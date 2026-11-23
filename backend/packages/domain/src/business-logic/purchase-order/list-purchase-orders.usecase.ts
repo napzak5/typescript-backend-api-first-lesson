@@ -71,7 +71,7 @@ export class ListPurchaseOrdersUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a purchase order of the list',
+              message: purchaseOrderMessages.aPurchaseOrderOfList,
             },
           ]),
         ),

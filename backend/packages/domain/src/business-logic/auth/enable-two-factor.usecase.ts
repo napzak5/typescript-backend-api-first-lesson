@@ -66,7 +66,7 @@ export class EnableTwoFactorUseCase {
           {
             field: 'password',
             rule: 'incorrect',
-            message: 'The password could not be confirmed',
+            message: authMessages.passwordNotConfirmed,
           },
         ]),
       )

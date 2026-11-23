@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { CustomerId } from '../../../models/customer'
 import type { RequestedReviewChange } from '../../../models/review'
 import type { ValidationIssue } from '../../../shared'
@@ -100,7 +101,7 @@ export const planReviewChange = (
         {
           field: 'staffRating',
           rule: 'custom',
-          message: 'Must be null when the review names no staff member',
+          message: reviewMessages.nullWithoutStaffMember,
         },
       ],
     }

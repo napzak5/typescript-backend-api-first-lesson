@@ -14,4 +14,8 @@ export const customerAllergyMessages = {
     en: 'Invalid customer allergy search',
     ja: '顧客のアレルギーの検索の条件が正しくありません',
   }),
+  anAllergyOfCustomer: text({
+    en: 'Must name an allergy of the customer',
+    ja: 'この顧客のアレルギーを指定してください',
+  }),
 }

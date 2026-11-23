@@ -64,4 +64,24 @@ export const inventoryMessages = {
     en: 'Must not repeat a stock row counted earlier',
     ja: '前に数えた在庫の行は指定できません',
   }),
+  aStockRow: text({
+    en: 'Must name a stock row',
+    ja: '存在する在庫の行を指定してください',
+  }),
+  aStockRowOfList: text({
+    en: 'Must name a stock row of the list',
+    ja: 'この一覧の在庫の行を指定してください',
+  }),
+  aStockMovementOfStockRow: text({
+    en: 'Must name a stock movement of the stock row',
+    ja: 'この在庫の行の移動を指定してください',
+  }),
+  lotOfProductKeptByLots: text({
+    en: 'Must name the lot: the product is kept by lots',
+    ja: 'ロット番号を指定してください。この商品は、在庫をロット番号で分けます',
+  }),
+  nullForProductNotKeptByLots: text({
+    en: 'Must be null: the product is not kept by lots',
+    ja: 'null にしてください。この商品は、在庫をロット番号で分けません',
+  }),
 }

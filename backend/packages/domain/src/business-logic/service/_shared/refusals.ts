@@ -1,3 +1,7 @@
+import {
+  ruleMessages,
+  serviceMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { ServiceChangeRefusal } from '../../../repositories/service.repository'
 import {
@@ -11,7 +15,7 @@ import {
 export const packageContainsItself: ValidationIssue = {
   field: 'packageServiceIds',
   rule: 'circular',
-  message: 'Must not name the service itself',
+  message: serviceMessages.notServiceItself,
 }
 
 /**
@@ -54,7 +58,7 @@ export const toRefusalError = (
           {
             field: 'categoryId',
             rule: 'not_found',
-            message: 'Must be a category of the same salon',
+            message: ruleMessages.aCategoryOfSameSalon,
           },
         ],
         within,
@@ -67,7 +71,7 @@ export const toRefusalError = (
           {
             field: 'packageServiceIds',
             rule: 'not_found',
-            message: 'Must name services of the same salon',
+            message: serviceMessages.servicesOfSameSalon,
           },
         ],
         within,
@@ -80,7 +84,7 @@ export const toRefusalError = (
           {
             field: 'packageServiceIds',
             rule: 'nested_package',
-            message: 'Must not name a package',
+            message: serviceMessages.noPackageAsMember,
           },
         ],
         within,
@@ -93,7 +97,7 @@ export const toRefusalError = (
           {
             field: 'isPackage',
             rule: 'contained_in_package',
-            message: 'A service that a package contains cannot be a package',
+            message: serviceMessages.notPackageWhileContained,
           },
         ],
         within,

@@ -1,3 +1,7 @@
+import {
+  pointMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { tz } from '@date-fns/tz'
 import { addDays, format, subDays } from 'date-fns'
 import { match } from 'ts-pattern'
@@ -131,7 +135,10 @@ export const planPoints = (
       return {
         type: 'invalid',
         issues: [
-          notFound('referenceId', `a ${request.referenceType} of the customer`),
+          notFound(
+            'referenceId',
+            pointMessages.aReferenceOfCustomer(request.referenceType),
+          ),
         ],
       }
     }
@@ -190,7 +197,7 @@ export const issuesOfExpiry = (
         {
           field: 'expiryDate',
           rule: 'too_small',
-          message: `Must not be earlier than ${earliest}`,
+          message: ruleMessages.notEarlierThan(earliest),
         },
       ]
 }
@@ -213,7 +220,7 @@ export const issuesOfProcessBefore = (
         {
           field: 'processBefore',
           rule: 'too_big',
-          message: `Must not be later than ${latest}`,
+          message: ruleMessages.notLaterThan(latest),
         },
       ]
 }

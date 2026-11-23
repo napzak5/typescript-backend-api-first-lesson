@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
@@ -53,7 +56,7 @@ export class ListCustomersUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a customer',
+            message: ruleMessages.aCustomer,
           },
         ]),
       )

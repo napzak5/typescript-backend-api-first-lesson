@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PointReadMapper } from '../../../mappers/read/point.mapper'
 import type { LedgerReach } from '../../../models/booking'
@@ -34,7 +35,7 @@ export const recordMovement = async (
     .with({ type: 'customerNotFound' }, () =>
       Result.error(
         DomainErrors.validation(message, [
-          notFound('customerId', 'a customer'),
+          notFound('customerId', ruleMessages.aCustomer),
         ]),
       ),
     )

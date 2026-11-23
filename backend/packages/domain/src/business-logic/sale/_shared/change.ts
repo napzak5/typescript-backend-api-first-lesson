@@ -1,4 +1,7 @@
-import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import type {
   DbPaymentTransaction,
   DbSale,
@@ -102,16 +105,11 @@ const issuesOfBooking = (
     return []
   }
   if (request.bookingId !== undefined) {
-    return [
-      notFound(
-        'bookingId',
-        'a booking of the salon that is of the customer of the sale',
-      ),
-    ]
+    return [notFound('bookingId', saleMessages.aBookingOfCustomerOfSale)]
   }
 
   return customerIsThere
-    ? [notFound('customerId', 'the customer of the booking of the sale')]
+    ? [notFound('customerId', saleMessages.theCustomerOfBookingOfSale)]
     : []
 }
 
@@ -138,12 +136,14 @@ export const planSaleChange = (
   }
 
   const issues = [
-    ...(customerIsThere ? [] : [notFound('customerId', 'a customer')]),
+    ...(customerIsThere
+      ? []
+      : [notFound('customerId', ruleMessages.aCustomer)]),
     ...(request.staffId === undefined ||
     request.staffId === null ||
     references.staffIds.includes(request.staffId)
       ? []
-      : [notFound('staffId', 'a staff member of the salon')]),
+      : [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]),
     ...(bookingToHold(sale, request) === null
       ? []
       : issuesOfBooking(request, customerId, customerIsThere, references)),

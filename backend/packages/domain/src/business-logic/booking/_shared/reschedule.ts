@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   addMilliseconds,
   differenceInMilliseconds,
@@ -149,7 +150,7 @@ export const planReschedule = (
   if (inCharge === undefined || inCharge.isDeleted) {
     return {
       type: 'invalid',
-      issues: [notFound('staffId', 'a staff member of the salon')],
+      issues: [notFound('staffId', ruleMessages.aStaffMemberOfSalon)],
     }
   }
 

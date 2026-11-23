@@ -1,3 +1,4 @@
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type {
   PaymentWrite,
   RefundWrite,
@@ -133,9 +134,6 @@ const OF_A_CARD: readonly ('cardLastFour' | 'cardBrand')[] = [
   'cardBrand',
 ]
 
-export const NOT_A_CARD =
-  'Must be null unless the payment method is a credit card or a debit card'
-
 /**
  * What a request breaks of the payment method it names: only a card has
  * the digits and the brand of one, and a payment method takes amounts
@@ -150,7 +148,13 @@ const issuesOfMethod = (
     : OF_A_CARD.flatMap((field) =>
         request[field] === null
           ? []
-          : [{ field, rule: 'custom', message: NOT_A_CARD }],
+          : [
+              {
+                field,
+                rule: 'custom',
+                message: paymentMessages.nullUnlessCard,
+              },
+            ],
       )),
   ...(paymentMethod.minimumAmount !== null &&
   request.amount < paymentMethod.minimumAmount
@@ -158,7 +162,9 @@ const issuesOfMethod = (
         {
           field: 'amount',
           rule: 'too_small',
-          message: `Must not be less than the minimumAmount of the payment method (${paymentMethod.minimumAmount})`,
+          message: paymentMessages.notLessThanMinimumOfMethod(
+            paymentMethod.minimumAmount,
+          ),
         },
       ]
     : []),
@@ -168,7 +174,9 @@ const issuesOfMethod = (
         {
           field: 'amount',
           rule: 'too_big',
-          message: `Must not be more than the maximumAmount of the payment method (${paymentMethod.maximumAmount})`,
+          message: paymentMessages.notMoreThanMaximumOfMethod(
+            paymentMethod.maximumAmount,
+          ),
         },
       ]
     : []),
@@ -198,7 +206,7 @@ export const planPayment = (
       : [
           notFound(
             'paymentMethodId',
-            'a payment method of the salon of the sale that is active',
+            paymentMessages.anActivePaymentMethodOfSalonOfSale,
           ),
         ]),
     ...(request.amount > left
@@ -206,7 +214,7 @@ export const planPayment = (
           {
             field: 'amount',
             rule: 'too_big',
-            message: `Must not be more than what is left to pay (${left})`,
+            message: paymentMessages.notMoreThanLeftToPay(left),
           },
         ]
       : []),
@@ -270,7 +278,7 @@ export const planRefund = (
         {
           field: 'refundAmount',
           rule: 'too_big',
-          message: `Must not be more than the amount of the payment (${payment.amount})`,
+          message: paymentMessages.notMoreThanAmountOfPayment(payment.amount),
         },
       ],
     }

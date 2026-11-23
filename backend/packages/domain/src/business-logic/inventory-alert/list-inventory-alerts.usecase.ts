@@ -114,7 +114,7 @@ export class ListInventoryAlertsUseCase {
               {
                 field: 'cursor',
                 rule: 'not_found',
-                message: 'Must name a product or a stock row of the salon',
+                message: inventoryAlertMessages.aProductOrStockRowOfSalon,
               },
             ]),
           ),

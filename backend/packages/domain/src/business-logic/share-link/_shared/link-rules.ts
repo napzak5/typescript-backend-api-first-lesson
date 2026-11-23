@@ -1,3 +1,4 @@
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addHours, isAfter, parseISO } from 'date-fns'
 import {
   type DomainError,
@@ -11,7 +12,8 @@ import {
  * outside the salon without an end; whoever wants it shown longer creates
  * another link.
  */
-const MOST_SHARE_HOURS = 30 * 24
+const MOST_SHARE_DAYS = 30
+const MOST_SHARE_HOURS = MOST_SHARE_DAYS * 24
 
 /**
  * The rule the end of a link breaks when it is created at `now`; null when
@@ -27,14 +29,14 @@ export const shareEndIssue = (
     return {
       field: 'expiresAt',
       rule: 'too_small',
-      message: 'Must be later than now',
+      message: shareLinkMessages.laterThanNow,
     }
   }
   if (isAfter(end, addHours(now, MOST_SHARE_HOURS))) {
     return {
       field: 'expiresAt',
       rule: 'too_big',
-      message: 'Must be within 30 days from now',
+      message: shareLinkMessages.withinDaysFromNow(MOST_SHARE_DAYS),
     }
   }
   return null

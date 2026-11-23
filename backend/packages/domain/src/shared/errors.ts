@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import type { Told } from './told'
 
 /** One rule that an input value broke. */
@@ -6,7 +7,8 @@ export type ValidationIssue = {
   field: string
   /** Identifier of the rule that was broken, e.g. `too_big`. */
   rule: string
-  message: Told
+  /** What the rule asks for, in every language. */
+  message: LocalizedText
 }
 
 /**

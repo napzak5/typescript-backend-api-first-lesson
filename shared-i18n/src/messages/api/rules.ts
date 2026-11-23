@@ -87,4 +87,40 @@ export const ruleMessages = {
     en: 'Must not repeat an earlier entry',
     ja: '前の要素と同じものは指定できません',
   }),
+  notInFuture: text({
+    en: 'Must not be in the future',
+    ja: '未来の日付にはできません',
+  }),
+  aSalon: text({
+    en: 'Must name a salon',
+    ja: '存在するサロンを指定してください',
+  }),
+  aCustomer: text({
+    en: 'Must name a customer',
+    ja: '存在する顧客を指定してください',
+  }),
+  aStaffMember: text({
+    en: 'Must name a staff member',
+    ja: '存在するスタッフを指定してください',
+  }),
+  aStaffMemberOfSalon: text({
+    en: 'Must name a staff member of the salon',
+    ja: 'このサロンのスタッフを指定してください',
+  }),
+  aServiceOfSalon: text({
+    en: 'Must name a service of the salon',
+    ja: 'このサロンのサービスを指定してください',
+  }),
+  aProductOfSalon: text({
+    en: 'Must name a product of the salon',
+    ja: 'このサロンの商品を指定してください',
+  }),
+  aStockRowOfSalon: text({
+    en: 'Must name a stock row of the salon',
+    ja: 'このサロンの在庫の行を指定してください',
+  }),
+  aCategoryOfSameSalon: text({
+    en: 'Must be a category of the same salon',
+    ja: '同じサロンのカテゴリーにしてください',
+  }),
 }

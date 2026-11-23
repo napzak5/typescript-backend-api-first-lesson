@@ -28,4 +28,8 @@ export const attachmentMessages = {
       en: `Must end as a file of the type ${contentType} does`,
       ja: `${contentType} のファイルの拡張子で終わらせてください`,
     }),
+  anAttachmentOfList: text({
+    en: 'Must name an attachment of the list',
+    ja: 'この一覧の添付ファイルを指定してください',
+  }),
 }

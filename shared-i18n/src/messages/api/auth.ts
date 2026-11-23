@@ -66,4 +66,36 @@ export const authMessages = {
     en: 'Invalid two-factor authentication setup',
     ja: '2 要素認証の設定の内容が正しくありません',
   }),
+  tokenInvalidOrExpired: text({
+    en: 'The token is invalid or has expired',
+    ja: 'トークンが正しくないか、期限が切れています',
+  }),
+  passwordGuessableWithEmail: text({
+    en: 'This password is too easy to guess: it repeats the email address, is a simple pattern or is a well-known password. Choose a different one',
+    ja: 'このパスワードは、推測されやすいものです。メールアドレスと同じか、単純な並びか、よく知られたパスワードです。別のパスワードにしてください',
+  }),
+  passwordGuessable: text({
+    en: 'This password is too easy to guess: it is a simple pattern or a well-known password. Choose a different one',
+    ja: 'このパスワードは、推測されやすいものです。単純な並びか、よく知られたパスワードです。別のパスワードにしてください',
+  }),
+  currentPasswordNotConfirmed: text({
+    en: 'The current password could not be confirmed',
+    ja: '現在のパスワードを確認できませんでした',
+  }),
+  differentFromCurrentPassword: text({
+    en: 'Must differ from the current password',
+    ja: '現在のパスワードと違うものにしてください',
+  }),
+  passwordNotConfirmed: text({
+    en: 'The password could not be confirmed',
+    ja: 'パスワードを確認できませんでした',
+  }),
+  codeNotConfirmed: text({
+    en: 'The code could not be confirmed',
+    ja: 'コードを確認できませんでした',
+  }),
+  sessionOfCursorGone: text({
+    en: 'The session this cursor names is not there any more',
+    ja: 'このカーソルが指すセッションは、もうありません',
+  }),
 }

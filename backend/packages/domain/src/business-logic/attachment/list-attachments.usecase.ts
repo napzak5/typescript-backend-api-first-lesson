@@ -64,7 +64,7 @@ export class ListAttachmentsUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name an attachment of the list',
+            message: attachmentMessages.anAttachmentOfList,
           },
         ]),
       )

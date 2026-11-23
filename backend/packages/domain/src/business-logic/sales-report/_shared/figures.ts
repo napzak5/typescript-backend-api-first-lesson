@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { LedgerReach } from '../../../models/booking'
 import type {
   SalesFigures,
@@ -31,7 +32,9 @@ export const figuresOf = async (
 
   return figures.data === null
     ? Result.error(
-        DomainErrors.validation(message, [notFound('salonId', 'a salon')]),
+        DomainErrors.validation(message, [
+          notFound('salonId', ruleMessages.aSalon),
+        ]),
       )
     : Result.success(figures.data)
 }

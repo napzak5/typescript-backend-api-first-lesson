@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  serviceMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
 import type { ApiPage } from '../../models/page'
@@ -54,7 +57,7 @@ export class ListServicesUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a service of the salon',
+            message: ruleMessages.aServiceOfSalon,
           },
         ]),
       )

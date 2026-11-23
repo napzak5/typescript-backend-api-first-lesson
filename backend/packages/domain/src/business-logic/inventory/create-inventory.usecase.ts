@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
@@ -70,7 +73,7 @@ export class CreateInventoryUseCase {
             {
               field: 'productId',
               rule: 'not_found',
-              message: 'Must name a product of the salon',
+              message: ruleMessages.aProductOfSalon,
             },
           ]),
         ),

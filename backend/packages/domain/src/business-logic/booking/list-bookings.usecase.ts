@@ -57,7 +57,7 @@ export class ListBookingsUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a booking',
+            message: bookingMessages.aBooking,
           },
         ]),
       )

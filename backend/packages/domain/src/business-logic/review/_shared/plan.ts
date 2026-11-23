@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { DbBooking } from '../../../models/booking'
 import type { CustomerId } from '../../../models/customer'
 import type { RequestedReview, ReviewWrite } from '../../../models/review'
@@ -61,10 +62,10 @@ const issuesOf = (
   booking: ReviewedBooking,
 ): ValidationIssue[] => [
   ...(request.salonId !== booking.salonId || booking.salonDeleted
-    ? [notFound('salonId', 'the salon of the booking')]
+    ? [notFound('salonId', reviewMessages.theSalonOfBooking)]
     : []),
   ...(request.staffId !== null && !booking.staffIds.includes(request.staffId)
-    ? [notFound('staffId', 'a staff member who took the booking')]
+    ? [notFound('staffId', reviewMessages.aStaffMemberWhoTookBooking)]
     : []),
 ]
 
@@ -83,7 +84,7 @@ export const planReview = (
   if (booking === null || booking.customerId !== customerId) {
     return {
       type: 'invalid',
-      issues: [notFound('bookingId', 'a booking of the customer')],
+      issues: [notFound('bookingId', reviewMessages.aBookingOfCustomer)],
     }
   }
   const issues = issuesOf(request, booking)

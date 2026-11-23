@@ -48,4 +48,30 @@ export const saleMessages = {
     en: 'Must be null for a sale without a customer',
     ja: '顧客のいない売上では、null にしてください',
   }),
+  aSale: text({
+    en: 'Must name a sale',
+    ja: '存在する売上を指定してください',
+  }),
+  aBookingOfSalon: text({
+    en: 'Must name a booking of the salon',
+    ja: 'このサロンの予約を指定してください',
+  }),
+  aBookingOfCustomerOfSale: text({
+    en: 'Must name a booking of the salon that is of the customer of the sale',
+    ja: 'このサロンの予約のうち、売上の顧客のものを指定してください',
+  }),
+  theCustomerOfBookingOfSale: text({
+    en: 'Must name the customer of the booking of the sale',
+    ja: '売上の予約の顧客を指定してください',
+  }),
+  aServiceWithoutServiceLine: text({
+    en: 'Must name a service when the booking has no service line',
+    ja: '予約に施術明細がないときは、サービスを指定してください',
+  }),
+  /** `limit` is the largest amount of a sale. */
+  amountsWithinLimit: (limit: number) =>
+    text({
+      en: `The amounts of a sale must not exceed ${limit}`,
+      ja: `売上の金額は、${limit} を超えられません`,
+    }),
 }

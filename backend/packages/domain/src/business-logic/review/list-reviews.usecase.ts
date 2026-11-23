@@ -37,7 +37,7 @@ export class ListReviewsUseCase {
     if (listed.data === null) {
       return Result.error(
         DomainErrors.validation(MESSAGE, [
-          notFound('cursor', 'a review that is listed'),
+          notFound('cursor', reviewMessages.aListedReview),
         ]),
       )
     }

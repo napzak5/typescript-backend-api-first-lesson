@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { DbCustomerPreferencesChanges } from '../../../models/customer-preferences'
 import type { CustomerPreferencesRefusal } from '../../../repositories/customer-preferences.repository'
@@ -11,7 +12,7 @@ import {
 const notAStaffMember = (field: string): ValidationIssue => ({
   field,
   rule: 'not_found',
-  message: 'Must name a staff member',
+  message: ruleMessages.aStaffMember,
 })
 
 /**

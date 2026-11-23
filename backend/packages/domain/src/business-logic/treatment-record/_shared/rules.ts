@@ -1,3 +1,4 @@
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { DbBooking } from '../../../models/booking'
 import type { ProductId } from '../../../models/product'
@@ -49,15 +50,20 @@ export type NamedOfTreatment = {
   materials?: readonly { productId: ProductId; lotNumber: string | null }[]
 }
 
-const SERVICE = 'a service of the salon of the booking'
-
 const serviceIssues = (
   field: string,
   services: readonly ServiceId[] | undefined,
   known: ReadonlySet<ServiceId>,
 ): ValidationIssue[] =>
   (services ?? []).flatMap((serviceId, index) =>
-    known.has(serviceId) ? [] : [notFound(`${field}.${index}`, SERVICE)],
+    known.has(serviceId)
+      ? []
+      : [
+          notFound(
+            `${field}.${index}`,
+            treatmentRecordMessages.aServiceOfSalonOfBooking,
+          ),
+        ],
   )
 
 /**
@@ -80,7 +86,9 @@ export const treatmentIssues = (
           {
             field: 'nextRecommendedDate',
             rule: 'too_small',
-            message: `Must not be before the date of the booking, ${facts.bookingDate}`,
+            message: treatmentRecordMessages.notBeforeBookingDate(
+              facts.bookingDate,
+            ),
           },
         ]
       : []
@@ -91,7 +99,7 @@ export const treatmentIssues = (
         return [
           notFound(
             `materials.${index}.productId`,
-            'a product of the salon of the booking',
+            treatmentRecordMessages.aProductOfSalonOfBooking,
           ),
         ]
       }
@@ -142,9 +150,14 @@ export const creationIssues = (
 ): ValidationIssue[] => [
   ...(facts.customerOfBooking
     ? []
-    : [notFound('customerId', 'the customer of the booking')]),
+    : [notFound('customerId', treatmentRecordMessages.theCustomerOfBooking)]),
   ...(facts.staffOfSalon
     ? []
-    : [notFound('staffId', 'a staff member of the salon of the booking')]),
+    : [
+        notFound(
+          'staffId',
+          treatmentRecordMessages.aStaffMemberOfSalonOfBooking,
+        ),
+      ]),
   ...treatmentIssues(facts, named),
 ]

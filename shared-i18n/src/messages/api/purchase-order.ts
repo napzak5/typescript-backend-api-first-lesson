@@ -46,4 +46,18 @@ export const purchaseOrderMessages = {
     en: 'Must not repeat a stock row received earlier in the receipt',
     ja: '同じ納品で前に指定した在庫の行は指定できません',
   }),
+  aPurchaseOrderOfList: text({
+    en: 'Must name a purchase order of the list',
+    ja: 'この一覧の発注を指定してください',
+  }),
+  aStockRowOfItemOfOrder: text({
+    en: 'Must name a stock row of an item of the order',
+    ja: 'この発注の明細の在庫の行を指定してください',
+  }),
+  /** `ordered` is the quantity the item of the order orders. */
+  atMostOrdered: (ordered: number) =>
+    text({
+      en: `Must be at most ${ordered}, the quantity the item orders`,
+      ja: `${ordered} 以下にしてください。明細が発注した数量です`,
+    }),
 }

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { medicalChartMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  medicalChartMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../mappers/read/medical-chart.mapper'
 import { MedicalChartWriteMapper } from '../../mappers/write/medical-chart.mapper'
@@ -56,7 +59,7 @@ export class CreateMedicalChartUseCase {
             {
               field: 'customerId',
               rule: 'not_found',
-              message: 'Must name a customer',
+              message: ruleMessages.aCustomer,
             },
           ]),
         ),
