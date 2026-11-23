@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
@@ -205,7 +206,7 @@ describe('ListPurchaseOrdersUseCase', () => {
       const result = await list(
         dependencies,
         actor,
-        Result.error(DomainErrors.validation('Bad query', [])),
+        Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
       )
 
       expect(result).toEqual(forbidden)
@@ -228,7 +229,7 @@ describe('ListPurchaseOrdersUseCase', () => {
 
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid query', [
+      DomainErrors.validation(MADE_UP_HEADLINE, [
         { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )

@@ -10,7 +10,7 @@ import type {
 } from '../../models/auth'
 import type { ApiPage, Paging } from '../../models/page'
 import type { SessionList } from '../../repositories/session.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 import { UserReadMapper } from './user.mapper'
@@ -39,24 +39,20 @@ const toApiSession = (
 ): Result<ApiSessionResponse, DomainError> => {
   const { id, userId, ipAddress, userAgent } = session
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, session, 'Invalid stored session'),
-      (converted) => ({
-        id,
-        userId,
-        ipAddress,
-        userAgent,
-        ...converted,
-        current,
-      }),
+  return Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      session,
+      `Stored session ${session.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored session ${session.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id,
+      userId,
+      ipAddress,
+      userAgent,
+      ...converted,
+      current,
+    }),
   )
 }
 

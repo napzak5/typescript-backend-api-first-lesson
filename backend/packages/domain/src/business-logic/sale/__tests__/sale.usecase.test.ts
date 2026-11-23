@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   ruleMessages,
@@ -30,7 +31,7 @@ import type {
   SaleUpdate,
   SaleVoiding,
 } from '../../../repositories/sale.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CreateSaleUseCase,
   GetSaleUseCase,
@@ -58,7 +59,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** A sale whose time cannot be turned into a response. */

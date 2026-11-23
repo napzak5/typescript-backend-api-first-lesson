@@ -12,7 +12,7 @@ import type {
   SaleWithDetails,
 } from '../../models/sale'
 import type { SaleList } from '../../repositories/sale.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 import { toApiPayment } from './payment.mapper'
@@ -46,15 +46,13 @@ const convertedSaleColumnsSchema = z.object({
   Pick<ApiSaleResponse, 'saleTime' | 'voidedAt' | 'createdAt' | 'updatedAt'>
 >
 
+/** `description` says which sale the line is read with. */
 const toApiSalesDetail = (
   detail: DbSalesDetail,
+  description: string,
 ): Result<ApiSalesDetail, DomainError> =>
   Result.map(
-    parseWith(
-      convertedDetailColumnsSchema,
-      detail,
-      'Invalid stored sales detail',
-    ),
+    parseStored(convertedDetailColumnsSchema, detail, description),
     (converted) => ({
       itemType: detail.itemType,
       itemId: detail.itemId,
@@ -92,46 +90,47 @@ const toApiSale = ({
   sale,
   details,
   payments,
-}: SaleWithDetails): Result<ApiSaleResponse, DomainError> =>
-  Result.mapError(
-    Result.flatMap(
-      parseWith(convertedSaleColumnsSchema, sale, 'Invalid stored sale'),
-      (converted) =>
-        Result.flatMap(each(details, toApiSalesDetail), (apiDetails) =>
-          Result.map(each(payments, toApiPayment), (apiPayments) => ({
-            id: sale.id,
-            saleNumber: sale.saleNumber,
-            salonId: sale.salonId,
-            customerId: sale.customerId,
-            staffId: sale.staffId,
-            bookingId: sale.bookingId,
-            saleDate: sale.saleDate,
-            saleTime: converted.saleTime,
-            subtotal: sale.subtotal,
-            discountAmount: sale.discountAmount,
-            taxAmount: sale.taxAmount,
-            totalAmount: sale.totalAmount,
-            pointsUsed: sale.pointsUsed,
-            pointsEarned: sale.pointsEarned,
-            paymentStatus: sale.paymentStatus,
-            isVoid: sale.isVoid,
-            voidedAt: converted.voidedAt,
-            voidReason: sale.voidReason,
-            notes: sale.notes,
-            details: apiDetails,
-            payments: apiPayments,
-            createdAt: converted.createdAt,
-            updatedAt: converted.updatedAt,
-          })),
-        ),
-    ),
-    // The request was fine; the stored rows are not.
-    (error) =>
-      DomainErrors.database(
-        `Stored sale ${sale.id} does not match the API model`,
-        error,
+}: SaleWithDetails): Result<ApiSaleResponse, DomainError> => {
+  // The lines and the payments are read with the sale: what does not match is told of the sale.
+  const description = `Stored sale ${sale.id} does not match the API model`
+
+  return Result.flatMap(
+    parseStored(convertedSaleColumnsSchema, sale, description),
+    (converted) =>
+      Result.flatMap(
+        each(details, (detail) => toApiSalesDetail(detail, description)),
+        (apiDetails) =>
+          Result.map(
+            each(payments, (payment) => toApiPayment(payment, description)),
+            (apiPayments) => ({
+              id: sale.id,
+              saleNumber: sale.saleNumber,
+              salonId: sale.salonId,
+              customerId: sale.customerId,
+              staffId: sale.staffId,
+              bookingId: sale.bookingId,
+              saleDate: sale.saleDate,
+              saleTime: converted.saleTime,
+              subtotal: sale.subtotal,
+              discountAmount: sale.discountAmount,
+              taxAmount: sale.taxAmount,
+              totalAmount: sale.totalAmount,
+              pointsUsed: sale.pointsUsed,
+              pointsEarned: sale.pointsEarned,
+              paymentStatus: sale.paymentStatus,
+              isVoid: sale.isVoid,
+              voidedAt: converted.voidedAt,
+              voidReason: sale.voidReason,
+              notes: sale.notes,
+              details: apiDetails,
+              payments: apiPayments,
+              createdAt: converted.createdAt,
+              updatedAt: converted.updatedAt,
+            }),
+          ),
       ),
   )
+}
 
 export const SaleReadMapper = {
   toApiSale,

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   bookingMessages,
   entityMessages,
@@ -20,6 +21,7 @@ import {
 import {
   brokenRules,
   OTHER_SALON_ID,
+  RULES_BROKEN_BY_STORED,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
 import {
@@ -32,7 +34,7 @@ import type {
   BookingServiceRemoval,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type BookingUseCaseDependencies,
   CreateBookingServiceUseCase,
@@ -64,7 +66,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 type Reach = { type: string; salonId?: string }
@@ -157,7 +159,7 @@ const storedLineIsCorrupt = {
   error: {
     type: 'database',
     message: `Stored booking service ${BOOKING_SERVICE_ID} does not match the API model`,
-    cause: expect.objectContaining({ type: 'validation' }),
+    cause: RULES_BROKEN_BY_STORED,
   },
 }
 

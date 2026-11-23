@@ -9,7 +9,7 @@ import type {
 } from '../../models/booking'
 import type { ApiPage, Paging } from '../../models/page'
 import type { BookingList } from '../../repositories/booking.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -56,15 +56,13 @@ const convertedBookingColumnsSchema = z.object({
   >
 >
 
+/** `description` says which stored row the service line is read with. */
 const toApiBookingService = (
   service: DbBookingService,
+  description: string,
 ): Result<ApiBookingServiceResponse, DomainError> =>
   Result.map(
-    parseWith(
-      convertedServiceColumnsSchema,
-      service,
-      'Invalid stored booking service',
-    ),
+    parseStored(convertedServiceColumnsSchema, service, description),
     (converted) => ({
       id: service.id,
       serviceId: service.serviceId,
@@ -85,10 +83,11 @@ const toApiBookingService = (
 
 const toApiBookingServices = (
   services: DbBookingService[],
+  description: string,
 ): Result<ApiBookingServiceResponse[], DomainError> => {
   const apiServices: ApiBookingServiceResponse[] = []
   for (const service of services) {
-    const mapped = toApiBookingService(service)
+    const mapped = toApiBookingService(service, description)
     if (mapped.type === 'error') {
       return mapped
     }
@@ -100,16 +99,15 @@ const toApiBookingServices = (
 const toApiBooking = ({
   booking,
   services,
-}: BookingWithServices): Result<ApiBookingResponse, DomainError> =>
-  Result.mapError(
-    Result.flatMap(
-      parseWith(
-        convertedBookingColumnsSchema,
-        booking,
-        'Invalid stored booking',
-      ),
-      (converted) =>
-        Result.map(toApiBookingServices(services), (apiServices) => ({
+}: BookingWithServices): Result<ApiBookingResponse, DomainError> => {
+  const description = `Stored booking ${booking.id} does not match the API model`
+
+  return Result.flatMap(
+    parseStored(convertedBookingColumnsSchema, booking, description),
+    (converted) =>
+      Result.map(
+        toApiBookingServices(services, description),
+        (apiServices) => ({
           id: booking.id,
           bookingNumber: booking.bookingNumber,
           salonId: booking.salonId,
@@ -142,15 +140,10 @@ const toApiBooking = ({
           services: apiServices,
           createdAt: converted.createdAt,
           updatedAt: converted.updatedAt,
-        })),
-    ),
-    // The request was fine; the stored rows are not.
-    (error) =>
-      DomainErrors.database(
-        `Stored booking ${booking.id} does not match the API model`,
-        error,
+        }),
       ),
   )
+}
 
 export const BookingReadMapper = {
   toApiBooking,
@@ -158,12 +151,9 @@ export const BookingReadMapper = {
   toApiBookingService(
     service: DbBookingService,
   ): Result<ApiBookingServiceResponse, DomainError> {
-    return Result.mapError(toApiBookingService(service), (error) =>
-      // The request was fine; the stored row is not.
-      DomainErrors.database(
-        `Stored booking service ${service.id} does not match the API model`,
-        error,
-      ),
+    return toApiBookingService(
+      service,
+      `Stored booking service ${service.id} does not match the API model`,
     )
   },
 

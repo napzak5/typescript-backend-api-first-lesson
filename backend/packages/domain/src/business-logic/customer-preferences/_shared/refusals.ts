@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { DbCustomerPreferencesChanges } from '../../../models/customer-preferences'
@@ -5,7 +6,6 @@ import type { CustomerPreferencesRefusal } from '../../../repositories/customer-
 import {
   type DomainError,
   DomainErrors,
-  type Told,
   type ValidationIssue,
 } from '../../../shared'
 
@@ -45,7 +45,7 @@ const staffNotFoundIssues = (
 export const toRefusalError = (
   refusal: CustomerPreferencesRefusal,
   changes: DbCustomerPreferencesChanges,
-  message: Told,
+  message: LocalizedText,
   customerNotFound: () => DomainError,
 ): DomainError =>
   match(refusal)

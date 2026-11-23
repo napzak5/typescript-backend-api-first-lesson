@@ -4,7 +4,7 @@ import type {
   ApiPaymentResponse,
   DbPaymentTransaction,
 } from '../../models/sale'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 /**
@@ -37,9 +37,10 @@ const convertedColumnsSchema = z.object({
  */
 export const toApiPayment = (
   payment: DbPaymentTransaction,
+  description: string,
 ): Result<ApiPaymentResponse, DomainError> =>
   Result.map(
-    parseWith(convertedColumnsSchema, payment, 'Invalid stored payment'),
+    parseStored(convertedColumnsSchema, payment, description),
     (converted) => ({
       id: payment.id,
       saleId: payment.saleId,
@@ -66,14 +67,9 @@ export const PaymentReadMapper = {
   toApiPayment(
     payment: DbPaymentTransaction,
   ): Result<ApiPaymentResponse, DomainError> {
-    return Result.mapError(
-      toApiPayment(payment),
-      // The request was fine; the stored row is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored payment ${payment.id} does not match the API model`,
-          error,
-        ),
+    return toApiPayment(
+      payment,
+      `Stored payment ${payment.id} does not match the API model`,
     )
   },
 }

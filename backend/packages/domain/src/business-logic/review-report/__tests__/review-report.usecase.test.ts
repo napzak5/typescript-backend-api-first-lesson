@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   reviewMessages,
@@ -31,7 +32,7 @@ import type {
   ReportDismissal,
   ReviewReportList,
 } from '../../../repositories/review-report.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   ReportReviewUseCase,
   type ReviewUseCaseDependencies,
@@ -63,7 +64,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** A report for a reason of the list, with what it is about. */

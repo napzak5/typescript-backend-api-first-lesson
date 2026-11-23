@@ -12,7 +12,7 @@ import type {
 } from '../../models/salon'
 import type { SalonList } from '../../repositories/salon.repository'
 import { storedBusinessHoursSchema } from '../../schemas/salon.schema'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -71,25 +71,19 @@ const toApiSalon = (
 ): Result<ApiSalonResponse, DomainError> => {
   const { deletedAt, ...columns } = salon
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
-      (converted) => ({
-        ...columns,
-        ...converted,
-        openingHours: openingHours.map(toApiOpeningHours),
-      }),
-    ),
-    (error) => storedDoesNotMatch(salon.id, error),
+  return Result.map(
+    parseStored(convertedColumnsSchema, salon, storedSalon(salon.id)),
+    (converted) => ({
+      ...columns,
+      ...converted,
+      openingHours: openingHours.map(toApiOpeningHours),
+    }),
   )
 }
 
-/** The request was fine; the stored row is not. */
-const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
-  DomainErrors.database(
-    `Stored salon ${id} does not match the API model`,
-    cause,
-  )
+/** What is told of a stored salon that does not match, for the log. */
+const storedSalon = (id: string): string =>
+  `Stored salon ${id} does not match the API model`
 
 export const SalonReadMapper = {
   toApiSalon,
@@ -102,10 +96,7 @@ export const SalonReadMapper = {
     ApiBusinessHours[] | null,
     DomainError
   > {
-    return Result.mapError(
-      parseWith(businessHoursSchema, businessHours, 'Invalid stored salon'),
-      (error) => storedDoesNotMatch(id, error),
-    )
+    return parseStored(businessHoursSchema, businessHours, storedSalon(id))
   },
 
   toApiSalons(

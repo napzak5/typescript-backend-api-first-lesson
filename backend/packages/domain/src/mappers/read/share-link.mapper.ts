@@ -10,7 +10,7 @@ import type {
   ShareLinkId,
 } from '../../models/share-link'
 import type { ShareLinkList } from '../../repositories/share-link.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -35,27 +35,23 @@ const convertedColumnsSchema = z.object({
 const toApiShareLink = (
   shareLink: DbShareLink,
 ): Result<ApiShareLinkResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, shareLink, 'Invalid stored share link'),
-      (converted) => ({
-        id: shareLink.id,
-        attachmentId: shareLink.attachmentId,
-        expiresAt: converted.expiresAt,
-        maxDownloads: shareLink.maxDownloads,
-        downloadCount: shareLink.downloadCount,
-        hasPassword: shareLink.passwordHash !== null,
-        createdBy: shareLink.createdBy,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      shareLink,
+      `Stored share link ${shareLink.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored share link ${shareLink.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: shareLink.id,
+      attachmentId: shareLink.attachmentId,
+      expiresAt: converted.expiresAt,
+      maxDownloads: shareLink.maxDownloads,
+      downloadCount: shareLink.downloadCount,
+      hasPassword: shareLink.passwordHash !== null,
+      createdBy: shareLink.createdBy,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const ShareLinkReadMapper = {

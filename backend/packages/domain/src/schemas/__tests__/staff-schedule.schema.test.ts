@@ -1,22 +1,26 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import {
   dayOffEntry,
   singleDayEntry,
   weeklyEntry,
 } from '../../__tests__/fixtures/staff-schedule-fixtures'
 import type { ApiStaffSchedule } from '../../models/staff-schedule'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   staffScheduleSearchRequestSchema,
   staffScheduleUpdateRequestSchema,
 } from '../staff-schedule.schema'
 
 const update = (input: unknown) =>
-  parseWith(staffScheduleUpdateRequestSchema, input, 'Invalid')
+  parseWith(staffScheduleUpdateRequestSchema, input, MADE_UP_HEADLINE)
 
 const search = (input: unknown) =>
-  parseWith(staffScheduleSearchRequestSchema, input, 'Invalid')
+  parseWith(staffScheduleSearchRequestSchema, input, MADE_UP_HEADLINE)
 
 /** The broken rules of a request for a replacement, as `field:rule`. */
 const rulesBrokenBy = (input: unknown): string[] => {
@@ -29,7 +33,7 @@ const messagesFor = (input: unknown): string[] => {
   const result = update(input)
   return result.type === 'error' && result.error.type === 'validation'
     ? result.error.issues.map(
-        ({ field, message }) => `${field}: ${toldIn(message, 'en')}`,
+        ({ field, message }) => `${field}: ${textIn(message, 'en')}`,
       )
     : []
 }

@@ -1,8 +1,13 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID, CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   PRODUCT_ID,
   SALE_ID,
@@ -11,7 +16,7 @@ import {
   TREATMENT_ID,
 } from '../../__tests__/fixtures/sale-fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
-import { type DomainError, parseWith, toldIn } from '../../shared'
+import { type DomainError, parseWith } from '../../shared'
 import {
   MAX_SALE_DETAILS,
   saleCalculateRequestSchema,
@@ -27,30 +32,30 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
 const parseCreate = (input: unknown) =>
-  parseWith(saleCreateRequestSchema, input, 'Invalid')
+  parseWith(saleCreateRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfCreate = (input: unknown): string[] =>
   rulesBrokenBy(saleCreateRequestSchema, input)
 
 const parseUpdate = (input: unknown) =>
-  parseWith(saleUpdateRequestSchema, input, 'Invalid')
+  parseWith(saleUpdateRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfUpdate = (input: unknown): string[] =>
   rulesBrokenBy(saleUpdateRequestSchema, input)
 
 const parseVoid = (input: unknown) =>
-  parseWith(saleVoidRequestSchema, input, 'Invalid')
+  parseWith(saleVoidRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfVoid = (input: unknown): string[] =>
   rulesBrokenBy(saleVoidRequestSchema, input)
 
 const parseSearch = (input: unknown) =>
-  parseWith(saleSearchRequestSchema, input, 'Invalid')
+  parseWith(saleSearchRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfSearch = (input: unknown): string[] =>
   rulesBrokenBy(saleSearchRequestSchema, input)
@@ -64,7 +69,7 @@ const messagesOf = (input: unknown): Record<string, string> => {
     ? Object.fromEntries(
         error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}
@@ -834,7 +839,7 @@ describe('saleSearchRequestSchema', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid',
+        message: MADE_UP_HEADLINE,
         issues: [
           {
             field: 'endDate',
@@ -1147,7 +1152,7 @@ describe('saleVoidRequestSchema', () => {
 
 describe('saleCalculateRequestSchema', () => {
   const parseCalculation = (input: unknown) =>
-    parseWith(saleCalculateRequestSchema, input, 'Invalid')
+    parseWith(saleCalculateRequestSchema, input, MADE_UP_HEADLINE)
 
   const rulesOfCalculation = (input: unknown): string[] =>
     rulesBrokenBy(saleCalculateRequestSchema, input)

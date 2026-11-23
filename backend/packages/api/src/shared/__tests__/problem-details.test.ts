@@ -3,12 +3,12 @@ import type { Locale, LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   authMessages,
   entityMessages,
+  salonMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   type ApiError,
   type HttpError,
-  languageOf,
   type ProblemDetails,
   toBearerChallenge,
   toProblemDetails,
@@ -23,7 +23,7 @@ const context = {
 describe('toProblemDetails', () => {
   it('presents a validation error as 400 with one entry per broken rule', () => {
     const problem = toProblemDetails(
-      DomainErrors.validation('Invalid salon', [
+      DomainErrors.validation(salonMessages.invalidSalon, [
         {
           field: 'email',
           rule: 'invalid_format',
@@ -403,10 +403,10 @@ describe('toProblemDetails for an operation that the state does not allow', () =
 })
 
 /** What a problem reads: its title and its detail. */
-type Told = Pick<ProblemDetails, 'title' | 'detail'>
+type Said = Pick<ProblemDetails, 'title' | 'detail'>
 
 /** The errors that are told in the language asked for, with what they read in each language. */
-const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
+const TOLD_BY_THE_API: [string, ApiError, Said, Said][] = [
   [
     'a request without credentials',
     DomainErrors.unauthenticated('missingCredentials'),
@@ -636,17 +636,6 @@ const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
   ],
 ]
 
-/** The errors of which the domain writes a text in English alone, with what they read. */
-const TOLD_BY_THE_DOMAIN: [string, DomainError, Told][] = [
-  [
-    'a validation error with a headline in English alone',
-    DomainErrors.validation('Invalid salon', []),
-    { title: 'Validation failed', detail: 'Invalid salon' },
-  ],
-]
-
-const LANGUAGES: Locale[] = ['en', 'ja']
-
 describe('toProblemDetails in the language that is asked for', () => {
   it.each(TOLD_BY_THE_API)(
     'should tell %s in English when English is asked for',
@@ -685,63 +674,6 @@ describe('toProblemDetails in the language that is asked for', () => {
       })
     },
   )
-
-  it.each(
-    TOLD_BY_THE_DOMAIN.flatMap(([name, error, told]) =>
-      LANGUAGES.map((asked): [string, Locale, DomainError, Told] => [
-        name,
-        asked,
-        error,
-        told,
-      ]),
-    ),
-  )(
-    'should tell %s in English when %s is asked for',
-    (_case, asked, error, english) => {
-      // Act
-      const problem = toProblemDetails(error, context, asked)
-
-      // Assert
-      expect(problem).toMatchObject(english)
-    },
-  )
-})
-
-describe('languageOf', () => {
-  it.each(
-    TOLD_BY_THE_API.flatMap(([name, error]) =>
-      LANGUAGES.map((asked): [string, Locale, ApiError] => [
-        name,
-        asked,
-        error,
-      ]),
-    ),
-  )('should tell %s in the language asked for (%s)', (_case, asked, error) => {
-    // Act
-    const language = languageOf(error, asked)
-
-    // Assert
-    expect(language).toBe(asked)
-  })
-
-  it.each(
-    TOLD_BY_THE_DOMAIN.flatMap(([name, error]) =>
-      LANGUAGES.map((asked): [string, Locale, ApiError] => [
-        name,
-        asked,
-        error,
-      ]),
-    ),
-  )(
-    'should tell %s in English whatever is asked for (%s)',
-    (_case, asked, error) => {
-      // Act
-      const language = languageOf(error, asked)
-
-      // Assert
-      expect(language).toBe('en')
-    },
-  )
 })
 
 const HEADLINE: LocalizedText = {
@@ -759,22 +691,13 @@ const TOO_LONG: LocalizedText = {
   ja: '大きすぎる値: stringは255文字以下である必要があります',
 }
 
-/** A validation error whose headline is written in every language, as what it says of each broken rule is. */
+/** A validation error: its headline and what it says of each broken rule are written in every language. */
 const WRITTEN_IN_EVERY_LANGUAGE = DomainErrors.validation(HEADLINE, [
   { field: 'name', rule: 'invalid_format', message: BLANK },
   { field: 'city', rule: 'too_big', message: TOO_LONG },
 ])
 
-/**
- * A validation error whose headline is written in English alone. What it
- * says of each broken rule is written in every language.
- */
-const HEADLINE_IN_ENGLISH_ALONE = DomainErrors.validation('Invalid salon', [
-  { field: 'name', rule: 'invalid_format', message: BLANK },
-  { field: 'city', rule: 'too_big', message: TOO_LONG },
-])
-
-/** What such an error says, whoever asks. */
+/** What it says in English. */
 const IN_ENGLISH = {
   title: 'Validation failed',
   detail: 'Invalid salon',
@@ -805,7 +728,7 @@ describe('a validation error in the language that is asked for', () => {
     expect(problem).toMatchObject(IN_ENGLISH)
   })
 
-  it('should be told in Japanese to who asks for Japanese, when its headline is written in it', () => {
+  it('should be told in Japanese to who asks for Japanese', () => {
     // Act
     const problem = toProblemDetails(WRITTEN_IN_EVERY_LANGUAGE, context, 'ja')
 
@@ -849,42 +772,18 @@ describe('a validation error in the language that is asked for', () => {
     )
   })
 
-  it.each(LANGUAGES)(
-    'should be told in the language asked for (%s) when it has a headline in every language and no issue',
+  it.each<Locale>(['en', 'ja'])(
+    'should say its headline in the language asked for (%s) when it names no broken rule',
     (asked) => {
       // Act
-      const language = languageOf(DomainErrors.validation(HEADLINE, []), asked)
-
-      // Assert
-      expect(language).toBe(asked)
-    },
-  )
-
-  it.each(LANGUAGES)(
-    'should be told in the language asked for (%s) when its headline is written in every language',
-    (asked) => {
-      // Act
-      const language = languageOf(WRITTEN_IN_EVERY_LANGUAGE, asked)
-
-      // Assert
-      expect(language).toBe(asked)
-    },
-  )
-
-  it.each(LANGUAGES)(
-    'should be told in English as a whole when its headline is written in English alone, whatever is asked for (%s)',
-    (asked) => {
-      // Act
-      const language = languageOf(HEADLINE_IN_ENGLISH_ALONE, asked)
       const problem = toProblemDetails(
-        HEADLINE_IN_ENGLISH_ALONE,
+        DomainErrors.validation(HEADLINE, []),
         context,
         asked,
       )
 
       // Assert
-      expect(language).toBe('en')
-      expect(problem).toMatchObject(IN_ENGLISH)
+      expect(problem).toMatchObject({ detail: HEADLINE[asked], errors: [] })
     },
   )
 })
@@ -925,7 +824,7 @@ describe('toBearerChallenge', () => {
 
   it.each<[string, ApiError]>([
     ['a forbidden action', DomainErrors.forbidden()],
-    ['a validation error', DomainErrors.validation('Invalid', [])],
+    ['a validation error', DomainErrors.validation(HEADLINE, [])],
     ['a missing entity', DomainErrors.notFound(entityMessages.salon, 'x')],
     [
       'a duplicate',

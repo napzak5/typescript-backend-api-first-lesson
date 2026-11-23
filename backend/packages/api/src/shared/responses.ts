@@ -4,7 +4,6 @@ import { API_VERSION } from './api-version'
 import { languageAsked } from './language'
 import {
   type ApiError,
-  languageOf,
   type ProblemDetails,
   toBearerChallenge,
   toProblemDetails,
@@ -43,9 +42,9 @@ const PROBLEM_MEDIA_TYPE = 'application/problem+json'
  * logged here, because their cause never reaches the response.
  *
  * The problem is told in the language the request asks for
- * (`Accept-Language`) where the error is written in it. `Content-Language`
- * names the language it is told in, and `Vary` says that the answer depends
- * on what the request asked for.
+ * (`Accept-Language`): every text of an error is written in every language.
+ * `Content-Language` names the language, and `Vary` says that the answer
+ * depends on what the request asked for.
  */
 export const sendProblem = (
   req: AnsweredRequest,
@@ -56,9 +55,8 @@ export const sendProblem = (
     req.log.error({ cause: error.cause }, error.message)
   }
 
-  const asked = languageAsked(req)
   // A language of the product that the contract does not name does not compile
-  const language: ContentLanguage = languageOf(error, asked)
+  const language: ContentLanguage = languageAsked(req)
   const problem = toProblemDetails(
     error,
     {
@@ -66,7 +64,7 @@ export const sendProblem = (
       correlationId: correlationIdOf(req),
       timestamp: new Date().toISOString(),
     },
-    asked,
+    language,
   )
   const challenge = toBearerChallenge(error)
   if (challenge !== null) {

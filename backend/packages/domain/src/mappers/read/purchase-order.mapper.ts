@@ -15,7 +15,7 @@ import type {
   PurchaseOrderListing,
   ReorderSuggestionListing,
 } from '../../repositories/purchase-order.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage, toApiPageEndingAt } from './page'
 
@@ -75,21 +75,24 @@ const convertedSuggestionSchema = z.object({
   >
 >
 
-const MESSAGE = 'Invalid stored purchase order'
-
+/** `description` says which item of which order the row is. */
 const toApiItem = (
   item: DbPurchaseOrderItem,
+  description: string,
 ): Result<ApiPurchaseOrderItem, DomainError> =>
-  Result.map(parseWith(convertedItemSchema, item, MESSAGE), ({ quantity }) => ({
-    inventoryId: item.inventoryId,
-    productCode: item.productCode,
-    productName: item.productName,
-    quantity,
-    unit: item.unit,
-    unitPrice: item.unitPrice,
-    totalPrice: item.totalPrice,
-    notes: item.notes,
-  }))
+  Result.map(
+    parseStored(convertedItemSchema, item, description),
+    ({ quantity }) => ({
+      inventoryId: item.inventoryId,
+      productCode: item.productCode,
+      productName: item.productName,
+      quantity,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      notes: item.notes,
+    }),
+  )
 
 const toApiPurchaseOrder = ({
   order,
@@ -97,53 +100,47 @@ const toApiPurchaseOrder = ({
 }: PurchaseOrderWithItems): Result<ApiPurchaseOrderResponse, DomainError> => {
   const apiItems: ApiPurchaseOrderItem[] = []
   for (const item of items) {
-    const mapped = toApiItem(item)
+    const mapped = toApiItem(
+      item,
+      `Stored item ${item.id} of purchase order ${order.id} does not match the API model`,
+    )
     if (mapped.type === 'error') {
-      return Result.error(
-        DomainErrors.database(
-          `Stored item ${item.id} of purchase order ${order.id} does not match the API model`,
-          mapped.error,
-        ),
-      )
+      return mapped
     }
     apiItems.push(mapped.data)
   }
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedOrderSchema, order, MESSAGE),
-      (converted) => ({
-        id: order.id,
-        salonId: order.salonId,
-        orderNumber: order.orderNumber,
-        supplier: order.supplier,
-        status: order.status,
-        items: apiItems,
-        subtotal: order.subtotal,
-        taxAmount: order.taxAmount,
-        shippingCost: order.shippingCost,
-        totalAmount: order.totalAmount,
-        orderDate: converted.orderDate,
-        expectedDelivery: converted.expectedDelivery,
-        actualDelivery: converted.actualDelivery,
-        deliveryNotes: order.deliveryNotes,
-        paymentTerms: order.paymentTerms,
-        notes: order.notes,
-        approvedBy: order.approvedBy,
-        approvedAt: converted.approvedAt,
-        cancelledAt: converted.cancelledAt,
-        cancellationReason: order.cancellationReason,
-        createdBy: order.createdBy,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  return Result.map(
+    parseStored(
+      convertedOrderSchema,
+      order,
+      `Stored purchase order ${order.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored purchase order ${order.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: order.id,
+      salonId: order.salonId,
+      orderNumber: order.orderNumber,
+      supplier: order.supplier,
+      status: order.status,
+      items: apiItems,
+      subtotal: order.subtotal,
+      taxAmount: order.taxAmount,
+      shippingCost: order.shippingCost,
+      totalAmount: order.totalAmount,
+      orderDate: converted.orderDate,
+      expectedDelivery: converted.expectedDelivery,
+      actualDelivery: converted.actualDelivery,
+      deliveryNotes: order.deliveryNotes,
+      paymentTerms: order.paymentTerms,
+      notes: order.notes,
+      approvedBy: order.approvedBy,
+      approvedAt: converted.approvedAt,
+      cancelledAt: converted.cancelledAt,
+      cancellationReason: order.cancellationReason,
+      createdBy: order.createdBy,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 }
 
@@ -155,28 +152,25 @@ const toApiPurchaseOrder = ({
 const toApiReorderSuggestion = (
   suggestion: DbReorderSuggestion,
 ): Result<ApiReorderSuggestionResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedSuggestionSchema, suggestion, MESSAGE),
-      (converted) => ({
-        productId: suggestion.productId,
-        productCode: suggestion.productCode,
-        productName: suggestion.productName,
-        unit: suggestion.unit,
-        supplier: suggestion.supplier,
-        currentStock: converted.currentStock,
-        onOrderQuantity: converted.onOrderQuantity,
-        reorderPoint: converted.reorderPoint,
-        maximumStock: converted.maximumStock,
-        suggestedQuantity: converted.suggestedQuantity,
-        lastOrderDate: converted.lastOrderDate,
-      }),
+  Result.map(
+    parseStored(
+      convertedSuggestionSchema,
+      suggestion,
+      `Reorder suggestion of product ${suggestion.productId} does not match the API model`,
     ),
-    (error) =>
-      DomainErrors.database(
-        `Reorder suggestion of product ${suggestion.productId} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      productId: suggestion.productId,
+      productCode: suggestion.productCode,
+      productName: suggestion.productName,
+      unit: suggestion.unit,
+      supplier: suggestion.supplier,
+      currentStock: converted.currentStock,
+      onOrderQuantity: converted.onOrderQuantity,
+      reorderPoint: converted.reorderPoint,
+      maximumStock: converted.maximumStock,
+      suggestedQuantity: converted.suggestedQuantity,
+      lastOrderDate: converted.lastOrderDate,
+    }),
   )
 
 export const PurchaseOrderReadMapper = {

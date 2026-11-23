@@ -1,10 +1,15 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   PRODUCT_ID,
   productCreateRequest,
 } from '../../__tests__/fixtures/product-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   productCreateRequestSchema,
   productSearchRequestSchema,
@@ -15,7 +20,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -24,10 +29,10 @@ const messagesOf = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' && result.error.type === 'validation'
     ? result.error.issues.map(
-        ({ field, message }) => `${field}: ${toldIn(message, 'en')}`,
+        ({ field, message }) => `${field}: ${textIn(message, 'en')}`,
       )
     : []
 }
@@ -293,7 +298,9 @@ describe('productCreateRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = productCreateRequest()
 
-    expect(parseWith(productCreateRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(productCreateRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -320,7 +327,9 @@ describe('productCreateRequestSchema', () => {
       safetyDataSheet: null,
     }
 
-    expect(parseWith(productCreateRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(productCreateRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -329,7 +338,9 @@ describe('productCreateRequestSchema', () => {
   it.each(accepted)('accepts %s and keeps it as it is', (_case, change) => {
     const request = { ...withoutLevels(), ...change }
 
-    expect(parseWith(productCreateRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(productCreateRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -467,7 +478,9 @@ describe('productUpdateRequestSchema', () => {
   it('accepts everything a product has and returns it unchanged', () => {
     const request = productCreateRequest()
 
-    expect(parseWith(productUpdateRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(productUpdateRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -477,13 +490,19 @@ describe('productUpdateRequestSchema', () => {
     'accepts %s alone',
     (property, value) => {
       expect(
-        parseWith(productUpdateRequestSchema, { [property]: value }, 'Invalid'),
+        parseWith(
+          productUpdateRequestSchema,
+          { [property]: value },
+          MADE_UP_HEADLINE,
+        ),
       ).toEqual({ type: 'success', data: { [property]: value } })
     },
   )
 
   it.each(accepted)('accepts %s and keeps it as it is', (_case, change) => {
-    expect(parseWith(productUpdateRequestSchema, change, 'Invalid')).toEqual({
+    expect(
+      parseWith(productUpdateRequestSchema, change, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: change,
     })
@@ -502,7 +521,11 @@ describe('productUpdateRequestSchema', () => {
     'expiryMonths',
   ])('accepts null for %s, which clears it', (property) => {
     expect(
-      parseWith(productUpdateRequestSchema, { [property]: null }, 'Invalid'),
+      parseWith(
+        productUpdateRequestSchema,
+        { [property]: null },
+        MADE_UP_HEADLINE,
+      ),
     ).toEqual({ type: 'success', data: { [property]: null } })
   })
 
@@ -568,10 +591,12 @@ describe('productUpdateRequestSchema', () => {
 
 describe('productSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    expect(parseWith(productSearchRequestSchema, {}, 'Invalid')).toEqual({
-      type: 'success',
-      data: {},
-    })
+    expect(parseWith(productSearchRequestSchema, {}, MADE_UP_HEADLINE)).toEqual(
+      {
+        type: 'success',
+        data: {},
+      },
+    )
   })
 
   it('accepts every parameter and returns it unchanged', () => {
@@ -586,7 +611,9 @@ describe('productSearchRequestSchema', () => {
       isForTreatment: false,
     }
 
-    expect(parseWith(productSearchRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(productSearchRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -597,7 +624,7 @@ describe('productSearchRequestSchema', () => {
       parseWith(
         productSearchRequestSchema,
         { cursor: PRODUCT_ID.toUpperCase() },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { cursor: PRODUCT_ID } })
   })

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   inventoryMessages,
@@ -29,7 +30,7 @@ import type {
   InventoryRemoval,
   InventoryUpdate,
 } from '../../../repositories/inventory.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CreateInventoryUseCase,
   DeleteInventoryUseCase,
@@ -73,7 +74,7 @@ const messagesOf = (
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}

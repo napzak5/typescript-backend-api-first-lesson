@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ATTACHMENT_ID } from '../../__tests__/fixtures/attachment-fixtures'
+import { RULES_BROKEN_BY_STORED } from '../../__tests__/fixtures/fixtures'
 import {
   apiShareLink,
   dbShareLink,
@@ -12,6 +13,15 @@ import { attachmentIdSchema } from '../../models/attachment'
 import { shareLinkIdSchema } from '../../models/share-link'
 import { ShareLinkReadMapper } from '../read/share-link.mapper'
 import { ShareLinkWriteMapper } from '../write/share-link.mapper'
+
+const storedLinkIsCorrupt = {
+  type: 'error',
+  error: {
+    type: 'database',
+    message: `Stored share link ${SHARE_LINK_ID} does not match the API model`,
+    cause: RULES_BROKEN_BY_STORED,
+  },
+}
 
 describe('ShareLinkReadMapper.toApiShareLinkPage', () => {
   it('answers with the links of the list and where the list goes on', () => {
@@ -50,7 +60,7 @@ describe('ShareLinkReadMapper.toApiShareLinkPage', () => {
       { limit: 20, after: null },
     )
 
-    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+    expect(result).toEqual(storedLinkIsCorrupt)
   })
 })
 
@@ -70,7 +80,7 @@ describe('ShareLinkReadMapper.toApiShareLinkCreate', () => {
       TOKEN,
     )
 
-    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+    expect(result).toEqual(storedLinkIsCorrupt)
     expect(JSON.stringify(result)).not.toContain(TOKEN)
   })
 })

@@ -149,7 +149,7 @@ domain/src/
 ├── repositories/salon.repository.ts   ISalonRepository
 ├── business-logic/salon/              One *.usecase.ts per operation;
 │                                      _shared/authorization.ts decides who may
-└── shared/                            DomainError, parseWith
+└── shared/                            DomainError, parseWith, parseStored
 
 infrastructure/src/
 ├── database/                          Connection, ping, attempt, log-safe failure description,
@@ -2337,7 +2337,7 @@ returns the body the contract defines for it, not problem details.
 | `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a customer that does not exist or is deleted, the profile of a customer account that has none, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
 | `alreadyExists` | The repository, when a write violates a unique index or constraint: the `email` of a salon among the salons that are not deleted, the `email` of a customer among the customers that are not deleted, the `referralCode` of a customer among all customers | 409 |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked; the use case that deletes a service, when a package contains the service; the use case that creates a customer's profile, when the account has one, has not confirmed its email address, or the customer with its email address belongs to another account; the customer repository, when a customer with that email address is added to the ledger at the moment the profile is created | 409 |
-| `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
+| `database` | The repository, when a query fails; the read mapper (`parseStored`), when a stored row does not match the API model | 500 |
 | `storage` | The file storage (`S3FileStorage`), when a call to the object storage of the attachments fails or is refused | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |

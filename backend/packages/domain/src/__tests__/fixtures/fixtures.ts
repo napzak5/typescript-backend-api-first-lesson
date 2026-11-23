@@ -1,6 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 import type {
   ApiSalonCreateRequest,
   DbOpeningHours,
@@ -19,6 +19,32 @@ import type { DomainError } from '../../shared'
 export const MADE_UP_MESSAGE: LocalizedText = {
   en: 'Must be a number',
   ja: '数にしてください',
+}
+
+/**
+ * The headline of a refusal that a test makes up: where the test is about
+ * the rules a value breaks, or about what a use case does with a refusal
+ * its caller hands over, and not about what the refusal is called.
+ */
+export const MADE_UP_HEADLINE: LocalizedText = {
+  en: 'Invalid',
+  ja: '正しくありません',
+}
+
+/**
+ * The cause of a stored value that does not match (`parseStored`),
+ * whichever properties break a rule: at least one, each with its name, its
+ * rule and what is said of it. What the cause holds exactly is the subject
+ * of `validation.test.ts`.
+ */
+export const RULES_BROKEN_BY_STORED = {
+  issues: expect.arrayContaining([
+    {
+      field: expect.any(String),
+      rule: expect.any(String),
+      message: expect.any(String),
+    },
+  ]),
 }
 
 export const SALON_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   availableSlotMessages,
   entityMessages,
@@ -38,7 +39,7 @@ import type {
   SlotDay,
   SlotOccupancy,
 } from '../../../repositories/available-slot.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type AvailableSlotUseCaseDependencies,
   CheckAvailableSlotUseCase,
@@ -79,7 +80,7 @@ const refusalOf = (
 ): { message: string; rules: string[] } | string =>
   result.type === 'error' && result.error.type === 'validation'
     ? {
-        message: toldIn(result.error.message, 'en'),
+        message: textIn(result.error.message, 'en'),
         rules: brokenRules(result.error),
       }
     : result.type

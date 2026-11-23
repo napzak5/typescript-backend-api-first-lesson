@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { RULES_BROKEN_BY_STORED } from '../../__tests__/fixtures/fixtures'
 import {
   apiRefundedPayment,
   paymentRefundRequest,
@@ -48,10 +49,7 @@ const storedRowIsCorrupt = (id: string = PAYMENT_ID) => ({
   error: {
     type: 'database',
     message: `Stored payment ${id} does not match the API model`,
-    cause: expect.objectContaining({
-      type: 'validation',
-      message: 'Invalid stored payment',
-    }),
+    cause: RULES_BROKEN_BY_STORED,
   },
 })
 

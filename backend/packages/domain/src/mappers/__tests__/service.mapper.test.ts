@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  RULES_BROKEN_BY_STORED,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import { CATEGORY_ID } from '../../__tests__/fixtures/service-category-fixtures'
 import {
   dbService,
@@ -400,11 +403,12 @@ describe('ServiceReadMapper.toApiService', () => {
         [dbServiceOption()],
       )
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         type: 'error',
         error: {
           type: 'database',
-          message: expect.stringContaining(OTHER_SERVICE_ID),
+          message: `Stored service ${OTHER_SERVICE_ID} does not match the API model`,
+          cause: RULES_BROKEN_BY_STORED,
         },
       })
     },

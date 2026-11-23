@@ -1,4 +1,3 @@
-import type { Told } from '@beauty-salon-backend/domain'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
@@ -108,38 +107,32 @@ describe('queryDecoder', () => {
     })
   })
 
-  it.each<[string, Told]>([
-    ['a headline in every language', HEADLINE],
-    ['a headline in English alone', 'Invalid visit search'],
-  ])(
-    'should say of a parameter that is of no type of its own what its rule says in every language, under %s',
-    (_what, headline) => {
-      // Act
-      const decoded = queryDecoder(
-        schema,
-        headline,
-      )({ limit: 'ten', isOpen: 'yes' })
+  it('should say of a parameter that is of no type of its own what its rule says in every language, under the headline it was given', () => {
+    // Act
+    const decoded = queryDecoder(
+      schema,
+      HEADLINE,
+    )({ limit: 'ten', isOpen: 'yes' })
 
-      // Assert
-      expect(decoded).toEqual({
-        type: 'error',
-        error: {
-          type: 'validation',
-          message: headline,
-          issues: [
-            {
-              field: 'limit',
-              rule: 'invalid_format',
-              message: ruleMessages.number,
-            },
-            {
-              field: 'isOpen',
-              rule: 'invalid_value',
-              message: ruleMessages.trueOrFalse,
-            },
-          ],
-        },
-      })
-    },
-  )
+    // Assert
+    expect(decoded).toEqual({
+      type: 'error',
+      error: {
+        type: 'validation',
+        message: HEADLINE,
+        issues: [
+          {
+            field: 'limit',
+            rule: 'invalid_format',
+            message: ruleMessages.number,
+          },
+          {
+            field: 'isOpen',
+            rule: 'invalid_value',
+            message: ruleMessages.trueOrFalse,
+          },
+        ],
+      },
+    })
+  })
 })

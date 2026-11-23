@@ -1,3 +1,4 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   PAYMENT_NUMBER,
@@ -12,7 +13,6 @@ import {
   paymentRefundRequestSchema,
   saleProcessRequestSchema,
 } from '../../../schemas/payment.schema'
-import { toldIn } from '../../../shared'
 import {
   type MoneyOfPayment,
   type PaymentMethodOfPayment,
@@ -123,7 +123,7 @@ const messagesOf = (
   planned: ReturnType<typeof planPayment> | ReturnType<typeof planRefund>,
 ): string[] =>
   planned.type === 'invalid'
-    ? planned.issues.map(({ message }) => toldIn(message, 'en'))
+    ? planned.issues.map(({ message }) => textIn(message, 'en'))
     : []
 
 describe('paymentStatusOf', () => {

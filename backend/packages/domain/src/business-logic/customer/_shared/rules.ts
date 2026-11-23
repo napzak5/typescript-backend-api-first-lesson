@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   customerMessages,
   ruleMessages,
@@ -7,7 +8,6 @@ import type { CustomerId } from '../../../models/customer'
 import {
   type DomainError,
   DomainErrors,
-  type Told,
   type ValidationIssue,
 } from '../../../shared'
 
@@ -70,5 +70,5 @@ export const referrerMissing: ValidationIssue = {
   message: ruleMessages.aCustomer,
 }
 
-export const referrerNotFound = (message: Told): DomainError =>
+export const referrerNotFound = (message: LocalizedText): DomainError =>
   DomainErrors.validation(message, [referrerMissing])

@@ -6,11 +6,12 @@ import {
 import { describe, expect, it } from 'vitest'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   OTHER_SALON_ID,
   SALON_ID,
   salonCreateRequest,
 } from '../../__tests__/fixtures/fixtures'
-import { parseWith, type Told } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   salonCreateRequestSchema,
   salonSearchRequestSchema,
@@ -22,7 +23,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -48,7 +49,11 @@ describe('salonCreateRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = salonCreateRequest()
 
-    const result = parseWith(salonCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      salonCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -69,7 +74,7 @@ describe('salonCreateRequestSchema', () => {
         logoUrl: null,
         businessHours: null,
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result.type).toBe('success')
@@ -249,7 +254,7 @@ describe('salonCreateRequestSchema', () => {
             },
           ],
         },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result.type).toBe('success')
@@ -379,9 +384,9 @@ describe('storedBusinessHoursSchema', () => {
       operatingSlots: [{ startTime: '19:00', endTime: '10:00' }],
     }
 
-    expect(parseWith(storedBusinessHoursSchema, stored, 'Invalid').type).toBe(
-      'success',
-    )
+    expect(
+      parseWith(storedBusinessHoursSchema, stored, MADE_UP_HEADLINE).type,
+    ).toBe('success')
     expect(
       rulesBrokenBy(storedBusinessHoursSchema, { dayOfWeek: 'monday' }),
     ).toContain('operatingSlots:invalid_type')
@@ -402,7 +407,7 @@ describe('salonUpdateRequestSchema', () => {
     'accepts the time zone %s',
     (timezone) => {
       expect(
-        parseWith(salonUpdateRequestSchema, { timezone }, 'Invalid'),
+        parseWith(salonUpdateRequestSchema, { timezone }, MADE_UP_HEADLINE),
       ).toEqual({ type: 'success', data: { timezone } })
     },
   )
@@ -411,7 +416,7 @@ describe('salonUpdateRequestSchema', () => {
     const result = parseWith(
       salonUpdateRequestSchema,
       { name: 'Renamed', building: null },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -452,7 +457,7 @@ describe('salonUpdateRequestSchema', () => {
 
 describe('salonSearchRequestSchema', () => {
   it('accepts a request without any filter', () => {
-    expect(parseWith(salonSearchRequestSchema, {}, 'Invalid')).toEqual({
+    expect(parseWith(salonSearchRequestSchema, {}, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: {},
     })
@@ -470,7 +475,9 @@ describe('salonSearchRequestSchema', () => {
       features: ['color'],
     }
 
-    expect(parseWith(salonSearchRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(salonSearchRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -499,7 +506,10 @@ describe('salonSearchRequestSchema', () => {
 })
 
 /** What a refused salon is told of a property, in the order of the issues. */
-const toldOf = (changed: Record<string, unknown>, field: string): Told[] => {
+const toldOf = (
+  changed: Record<string, unknown>,
+  field: string,
+): LocalizedText[] => {
   const result = parseWith(
     salonCreateRequestSchema,
     { ...salonCreateRequest(), ...changed },

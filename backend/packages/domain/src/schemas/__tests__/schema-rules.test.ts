@@ -3,7 +3,10 @@ import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { format, isValid } from 'date-fns'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith, uuidSchema } from '../../shared'
 import {
   atLeastOneProperty,
@@ -27,7 +30,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -42,7 +45,7 @@ describe('nonBlankText', () => {
     ['text of a full-width space and a letter', '　a'],
     ['a digit', '0'],
   ])('accepts %s and keeps it as it is, untrimmed', (_case, text) => {
-    expect(parseWith(nonBlankText, text, 'Invalid')).toEqual({
+    expect(parseWith(nonBlankText, text, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: text,
     })
@@ -94,7 +97,7 @@ describe('atLeastOneProperty', () => {
     ['one property', { name: 'Renamed' }],
     ['every property', { name: 'Renamed', isActive: false }],
   ])('adds nothing to an object with %s', (_case, input) => {
-    expect(parseWith(updateSchema, input, 'Invalid')).toEqual({
+    expect(parseWith(updateSchema, input, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: input,
     })
@@ -138,7 +141,7 @@ describe('noRepeatedEntries', () => {
     ['a list without repetitions', ['cut', 'color', 'perm']],
     ['entries that differ in case only', ['cut', 'Cut', 'CUT']],
   ])('adds nothing to %s and keeps it as it is', (_case, list) => {
-    expect(parseWith(listSchema, list, 'Invalid')).toEqual({
+    expect(parseWith(listSchema, list, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: list,
     })
@@ -157,13 +160,13 @@ describe('noRepeatedEntries', () => {
   })
 
   it('reports the repetition with a message', () => {
-    const result = parseWith(listSchema, ['cut', 'cut'], 'Invalid')
+    const result = parseWith(listSchema, ['cut', 'cut'], MADE_UP_HEADLINE)
 
     expect(result).toEqual({
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid',
+        message: MADE_UP_HEADLINE,
         issues: [
           {
             field: '1',
@@ -202,7 +205,7 @@ describe('phoneNumber', () => {
     ['an area code in parentheses', '(03)1234-5678'],
     ['20 characters', '090-1234-5678-901234'],
   ])('accepts %s and keeps it as it is', (_case, number) => {
-    expect(parseWith(phoneNumber, number, 'Invalid')).toEqual({
+    expect(parseWith(phoneNumber, number, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: number,
     })
@@ -276,7 +279,7 @@ describe('timeZoneName', () => {
     // A name that tzdata keeps as a link to Asia/Kolkata.
     'Asia/Calcutta',
   ])('accepts %s and returns it unchanged', (zone) => {
-    expect(parseWith(timeZoneName, zone, 'Invalid')).toEqual({
+    expect(parseWith(timeZoneName, zone, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: zone,
     })
@@ -324,7 +327,7 @@ describe('timeOfDay', () => {
     ['an hour of 19', '19:00'],
     ['an hour of 20', '20:00'],
   ])('accepts %s and keeps it as it is', (_case, time) => {
-    expect(parseWith(timeOfDay, time, 'Invalid')).toEqual({
+    expect(parseWith(timeOfDay, time, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: time,
     })
@@ -422,7 +425,7 @@ describe('timeSlot', () => {
       { startTime: '09:00', endTime: '09:00' },
     ],
   ])('has the shape of %s', (_case, slot) => {
-    expect(parseWith(timeSlot, slot, 'Invalid')).toEqual({
+    expect(parseWith(timeSlot, slot, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: slot,
     })
@@ -472,7 +475,7 @@ describe('orderedTimeSlot', () => {
     ['a slot of one minute', { startTime: '09:00', endTime: '09:01' }],
     ['a slot of a whole day', { startTime: '00:00', endTime: '23:59' }],
   ])('accepts %s', (_case, slot) => {
-    expect(parseWith(orderedTimeSlot, slot, 'Invalid')).toEqual({
+    expect(parseWith(orderedTimeSlot, slot, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: slot,
     })
@@ -494,13 +497,13 @@ describe('orderedTimeSlot', () => {
       parseWith(
         orderedTimeSlot,
         { startTime: '09:00', endTime: '09:00' },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid',
+        message: MADE_UP_HEADLINE,
         issues: [
           {
             field: 'endTime',

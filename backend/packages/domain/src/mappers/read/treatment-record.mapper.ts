@@ -14,7 +14,7 @@ import type {
   TreatmentRecordWithDetails,
 } from '../../models/treatment-record'
 import type { TreatmentRecordListing } from '../../repositories/treatment-record.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -56,13 +56,13 @@ const convertedMaterialSchema = z.object({
   quantity: numericSchema,
 }) satisfies z.ZodType<Pick<ApiTreatmentMaterial, 'quantity'>>
 
-const MESSAGE = 'Invalid stored treatment record'
-
+/** `description` says which material of which record the row is. */
 const toApiMaterial = (
   material: DbTreatmentMaterial,
+  description: string,
 ): Result<ApiTreatmentMaterial, DomainError> =>
   Result.map(
-    parseWith(convertedMaterialSchema, material, MESSAGE),
+    parseStored(convertedMaterialSchema, material, description),
     ({ quantity }) => ({
       productId: material.productId,
       quantity,
@@ -94,51 +94,45 @@ const toApiTreatmentRecord = ({
 > => {
   const apiMaterials: ApiTreatmentMaterial[] = []
   for (const material of materials) {
-    const mapped = toApiMaterial(material)
+    const mapped = toApiMaterial(
+      material,
+      `Stored material ${material.id} of treatment record ${record.id} does not match the API model`,
+    )
     if (mapped.type === 'error') {
-      return Result.error(
-        DomainErrors.database(
-          `Stored material ${material.id} of treatment record ${record.id} does not match the API model`,
-          mapped.error,
-        ),
-      )
+      return mapped
     }
     apiMaterials.push(mapped.data)
   }
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedRecordSchema, record, MESSAGE),
-      (converted) => ({
-        id: record.id,
-        bookingId: record.bookingId,
-        customerId: record.customerId,
-        staffId: record.staffId,
-        services: converted.services,
-        techniques: converted.techniques,
-        consultationNotes: record.consultationNotes,
-        scalpCondition: record.scalpCondition,
-        hairCondition: record.hairCondition,
-        colorFormula: record.colorFormula,
-        processingTime: record.processingTime,
-        resultNotes: record.resultNotes,
-        nextRecommendedDate: record.nextRecommendedDate,
-        nextRecommendedServices: converted.nextRecommendedServices,
-        homeCareSuggestions: record.homeCareSuggestions,
-        customerSatisfaction: record.customerSatisfaction,
-        staffEvaluation: record.staffEvaluation,
-        materials: apiMaterials,
-        photos: photos.map(toApiPhoto),
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  return Result.map(
+    parseStored(
+      convertedRecordSchema,
+      record,
+      `Stored treatment record ${record.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored treatment record ${record.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: record.id,
+      bookingId: record.bookingId,
+      customerId: record.customerId,
+      staffId: record.staffId,
+      services: converted.services,
+      techniques: converted.techniques,
+      consultationNotes: record.consultationNotes,
+      scalpCondition: record.scalpCondition,
+      hairCondition: record.hairCondition,
+      colorFormula: record.colorFormula,
+      processingTime: record.processingTime,
+      resultNotes: record.resultNotes,
+      nextRecommendedDate: record.nextRecommendedDate,
+      nextRecommendedServices: converted.nextRecommendedServices,
+      homeCareSuggestions: record.homeCareSuggestions,
+      customerSatisfaction: record.customerSatisfaction,
+      staffEvaluation: record.staffEvaluation,
+      materials: apiMaterials,
+      photos: photos.map(toApiPhoto),
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 }
 

@@ -7,7 +7,7 @@ import type {
 } from '../../models/customer-allergy'
 import type { ApiPage, Paging } from '../../models/page'
 import type { CustomerAllergyListing } from '../../repositories/customer-allergy.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -31,31 +31,23 @@ const convertedAllergySchema = z.object({
 const toApiCustomerAllergy = (
   allergy: DbCustomerAllergy,
 ): Result<ApiCustomerAllergyResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedAllergySchema,
-        allergy,
-        'Invalid stored customer allergy',
-      ),
-      (converted) => ({
-        id: allergy.id,
-        allergyType: allergy.allergyType,
-        allergenName: allergy.allergenName,
-        severityType: allergy.severityType,
-        symptoms: allergy.symptoms,
-        notes: allergy.notes,
-        confirmedDate: allergy.confirmedDate,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedAllergySchema,
+      allergy,
+      `Stored customer allergy ${allergy.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored customer allergy ${allergy.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: allergy.id,
+      allergyType: allergy.allergyType,
+      allergenName: allergy.allergenName,
+      severityType: allergy.severityType,
+      symptoms: allergy.symptoms,
+      notes: allergy.notes,
+      confirmedDate: allergy.confirmedDate,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const CustomerAllergyReadMapper = {

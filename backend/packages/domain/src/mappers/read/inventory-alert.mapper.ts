@@ -13,7 +13,7 @@ import type {
   InventoryAlertSeverity,
 } from '../../models/inventory-alert'
 import type { ApiPage, Paging } from '../../models/page'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPageEndingAt } from './page'
 
@@ -29,8 +29,6 @@ import { toApiPageEndingAt } from './page'
  * itself.
  */
 
-const MESSAGE = 'Stored inventory alert does not match the API model'
-
 const convertedAlertSchema = z.object({
   currentStock: numericSchema,
   threshold: numericSchema.nullable(),
@@ -45,11 +43,13 @@ const convertedAcknowledgementSchema = z.object({
   Pick<ApiInventoryAlertAcknowledgementResponse, 'threshold' | 'acknowledgedAt'>
 >
 
+/** `description` says which alert the acknowledgement is read with. */
 const toApiAcknowledgement = (
   acknowledgement: DbInventoryAlertAcknowledgement,
+  description: string,
 ): Result<ApiInventoryAlertAcknowledgementResponse, DomainError> =>
   Result.map(
-    parseWith(convertedAcknowledgementSchema, acknowledgement, MESSAGE),
+    parseStored(convertedAcknowledgementSchema, acknowledgement, description),
     (converted) => ({
       id: acknowledgement.id,
       salonId: acknowledgement.salonId,
@@ -68,36 +68,30 @@ const toApiAcknowledgement = (
 const toApiInventoryAlert = (
   alert: InventoryAlert,
 ): Result<ApiInventoryAlertResponse, DomainError> => {
-  const converted = parseWith(convertedAlertSchema, alert, MESSAGE)
+  // The request was fine; what the database told is not.
+  const description = `Inventory alert ${alert.alert} of ${alert.inventoryId ?? alert.productId} does not match the API model`
+  const converted = parseStored(convertedAlertSchema, alert, description)
   const acknowledgement =
     alert.acknowledgement === null
       ? Result.success(null)
-      : toApiAcknowledgement(alert.acknowledgement)
+      : toApiAcknowledgement(alert.acknowledgement, description)
 
-  return Result.mapError(
-    Result.flatMap(converted, (figures) =>
-      Result.map(acknowledgement, (acknowledged) => ({
-        alert: alert.alert,
-        severity: alert.severity,
-        salonId: alert.salonId,
-        productId: alert.productId,
-        productCode: alert.productCode,
-        productName: alert.productName,
-        unit: alert.unit,
-        inventoryId: alert.inventoryId,
-        lotNumber: alert.lotNumber,
-        expiryDate: alert.expiryDate,
-        currentStock: figures.currentStock,
-        threshold: figures.threshold,
-        acknowledgement: acknowledged,
-      })),
-    ),
-    // The request was fine; what the database told is not.
-    (error) =>
-      DomainErrors.database(
-        `Inventory alert ${alert.alert} of ${alert.inventoryId ?? alert.productId} does not match the API model`,
-        error,
-      ),
+  return Result.flatMap(converted, (figures) =>
+    Result.map(acknowledgement, (acknowledged) => ({
+      alert: alert.alert,
+      severity: alert.severity,
+      salonId: alert.salonId,
+      productId: alert.productId,
+      productCode: alert.productCode,
+      productName: alert.productName,
+      unit: alert.unit,
+      inventoryId: alert.inventoryId,
+      lotNumber: alert.lotNumber,
+      expiryDate: alert.expiryDate,
+      currentStock: figures.currentStock,
+      threshold: figures.threshold,
+      acknowledgement: acknowledged,
+    })),
   )
 }
 

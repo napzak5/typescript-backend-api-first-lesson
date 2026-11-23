@@ -5,7 +5,7 @@ import type {
   ApiStaffAccountResponse,
   DbStaffAccount,
 } from '../../models/staff-account'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 /**
@@ -38,21 +38,13 @@ export const StaffAccountReadMapper = {
   ): Result<ApiStaffAccountResponse, DomainError> {
     const { id, email, status, twoFactorStatus } = account
 
-    return Result.mapError(
-      Result.map(
-        parseWith(
-          convertedColumnsSchema,
-          account,
-          'Invalid stored staff account',
-        ),
-        (converted) => ({ id, email, status, twoFactorStatus, ...converted }),
+    return Result.map(
+      parseStored(
+        convertedColumnsSchema,
+        account,
+        `Stored account ${account.id} of a staff member does not match the API model`,
       ),
-      // The request was fine; the stored row is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored account ${account.id} of a staff member does not match the API model`,
-          error,
-        ),
+      (converted) => ({ id, email, status, twoFactorStatus, ...converted }),
     )
   },
 }

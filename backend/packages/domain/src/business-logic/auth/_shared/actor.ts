@@ -1,4 +1,4 @@
-import { Result } from '@beauty-salon-backend/utility'
+import type { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import {
   type Actor,
@@ -7,7 +7,7 @@ import {
   type SessionWithAccount,
   type UserAccount,
 } from '../../../models/auth'
-import { type DomainError, DomainErrors, parseWith } from '../../../shared'
+import { type DomainError, parseStored } from '../../../shared'
 
 /** The scope a user's role and linked records give; see `ActorScope`. */
 const scopeOf = ({ user, staffSalonId }: UserAccount): unknown =>
@@ -58,19 +58,12 @@ export const toActor = ({
   session,
   account,
 }: SessionWithAccount): Result<Actor, DomainError> =>
-  Result.mapError(
-    parseWith(
-      actorSchema,
-      {
-        userId: account.user.id,
-        sessionId: session.id,
-        scope: scopeOf(account),
-      },
-      'Invalid stored session',
-    ),
-    (error) =>
-      DomainErrors.database(
-        `Stored session ${session.id} does not describe an actor`,
-        error,
-      ),
+  parseStored(
+    actorSchema,
+    {
+      userId: account.user.id,
+      sessionId: session.id,
+      scope: scopeOf(account),
+    },
+    `Stored session ${session.id} does not describe an actor`,
   )

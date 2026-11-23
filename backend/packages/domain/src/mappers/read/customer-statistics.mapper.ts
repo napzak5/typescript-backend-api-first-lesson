@@ -15,7 +15,7 @@ import type {
   CustomerStatisticsFigures,
   CustomerStatisticsPeriod,
 } from '../../repositories/customer-statistics.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 const storedTimesSchema = z.object({
@@ -41,58 +41,54 @@ export const CustomerStatisticsReadMapper = {
     { salonId, startDate, endDate }: CustomerStatisticsPeriod,
     figures: CustomerStatisticsFigures,
   ): Result<ApiCustomerStatisticsResponse, DomainError> {
-    return Result.mapError(
-      Result.map(
-        parseWith(storedTimesSchema, figures, 'Invalid stored statistics'),
-        ({ lastVisit, customerSince }) => ({
-          customerId,
-          salonId,
-          startDate,
-          endDate,
-          totalBookings: figures.bookings,
-          totalSpent: figures.spent,
-          averageBookingValue: averageOf(
-            figures.bookingSpent,
-            figures.bookingSales,
-          ),
-          lastVisit,
-          favoriteServices: favorites(
-            figures.services,
-            ({ serviceId }) => serviceId,
-          ).map(
-            ({
-              serviceId,
-              name,
-              bookingCount,
-            }): ApiCustomerStatisticsServiceResponse => ({
-              serviceId,
-              name,
-              bookingCount,
-            }),
-          ),
-          favoriteStaff: favorites(figures.staff, ({ staffId }) => staffId).map(
-            ({
-              staffId,
-              displayName,
-              bookingCount,
-            }): ApiCustomerStatisticsStaffResponse => ({
-              staffId,
-              displayName,
-              bookingCount,
-            }),
-          ),
-          loyaltyPoints: figures.loyaltyPoints,
-          customerSince,
-          cancellationRate: percentageOf(figures.cancelled, figures.bookings),
-          noShowRate: percentageOf(figures.noShows, figures.bookings),
-        }),
+    return Result.map(
+      parseStored(
+        storedTimesSchema,
+        figures,
+        `Stored times of customer ${customerId} do not match the API model`,
       ),
-      // The request was fine; what was stored is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored times of customer ${customerId} do not match the API model`,
-          error,
+      ({ lastVisit, customerSince }) => ({
+        customerId,
+        salonId,
+        startDate,
+        endDate,
+        totalBookings: figures.bookings,
+        totalSpent: figures.spent,
+        averageBookingValue: averageOf(
+          figures.bookingSpent,
+          figures.bookingSales,
         ),
+        lastVisit,
+        favoriteServices: favorites(
+          figures.services,
+          ({ serviceId }) => serviceId,
+        ).map(
+          ({
+            serviceId,
+            name,
+            bookingCount,
+          }): ApiCustomerStatisticsServiceResponse => ({
+            serviceId,
+            name,
+            bookingCount,
+          }),
+        ),
+        favoriteStaff: favorites(figures.staff, ({ staffId }) => staffId).map(
+          ({
+            staffId,
+            displayName,
+            bookingCount,
+          }): ApiCustomerStatisticsStaffResponse => ({
+            staffId,
+            displayName,
+            bookingCount,
+          }),
+        ),
+        loyaltyPoints: figures.loyaltyPoints,
+        customerSince,
+        cancellationRate: percentageOf(figures.cancelled, figures.bookings),
+        noShowRate: percentageOf(figures.noShows, figures.bookings),
+      }),
     )
   },
 }

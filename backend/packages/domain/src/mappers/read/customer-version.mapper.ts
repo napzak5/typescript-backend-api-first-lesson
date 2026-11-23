@@ -14,7 +14,7 @@ import type {
   CustomerVersionWithPrevious,
 } from '../../repositories/customer-version.repository'
 import { storedCustomerPreferencesSchema } from '../../schemas/customer.schema'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -35,21 +35,13 @@ const convertedColumnsSchema = z.object({
 const toApiCustomerVersion = (
   version: DbCustomerVersion,
 ): Result<ApiCustomerVersionResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        version,
-        'Invalid stored customer version',
-      ),
-      (converted) => ({ ...version, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      version,
+      `Stored customer version ${version.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored customer version ${version.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...version, ...converted }),
   )
 
 /** The writes whose versions tell what they changed: an update and a merge. */

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   availableSlotMessages,
   bookingMessages,
@@ -40,7 +41,7 @@ import type {
   CustomerBookingReschedule,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CancelCustomerBookingUseCase,
   CreateCustomerBookingUseCase,
@@ -68,7 +69,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** The message of a conflict; null for anything else. */

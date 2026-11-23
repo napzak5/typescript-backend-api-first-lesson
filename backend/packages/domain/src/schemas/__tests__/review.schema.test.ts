@@ -1,13 +1,18 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../__tests__/fixtures/booking-fixtures'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   REVIEW_ID,
   reviewCreateRequest,
 } from '../../__tests__/fixtures/review-fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   reviewCreateRequestSchema,
   reviewSearchRequestSchema,
@@ -18,7 +23,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -27,12 +32,12 @@ const messagesOf = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): Record<string, string> => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}
@@ -63,7 +68,11 @@ const urlOfLength = (length: number): string => {
 describe('reviewCreateRequestSchema', () => {
   it('accepts a review that satisfies every rule and returns it unchanged', () => {
     expect(
-      parseWith(reviewCreateRequestSchema, reviewCreateRequest(), 'Invalid'),
+      parseWith(
+        reviewCreateRequestSchema,
+        reviewCreateRequest(),
+        MADE_UP_HEADLINE,
+      ),
     ).toEqual({ type: 'success', data: reviewCreateRequest() })
   })
 
@@ -324,7 +333,11 @@ describe('reviewUpdateRequestSchema', () => {
     'accepts a change of %s alone and returns it unchanged',
     (key, value) => {
       expect(
-        parseWith(reviewUpdateRequestSchema, { [key]: value }, 'Invalid'),
+        parseWith(
+          reviewUpdateRequestSchema,
+          { [key]: value },
+          MADE_UP_HEADLINE,
+        ),
       ).toEqual({ type: 'success', data: { [key]: value } })
     },
   )
@@ -332,7 +345,9 @@ describe('reviewUpdateRequestSchema', () => {
   it('accepts a change of every property at once', () => {
     const change = Object.fromEntries(CHANGES)
 
-    expect(parseWith(reviewUpdateRequestSchema, change, 'Invalid')).toEqual({
+    expect(
+      parseWith(reviewUpdateRequestSchema, change, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: change,
     })
@@ -481,7 +496,7 @@ describe('reviewUpdateRequestSchema', () => {
 
 describe('reviewSearchRequestSchema', () => {
   it('accepts a search without any parameter', () => {
-    expect(parseWith(reviewSearchRequestSchema, {}, 'Invalid')).toEqual({
+    expect(parseWith(reviewSearchRequestSchema, {}, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: {},
     })
@@ -501,7 +516,9 @@ describe('reviewSearchRequestSchema', () => {
       sortBy: 'helpful',
     }
 
-    expect(parseWith(reviewSearchRequestSchema, search, 'Invalid')).toEqual({
+    expect(
+      parseWith(reviewSearchRequestSchema, search, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: search,
     })

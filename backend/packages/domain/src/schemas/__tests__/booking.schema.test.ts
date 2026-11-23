@@ -10,7 +10,11 @@ import {
   COLOR_ID,
   CUT_ID,
 } from '../../__tests__/fixtures/booking-fixtures'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
 import { parseWith } from '../../shared'
 import {
@@ -28,36 +32,36 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
 const parseCreate = (input: unknown) =>
-  parseWith(bookingCreateRequestSchema, input, 'Invalid')
+  parseWith(bookingCreateRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfCreate = (input: unknown): string[] =>
   rulesBrokenBy(bookingCreateRequestSchema, input)
 
 const parseUpdate = (input: unknown) =>
-  parseWith(bookingUpdateRequestSchema, input, 'Invalid')
+  parseWith(bookingUpdateRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfUpdate = (input: unknown): string[] =>
   rulesBrokenBy(bookingUpdateRequestSchema, input)
 
 const parseReschedule = (input: unknown) =>
-  parseWith(bookingRescheduleRequestSchema, input, 'Invalid')
+  parseWith(bookingRescheduleRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfReschedule = (input: unknown): string[] =>
   rulesBrokenBy(bookingRescheduleRequestSchema, input)
 
 const parseCancel = (input: unknown) =>
-  parseWith(bookingCancelRequestSchema, input, 'Invalid')
+  parseWith(bookingCancelRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfCancel = (input: unknown): string[] =>
   rulesBrokenBy(bookingCancelRequestSchema, input)
 
 const parseComplete = (input: unknown) =>
-  parseWith(bookingCompleteRequestSchema, input, 'Invalid')
+  parseWith(bookingCompleteRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfComplete = (input: unknown): string[] =>
   rulesBrokenBy(bookingCompleteRequestSchema, input)
@@ -69,7 +73,7 @@ const times = (actualStartTime: unknown, actualEndTime: unknown) => ({
 })
 
 const parseSearch = (input: unknown) =>
-  parseWith(bookingSearchRequestSchema, input, 'Invalid')
+  parseWith(bookingSearchRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfSearch = (input: unknown): string[] =>
   rulesBrokenBy(bookingSearchRequestSchema, input)
@@ -1056,7 +1060,7 @@ describe('bookingSearchRequestSchema', () => {
 
 describe('customerBookingCreateRequestSchema', () => {
   const parseOwn = (input: unknown) =>
-    parseWith(customerBookingCreateRequestSchema, input, 'Invalid')
+    parseWith(customerBookingCreateRequestSchema, input, MADE_UP_HEADLINE)
   const rulesOfOwn = (input: unknown): string[] =>
     rulesBrokenBy(customerBookingCreateRequestSchema, input)
 
@@ -1158,7 +1162,7 @@ describe('customerBookingCreateRequestSchema', () => {
 
 describe('customerBookingSearchRequestSchema', () => {
   const parseOwnSearch = (input: unknown) =>
-    parseWith(customerBookingSearchRequestSchema, input, 'Invalid')
+    parseWith(customerBookingSearchRequestSchema, input, MADE_UP_HEADLINE)
   const rulesOfOwnSearch = (input: unknown): string[] =>
     rulesBrokenBy(customerBookingSearchRequestSchema, input)
 

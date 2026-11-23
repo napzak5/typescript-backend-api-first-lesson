@@ -61,27 +61,24 @@ Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、
 
 ## 境界で検証する
 
-外から入ってくる値は `unknown` として受け取り、Zod スキーマで検証して初めて型が付きます。検証の入口は `parseWith` です。
+外から入ってくる値は `unknown` として受け取り、Zod スキーマで検証して初めて型が付きます。検証の入口は、リクエストには `parseWith`、データベースから読んだ値には `parseStored` です。
 
 ```typescript
-// backend/packages/domain/src/shared/validation.ts
+// backend/packages/domain/src/shared/validation.ts（シグネチャ）
 export const parseWith = <T>(
   schema: z.ZodType<T>,
   input: unknown,
-  message: string,
-): Result<T, DomainError> =>
-  match(schema.safeParse(input))
-    .with({ success: true }, ({ data }) => Result.success(data))
-    .with({ success: false }, ({ error }) =>
-      Result.error(
-        DomainErrors.validation(
-          message,
-          error.issues.flatMap(toValidationIssues),
-        ),
-      ),
-    )
-    .exhaustive()
+  message: LocalizedText,
+): Result<T, DomainError>
+
+export const parseStored = <T>(
+  schema: z.ZodType<T>,
+  stored: unknown,
+  description: string,
+): Result<T, DomainError>
 ```
+
+どちらも、Zod の `safeParse` の結果を `match` で分けます。`parseWith` は、破られた決まりを、すべての言語の文と一緒に `validation` エラーにします。`message` は見出しで、すべての言語で書いたメッセージです。`parseStored` は、合わない値を `database` エラーにします。保存されている値が合わないのは、リクエストの誤りではないからです。`description` は、ログに書く英語の文です。
 
 境界ごとの検証箇所は次のとおりです。
 
@@ -92,7 +89,7 @@ export const parseWith = <T>(
 | クエリ文字列 | `unknown` | `decodeSalonSearchQuery`（`backend/packages/api/src/routes/salon/_shared/query.ts`）が文字列を数値・真偽値・配列に直し、ユースケースが `salonSearchRequestSchema` で検証 |
 | `Authorization` ヘッダー | `string \| undefined` | `AuthenticateUseCase`（`backend/packages/domain/src/business-logic/auth/authenticate.usecase.ts`）がトークンを取り出してセッションを検索し、操作者を `actorSchema` で検証して `Actor` にする |
 | 環境変数 | `Record<string, string \| undefined>` | `parseAppConfig`（`backend/packages/config/src/app-config.ts`） |
-| DB から読んだ値のうち DB が形を保証しないもの（`jsonb`、文字列で返る `numeric` と `timestamptz`） | Drizzle の推論型 | 読み取りマッパーの `convertedColumnsSchema`（`backend/packages/domain/src/mappers/read/salon.mapper.ts`） |
+| DB から読んだ値のうち DB が形を保証しないもの（`jsonb`、文字列で返る `numeric` と `timestamptz`） | Drizzle の推論型 | 読み取りマッパーが、`convertedColumnsSchema` を `parseStored` に渡す（`backend/packages/domain/src/mappers/read/salon.mapper.ts`） |
 | ライブラリが渡すエラー | `unknown` | ts-pattern の `P` パターン（[Sum型とパターンマッチング](./sum-types-pattern-matching.md)） |
 
 検証を通った値だけが型を持つので、`req.body as ApiSalonCreateRequest` のようなアサーションは必要になりません。

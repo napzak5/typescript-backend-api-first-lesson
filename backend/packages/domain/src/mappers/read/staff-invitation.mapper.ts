@@ -4,7 +4,7 @@ import type {
   ApiStaffInvitationResponse,
   DbStaffInvitation,
 } from '../../models/staff-invitation'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 /**
@@ -29,21 +29,13 @@ export const StaffInvitationReadMapper = {
   ): Result<ApiStaffInvitationResponse, DomainError> {
     const { id, staffId, email, role } = invitation
 
-    return Result.mapError(
-      Result.map(
-        parseWith(
-          convertedColumnsSchema,
-          invitation,
-          'Invalid stored staff invitation',
-        ),
-        (converted) => ({ id, staffId, email, role, ...converted }),
+    return Result.map(
+      parseStored(
+        convertedColumnsSchema,
+        invitation,
+        `Stored staff invitation ${invitation.id} does not match the API model`,
       ),
-      // The request was fine; the stored row is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored staff invitation ${invitation.id} does not match the API model`,
-          error,
-        ),
+      (converted) => ({ id, staffId, email, role, ...converted }),
     )
   },
 }

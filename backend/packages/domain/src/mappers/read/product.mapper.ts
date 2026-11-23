@@ -7,7 +7,7 @@ import type {
   ProductId,
 } from '../../models/product'
 import type { ProductList } from '../../repositories/product.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -37,46 +37,42 @@ const convertedColumnsSchema = z.object({
 const toApiProduct = (
   product: DbProduct,
 ): Result<ApiProductResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, product, 'Invalid stored product'),
-      (converted) => ({
-        id: product.id,
-        salonId: product.salonId,
-        productCode: product.productCode,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        brand: product.brand,
-        purchasePrice: product.purchasePrice,
-        retailPrice: product.retailPrice,
-        salonPrice: product.salonPrice,
-        unit: product.unit,
-        minimumStock: converted.minimumStock,
-        maximumStock: converted.maximumStock,
-        reorderPoint: converted.reorderPoint,
-        supplier: product.supplier,
-        supplierProductCode: product.supplierProductCode,
-        leadTimeDays: product.leadTimeDays,
-        imageUrl: product.imageUrl,
-        barcode: product.barcode,
-        isForSale: product.isForSale,
-        isForTreatment: product.isForTreatment,
-        requiresLotTracking: product.requiresLotTracking,
-        expiryMonths: product.expiryMonths,
-        storageConditions: product.storageConditions,
-        safetyDataSheet: product.safetyDataSheet,
-        isActive: product.isActive,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      product,
+      `Stored product ${product.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored product ${product.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: product.id,
+      salonId: product.salonId,
+      productCode: product.productCode,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      brand: product.brand,
+      purchasePrice: product.purchasePrice,
+      retailPrice: product.retailPrice,
+      salonPrice: product.salonPrice,
+      unit: product.unit,
+      minimumStock: converted.minimumStock,
+      maximumStock: converted.maximumStock,
+      reorderPoint: converted.reorderPoint,
+      supplier: product.supplier,
+      supplierProductCode: product.supplierProductCode,
+      leadTimeDays: product.leadTimeDays,
+      imageUrl: product.imageUrl,
+      barcode: product.barcode,
+      isForSale: product.isForSale,
+      isForTreatment: product.isForTreatment,
+      requiresLotTracking: product.requiresLotTracking,
+      expiryMonths: product.expiryMonths,
+      storageConditions: product.storageConditions,
+      safetyDataSheet: product.safetyDataSheet,
+      isActive: product.isActive,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const ProductReadMapper = {

@@ -1,6 +1,10 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import {
   paymentRefundRequest,
   saleProcessRequest,
@@ -8,7 +12,7 @@ import {
 import { PAYMENT_METHOD_ID } from '../../__tests__/fixtures/payment-method-fixtures'
 import { PAYMENT_ID } from '../../__tests__/fixtures/sale-fixtures'
 import { parsePaymentId } from '../../models/payment'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   paymentRefundRequestSchema,
   saleProcessRequestSchema,
@@ -18,7 +22,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -27,12 +31,12 @@ const messagesOf = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): Record<string, string> => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}

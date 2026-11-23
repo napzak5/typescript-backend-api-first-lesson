@@ -442,7 +442,7 @@ answers 503 with the body its operation defines.
 | `notFound` | A use case, when the repository finds no row; on a route below a salon, that includes a salon that does not exist and a resource that is not of the salon in the path; on the routes of a customer's own profile, an account that has no customer record | 404 | `3001` |
 | `alreadyExists` | The repository, from the name of the constraint that a write violated: the unique index on the `email` of a salon; for a customer, the unique index on `email`, which covers the customers that are not deleted, and the unique constraint on `referralCode`, which covers every customer | 409 | `3002` |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example); the use case that deletes a service, when a package contains the service; the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account; the use case that creates a booking, when a staff member is occupied at that time or the time zone of the salon is not one the runtime knows; a use case that changes the status of a booking, when the status does not allow the action, when a no-show is noted before the booking has begun, or when the actual end would not be after the actual start the booking has | 409 | `3003` |
-| `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
+| `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model (`parseStored`) | 500 | `4003` |
 | `storage` | The file storage (`S3FileStorage`), when a call to the object storage of the attachments fails or is refused | 500 | `4004` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
@@ -503,10 +503,10 @@ an issue says is a `LocalizedText`, and a string does not compile. A
 about as a message (`entityMessages.salon`), and the sentence is made here,
 in the language of the answer. A `conflict` error carries why the state
 does not allow the operation as a message of its domain
-(`saleMessages.alreadyVoid`), and that is its detail as it is. A validation
-error whose headline is a string in English alone is told in English as a
-whole, title included, whatever was asked for: no answer is in two
-languages, and no request has such a headline. `sendProblem` names the language of the answer in
+(`saleMessages.alreadyVoid`), and that is its detail as it is. Every text
+an error tells is of the type `LocalizedText`, so no answer is in two
+languages, and a string in place of such a text does not compile.
+`sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend
 on it at all. See [i18n](./i18n.md).

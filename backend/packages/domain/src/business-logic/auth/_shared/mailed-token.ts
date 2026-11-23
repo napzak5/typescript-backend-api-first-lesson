@@ -1,7 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes, isAfter, parseISO, subSeconds } from 'date-fns'
 import type { DbUser } from '../../../models/auth'
-import { type DomainError, DomainErrors, type Told } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 
 /**
  * The single-use tokens that are mailed to confirm an address, to reset a
@@ -73,7 +74,7 @@ export const mayResetPassword = (user: DbUser): boolean =>
   (user.status === 'locked' && user.lockedUntil !== null)
 
 /** One answer for a mailed token that cannot be used, whatever the reason. */
-export const mailedTokenRefused = (message: Told): DomainError =>
+export const mailedTokenRefused = (message: LocalizedText): DomainError =>
   DomainErrors.validation(message, [
     {
       field: 'token',

@@ -67,7 +67,7 @@ What the Salon domain consists of:
 
 Steps 1 to 3 belong together. The database is the source of truth for names and nullability, so the contract is written against the table, and `pnpm check:api-db` compares the two.
 
-Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the rules that request schemas share (`backend/packages/domain/src/schemas/rules.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError`, `attempt` and `containing`, the LIKE pattern that finds a keyword literally (`backend/packages/infrastructure/src/database/`), and the response helpers, the `authenticated` wrapper, the links of a page (`pageLinks`) and the converters of query parameters of the API package (`backend/packages/api/src/shared/`).
+Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError`, `parseWith` and `parseStored` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the rules that request schemas share (`backend/packages/domain/src/schemas/rules.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError`, `attempt` and `containing`, the LIKE pattern that finds a keyword literally (`backend/packages/infrastructure/src/database/`), and the response helpers, the `authenticated` wrapper, the links of a page (`pageLinks`) and the converters of query parameters of the API package (`backend/packages/api/src/shared/`).
 
 ## 1. API Contract
 
@@ -420,29 +420,24 @@ const toApiSalon = (
 ): Result<ApiSalonResponse, DomainError> => {
   const { deletedAt, ...columns } = salon
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
-      (converted) => ({
-        ...columns,
-        ...converted,
-        openingHours: openingHours.map(toApiOpeningHours),
-      }),
-    ),
-    (error) => storedDoesNotMatch(salon.id, error),
+  return Result.map(
+    parseStored(convertedColumnsSchema, salon, storedSalon(salon.id)),
+    (converted) => ({
+      ...columns,
+      ...converted,
+      openingHours: openingHours.map(toApiOpeningHours),
+    }),
   )
 }
 
-/** The request was fine; the stored row is not. */
-const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
-  DomainErrors.database(
-    `Stored salon ${id} does not match the API model`,
-    cause,
-  )
+/** What is told of a stored salon that does not match, for the log. */
+const storedSalon = (id: string): string =>
+  `Stored salon ${id} does not match the API model`
 ```
 
 - **The conversion is a parse.** A cast would claim that the `jsonb` value has the API shape; the schema checks it. The `pipe` steps also reject a number or a date that did not convert.
 - **The read mapper returns a `Result`.** A stored row that does not fit is a `database` error, not a `validation` error: the client did nothing wrong and gets a 500 without details, while the cause is logged.
+- **A stored value is read with `parseStored`** (`backend/packages/domain/src/shared/validation.ts`), not with `parseWith`. It answers with the `database` error itself, so no mapper has to turn a validation error into one, and none can forget to. Its third argument is what the log says of the row (`Stored salon <id> does not match the API model`); the cause names the properties and the rules they break, in English and without the stored values. A row that is read with another one (the service lines of a booking, the lines and the payments of a sale, the items of a purchase order) is given what to say by the mapper that reads it.
 - **Hidden columns are removed by destructuring**, the same three that the response rule in step 3 omits.
 - **The page of a list is made here too.** `toApiSalonPage` maps the salons of a list and hands them to `toApiPage` (`backend/packages/domain/src/mappers/read/page.ts`), which builds `meta` for every list: `nextCursor` is the ID of the last item of the page when `hasMore` is true, otherwise `null`. A list whose items have no ID (the available slots) says the cursor of its last item itself, to `toApiPageEndingAt` in the same file, which `toApiPage` is built on.
 
@@ -777,7 +772,7 @@ A new domain adds one such statement next to it, before `notFoundHandler`. The s
 | `backend/packages/domain/src/schemas/__tests__/salon.schema.test.ts` | unit | the request schemas: what they accept and the rules they reject |
 | `backend/packages/domain/src/mappers/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
 | `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository, and who may change a salon |
-| `backend/packages/domain/src/__tests__/fixtures/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` and `saidOfBrokenRules` (the rules a validation error names, and what it says of each), `MADE_UP_MESSAGE` (the message of an issue that a test makes up) |
+| `backend/packages/domain/src/__tests__/fixtures/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` and `saidOfBrokenRules` (the rules a validation error names, and what it says of each), `MADE_UP_MESSAGE` and `MADE_UP_HEADLINE` (the message of an issue and the headline of a refusal that a test makes up), `RULES_BROKEN_BY_STORED` (the cause of a stored value that does not match, whichever rules it breaks) |
 | `backend/packages/domain/src/__tests__/fixtures/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer with and without a customer record, a user without a scope |
 | `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
 | `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL, signed in as the user the scenario needs |
@@ -1431,7 +1426,7 @@ A use case fails in one of nine ways (`backend/packages/domain/src/shared/errors
 
 ```typescript
 export type DomainError =
-  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
+  | { type: 'validation'; message: LocalizedText; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -1447,7 +1442,7 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile. So is the `entity` of `notFound` and of `alreadyExists`, the name of what the error is about (`entityMessages.salon`); the `id` of `notFound` is what the thing was looked for by, and null where that is not to be repeated (the token of a share link). The `message` of `conflict` is a `LocalizedText` too: why the state does not allow the operation, a message of the file of the domain (`saleMessages.alreadyVoid`), with the values it names (a status, an ID) as they are in every language.
+What an error tells a client is written in every language (`LocalizedText`), and a string in its place does not compile. The headline of a validation error (`message`) is such a text, and so is the `message` of each of its issues. The `message` of `database` and of `storage` is for the log, in English, and reaches no client. So is the `entity` of `notFound` and of `alreadyExists`, the name of what the error is about (`entityMessages.salon`); the `id` of `notFound` is what the thing was looked for by, and null where that is not to be repeated (the token of a share link). The `message` of `conflict` is a `LocalizedText` too: why the state does not allow the operation, a message of the file of the domain (`saleMessages.alreadyVoid`), with the values it names (a status, an ID) as they are in every language.
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 
@@ -1460,7 +1455,7 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 | `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist; a use case of a customer's own profile, when the account has no customer record | 404 |
 | `alreadyExists` | the repository, from a unique violation: the email of a salon, the email of a customer, the referral code of a customer, the email and the staff code of a staff member within a salon | 409 |
 | `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it: the use cases of two-factor authentication (enabling what is already enabled, for example), those of the administrator operations (unlocking an account that is not locked, for example), the use case that deletes a service, when a package contains the service, and the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account. The customer repository returns it as well, when a customer with that email address is added at the moment the profile is created. The use cases that update and delete a staff member return it for what an actor may do to every staff member but their own: deactivating or deleting the one their account belongs to | 409 |
-| `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
+| `database` | the repository, from a failed query; the read mapper (`parseStored`), from a stored row that does not fit | 500 without details; the cause is logged |
 | `storage` | the file storage of the attachments (`S3FileStorage`), from a call to the object storage that failed or was refused | 500 without details; the cause is logged, never a signed URL |
 
 The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.

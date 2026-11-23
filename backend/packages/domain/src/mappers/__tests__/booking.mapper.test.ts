@@ -10,7 +10,10 @@ import {
   dbBookingServices,
   OTHER_BOOKING_ID,
 } from '../../__tests__/fixtures/booking-fixtures'
-import { SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  RULES_BROKEN_BY_STORED,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
 import {
   bookingIdSchema,
@@ -100,7 +103,7 @@ const storedRowIsCorrupt = (id: string = BOOKING_ID) => ({
   error: {
     type: 'database',
     message: `Stored booking ${id} does not match the API model`,
-    cause: expect.objectContaining({ type: 'validation' }),
+    cause: RULES_BROKEN_BY_STORED,
   },
 })
 
@@ -349,7 +352,7 @@ describe('BookingReadMapper.toApiBookingService', () => {
       error: {
         type: 'database',
         message: `Stored booking service ${row?.id} does not match the API model`,
-        cause: expect.objectContaining({ type: 'validation' }),
+        cause: RULES_BROKEN_BY_STORED,
       },
     })
   })

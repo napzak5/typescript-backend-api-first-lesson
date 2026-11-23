@@ -7,7 +7,7 @@ import type {
 } from '../../models/inventory'
 import type { ApiPage, Paging } from '../../models/page'
 import type { InventoryMovementListing } from '../../repositories/inventory.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -37,35 +37,31 @@ const convertedColumnsSchema = z.object({
 const toApiInventoryTransaction = (
   row: DbInventoryTransaction,
 ): Result<ApiInventoryTransactionResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, row, 'Invalid stored stock movement'),
-      (converted) => ({
-        id: row.id,
-        salonId: row.salonId,
-        productId: row.productId,
-        inventoryId: row.inventoryId,
-        transactionType: row.transactionType,
-        quantity: converted.quantity,
-        balanceBefore: converted.balanceBefore,
-        balanceAfter: converted.balanceAfter,
-        unitCost: row.unitCost,
-        totalCost: row.totalCost,
-        referenceType: row.referenceType,
-        referenceId: row.referenceId,
-        lotNumber: row.lotNumber,
-        expiryDate: row.expiryDate,
-        reason: row.reason,
-        performedBy: row.performedBy,
-        createdAt: converted.createdAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      row,
+      `Stored stock movement ${row.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored stock movement ${row.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: row.id,
+      salonId: row.salonId,
+      productId: row.productId,
+      inventoryId: row.inventoryId,
+      transactionType: row.transactionType,
+      quantity: converted.quantity,
+      balanceBefore: converted.balanceBefore,
+      balanceAfter: converted.balanceAfter,
+      unitCost: row.unitCost,
+      totalCost: row.totalCost,
+      referenceType: row.referenceType,
+      referenceId: row.referenceId,
+      lotNumber: row.lotNumber,
+      expiryDate: row.expiryDate,
+      reason: row.reason,
+      performedBy: row.performedBy,
+      createdAt: converted.createdAt,
+    }),
   )
 
 export const InventoryTransactionReadMapper = {

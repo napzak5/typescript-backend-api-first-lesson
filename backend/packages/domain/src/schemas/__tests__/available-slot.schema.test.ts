@@ -1,19 +1,23 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { DATE } from '../../__tests__/fixtures/available-slot-fixtures'
 import { CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   availableSlotCheckRequestSchema,
   availableSlotSearchRequestSchema,
 } from '../available-slot.schema'
 
 const search = (input: unknown) =>
-  parseWith(availableSlotSearchRequestSchema, input, 'Invalid')
+  parseWith(availableSlotSearchRequestSchema, input, MADE_UP_HEADLINE)
 
 const check = (input: unknown) =>
-  parseWith(availableSlotCheckRequestSchema, input, 'Invalid')
+  parseWith(availableSlotCheckRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOf = (result: ReturnType<typeof search | typeof check>): string[] =>
   result.type === 'error' ? brokenRules(result.error) : []
@@ -23,7 +27,7 @@ const messagesOf = (
 ): string[] =>
   result.type === 'error' && result.error.type === 'validation'
     ? result.error.issues.map(
-        ({ field, message }) => `${field}: ${toldIn(message, 'en')}`,
+        ({ field, message }) => `${field}: ${textIn(message, 'en')}`,
       )
     : []
 

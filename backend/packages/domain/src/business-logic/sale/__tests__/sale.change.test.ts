@@ -1,3 +1,4 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
@@ -12,7 +13,6 @@ import {
 } from '../../../__tests__/fixtures/staff-fixtures'
 import type { DbPaymentTransaction, DbSale } from '../../../models/sale'
 import { saleUpdateRequestSchema } from '../../../schemas/sale.schema'
-import { toldIn } from '../../../shared'
 import {
   bookingToHold,
   planSaleChange,
@@ -141,7 +141,7 @@ const messagesOf = (
     ? Object.fromEntries(
         result.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}

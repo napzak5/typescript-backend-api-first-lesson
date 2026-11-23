@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   bookingMessages,
   entityMessages,
@@ -6,7 +7,7 @@ import { match } from 'ts-pattern'
 import type { BookingServiceId, DbBooking } from '../../../models/booking'
 import type { BookingCreationRefusal } from '../../../repositories/booking.repository'
 import { MAX_INTEGER } from '../../../schemas/rules'
-import { type DomainError, DomainErrors, type Told } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 
 /** A refusal that says something about the request or about what it meets. */
 type AnsweredRefusal = Exclude<
@@ -25,7 +26,7 @@ export const timeZoneUnknown = (): DomainError =>
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
-  message: Told,
+  message: LocalizedText,
 ): DomainError =>
   match(refusal)
     .with({ type: 'invalid' }, ({ issues }) =>

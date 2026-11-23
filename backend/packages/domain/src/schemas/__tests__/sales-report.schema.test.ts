@@ -1,7 +1,12 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import { periodQuery } from '../../__tests__/fixtures/sales-report-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   dailySalesGetRequestSchema,
   MAX_REPORT_DAYS,
@@ -13,12 +18,12 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
 const parseReport = (input: unknown) =>
-  parseWith(salesReportGetRequestSchema, input, 'Invalid')
+  parseWith(salesReportGetRequestSchema, input, MADE_UP_HEADLINE)
 
 const rulesOfReport = (input: unknown): string[] =>
   rulesBrokenBy(salesReportGetRequestSchema, input)
@@ -36,7 +41,7 @@ const messagesOf = (input: unknown): Record<string, string> => {
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}

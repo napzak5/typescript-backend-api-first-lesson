@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  RULES_BROKEN_BY_STORED,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   CATEGORY_ID,
   dbServiceCategory,
@@ -120,15 +123,19 @@ describe('ServiceCategoryReadMapper.toApiServiceCategory', () => {
     ['a creation time that is not a timestamp', { createdAt: 'yesterday' }],
     ['an update time that is not a timestamp', { updatedAt: '' }],
   ])(
-    'reports %s as a database error, not as a bad request',
+    'reports %s as a database error that names the category, not as a bad request',
     (_case, stored) => {
       const result = ServiceCategoryReadMapper.toApiServiceCategory(
         dbServiceCategory(stored),
       )
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         type: 'error',
-        error: { type: 'database' },
+        error: {
+          type: 'database',
+          message: `Stored service category ${CATEGORY_ID} does not match the API model`,
+          cause: RULES_BROKEN_BY_STORED,
+        },
       })
     },
   )

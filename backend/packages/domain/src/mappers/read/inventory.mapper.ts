@@ -7,7 +7,7 @@ import type {
 } from '../../models/inventory'
 import type { ApiPage, Paging } from '../../models/page'
 import type { InventoryList } from '../../repositories/inventory.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -44,33 +44,29 @@ const convertedColumnsSchema = z.object({
 const toApiInventory = (
   row: DbInventory,
 ): Result<ApiInventoryResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, row, 'Invalid stored stock row'),
-      (converted) => ({
-        id: row.id,
-        salonId: row.salonId,
-        productId: row.productId,
-        currentStock: converted.currentStock,
-        availableStock: converted.availableStock,
-        reservedStock: converted.reservedStock,
-        lotNumber: row.lotNumber,
-        expiryDate: row.expiryDate,
-        location: row.location,
-        shelf: row.shelf,
-        lastCountedAt: converted.lastCountedAt,
-        lastCountedBy: row.lastCountedBy,
-        notes: row.notes,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      row,
+      `Stored stock row ${row.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored stock row ${row.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: row.id,
+      salonId: row.salonId,
+      productId: row.productId,
+      currentStock: converted.currentStock,
+      availableStock: converted.availableStock,
+      reservedStock: converted.reservedStock,
+      lotNumber: row.lotNumber,
+      expiryDate: row.expiryDate,
+      location: row.location,
+      shelf: row.shelf,
+      lastCountedAt: converted.lastCountedAt,
+      lastCountedBy: row.lastCountedBy,
+      notes: row.notes,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const InventoryReadMapper = {
