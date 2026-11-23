@@ -330,6 +330,9 @@ describe('VerifyResetTokenUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['token:invalid_token'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      authMessages.tokenInvalidOrExpired,
+    ])
   })
 
   it.each([
