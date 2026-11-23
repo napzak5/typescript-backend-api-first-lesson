@@ -10,10 +10,6 @@ import { ANSWERED_BY_OTHERS, customersOf } from './customer-words'
  */
 
 export const customerExportMessages = {
-  /** What a screen could not read, as a sentence names it */
-  names: {
-    data: text({ en: 'the data of the customer', ja: 'お客様のデータ' }),
-  },
   /** What follows an export of the ledger */
   ledger: {
     noneMatch: text({

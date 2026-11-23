@@ -1,11 +1,11 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { DataExport, LedgerExport } from '../api/customer-export-api'
 
-const { exports: words, names } = adminCustomerMessages
+const { exports: words } = adminCustomerMessages
 
 /*
  * What follows an export: the file that is saved and what is said of it,
@@ -46,10 +46,10 @@ export const afterLedgerExport = (outcome: LedgerExport): ExportSays =>
       tone: 'danger',
       message: words.ledger.forbidden,
     }))
-    .with({ type: 'tooManyRequests' }, (reason) => ({
+    .with({ type: 'tooManyRequests' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: unreadMessageOf(names.ledger, reason),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',
@@ -81,10 +81,10 @@ export const afterDataExport = (
       tone: 'danger',
       message: words.data.forbidden,
     }))
-    .with({ type: 'tooManyRequests' }, (reason) => ({
+    .with({ type: 'tooManyRequests' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: unreadMessageOf(words.names.data, reason),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',
