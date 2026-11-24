@@ -28,9 +28,10 @@
     "build:watch": "vite build --watch --mode development",
     "clean": "rm -rf dist *.tsbuildinfo",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@beauty-salon-frontend/answers": "workspace:*",

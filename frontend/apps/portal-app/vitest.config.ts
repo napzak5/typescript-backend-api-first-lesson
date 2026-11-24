@@ -1,37 +1,6 @@
-import { defaultClientConditions, defaultServerConditions } from 'vite'
-import { configDefaults, defineConfig } from 'vitest/config'
+import { frontendTests } from '@beauty-salon-shared/config/vitest'
 
-// Workspace packages are tested from source, not from their last build
-const SOURCE = '@beauty-salon-frontend/source'
-
-export default defineConfig({
-  resolve: {
-    conditions: [SOURCE, ...defaultClientConditions],
-  },
-  ssr: {
-    resolve: {
-      conditions: [SOURCE, ...defaultServerConditions],
-    },
-  },
-  test: {
-    environment: 'jsdom',
-    // The DOM is set up once per worker, and every file still runs in a
-    // context of its own: without one, what another file rendered would stay
-    // in the document
-    pool: 'vmThreads',
-    setupFiles: [
-      '@beauty-salon-frontend/testing/setup',
-      '@beauty-salon-frontend/testing/stories',
-    ],
-    // The tests that need the API are run by `test:integration`
-    exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
-    css: {
-      // The class names of the CSS Modules, as they are written
-      modules: { classNameStrategy: 'non-scoped' },
-    },
-    // The origin that the API client sends its requests to
-    env: {
-      VITE_BACKEND_BASE_URL: 'http://localhost:3000',
-    },
-  },
+export default frontendTests({
+  unit: { environment: 'jsdom', stories: true, pool: 'vmThreads' },
+  integration: {},
 })

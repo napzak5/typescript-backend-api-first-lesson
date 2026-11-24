@@ -9,6 +9,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  # What a run of the unit or the integration tests of a package leaves for
+  # the job Coverage: what it covered, in a blob report of Vitest
+  # (`.vitest/blob` of the package). The run reports no coverage and checks
+  # no threshold of its own: the merge does, over the unit and the
+  # integration tests together
+  FOR_THE_COVERAGE: --reporter=default --reporter=github-actions --reporter=blob --coverage.enabled --coverage.reporter=none --coverage.thresholds.100=false
+
 jobs:
   quality:
     name: Lint, Format and Type Check
@@ -129,7 +137,18 @@ jobs:
         run: pnpm build:prod
 
       - name: Run unit tests
-        run: pnpm -r ${{ needs.scope.outputs.filter }} run test
+        run: pnpm -r ${{ needs.scope.outputs.filter }} run test $FOR_THE_COVERAGE
+
+      - name: Upload what the unit tests covered
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-unit
+          path: |
+            backend/*/*/.vitest/blob
+            frontend/*/*/.vitest/blob
+            shared-*/.vitest/blob
+          include-hidden-files: true
+          retention-days: 1
 
   test:
     name: Integration Test (part ${{ matrix.part }} of 4)
@@ -185,7 +204,7 @@ jobs:
       - name: Run integration tests
         # pnpm test:integration, for the packages of the scope. A package with
         # fewer test files than parts has parts without any
-        run: pnpm -r --no-sort ${{ needs.scope.outputs.filter }} run test:integration --shard=${{ matrix.part }}/4 --passWithNoTests
+        run: pnpm -r --no-sort ${{ needs.scope.outputs.filter }} run test:integration --shard=${{ matrix.part }}/4 --passWithNoTests $FOR_THE_COVERAGE
         env:
           # The PostgreSQL service above. Without it the tests start a
           # PostgreSQL container of their own (testcontainers), as they do on
@@ -193,9 +212,67 @@ jobs:
           # their containers here as well
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_salon_test
 
+      - name: Upload what the integration tests covered
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-integration-${{ matrix.part }}
+          path: |
+            backend/*/*/.vitest/blob
+            frontend/*/*/.vitest/blob
+            shared-*/.vitest/blob
+          include-hidden-files: true
+          retention-days: 1
+
       - name: Check the database schema files are up to date
         if: matrix.part == 1
         run: pnpm check:db-schema
+
+  # The coverage of every package that was tested: the reports that its unit
+  # tests and the four parts of its integration tests left, merged by its
+  # `test:coverage` (`vitest run --coverage --merge-reports`), so a package
+  # is measured over both as `pnpm test:coverage` measures it. A package that says its tests cover
+  # all of it (`full: true` in its vitest.config.ts) fails here below 100%
+  coverage:
+    name: Coverage
+    needs: [unit, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Into the folders of the packages, where the tests left them
+      - name: Download what the tests covered
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Measure every package that was tested
+        run: |
+          short=""
+          for reports in $(find backend frontend shared-config shared-i18n -name node_modules -prune -o -type d -path '*/.vitest/blob' -print | sort); do
+            package=${reports%/.vitest/blob}
+            echo "::group::$package"
+            (cd "$package" && pnpm run test:coverage --merge-reports) || short="$short $package"
+            echo "::endgroup::"
+          done
+          if [ -n "$short" ]; then
+            echo "Covered less than their configurations say, or failed:$short"
+            exit 1
+          fi
 
   # A browser on the built applications, the production API and PostgreSQL.
   e2e:
@@ -291,7 +368,7 @@ jobs:
   # The images are published only for a commit on main whose checks passed.
   publish-staging-images:
     name: Publish Staging Images
-    needs: [quality, unit, test, e2e, build]
+    needs: [quality, unit, test, coverage, e2e, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read

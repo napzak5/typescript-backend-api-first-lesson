@@ -1,9 +1,3 @@
-import { defineConfig } from 'vitest/config'
+import { sharedTests } from '@beauty-salon-shared/config/vitest'
 
-export default defineConfig({
-  test: {
-    // Functions of languages and of texts: no document is needed
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
-  },
-})
+export default sharedTests()

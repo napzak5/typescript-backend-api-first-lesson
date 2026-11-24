@@ -157,7 +157,7 @@ export default bundledLibrary(manifest, 'browser')
     "rootDir": "./src",
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "types": ["vitest/globals", "node"]
+    "types": ["node"]
   },
   "references": [
     { "path": "../domain" },
@@ -217,7 +217,7 @@ import { startServer } from './server.js'
 | 実行 | 条件の指定 | 読み込まれるもの |
 |------|------------|------------------|
 | `pnpm dev:backend` | `tsx watch --conditions=@beauty-salon-backend/source` | `src/index.ts` |
-| `pnpm test`、`pnpm test:integration`（api、config、database、domain、infrastructure、server） | 各 `vitest.config.ts` / `vitest.integration.config.ts` の `ssr.resolve.conditions` | `src/index.ts` |
+| `pnpm test`、`pnpm test:integration`、`pnpm test:coverage`（api、config、database、domain、infrastructure、server） | 各 `vitest.config.ts` が呼ぶ `backendTests`（`@beauty-salon-shared/config/vitest`）の `ssr.resolve.conditions` | `src/index.ts` |
 | DB スクリプト（`pnpm db:migrate` など） | `tsx --conditions=@beauty-salon-backend/source` | `src/index.ts` |
 | `pnpm typecheck`、各パッケージの `tsc` | なし | `dist/index.d.ts` |
 | `pnpm start:backend` | なし | `dist/index.js` |
@@ -250,5 +250,5 @@ import { startServer } from './server.js'
 
 TypeScript 5 までの設定例をそのまま使うとエラーになるものです。
 
-- **`types` は明示する**: `@types/*` は自動では読み込まれません。Node.js の型を使うパッケージは `"types": ["node"]` を、Vitest のグローバルを使うパッケージは `"vitest/globals"` を指定しています。指定がないと `Cannot find name 'process'` のようなエラーになります
+- **`types` は明示する**: `@types/*` は自動では読み込まれません。Node.js の型を使うパッケージは `"types": ["node"]` を指定しています。テストは `describe` や `it` を `vitest` から import するので、Vitest のグローバル（`vitest/globals`）は、どのパッケージも使いません。指定がないと `Cannot find name 'process'` のようなエラーになります
 - **`baseUrl` と `moduleResolution: "node"` は削除された**: 指定すると `tsc` がエラーにします。`paths` は `baseUrl` なしで、`tsconfig` からの相対パス（`"@/*": ["./src/*"]`）で書きます

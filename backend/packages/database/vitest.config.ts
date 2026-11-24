@@ -1,21 +1,8 @@
-import { defineConfig } from 'vitest/config'
+import { backendTests } from '@beauty-salon-shared/config/vitest'
 
-export default defineConfig({
-  // Workspace packages are tested from source, not from their last build.
-  // Every other package is resolved as Node resolves it when the server
-  // runs: without `module`, which names a build that is meant for a bundler.
-  ssr: {
-    resolve: {
-      conditions: [
-        '@beauty-salon-backend/source',
-        'node',
-        'development|production',
-      ],
-    },
-  },
-  test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
-    exclude: ['src/**/*.integration.test.ts'],
-  },
+export default backendTests({
+  unit: {},
+  integration: {},
+  // What `pnpm db:introspect` generates from the database
+  unmeasured: ['src/schema.ts', 'src/relations.ts'],
 })

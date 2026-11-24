@@ -219,6 +219,7 @@ pnpm preview:frontend        # Serve the built frontend apps
 # Testing
 pnpm test                    # Unit tests
 pnpm test:integration        # Tests against PostgreSQL and an SMTP server, backend and frontend (see Testing)
+pnpm test:coverage           # Unit and integration tests of every package, and their coverage together (see Testing)
 pnpm test:e2e                # Browser tests of the built frontend applications against the real API (see Testing)
 pnpm test:e2e:install        # The browser of those tests, once
 
@@ -374,6 +375,10 @@ dropped.
   production API from the code of the client, and from the screens as a user
   works them: a test server of the backend gives every test file an API on a
   copy of a database with the seed data.
+- **Coverage** (`pnpm test:coverage`): the unit and the integration tests of
+  every package run together, and their coverage is measured over both
+  (Vitest's v8 provider). 100% is the bar: a package that is there says so
+  in its `vitest.config.ts`, and then fails below it, in CI as well
 - **Browser tests** (`pnpm test:e2e`): Playwright drives Chromium on the three
   frontend applications as they are built, which call the production API on
   a PostgreSQL with the seed data (`TEST_DATABASE_URL`, or a container). The

@@ -21,7 +21,7 @@ export type Manifest = {
 type RunsIn = 'browser' | 'node'
 
 /** What lies under `src` and is not built: tests, stories, and what only they use. */
-const NOT_BUILT = [
+export const NOT_BUILT = [
   '**/*.test.{ts,tsx}',
   '**/*.stories.tsx',
   '**/*.d.ts',

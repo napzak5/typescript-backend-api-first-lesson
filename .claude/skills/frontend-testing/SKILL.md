@@ -1644,44 +1644,41 @@ the catalogue shows it for a single story.
 
 ## Setting up a package or an application
 
-`vitest.config.ts`:
+The tests of every package are configured by `frontendTests` of
+`@beauty-salon-shared/config/vitest` (`shared-config/vitest/package-tests.ts`).
+`vitest.config.ts` names the tests the package has and what is its own:
 
 ```ts
-import { defaultClientConditions, defaultServerConditions } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { frontendTests } from '@beauty-salon-shared/config/vitest'
 
-// Workspace packages are tested from source, not from their last build
-const SOURCE = '@beauty-salon-frontend/source'
-
-export default defineConfig({
-  resolve: { conditions: [SOURCE, ...defaultClientConditions] },
-  ssr: { resolve: { conditions: [SOURCE, ...defaultServerConditions] } },
-  test: {
-    environment: 'jsdom',
-    setupFiles: [
-      '@beauty-salon-frontend/testing/setup',
-      '@beauty-salon-frontend/testing/stories',
-    ],
-    css: {
-      // The class names of the CSS Modules, as they are written
-      modules: { classNameStrategy: 'non-scoped' },
-    },
-  },
+export default frontendTests({
+  unit: { environment: 'jsdom', stories: true },
+  integration: {},
 })
 ```
 
-`@beauty-salon-frontend/testing/stories` gives the tests what the catalogue
-gives every story: Storybook empties the `fn()` callbacks of a story
-between two tests, and a story is drawn at the width of its viewport
-(`atTheWidthOfTheStory`). It also leaves nothing that a test rendered with
-`@testing-library/react` directly, as `App.test.tsx` does, to the next
-(`afterEach(cleanup)`). A package or an application whose stories the
-catalogue of `ui` shows has no preview of its own and names it as it is;
-`storybook`, `@storybook/react-vite` and `@testing-library/react` are among
-its dev dependencies.
+What every package gets is written there once: the workspace packages are
+read from their sources (`@beauty-salon-frontend/source`), the class names
+of the CSS Modules are kept as they are written, and the unit tests have
+the origin the API client sends its requests to (`VITE_BACKEND_BASE_URL`).
+The unit tests are the files `src/**/*.test.{ts,tsx}` that are not
+integration tests. They run in Node.js unless the package names
+`environment: 'jsdom'`: then `@beauty-salon-frontend/testing/setup` gives
+the document what jsdom lacks.
+
+`stories: true` adds `@beauty-salon-frontend/testing/stories`, which gives
+the tests what the catalogue gives every story: Storybook empties the
+`fn()` callbacks of a story between two tests, and a story is drawn at the
+width of its viewport (`atTheWidthOfTheStory`). It also leaves nothing that
+a test rendered with `@testing-library/react` directly, as `App.test.tsx`
+does, to the next (`afterEach(cleanup)`). A package or an application whose
+stories the catalogue of `ui` shows has no preview of its own and says
+`stories: true`; `storybook`, `@storybook/react-vite` and
+`@testing-library/react` are among its dev dependencies.
 
 `ui` has the preview of the catalogue, and gives it with its own
-`vitest.setup.ts` in place of the shared one:
+`vitest.setup.ts` (`setupFiles: ['./vitest.setup.ts']`, after the shared
+setup) in place of `stories: true`:
 
 ```ts
 import { atTheWidthOfTheStory } from '@beauty-salon-frontend/testing'
@@ -1695,44 +1692,35 @@ beforeAll(annotations.beforeAll)
 ```
 
 Where setting up the DOM for every file takes most of the run, the unit
-tests run in the `vmThreads` pool (`pool: 'vmThreads'` in `test`; `admin-app`,
-`portal-app` and `ui`): the DOM is set up once per worker, and every file
-still runs in a context of its own. `isolate: false` does not do for these
-tests: the document is shared, and what one file rendered is still there in
-the next. `vitest doctor` in the package measures the pools against each
-other and says whether the files still pass; a package changes its pool where
-the gain is large, and the integration tests keep the default.
+tests run in the `vmThreads` pool (`pool: 'vmThreads'` in `unit`;
+`admin-app`, `portal-app` and `ui`): the DOM is set up once per worker, and
+every file still runs in a context of its own. `isolate: false` does not do
+for these tests: the document is shared, and what one file rendered is
+still there in the next. `vitest doctor` in the package measures the pools
+against each other and says whether the files still pass; a package changes
+its pool where the gain is large, and the integration tests keep the
+default.
 
-A package with tests against the real API has a second configuration,
-`vitest.integration.config.ts`, and the script
-`"test:integration": "vitest run --config vitest.integration.config.ts"`
-(`frontend/packages/session`, `frontend/packages/app-frame`, and each
-application). It differs from the first in three lines, and
-`vitest.config.ts` gets
-`exclude: [...configDefaults.exclude, '**/*.integration.test.*']` so that
-`pnpm test` needs no database:
-
-```ts
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.integration.test.tsx'],
-    // Starts the test server of the backend for the run, and stops it
-    globalSetup: ['@beauty-salon-frontend/testing/api/global-setup'],
-    // An API for the file, a fresh database for every test
-    setupFiles: [
-      '@beauty-salon-frontend/testing/setup',
-      '@beauty-salon-frontend/testing/api/setup',
-      '@beauty-salon-frontend/testing/stories',
-    ],
-    css: {
-      // The class names of the CSS Modules, as they are written
-      modules: { classNameStrategy: 'non-scoped' },
-    },
-  },
-```
+A package with tests against the real API says `integration: {}`
+(`frontend/packages/session`, `frontend/packages/app-frame`,
+`frontend/packages/testing`, and each application), and has the script
+`"test:integration": "vitest run --project integration"`. Its integration
+tests are `src/**/*.integration.test.{ts,tsx}`, in jsdom: the global setup
+`@beauty-salon-frontend/testing/api/global-setup` starts the test server of
+the backend for the run, and the setup files give each file an API and
+every test a fresh database (`@beauty-salon-frontend/testing/setup`,
+`@beauty-salon-frontend/testing/api/setup`,
+`@beauty-salon-frontend/testing/stories`). `pnpm test` runs the project
+`unit` alone, and needs no database.
 
 `@beauty-salon-frontend/testing` is a dev dependency of such a package, and
 so is `@testing-library/user-event` when its tests work a screen.
+
+`full: true` says that the tests of the package cover all of it; from then
+on `pnpm test:coverage` and the job Coverage of CI fail below 100%. What is
+measured and what is not is in
+[Coverage](../../../docs/testing-requirements.md#coverage) of the testing
+requirements.
 
 ## A check is shown to fail
 
@@ -1751,6 +1739,9 @@ pnpm test                                            # frontend and backend unit
 pnpm --filter @beauty-salon-frontend/session test:integration   # against the real API, one package
 pnpm --filter @beauty-salon-frontend/admin-app test:integration # the same for one application
 pnpm test:integration                                # every integration test, backend and frontend
+
+pnpm --filter @beauty-salon-frontend/session test:coverage      # unit and integration tests, and their coverage
+pnpm test:coverage                                   # the same for every package
 
 pnpm test:e2e                                        # the browser tests (see "In a browser")
 ```

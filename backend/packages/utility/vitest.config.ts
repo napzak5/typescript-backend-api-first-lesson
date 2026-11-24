@@ -1,9 +1,3 @@
-import { defineConfig } from 'vitest/config'
+import { backendTests } from '@beauty-salon-shared/config/vitest'
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['src/__tests__/**/*.test.ts'],
-  },
-})
+export default backendTests({ unit: {}, full: true })
