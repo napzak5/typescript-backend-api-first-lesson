@@ -1160,8 +1160,18 @@ changes and removes) add:
 
 The sales of a salon
 (`frontend/apps/admin-app/src/sales/screens/sales.integration.test.tsx`: the
-checkout of a booking, the payments and the receipt of a sale, the ledger)
-add:
+checkout of a booking, the payments and the receipt of a sale, the ledger;
+`sale-changes.integration.test.tsx`: the change, the voiding and the
+refunds; and beside them, a file for each screen, what its requests meet
+when they fail or something changes meanwhile: `checkout`, `sale`,
+`payment-entry`, `sale-change-failures`, `sales-ledger`) add:
+
+- **The tests of the sales open a page and read it alike**
+  (`sales/__tests__/screens.ts`: `openAt` opens a page of the salon in
+  Tokyo signed in, `part` and `describedIn` read the part under a heading,
+  `theSale` waits for the page of a sale), and a visit of today with its
+  sale is one arrangement (`arrangeVisit` of `sales/__tests__/arrangements.ts`:
+  the booking at 09:00, the sale at 09:30, nothing paid).
 
 - **A sale is a row the test writes from its booking**
   (`arrangeSale` of `sales/__tests__/arrangements.ts`: the lines of the
@@ -1180,6 +1190,19 @@ add:
   heading, then the table of the lines): the number of the sale is below
   the heading as soon as the sale is read, the rest once the payment
   methods are.
+- **A ledger longer than a page is one statement** (`arrangeCounterSales(51)`:
+  sales at the counter for nobody of the ledger, one a minute from 08:01).
+  A page after the first fails alone when its sale has a moment that is
+  none (`unreadable('sales', 'createdAt', id)` of the oldest): the API
+  reads one row more than a page to know whether another follows, and
+  does not answer with it.
+- **A sale gone meanwhile** is `saleRemovedMeanwhile` (its lines and its
+  payments go with it); a sale that bills no booking is
+  `sellAtTheCounter`. A refusal followed by the sale gone is the reason
+  of the refusal arranged first (`paySale` before a voiding, `refundSale`
+  before a refund) and the sale removed when the screen reads it again
+  after the 409 (`whenAskedFor('GET /sales/<id>', () => saleRemovedMeanwhile(id))`,
+  called once the page was read).
 - **Printing is asked of `window.print`**, stubbed with
   `vi.spyOn(window, 'print').mockImplementation(() => {})`: jsdom prints
   nothing. What paper shows is a browser test.

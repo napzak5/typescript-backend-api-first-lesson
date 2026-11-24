@@ -1719,12 +1719,25 @@ page of a booking (`components/booking-sale/`).
   of the query. What the API answers is shown only when it agrees with the
   lines on the screen (`agreesWith`: the sum of their prices and their
   discounts); a menu that changed after it was read is said, with
-  「計算し直す」, which reads the menu again. What the request needs per
+  「計算し直す」, which reads the menu again. The services added are kept
+  by their IDs and billed as the menu that was read has them (`billed` of
+  `checkout-screen.tsx`): what is sent to be calculated, what is listed,
+  what is taken off and what the sale bills are the same services, and
+  one that left the menu meanwhile, which the calculation refuses (400)
+  and the screen names, is off the bill once the menu was read again.
+  What the request needs per
   line and the calculation gives for the whole (the tax) is shared out by
   the screen (`taxSharesOf` of `checkout.ts`: by the price of each line
   that leaves the tax out, what is less than a yen dropped, the yen left
   over one at a time from the first line), so the lines add up to the
   total that was shown.
+- **What a write leaves behind is forgotten in one place.** Every screen
+  that writes a sale (the checkout, a payment, a refund, the change, the
+  voiding) drops every ledger of the salon, whatever its conditions, and
+  the sales of the booking of the sale, with one function
+  (`forgetListsOf` of `sales-api.ts`, given the sale): a change of its
+  day moves it to the ledger of another day, and a sale of no booking
+  leaves no booking to drop.
 - **A record a 409 may have made meanwhile is looked for.** When the API
   refuses a sale because the booking was billed meanwhile, the screen reads
   the sales of the booking, shows the one it finds, and says so in a
