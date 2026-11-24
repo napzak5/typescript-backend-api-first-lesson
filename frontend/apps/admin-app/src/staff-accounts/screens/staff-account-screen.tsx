@@ -133,7 +133,7 @@ const InvitationForm = ({
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
-  const called = staffCalled(member)
+  const called = inJapanese(staffCalled(member))
   const again = invitation !== undefined
   const invite = useMutation({
     mutationFn: (role: ModelsSalonRoleType) =>
@@ -247,7 +247,7 @@ const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
   const [revoking, setRevoking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
   const [message, setMessage] = useState<string>()
-  const called = staffCalled(member)
+  const called = inJapanese(staffCalled(member))
   const revocation = useMutation({
     mutationFn: () => revokeInvitation(salon.id, member.id),
     onSuccess: async (revoked) =>
@@ -337,7 +337,7 @@ const RoleChangeForm = ({
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
-  const called = staffCalled(member)
+  const called = inJapanese(staffCalled(member))
   const change = useMutation({
     mutationFn: (role: ModelsSalonRoleType) =>
       changeRole(salon.id, member.id, role),
@@ -409,7 +409,7 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
   const [unlinking, setUnlinking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
   const [message, setMessage] = useState<string>()
-  const called = staffCalled(member)
+  const called = inJapanese(staffCalled(member))
   const unlink = useMutation({
     mutationFn: () => unlinkAccount(salon.id, member.id),
     onSuccess: async (unlinked) =>

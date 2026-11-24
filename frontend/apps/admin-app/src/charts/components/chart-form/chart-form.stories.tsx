@@ -1,8 +1,12 @@
+import { eachTooLongOf } from '@beauty-salon-frontend/fields'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aChart } from '../examples'
 import { ChartForm } from './chart-form'
+
+const { entry, form } = adminChartMessages
 
 const meta: Meta<typeof ChartForm> = {
   title: 'Admin/Charts/ChartForm',
@@ -37,8 +41,8 @@ export const WithErrors: Story = {
     chart: aChart(),
     submitLabel: '変更を保存する',
     errors: {
-      'previousTreatments.1.date': '施術日は、今日までにしてください。',
-      avoidProducts: '商材の名前は、1 つ 100 文字以内で入力してください。',
+      'previousTreatments.1.date': form.errors.dateTooLate,
+      avoidProducts: eachTooLongOf(form.productName, 100),
     },
   },
 }
@@ -66,7 +70,6 @@ export const Sending: Story = {
 /** The chart could not be sent */
 export const NotSent: Story = {
   args: {
-    message:
-      'カルテを作れませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: entry.failed,
   },
 }

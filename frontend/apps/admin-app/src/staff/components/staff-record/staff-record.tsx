@@ -7,20 +7,26 @@ import {
 import {
   Card,
   DescriptionList,
-  inJapanese,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import {
   activityNameOf,
   bookingsNameOf,
   bufferNameOf,
   commissionNameOf,
+  concurrentBookingsNameOf,
   fullStaffNameOf,
   levelNameOf,
+  yearsNameOf,
 } from '../../utils/staff-format'
 import styles from './staff-record.module.css'
+
+const { values, words } = adminStaffMessages
 
 export type StaffRecordProps = {
   member: ModelsStaffResponse
@@ -43,121 +49,146 @@ export const StaffRecord = ({
   timezone,
   currency,
   actions,
-}: StaffRecordProps) => (
-  <div className={styles['record']}>
-    <Card title='スタッフ' actions={actions}>
-      <DescriptionList
-        items={[
-          { term: '表示名', description: member.displayName },
-          { term: '氏名', description: fullStaffNameOf(member) },
-          { term: 'スタッフコード', description: member.staffCode },
-          { term: 'レベル', description: levelNameOf(member.level) },
-          { term: '役職', description: member.position },
-          { term: '状態', description: activityNameOf(member) },
-          {
-            term: 'ログインアカウント',
-            description:
-              member.userId === null ? '紐づいていません' : '紐づいています',
-          },
-          {
-            term: '登録した日時',
-            description: inJapanese(momentNameAt(member.createdAt, timezone)),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='連絡先'>
-      <DescriptionList
-        items={[
-          { term: 'メールアドレス', description: member.email },
-          { term: '電話番号', description: member.phoneNumber },
-          {
-            term: '予備の電話番号',
-            description: member.alternativePhone,
-          },
-        ]}
-      />
-    </Card>
-    <Card title='雇用'>
-      <DescriptionList
-        items={[
-          {
-            term: '雇用形態',
-            description: member.employmentType,
-          },
-          {
-            term: '入社日',
-            description:
-              member.hireDate === null
-                ? null
-                : inJapanese(dayNameOf(member.hireDate)),
-          },
-          {
-            term: '基本給',
-            description:
-              member.baseSalary === null
-                ? null
-                : inJapanese(amountOf(member.baseSalary, currency)),
-          },
-          {
-            term: '歩合率',
-            description:
-              member.commissionRate === null
-                ? null
-                : commissionNameOf(member.commissionRate),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='紹介'>
-      <DescriptionList
-        items={[
-          {
-            term: '専門',
-            description: <TagList label={'専門'} items={member.specialties} />,
-          },
-          {
-            term: '資格',
-            description: (
-              <TagList label={'資格'} items={member.certifications} />
-            ),
-          },
-          {
-            term: '経験年数',
-            description:
-              member.yearsOfExperience === null
-                ? null
-                : `${member.yearsOfExperience} 年`,
-          },
-          {
-            term: '紹介文',
-            description: <WrittenText>{member.bio}</WrittenText>,
-          },
-          {
-            term: '写真の URL',
-            description: member.imageUrl === null ? null : member.imageUrl,
-          },
-        ]}
-      />
-    </Card>
-    <Card title='予約の受け方'>
-      <DescriptionList
-        items={[
-          { term: '予約', description: bookingsNameOf(member) },
-          {
-            term: '同時に担当できる予約',
-            description: `${member.maxConcurrentBookings} 件まで`,
-          },
-          {
-            term: '予約の前に確保する時間',
-            description: bufferNameOf(member.bufferTimeBefore),
-          },
-          {
-            term: '予約の後に確保する時間',
-            description: bufferNameOf(member.bufferTimeAfter),
-          },
-        ]}
-      />
-    </Card>
-  </div>
-)
+}: StaffRecordProps) => {
+  const say = useSay()
+  /** A value that may not be recorded, in the language of the page */
+  const sayIfAny = (value: LocalizedText | null): string | null =>
+    value === null ? null : say(value)
+
+  return (
+    <div className={styles['record']}>
+      <Card title={say(words.member)} actions={actions}>
+        <DescriptionList
+          items={[
+            { term: say(words.displayName), description: member.displayName },
+            {
+              term: say(words.fullName),
+              description: say(fullStaffNameOf(member)),
+            },
+            { term: say(words.staffCode), description: member.staffCode },
+            {
+              term: say(words.level),
+              description: say(levelNameOf(member.level)),
+            },
+            { term: say(words.position), description: member.position },
+            {
+              term: say(words.status),
+              description: say(activityNameOf(member)),
+            },
+            {
+              term: say(words.account),
+              description: say(
+                member.userId === null ? values.notLinked : values.linked,
+              ),
+            },
+            {
+              term: say(words.createdAt),
+              description: say(momentNameAt(member.createdAt, timezone)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.contact)}>
+        <DescriptionList
+          items={[
+            { term: say(words.email), description: member.email },
+            { term: say(words.phoneNumber), description: member.phoneNumber },
+            {
+              term: say(words.alternativePhone),
+              description: member.alternativePhone,
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.employment)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.employmentType),
+              description: member.employmentType,
+            },
+            {
+              term: say(words.hireDate),
+              description: sayIfAny(
+                member.hireDate === null ? null : dayNameOf(member.hireDate),
+              ),
+            },
+            {
+              term: say(words.baseSalary),
+              description: sayIfAny(
+                member.baseSalary === null
+                  ? null
+                  : amountOf(member.baseSalary, currency),
+              ),
+            },
+            {
+              term: say(words.commissionRate),
+              description: sayIfAny(
+                member.commissionRate === null
+                  ? null
+                  : commissionNameOf(member.commissionRate),
+              ),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.introduction)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.specialties),
+              description: (
+                <TagList
+                  label={say(words.specialties)}
+                  items={member.specialties}
+                />
+              ),
+            },
+            {
+              term: say(words.certifications),
+              description: (
+                <TagList
+                  label={say(words.certifications)}
+                  items={member.certifications}
+                />
+              ),
+            },
+            {
+              term: say(words.yearsOfExperience),
+              description: sayIfAny(yearsNameOf(member.yearsOfExperience)),
+            },
+            {
+              term: say(words.bio),
+              description: <WrittenText>{member.bio}</WrittenText>,
+            },
+            { term: say(words.imageUrl), description: member.imageUrl },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.bookingSettings)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.bookings),
+              description: say(bookingsNameOf(member)),
+            },
+            {
+              term: say(words.maxConcurrentBookings),
+              description: say(
+                concurrentBookingsNameOf(member.maxConcurrentBookings),
+              ),
+            },
+            {
+              term: say(words.bufferTimeBefore),
+              description: say(bufferNameOf(member.bufferTimeBefore)),
+            },
+            {
+              term: say(words.bufferTimeAfter),
+              description: say(bufferNameOf(member.bufferTimeAfter)),
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}

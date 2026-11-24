@@ -8,9 +8,16 @@ import {
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
-import { ALLERGY_TYPE_OPTIONS, SEVERITY_OPTIONS } from '../../utils/allergies'
+import { ALLERGY_TYPE_CHOICES, SEVERITY_CHOICES } from '../../utils/allergies'
+
+const { form: FORM, words } = adminChartMessages.allergies
 
 export type AllergyFormProps = {
   /** The allergy the form opens with; none for one that is recorded */
@@ -19,9 +26,9 @@ export type AllergyFormProps = {
   today: string
   submitLabel: string
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -44,68 +51,74 @@ export const AllergyForm = ({
   pending,
   actions,
   onSubmit,
-}: AllergyFormProps) => (
-  <Form
-    submitLabel={submitLabel}
-    message={message}
-    errors={errors}
-    pending={pending}
-    actions={actions}
-    onSubmit={onSubmit}
-  >
-    <TextField
-      label='アレルゲン'
-      name='allergenName'
-      autoComplete='off'
-      required
-      description='薬剤の成分、香料、金属などの名前。お客様 1 人に、同じアレルゲンは 1 件です。'
-      defaultValue={allergy?.allergenName}
-      error={errors['allergenName']}
-    />
-    <Select
-      label='種類'
-      name='allergyType'
-      options={ALLERGY_TYPE_OPTIONS}
-      placeholder='選んでください'
-      required
-      defaultValue={allergy?.allergyType ?? ''}
-      error={errors['allergyType']}
-    />
-    <RadioGroup
-      label='重篤度'
-      name='severityType'
-      options={SEVERITY_OPTIONS}
-      required
-      defaultValue={allergy?.severityType}
-      error={errors['severityType']}
-    />
-    <TextArea
-      label='症状'
-      name='symptoms'
-      rows={2}
-      description='出た症状。記録しなければ空のままにします。'
-      defaultValue={allergy?.symptoms ?? undefined}
-      error={errors['symptoms']}
-    />
-    <TextArea
-      label='施術のときの注意'
-      name='notes'
-      rows={2}
-      description='使わない薬剤や、代わりに使うものなど。'
-      defaultValue={allergy?.notes ?? undefined}
-      error={errors['notes']}
-    />
-    <TextField
-      width='short'
-      label='確かめた日'
-      name='confirmedDate'
-      autoComplete='off'
-      type='date'
-      min={EARLIEST_DAY}
-      max={today}
-      description='カウンセリングやパッチテストで確かめた日。分からなければ空のままにします。'
-      defaultValue={allergy?.confirmedDate ?? undefined}
-      error={errors['confirmedDate']}
-    />
-  </Form>
-)
+}: AllergyFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      submitLabel={submitLabel}
+      message={said.message}
+      errors={errors}
+      pending={pending}
+      actions={actions}
+      onSubmit={onSubmit}
+    >
+      <TextField
+        label={say(words.allergen)}
+        name='allergenName'
+        autoComplete='off'
+        required
+        description={say(FORM.allergenDescription)}
+        defaultValue={allergy?.allergenName}
+        error={said.errors['allergenName']}
+      />
+      <Select
+        label={say(words.type)}
+        name='allergyType'
+        options={options(ALLERGY_TYPE_CHOICES)}
+        placeholder={say(FORM.choose)}
+        required
+        defaultValue={allergy?.allergyType ?? ''}
+        error={said.errors['allergyType']}
+      />
+      <RadioGroup
+        label={say(words.severity)}
+        name='severityType'
+        options={options(SEVERITY_CHOICES)}
+        required
+        defaultValue={allergy?.severityType}
+        error={said.errors['severityType']}
+      />
+      <TextArea
+        label={say(words.symptoms)}
+        name='symptoms'
+        rows={2}
+        description={say(FORM.symptomsDescription)}
+        defaultValue={allergy?.symptoms ?? undefined}
+        error={said.errors['symptoms']}
+      />
+      <TextArea
+        label={say(words.notes)}
+        name='notes'
+        rows={2}
+        description={say(FORM.notesDescription)}
+        defaultValue={allergy?.notes ?? undefined}
+        error={said.errors['notes']}
+      />
+      <TextField
+        width='short'
+        label={say(words.confirmedDate)}
+        name='confirmedDate'
+        autoComplete='off'
+        type='date'
+        min={EARLIEST_DAY}
+        max={today}
+        description={say(FORM.confirmedDateDescription)}
+        defaultValue={allergy?.confirmedDate ?? undefined}
+        error={said.errors['confirmedDate']}
+      />
+    </Form>
+  )
+}

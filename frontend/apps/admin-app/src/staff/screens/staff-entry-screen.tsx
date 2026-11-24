@@ -9,7 +9,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -23,10 +26,9 @@ import {
 } from '../api/staff-api'
 import { StaffForm } from '../components/staff-form/staff-form'
 import { afterStaffWrite, readStaffEntry } from '../utils/staff-form'
-import { staffCalled } from '../utils/staff-format'
 import { StaffLedgerForbidden, useKeepsStaffLedger } from './with-staff-member'
 
-const TITLE = 'スタッフを登録する'
+const { entry: ENTRY, titles, words } = adminStaffMessages
 
 type StaffEntryProps = { salon: ModelsSalonResponse }
 
@@ -39,7 +41,8 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsStaffCreateRequest) =>
       attemptStaffEntry(salon.id, request),
@@ -51,7 +54,7 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
           queryClient.removeQueries({ queryKey: STAFF_LISTS })
           notify({
             tone: 'success',
-            message: `${staffCalled(member)}を、スタッフ台帳に登録しました。`,
+            message: ENTRY.done(member.displayName),
           })
           void navigate(staffMemberHrefOf(salon.id, member.id))
         })
@@ -84,14 +87,14 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
   return (
     <StaffForm
       member={null}
-      submitLabel='登録する'
+      submitLabel={say(ENTRY.submit)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={staffLedgerHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -105,12 +108,13 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
 export const StaffEntryScreen = () => {
   const { salonId = '' } = useParams()
   const keeps = useKeepsStaffLedger()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={say(titles.entry)} description={salon.name} />
           {keeps ? (
             <StaffEntry key={salon.id} salon={salon} />
           ) : (

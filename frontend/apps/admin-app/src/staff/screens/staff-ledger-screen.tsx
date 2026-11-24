@@ -9,13 +9,13 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -28,7 +28,7 @@ import {
 import { StaffTable } from '../components/staff-table/staff-table'
 import { StaffLedgerForbidden, useKeepsStaffLedger } from './with-staff-member'
 
-const TITLE = 'スタッフ'
+const { ledger, loading, names, titles } = adminStaffMessages
 
 type StaffListProps = { salon: ModelsSalonResponse }
 
@@ -43,6 +43,7 @@ const cursorAfter = (page: StaffPageRead): string | undefined =>
  * told so instead.
  */
 const StaffList = ({ salon }: StaffListProps) => {
+  const say = useSay()
   const read = useInfiniteQuery({
     queryKey: [...STAFF_LISTS, salon.id],
     queryFn: ({ pageParam }) => readStaffPage(salon.id, pageParam),
@@ -55,12 +56,12 @@ const StaffList = ({ salon }: StaffListProps) => {
   const forbidden = pages?.[0]?.type === 'forbidden'
   const header = (
     <PageHeader
-      title={TITLE}
+      title={say(titles.ledger)}
       description={salon.name}
       actions={
         pages === undefined || forbidden ? undefined : (
           <ButtonLink href={staffEntryHrefOf(salon.id)} variant='primary'>
-            スタッフを登録する
+            {say(ledger.register)}
           </ButtonLink>
         )
       }
@@ -87,22 +88,18 @@ const StaffList = ({ salon }: StaffListProps) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='スタッフを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.staff)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-            )}
+            message={say(unreadMessageOf(names.staff, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
           <EmptyState
-            title='スタッフはいません'
-            description='サロンで働くスタッフを、台帳に登録してください。'
+            title={say(ledger.none)}
+            description={say(ledger.noneDescription)}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -128,15 +125,16 @@ const StaffList = ({ salon }: StaffListProps) => {
 export const StaffLedgerScreen = () => {
   const { salonId = '' } = useParams()
   const keeps = useKeepsStaffLedger()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.ledger)}>
       {(salon) =>
         keeps ? (
           <StaffList key={salon.id} salon={salon} />
         ) : (
           <>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={say(titles.ledger)} description={salon.name} />
             <StaffLedgerForbidden />
           </>
         )

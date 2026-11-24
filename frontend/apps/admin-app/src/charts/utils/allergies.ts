@@ -19,15 +19,15 @@ import {
 import {
   aboutTheAttempt,
   type BadgeTone,
-  type ChoiceOption,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
+  type NamedChoice,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { mayKeepCustomers } from '../../customers/utils/customer-history'
 import type { AllergyRemoval, AllergyWrite } from '../api/allergies-api'
@@ -38,21 +38,16 @@ import type { AllergyRemoval, AllergyWrite } from '../api/allergies-api'
  * customer has one allergy of an allergen, whatever its kind.
  */
 
-const TYPE_NAMES: Record<ModelsAllergyType, string> = {
-  chemical: '化学物質',
-  fragrance: '香料',
-  metal: '金属',
-  latex: 'ラテックス',
-  plant: '植物',
-  other: 'その他',
-}
+const { change, entry, form, removal, severities, types, words } =
+  adminChartMessages.allergies
+const { errors: ERRORS } = form
 
-const SEVERITY_NAMES: Record<ModelsAllergySeverityType, string> = {
-  mild: '軽い',
-  moderate: '中程度',
-  severe: '重い',
-  life_threatening: '命に関わる',
-}
+type Errors = FormErrors<LocalizedText>
+
+const TYPE_NAMES: Record<ModelsAllergyType, LocalizedText> = types
+
+const SEVERITY_NAMES: Record<ModelsAllergySeverityType, LocalizedText> =
+  severities
 
 const SEVERITY_TONES: Record<ModelsAllergySeverityType, BadgeTone> = {
   mild: 'neutral',
@@ -69,12 +64,13 @@ const SEVERITIES: readonly ModelsAllergySeverityType[] = Object.values(
 ).toReversed()
 
 /** What a kind of allergy is called: 「香料」. */
-export const allergyTypeNameOf = (type: ModelsAllergyType): string =>
+export const allergyTypeNameOf = (type: ModelsAllergyType): LocalizedText =>
   TYPE_NAMES[type]
 
 /** What a severity is called: 「命に関わる」. */
-export const severityNameOf = (severity: ModelsAllergySeverityType): string =>
-  SEVERITY_NAMES[severity]
+export const severityNameOf = (
+  severity: ModelsAllergySeverityType,
+): LocalizedText => SEVERITY_NAMES[severity]
 
 /** The colour of a severity: the two heaviest stand out. The word says which it is. */
 export const severityToneOf = (
@@ -82,12 +78,12 @@ export const severityToneOf = (
 ): BadgeTone => SEVERITY_TONES[severity]
 
 /** The kinds a form offers, in the order of the contract. */
-export const ALLERGY_TYPE_OPTIONS: readonly ChoiceOption[] = TYPES.map(
+export const ALLERGY_TYPE_CHOICES: readonly NamedChoice[] = TYPES.map(
   (type) => ({ value: type, label: TYPE_NAMES[type] }),
 )
 
 /** The severities a form offers, the heaviest first. */
-export const SEVERITY_OPTIONS: readonly ChoiceOption[] = SEVERITIES.map(
+export const SEVERITY_CHOICES: readonly NamedChoice[] = SEVERITIES.map(
   (severity) => ({ value: severity, label: SEVERITY_NAMES[severity] }),
 )
 
@@ -95,25 +91,9 @@ export const SEVERITY_OPTIONS: readonly ChoiceOption[] = SEVERITIES.map(
 export const mayRemoveAllergies = (role: string): boolean =>
   mayKeepCustomers(role)
 
-/** What a member of the staff is told where an allergy would be removed. */
-export const REMOVED_BY_OTHERS =
-  '間違えて記録したアレルギーの削除は、オーナーとマネージャーができます。'
-
 const LONGEST_ALLERGEN = 255
 
-const TYPE_MISSING = '種類を選んでください。'
-const ALLERGEN_MISSING = 'アレルゲンを入力してください。'
-const ALLERGEN_TOO_LONG = tooLongOf(
-  writtenInJapanese('アレルゲン'),
-  LONGEST_ALLERGEN,
-)
-const SEVERITY_MISSING = '重篤度を選んでください。'
-const DATE_NOT_A_DAY = '確かめた日を、日付で入力してください。'
-const DATE_TOO_EARLY = '確かめた日は、1900年1月1日以降にしてください。'
-const DATE_TOO_LATE = '確かめた日は、今日までにしてください。'
-
-/** What the form says when the customer has an allergy of the allergen already */
-const ALLERGEN_EXISTS = 'このお客様には、同じアレルゲンの記録があります。'
+const ALLERGEN_TOO_LONG = tooLongOf(words.allergen, LONGEST_ALLERGEN)
 
 /** A text written as a day, whether or not it is one the API takes */
 const DAY = /^\d{4}-\d{2}-\d{2}$/
@@ -124,29 +104,30 @@ const severityFrom = (value: string): ModelsAllergySeverityType | undefined =>
   SEVERITIES.find((severity) => severity === value)
 
 /** What is wrong with the day the allergy was confirmed on, if anything; none is no day. */
-const dateErrorOf = (date: string, today: string): string | undefined => {
+const dateErrorOf = (
+  date: string,
+  today: string,
+): LocalizedText | undefined => {
   if (date === '') {
     return undefined
   }
   if (DAY.test(date) && date < EARLIEST_DAY) {
-    return DATE_TOO_EARLY
+    return ERRORS.dateTooEarly
   }
   if (!isDay(date)) {
-    return DATE_NOT_A_DAY
+    return ERRORS.dateNotADay
   }
 
-  return date > today ? DATE_TOO_LATE : undefined
+  return date > today ? ERRORS.dateTooLate : undefined
 }
 
 /** What is wrong with the allergen, if anything. */
-const allergenErrorOf = (allergen: string): string | undefined => {
+const allergenErrorOf = (allergen: string): LocalizedText | undefined => {
   if (allergen === '') {
-    return ALLERGEN_MISSING
+    return ERRORS.allergenMissing
   }
 
-  return lengthOf(allergen) > LONGEST_ALLERGEN
-    ? inJapanese(ALLERGEN_TOO_LONG)
-    : undefined
+  return lengthOf(allergen) > LONGEST_ALLERGEN ? ALLERGEN_TOO_LONG : undefined
 }
 
 /**
@@ -156,15 +137,18 @@ const allergenErrorOf = (allergen: string): string | undefined => {
 export const readAllergy = (
   values: FormData,
   today: string,
-): FormRead<ModelsCustomerAllergyCreateRequest> => {
+): FormRead<ModelsCustomerAllergyCreateRequest, Errors> => {
   const allergyType = typeFrom(textOf(values, 'allergyType'))
   const allergenName = textOf(values, 'allergenName').trim()
   const severityType = severityFrom(textOf(values, 'severityType'))
   const confirmedDate = textOf(values, 'confirmedDate').trim()
-  const wrong: [string, string | undefined][] = [
-    ['allergyType', allergyType === undefined ? TYPE_MISSING : undefined],
+  const wrong: [string, LocalizedText | undefined][] = [
+    ['allergyType', allergyType === undefined ? ERRORS.typeMissing : undefined],
     ['allergenName', allergenErrorOf(allergenName)],
-    ['severityType', severityType === undefined ? SEVERITY_MISSING : undefined],
+    [
+      'severityType',
+      severityType === undefined ? ERRORS.severityMissing : undefined,
+    ],
     ['confirmedDate', dateErrorOf(confirmedDate, today)],
   ]
   const errors = Object.fromEntries(
@@ -195,7 +179,7 @@ export const readAllergy = (
 
 /** What a change of an allergy asks for: nothing, when nothing was changed. */
 export type AllergyChange =
-  | FormRead<ModelsCustomerAllergyUpdateRequest>
+  | FormRead<ModelsCustomerAllergyUpdateRequest, Errors>
   | { type: 'unchanged' }
 
 /**
@@ -238,33 +222,34 @@ export const readAllergyChange = (
 }
 
 /** Where the form says what the API refused, and in what words; `undefined` for what it has no control of. */
-const saidOf = ({ field, rule }: RefusedValue): [string, string] | undefined =>
+const saidOf = ({
+  field,
+  rule,
+}: RefusedValue): [string, LocalizedText] | undefined =>
   match(field)
-    .returnType<[string, string] | undefined>()
-    .with('allergyType', () => [field, TYPE_MISSING])
+    .returnType<[string, LocalizedText] | undefined>()
+    .with('allergyType', () => [field, ERRORS.typeMissing])
     .with('allergenName', () => [
       field,
-      rule === 'too_big' ? inJapanese(ALLERGEN_TOO_LONG) : ALLERGEN_MISSING,
+      rule === 'too_big' ? ALLERGEN_TOO_LONG : ERRORS.allergenMissing,
     ])
-    .with('severityType', () => [field, SEVERITY_MISSING])
+    .with('severityType', () => [field, ERRORS.severityMissing])
     .with('confirmedDate', () => [
       field,
       rule === 'too_big'
-        ? DATE_TOO_LATE
+        ? ERRORS.dateTooLate
         : rule === 'too_small'
-          ? DATE_TOO_EARLY
-          : DATE_NOT_A_DAY,
+          ? ERRORS.dateTooEarly
+          : ERRORS.dateNotADay,
     ])
     .otherwise(() => undefined)
 
 /** Which write a form makes: the words of its failure differ. */
 export type AllergyWriteKind = 'entry' | 'change'
 
-const FAILED_WRITES: Record<AllergyWriteKind, string> = {
-  entry:
-    'アレルギーを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-  change:
-    'アレルギーの記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+const FAILED_WRITES: Record<AllergyWriteKind, LocalizedText> = {
+  entry: entry.failed,
+  change: change.failed,
 }
 
 /** What the form says after the API refused it, or after nothing came of it. */
@@ -274,9 +259,9 @@ export const afterAllergyWrite = (
     { type: 'invalid' | 'exists' | 'forbidden' | 'tooManyRequests' | 'failed' }
   >,
   write: AllergyWriteKind,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap((value) => {
         const at = saidOf(value)
@@ -285,22 +270,19 @@ export const afterAllergyWrite = (
       })
 
       return {
-        message: inJapaneseIfAny(
+        message:
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
     .with({ type: 'exists' }, () => ({
       message: undefined,
-      errors: { allergenName: ALLERGEN_EXISTS },
+      errors: { allergenName: ERRORS.allergenExists },
     }))
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、アレルギーを記録できません。'),
-    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(form.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
@@ -310,27 +292,17 @@ export const allergyWrittenOf = (
   name: string,
   allergen: string,
   write: AllergyWriteKind,
-): string =>
-  write === 'entry'
-    ? `${name} 様のアレルギー（${allergen}）を記録しました。`
-    : `${name} 様のアレルギー（${allergen}）の記録を直しました。`
-
-/** What is said when an allergy was removed. */
-const allergyRemovedOf = (name: string, allergen: string): string =>
-  `${name} 様のアレルギー（${allergen}）の記録を削除しました。`
-
-/** What is said when another account removed the allergy meanwhile */
-const ALLERGY_GONE =
-  'その間に、ほかのアカウントがこのアレルギーの記録を削除していました。'
+): LocalizedText =>
+  write === 'entry' ? entry.done(name, allergen) : change.done(name, allergen)
 
 /** What a removal comes to on the screen. */
 export type AllergyRemovalSays =
   /** The allergy was removed: said in a notification */
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: LocalizedText }
   /** Nothing was removed, and another attempt may: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** What changed meanwhile, which another attempt does not change: said under the heading, and the list is read again */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
 /** What is said after an allergy was to be removed. */
 export const afterAllergyRemoval = (
@@ -342,24 +314,23 @@ export const afterAllergyRemoval = (
     .returnType<AllergyRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: allergyRemovedOf(name, allergen),
+      message: removal.done(name, allergen),
     }))
     .with({ type: 'notFound' }, () => ({
       type: 'refused',
-      message: ALLERGY_GONE,
+      message: removal.gone,
     }))
     // The role of the account changed meanwhile
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、アレルギーの記録を削除できません。${REMOVED_BY_OTHERS}`,
+      message: removal.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'アレルギーの記録を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()

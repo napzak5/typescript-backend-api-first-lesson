@@ -10,21 +10,27 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
-  inJapanese,
   NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import {
   MOST_TREATMENTS,
   rowControlOf,
-  TREATMENT_OPTIONS,
+  TREATMENT_CHOICES,
 } from '../../utils/chart-form'
+
+const { form: FORM, words } = adminChartMessages
 
 export type ChartFormProps = {
   /** The chart the form opens with; none for one that is made */
@@ -33,13 +39,13 @@ export type ChartFormProps = {
   today: string
   submitLabel: string
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /**
    * What is wrong with the values, under the names of the controls; a
    * row's under `previousTreatments.<n>.<name>`. A new object is the
    * answer to another attempt
    */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -69,68 +75,73 @@ export const ChartForm = ({
   actions,
   onSubmit,
 }: ChartFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
   // A row of the treatments the customer had before holds what it opened
   // with, if anything
-  const treatments = useRepeatedRows<ModelsPreviousTreatment | undefined>(
-    () => chart?.previousTreatments ?? [],
-    errors,
-  )
+  const treatments = useRepeatedRows<
+    ModelsPreviousTreatment | undefined,
+    LocalizedText
+  >(() => chart?.previousTreatments ?? [], errors)
+  const rowErrors = useSaidForm(undefined, treatments.errors).errors
+
   return (
     <Form
       submitLabel={submitLabel}
-      message={message}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={actions}
       onSubmit={onSubmit}
     >
-      <FormPart label='施術の前に確かめること'>
+      <FormPart label={say(FORM.beforeTreatment)}>
         <TextArea
-          label='持病や体調'
+          label={say(words.medicalConditions)}
           name='medicalConditions'
-          description='施術の前に注意が必要な持病や体調を書きます。'
+          description={say(FORM.medicalConditionsDescription)}
           defaultValue={chart?.medicalConditions ?? undefined}
-          error={errors['medicalConditions']}
+          error={said.errors['medicalConditions']}
         />
         <TextField
-          label='好みの商材'
+          label={say(words.preferredProducts)}
           name='preferredProducts'
           autoComplete='off'
-          description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-          defaultValue={inJapanese(tagsTextOf(chart?.preferredProducts ?? []))}
-          error={errors['preferredProducts']}
+          description={say(FORM.preferredProductsDescription)}
+          defaultValue={say(tagsTextOf(chart?.preferredProducts ?? []))}
+          error={said.errors['preferredProducts']}
         />
         <TextField
-          label='避ける商材'
+          label={say(words.avoidProducts)}
           name='avoidProducts'
           autoComplete='off'
-          description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-          defaultValue={inJapanese(tagsTextOf(chart?.avoidProducts ?? []))}
-          error={errors['avoidProducts']}
+          description={say(FORM.avoidProductsDescription)}
+          defaultValue={say(tagsTextOf(chart?.avoidProducts ?? []))}
+          error={said.errors['avoidProducts']}
         />
       </FormPart>
       <FormPart
-        label='過去の施術'
-        description='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
+        label={say(words.previousTreatments)}
+        description={say(FORM.previousTreatmentsDescription)}
       >
         {treatments.rows.map((row, index) => (
           <FormRow
             key={row.key}
             ref={treatments.rowRef(row.key)}
-            label={`${index + 1} 件目の施術`}
+            label={say(FORM.row(index + 1))}
           >
             <FieldRow>
               <Select
-                label='施術'
+                label={say(words.treatment)}
                 name={rowControlOf(index, 'treatment')}
-                options={TREATMENT_OPTIONS}
-                placeholder='選んでください'
+                options={options(TREATMENT_CHOICES)}
+                placeholder={say(FORM.choose)}
                 required
                 defaultValue={row.value?.treatment ?? ''}
-                error={treatments.errors[rowControlOf(index, 'treatment')]}
+                error={rowErrors[rowControlOf(index, 'treatment')]}
               />
               <TextField
-                label='施術日'
+                label={say(words.date)}
                 name={rowControlOf(index, 'date')}
                 autoComplete='off'
                 type='date'
@@ -138,29 +149,29 @@ export const ChartForm = ({
                 min={EARLIEST_DAY}
                 max={today}
                 defaultValue={row.value?.date}
-                error={treatments.errors[rowControlOf(index, 'date')]}
+                error={rowErrors[rowControlOf(index, 'date')]}
               />
             </FieldRow>
             <TextField
-              label='サロン'
+              label={say(words.salonName)}
               name={rowControlOf(index, 'salonName')}
               autoComplete='off'
-              description='施術を受けたサロンの名前。分からなければ空のままにします。'
+              description={say(FORM.salonNameDescription)}
               defaultValue={row.value?.salonName ?? undefined}
-              error={treatments.errors[rowControlOf(index, 'salonName')]}
+              error={rowErrors[rowControlOf(index, 'salonName')]}
             />
             <TextArea
-              label='施術のメモ'
+              label={say(FORM.treatmentNotes)}
               name={rowControlOf(index, 'notes')}
               rows={2}
               defaultValue={row.value?.notes ?? undefined}
             />
             <Button
               size='small'
-              aria-label={`${index + 1} 件目の施術を外す`}
+              aria-label={say(FORM.removeRow(index + 1))}
               onClick={() => treatments.remove(row.key)}
             >
-              外す
+              {say(FORM.remove)}
             </Button>
           </FormRow>
         ))}
@@ -169,19 +180,17 @@ export const ChartForm = ({
             ref={treatments.addRef}
             onClick={() => treatments.add(undefined)}
           >
-            施術を足す
+            {say(FORM.addRow)}
           </Button>
         ) : (
-          <Note size='small'>
-            {`過去の施術は、${MOST_TREATMENTS} 件まで書けます。`}
-          </Note>
+          <Note size='small'>{say(FORM.mostRows(MOST_TREATMENTS))}</Note>
         )}
       </FormPart>
       <TextArea
-        label='メモ'
+        label={say(words.notes)}
         name='notes'
         defaultValue={chart?.notes ?? undefined}
-        error={errors['notes']}
+        error={said.errors['notes']}
       />
     </Form>
   )

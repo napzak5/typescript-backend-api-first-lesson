@@ -288,9 +288,9 @@ export const afterStockWrite = (
 export const afterStockRemoval = (
   outcome: StockRowRemoval,
   name: LocalizedText,
-): TreatmentRemovalSays<LocalizedText> =>
+): TreatmentRemovalSays =>
   match(outcome)
-    .returnType<TreatmentRemovalSays<LocalizedText>>()
+    .returnType<TreatmentRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
       message: removal.done(name),

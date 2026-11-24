@@ -7,13 +7,16 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
-  inJapanese,
   Table,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { treatmentNameOf } from '../../utils/chart-form'
 import styles from './chart-record.module.css'
+
+const { record, words } = adminChartMessages
 
 export type ChartRecordProps = {
   /** The chart of the customer; `null` for one who has none yet */
@@ -42,79 +45,85 @@ export const ChartRecord = ({
   timezone,
   entryHref,
   changeHref,
-}: ChartRecordProps) =>
-  chart === null ? (
+}: ChartRecordProps) => {
+  const say = useSay()
+
+  return chart === null ? (
     <Card
-      title='カルテ'
+      title={say(words.chart)}
       actions={
         <ButtonLink href={entryHref} variant='primary'>
-          カルテを作る
+          {say(words.entry)}
         </ButtonLink>
       }
     >
-      <p>
-        このお客様のカルテは、まだありません。カルテには、施術の前に注意が必要な持病や体調、好みの商材と避ける商材、ほかのサロンで受けた施術を書き、施術の前に確かめます。
-      </p>
+      <p>{say(record.none)}</p>
     </Card>
   ) : (
     <div className={styles['record']}>
       <Card
-        title='カルテ'
-        actions={<ButtonLink href={changeHref}>カルテを直す</ButtonLink>}
+        title={say(words.chart)}
+        actions={<ButtonLink href={changeHref}>{say(words.change)}</ButtonLink>}
       >
         <DescriptionList
           items={[
             {
-              term: '持病や体調',
+              term: say(words.medicalConditions),
               description: <WrittenText>{chart.medicalConditions}</WrittenText>,
             },
             {
-              term: '好みの商材',
+              term: say(words.preferredProducts),
               description: (
-                <TagList label={'好みの商材'} items={chart.preferredProducts} />
+                <TagList
+                  label={say(words.preferredProducts)}
+                  items={chart.preferredProducts}
+                />
               ),
             },
             {
-              term: '避ける商材',
+              term: say(words.avoidProducts),
               description: (
-                <TagList label={'避ける商材'} items={chart.avoidProducts} />
+                <TagList
+                  label={say(words.avoidProducts)}
+                  items={chart.avoidProducts}
+                />
               ),
             },
             {
-              term: 'メモ',
+              term: say(words.notes),
               description: <WrittenText>{chart.notes}</WrittenText>,
             },
             {
-              term: '最後に書いた日時',
-              description: inJapanese(momentNameAt(chart.updatedAt, timezone)),
+              term: say(words.updatedAt),
+              description: say(momentNameAt(chart.updatedAt, timezone)),
             },
           ]}
         />
       </Card>
-      <Card title='過去の施術'>
+      <Card title={say(words.previousTreatments)}>
         <Table<Row>
-          caption='過去の施術の一覧'
+          caption={say(record.previousTreatmentsCaption)}
           captionHidden
           columns={[
             {
               key: 'date',
-              header: '施術日',
-              cell: ({ treatment: { date } }) => inJapanese(dayNameOf(date)),
+              header: say(words.date),
+              cell: ({ treatment: { date } }) => say(dayNameOf(date)),
             },
             {
               key: 'treatment',
-              header: '施術',
+              header: say(words.treatment),
               cell: ({ treatment: { treatment } }) =>
-                treatmentNameOf(treatment),
+                say(treatmentNameOf(treatment)),
             },
             {
               key: 'salonName',
-              header: 'サロン',
+              header: say(words.salonName),
               cell: ({ treatment: { salonName } }) => salonName,
             },
             {
               key: 'notes',
-              header: 'メモ',
+              header: say(words.notes),
               wrap: 'lines',
               cell: ({ treatment: { notes } }) => notes,
             },
@@ -125,8 +134,9 @@ export const ChartRecord = ({
           }))}
           // The treatments have no IDs: a row is its place in the list
           rowKey={({ place }) => String(place)}
-          emptyMessage='記録はありません'
+          emptyMessage={say(record.noPreviousTreatments)}
         />
       </Card>
     </div>
   )
+}

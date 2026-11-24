@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as staffRecordStories from './staff-record.stories'
 
 const stories = composeStories(staffRecordStories)
@@ -107,5 +108,77 @@ describe('StaffRecord', () => {
       within(card).getByRole('link', { name: 'スタッフ情報を直す' }),
     ).toBeVisible()
     expect(within(card).getByRole('button', { name: '削除' })).toBeVisible()
+  })
+})
+
+describe('StaffRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show everything the ledger keeps of a member, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Full.run()
+
+    // Assert
+    expect(termsOf('Staff member')).toEqual([
+      ['Display name', '田中 美咲'],
+      ['Full name', '田中 美咲 (タナカ ミサキ)'],
+      ['Staff code', 'STF010'],
+      ['Level', 'Senior'],
+      ['Position', 'トップスタイリスト'],
+      ['Status', 'Active'],
+      ['Sign-in account', 'Linked'],
+      ['Registered at', 'Wed, April 1, 2026 at 09:00'],
+    ])
+    expect(termsOf('Contact')).toEqual([
+      ['Email address', 'misaki.tanaka@example.com'],
+      ['Phone number', '090-1234-5678'],
+      ['Alternative phone number', 'Not recorded'],
+    ])
+    expect(termsOf('Employment')).toEqual([
+      ['Employment type', '正社員'],
+      ['Hire date', 'Sun, April 1, 2018'],
+      ['Base salary', '¥280,000'],
+      ['Commission rate', '12.5%'],
+    ])
+    expect(termsOf('Introduction')).toEqual([
+      ['Specialties', 'カットカラー'],
+      ['Certifications', '美容師免許管理美容師'],
+      ['Years of experience', '8 years'],
+      [
+        'Bio',
+        'ショートカットと、透明感のあるカラーが得意です。\nお気軽にご相談ください。',
+      ],
+      ['Photo URL', 'https://photos.example.com/staff/misaki.jpg'],
+    ])
+    expect(termsOf('Bookings')).toEqual([
+      ['Online bookings', 'Accepted'],
+      ['Concurrent bookings', 'Up to 2 bookings'],
+      ['Time kept before a booking', 'None'],
+      ['Time kept after a booking', '15 min'],
+    ])
+  })
+
+  it('should say what the ledger does not have of a member, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Sparse.run()
+
+    // Assert
+    expect(termsOf('Staff member')).toContainEqual(['Status', 'Inactive'])
+    expect(termsOf('Staff member')).toContainEqual([
+      'Sign-in account',
+      'Not linked',
+    ])
+    expect(termsOf('Bookings')).toContainEqual([
+      'Online bookings',
+      'Not accepted',
+    ])
   })
 })

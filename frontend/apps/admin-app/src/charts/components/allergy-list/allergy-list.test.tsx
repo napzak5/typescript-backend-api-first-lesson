@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import * as allergyListStories from './allergy-list.stories'
 
@@ -208,5 +209,79 @@ describe('AllergyList', () => {
 
     // Assert
     expect(stories.Unread.args.onRetry).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('AllergyList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the allergies with their severity and kind, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Listed.run()
+
+    // Assert
+    const allergiesPart = screen.getByRole('region', { name: 'Allergies' })
+    expect(rowsOf(allergiesPart)[1]).toEqual([
+      'パラフェニレンジアミン（PPD）',
+      'Severe',
+      'Chemical',
+      'カラー剤で頭皮に赤みとかゆみが出た。',
+      'ジアミンを含まないカラー剤を使う。\nパッチテストを先に。',
+      'Tue, June 10, 2025',
+      'EditRemove',
+    ])
+    expect(rowsOf(allergiesPart)[0]?.slice(1, 3)).toEqual([
+      'Life-threatening',
+      'Latex',
+    ])
+    expect(rowsOf(allergiesPart)[0]?.[5]).toBe('Unknown')
+    expect(within(allergiesPart).getByRole('status')).toHaveTextContent(
+      '3 items',
+    )
+    expect(
+      within(allergiesPart).getByRole('link', {
+        name: 'Edit the record of パラフェニレンジアミン（PPD）',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should ask before removing an allergy, and say what went wrong, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.RemovalFailed.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', {
+      name: 'Remove the record of パラフェニレンジアミン（PPD）?',
+    })
+    expect(asking).toHaveAccessibleDescription(
+      'Removes an allergy recorded by mistake from the chart. A removed record cannot be restored.',
+    )
+    expect(within(asking).getByRole('alert')).toHaveTextContent(
+      'Could not remove the allergy record. Check your connection and try again.',
+    )
+    expect(within(asking).getByRole('button', { name: 'Back' })).toBeVisible()
+  })
+
+  it('should tell a member of the staff who removes an allergy, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ByStaff.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Owners and managers can remove an allergy recorded by mistake.',
+      ),
+    ).toBeVisible()
   })
 })

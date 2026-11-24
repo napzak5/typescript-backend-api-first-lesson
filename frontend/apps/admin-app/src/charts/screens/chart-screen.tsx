@@ -13,11 +13,15 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
-  inJapanese,
   moreOf,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminChartMessages,
+  adminCustomerMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -52,7 +56,7 @@ import { ChartRecord } from '../components/chart-record/chart-record'
 import { afterAllergyRemoval, mayRemoveAllergies } from '../utils/allergies'
 import { WithChart } from './with-chart'
 
-const TITLE = 'カルテ'
+const { names, titles } = adminChartMessages
 
 type AllergiesPartProps = {
   salon: ModelsSalonResponse
@@ -82,9 +86,9 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
   })
   const [removing, setRemoving] = useState<ModelsCustomerAllergyResponse>()
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What changed meanwhile: said under the heading */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   /** How many times the dialog closed on what it changed: the heading takes the focus each time */
   const [moves, setMoves] = useState(0)
 
@@ -134,9 +138,7 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
     .with(undefined, () => ({ type: 'reading' }))
     .with({ type: 'unread' }, ({ reason }) => ({
       type: 'unread',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('アレルギー'), reason),
-      ),
+      message: unreadMessageOf(names.allergies, reason),
       retrying: read.isFetching,
     }))
     .with({ type: 'listed' }, ({ items, total, rest }) => ({
@@ -191,15 +193,21 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
  */
 export const ChartScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.chart)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(titles.chart)}
+          fresh={false}
+        >
           {(customer) => (
             <>
               <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
-                お客様の台帳へ
+                {say(adminCustomerMessages.backToCustomer)}
               </ButtonLink>
               <AllergiesPart
                 key={customer.id}

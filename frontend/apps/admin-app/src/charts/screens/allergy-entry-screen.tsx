@@ -10,7 +10,10 @@ import {
   type FormSays,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -30,7 +33,7 @@ import {
   readAllergy,
 } from '../utils/allergies'
 
-const TITLE = 'アレルギーを記録する'
+const { allergies, titles, words } = adminChartMessages
 
 type AllergyEntryProps = {
   salon: ModelsSalonResponse
@@ -46,7 +49,8 @@ const AllergyEntry = ({ salon, customer }: AllergyEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const back = chartHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
   const entry = useMutation({
@@ -105,14 +109,14 @@ const AllergyEntry = ({ salon, customer }: AllergyEntryProps) => {
   return (
     <AllergyForm
       today={today}
-      submitLabel='記録する'
+      submitLabel={say(allergies.entry.submit)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -122,11 +126,17 @@ const AllergyEntry = ({ salon, customer }: AllergyEntryProps) => {
 /** Records an allergy of a customer, below the salon of the address. */
 export const AllergyEntryScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.allergyEntry)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(titles.allergyEntry)}
+          fresh
+        >
           {(customer) => (
             <AllergyEntry key={customer.id} salon={salon} customer={customer} />
           )}

@@ -11,7 +11,10 @@ import {
   ButtonLink,
   Dialog,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -24,14 +27,10 @@ import {
 } from '../../navigation'
 import { removeStaffMember, STAFF_LISTS, staffKeyOf } from '../api/staff-api'
 import { StaffRecord } from '../components/staff-record/staff-record'
-import {
-  afterStaffRemoval,
-  isOwnStaffRecord,
-  staffCalled,
-} from '../utils/staff-format'
+import { afterStaffRemoval, isOwnStaffRecord } from '../utils/staff-format'
 import { useSignedInUserId, WithStaffMember } from './with-staff-member'
 
-const TITLE = 'スタッフの内容'
+const { member: MEMBER, removal: REMOVAL, titles } = adminStaffMessages
 
 type MemberPartProps = {
   salon: ModelsSalonResponse
@@ -49,20 +48,20 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
+  const say = useSay()
   const userId = useSignedInUserId()
   const [removing, setRemoving] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What the API refused: said above the member */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const own = isOwnStaffRecord(member, userId)
-  const name = staffCalled(member)
   const key = staffKeyOf(member.id)
 
   const removal = useMutation({
     mutationFn: () => removeStaffMember(salon.id, member.id),
     onSuccess: (outcome) =>
-      match(afterStaffRemoval(outcome, name))
+      match(afterStaffRemoval(outcome, member.displayName))
         .with({ type: 'done' }, ({ message: done }) => {
           queryClient.removeQueries({ queryKey: STAFF_LISTS })
           queryClient.setQueryData(key, NOT_FOUND)
@@ -89,12 +88,8 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
 
   return (
     <>
-      {own && (
-        <p>
-          ご自身のスタッフ情報です。このアカウントからは、無効にすることも、削除することもできません。
-        </p>
-      )}
-      {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
+      {own && <p>{say(MEMBER.own)}</p>}
+      {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
       <StaffRecord
         member={member}
         timezone={salon.timezone}
@@ -102,7 +97,7 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
         actions={
           <>
             <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
-              スタッフ情報を直す
+              {say(MEMBER.change)}
             </ButtonLink>
             {!own && (
               <Button
@@ -112,7 +107,7 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
                   setRemoving(true)
                 }}
               >
-                削除
+                {say(REMOVAL.remove)}
               </Button>
             )}
           </>
@@ -120,21 +115,21 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
       />
       <Actions>
         <ButtonLink href={scheduleHrefOf(salon.id, member.id)}>
-          勤務スケジュール
+          {say(MEMBER.schedule)}
         </ButtonLink>
         <ButtonLink href={staffAccountHrefOf(salon.id, member.id)}>
-          ログインアカウント
+          {say(MEMBER.account)}
         </ButtonLink>
       </Actions>
       {!own && (
         <Dialog
           open={removing}
           onClose={close}
-          title={`${name}を、スタッフ台帳から削除しますか？`}
-          description='削除したスタッフは、元に戻せません。担当した予約や施術記録は残ります。紐づいたログインアカウントは、サロンの画面を使えなくなります。スタッフコードは、ほかのスタッフに使えないままです。休職や退職の手続きの間は、削除せずに無効にしてください。'
+          title={say(REMOVAL.title(member.displayName))}
+          description={say(REMOVAL.description)}
           actions={
             <>
-              <Button onClick={close}>戻る</Button>
+              <Button onClick={close}>{say(REMOVAL.back)}</Button>
               <Button
                 variant='danger'
                 pending={removal.isPending}
@@ -143,12 +138,12 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
                   removal.mutate()
                 }}
               >
-                削除する
+                {say(REMOVAL.submit)}
               </Button>
             </>
           }
         >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+          {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
         </Dialog>
       )}
     </>
@@ -158,14 +153,15 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
 /** A member of the staff ledger of the salon of the address. */
 export const StaffMemberScreen = () => {
   const { salonId = '', staffId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.member)}>
       {(salon) => (
         <WithStaffMember
           key={staffId}
           salon={salon}
-          title={TITLE}
+          title={say(titles.member)}
           fresh={false}
         >
           {(member) => <MemberPart salon={salon} member={member} />}

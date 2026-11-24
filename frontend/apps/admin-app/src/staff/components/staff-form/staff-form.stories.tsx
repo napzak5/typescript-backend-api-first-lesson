@@ -1,7 +1,10 @@
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aStaffMember } from '../examples'
 import { StaffForm } from './staff-form'
+
+const { form } = adminStaffMessages
 
 const meta: Meta<typeof StaffForm> = {
   title: 'Admin/Staff/StaffForm',
@@ -30,12 +33,15 @@ export const WithErrors: Story = {
   args: {
     ...Change.args,
     errors: {
-      staffCode:
-        'このスタッフコードは、ほかのスタッフが使っています（台帳から削除したスタッフも含みます）。別のコードを入力してください。',
-      isActive:
-        'ご自身のスタッフ情報は、無効にできません。無効にすると、このアカウントでサロンの画面を使えなくなります。',
+      staffCode: form.errors.staffCodeTaken,
+      isActive: form.errors.ownRecordStaysActive,
     },
   },
+}
+
+/** What the API refused of the attempt as a whole */
+export const Refused: Story = {
+  args: { ...Change.args, message: form.forbidden },
 }
 
 /** The attempt is on its way */

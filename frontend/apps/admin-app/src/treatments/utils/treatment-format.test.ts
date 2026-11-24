@@ -135,7 +135,7 @@ describe('isTreated', () => {
 })
 
 describe('afterTreatmentRemoval', () => {
-  it.each<[string, TreatmentRemoval, TreatmentRemovalSays<LocalizedText>]>([
+  it.each<[string, TreatmentRemoval, TreatmentRemovalSays]>([
     [
       'a removal',
       { type: 'removed' },

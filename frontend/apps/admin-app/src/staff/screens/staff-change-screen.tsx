@@ -11,7 +11,10 @@ import {
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -28,7 +31,7 @@ import { afterStaffWrite, readStaffChange } from '../utils/staff-form'
 import { isOwnStaffRecord } from '../utils/staff-format'
 import { useSignedInUserId, WithStaffMember } from './with-staff-member'
 
-const TITLE = 'スタッフ情報を直す'
+const { change: CHANGE, titles, words } = adminStaffMessages
 
 type StaffChangeProps = {
   salon: ModelsSalonResponse
@@ -47,7 +50,8 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const userId = useSignedInUserId()
   const own = isOwnStaffRecord(member, userId)
   const key = staffKeyOf(member.id)
@@ -61,7 +65,7 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
           const read: StaffRead = { type: 'found', member: changed }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: STAFF_LISTS })
-          notify({ tone: 'success', message: 'スタッフ情報を直しました。' })
+          notify({ tone: 'success', message: CHANGE.done })
           void navigate(back)
         })
         // The member was removed from the ledger meanwhile
@@ -103,14 +107,14 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
   return (
     <StaffForm
       member={member}
-      submitLabel='変更を保存する'
+      submitLabel={say(CHANGE.submit)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -120,11 +124,17 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
 /** Changes what the staff ledger keeps of a member, below the salon of the address. */
 export const StaffChangeScreen = () => {
   const { salonId = '', staffId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) => (
-        <WithStaffMember key={staffId} salon={salon} title={TITLE} fresh>
+        <WithStaffMember
+          key={staffId}
+          salon={salon}
+          title={say(titles.change)}
+          fresh
+        >
           {(member) => <StaffChange salon={salon} member={member} />}
         </WithStaffMember>
       )}

@@ -1,12 +1,17 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { describe, expect, it } from 'vitest'
 import { aNewMember, aStaffMember } from '../components/examples'
 import {
   afterStaffWrite,
-  OWN_RECORD_STAYS_ACTIVE,
   readStaffChange,
   readStaffEntry,
   type StaffWriteAttempt,
 } from './staff-form'
+
+/** What keeps the member of the account active */
+const OWN_RECORD_STAYS_ACTIVE =
+  adminStaffMessages.form.errors.ownRecordStaysActive
 
 /** The values of a member as the form of `aStaffMember` holds them */
 const FILLED: Record<string, string> = {
@@ -172,170 +177,255 @@ describe('readStaffEntry', () => {
     expect(readStaffEntry(formOf(changes)).type).toBe('valid')
   })
 
-  it.each<[string, Record<string, string>, string, string]>([
-    ['no family name', { lastName: ' ' }, 'lastName', '姓を入力してください。'],
+  it.each<[string, Record<string, string>, string, LocalizedText]>([
+    [
+      'no family name',
+      { lastName: ' ' },
+      'lastName',
+      { en: 'Enter the last name.', ja: '姓を入力してください。' },
+    ],
     [
       'a given name too long',
       { firstName: 'あ'.repeat(101) },
       'firstName',
-      '100 文字以内で入力してください。',
+      {
+        en: 'Enter up to 100 characters.',
+        ja: '100 文字以内で入力してください。',
+      },
     ],
     [
       'a kana too long',
       { lastNameKana: 'ア'.repeat(101) },
       'lastNameKana',
-      '100 文字以内で入力してください。',
+      {
+        en: 'Enter up to 100 characters.',
+        ja: '100 文字以内で入力してください。',
+      },
     ],
     [
       'no name for the customers',
       { displayName: '' },
       'displayName',
-      '表示名を入力してください。',
+      { en: 'Enter the display name.', ja: '表示名を入力してください。' },
     ],
     [
       'a name for the customers too long',
       { displayName: 'あ'.repeat(256) },
       'displayName',
-      '255 文字以内で入力してください。',
+      {
+        en: 'Enter up to 255 characters.',
+        ja: '255 文字以内で入力してください。',
+      },
     ],
     [
       'an address of mail that is none',
       { email: 'misaki' },
       'email',
-      'メールアドレスは、hanako@example.com のような形で入力してください。',
+      {
+        en: 'Enter an email address in a form such as hanako@example.com.',
+        ja: 'メールアドレスは、hanako@example.com のような形で入力してください。',
+      },
     ],
     [
       'a phone number too short',
       { phoneNumber: '090-1234' },
       'phoneNumber',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     [
       'a second phone number of letters',
       { alternativePhone: 'なし' },
       'alternativePhone',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     [
       'a staff code too long',
       { staffCode: 'A'.repeat(51) },
       'staffCode',
-      '50 文字以内で入力してください。',
+      {
+        en: 'Enter up to 50 characters.',
+        ja: '50 文字以内で入力してください。',
+      },
     ],
-    ['no level', { level: '' }, 'level', 'レベルを選んでください。'],
+    [
+      'no level',
+      { level: '' },
+      'level',
+      { en: 'Choose the level.', ja: 'レベルを選んでください。' },
+    ],
     [
       'a level that is none',
       { level: 'master' },
       'level',
-      'レベルを選んでください。',
+      { en: 'Choose the level.', ja: 'レベルを選んでください。' },
     ],
     [
       'a position too long',
       { position: 'あ'.repeat(101) },
       'position',
-      '100 文字以内で入力してください。',
+      {
+        en: 'Enter up to 100 characters.',
+        ja: '100 文字以内で入力してください。',
+      },
     ],
     [
       'a kind of employment too long',
       { employmentType: 'あ'.repeat(51) },
       'employmentType',
-      '50 文字以内で入力してください。',
+      {
+        en: 'Enter up to 50 characters.',
+        ja: '50 文字以内で入力してください。',
+      },
     ],
     [
       'a hire before 1900',
       { hireDate: '1899-12-31' },
       'hireDate',
-      '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
+      {
+        en: 'Enter a hire date from January 1, 1900 to December 31, 2999.',
+        ja: '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
+      },
     ],
     [
       'a hire on no day',
       { hireDate: '2026-02-30' },
       'hireDate',
-      '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
+      {
+        en: 'Enter a hire date from January 1, 1900 to December 31, 2999.',
+        ja: '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
+      },
     ],
     [
       'a salary below nothing',
       { baseSalary: '-1' },
       'baseSalary',
-      '基本給は、0 以上の円の整数で入力してください。',
+      {
+        en: 'Enter the base salary as a whole number of yen from 0.',
+        ja: '基本給は、0 以上の円の整数で入力してください。',
+      },
     ],
     [
       'a salary of a fraction of a yen',
       { baseSalary: '1000.5' },
       'baseSalary',
-      '基本給は、0 以上の円の整数で入力してください。',
+      {
+        en: 'Enter the base salary as a whole number of yen from 0.',
+        ja: '基本給は、0 以上の円の整数で入力してください。',
+      },
     ],
     [
       'a salary beyond the column',
       { baseSalary: '2147483648' },
       'baseSalary',
-      '基本給は、0 以上の円の整数で入力してください。',
+      {
+        en: 'Enter the base salary as a whole number of yen from 0.',
+        ja: '基本給は、0 以上の円の整数で入力してください。',
+      },
     ],
     [
       'a rate above a hundred',
       { commissionRate: '100.01' },
       'commissionRate',
-      '歩合率は、0 から 100 までの数で、小数第 2 位まで入力してください。',
+      {
+        en: 'Enter the commission rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '歩合率は、0 から 100 までの数で、小数第 2 位まで入力してください。',
+      },
     ],
     [
       'a rate of three decimals',
       { commissionRate: '12.345' },
       'commissionRate',
-      '歩合率は、0 から 100 までの数で、小数第 2 位まで入力してください。',
+      {
+        en: 'Enter the commission rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '歩合率は、0 から 100 までの数で、小数第 2 位まで入力してください。',
+      },
     ],
     [
       'years above a hundred',
       { yearsOfExperience: '101' },
       'yearsOfExperience',
-      '経験年数は、0 から 100 までの整数で入力してください。',
+      {
+        en: 'Enter the years of experience as a whole number from 0 to 100.',
+        ja: '経験年数は、0 から 100 までの整数で入力してください。',
+      },
     ],
     [
       'years of a fraction',
       { yearsOfExperience: '2.5' },
       'yearsOfExperience',
-      '経験年数は、0 から 100 までの整数で入力してください。',
+      {
+        en: 'Enter the years of experience as a whole number from 0 to 100.',
+        ja: '経験年数は、0 から 100 までの整数で入力してください。',
+      },
     ],
     [
       'an address of a photo that is not of the web',
       { imageUrl: 'ftp://photos.example.com/a.jpg' },
       'imageUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an address of a photo too long',
       { imageUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       'imageUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'no bookings at a time',
       { maxConcurrentBookings: '0' },
       'maxConcurrentBookings',
-      '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      {
+        en: 'Enter the number of concurrent bookings as a whole number from 1 to 10.',
+        ja: '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      },
     ],
     [
       'more bookings at a time than ten',
       { maxConcurrentBookings: '11' },
       'maxConcurrentBookings',
-      '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      {
+        en: 'Enter the number of concurrent bookings as a whole number from 1 to 10.',
+        ja: '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      },
     ],
     [
       'no bookings at a time written',
       { maxConcurrentBookings: '' },
       'maxConcurrentBookings',
-      '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      {
+        en: 'Enter the number of concurrent bookings as a whole number from 1 to 10.',
+        ja: '同時に担当できる予約の数は、1 から 10 までの整数で入力してください。',
+      },
     ],
     [
       'a time before a booking above two hours',
       { bufferTimeBefore: '121' },
       'bufferTimeBefore',
-      '0 から 120 までの分を、整数で入力してください。',
+      {
+        en: 'Enter whole minutes from 0 to 120.',
+        ja: '0 から 120 までの分を、整数で入力してください。',
+      },
     ],
     [
       'no time after a booking written',
       { bufferTimeAfter: '' },
       'bufferTimeAfter',
-      '0 から 120 までの分を、整数で入力してください。',
+      {
+        en: 'Enter whole minutes from 0 to 120.',
+        ja: '0 から 120 までの分を、整数で入力してください。',
+      },
     ],
   ])('should refuse %s at its control', (_case, changes, control, message) => {
     expect(readStaffEntry(formOf(changes))).toEqual({
@@ -439,7 +529,12 @@ describe('readStaffChange', () => {
       readStaffChange(formOf({ email: '' }), aStaffMember(), false),
     ).toEqual({
       type: 'invalid',
-      errors: { email: 'メールアドレスを入力してください。' },
+      errors: {
+        email: {
+          en: 'Enter an email address.',
+          ja: 'メールアドレスを入力してください。',
+        },
+      },
     })
   })
 })
@@ -462,12 +557,18 @@ describe('afterStaffWrite', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        specialties:
-          'この値は受け付けられませんでした。入力を確かめてください。',
-        hireDate:
-          '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        specialties: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
+        hireDate: {
+          en: 'Enter a hire date from January 1, 1900 to December 31, 2999.',
+          ja: '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
+        },
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -479,7 +580,10 @@ describe('afterStaffWrite', () => {
         'change',
       ),
     ).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
@@ -489,20 +593,26 @@ describe('afterStaffWrite', () => {
       string,
       Exclude<StaffWriteAttempt, { type: 'written' } | { type: 'notFound' }>,
       string,
-      string,
+      LocalizedText,
     ]
   >([
     [
       'an address of mail',
       { type: 'duplicate', field: 'email' },
       'email',
-      'このメールアドレスのスタッフが、すでに台帳にいます。別のメールアドレスを入力してください。',
+      {
+        en: 'A staff member with this email address is in the ledger already. Enter another email address.',
+        ja: 'このメールアドレスのスタッフが、すでに台帳にいます。別のメールアドレスを入力してください。',
+      },
     ],
     [
       'a staff code',
       { type: 'duplicate', field: 'staffCode' },
       'staffCode',
-      'このスタッフコードは、ほかのスタッフが使っています（台帳から削除したスタッフも含みます）。別のコードを入力してください。',
+      {
+        en: 'Another staff member uses this staff code (staff members removed from the ledger included). Enter another code.',
+        ja: 'このスタッフコードは、ほかのスタッフが使っています（台帳から削除したスタッフも含みます）。別のコードを入力してください。',
+      },
     ],
     [
       'the deactivation of the own member',
@@ -525,32 +635,44 @@ describe('afterStaffWrite', () => {
       string,
       Exclude<StaffWriteAttempt, { type: 'written' } | { type: 'notFound' }>,
       'entry' | 'change',
-      string,
+      LocalizedText,
     ]
   >([
     [
       'a refusal of the account',
       { type: 'forbidden' },
       'entry',
-      'このアカウントでは、このサロンのスタッフ台帳を扱えません。',
+      {
+        en: 'This account cannot keep the staff ledger of this salon.',
+        ja: 'このアカウントでは、このサロンのスタッフ台帳を扱えません。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
       'change',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'a failed registration',
       { type: 'failed' },
       'entry',
-      'スタッフを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not register the staff member. Check your connection and try again.',
+        ja: 'スタッフを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'a failed change',
       { type: 'failed' },
       'change',
-      'スタッフ情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the staff member. Check your connection and try again.',
+        ja: 'スタッフ情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])(
     'should say above the form what came of %s',

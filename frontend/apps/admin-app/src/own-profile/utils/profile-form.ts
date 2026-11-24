@@ -7,11 +7,12 @@ import type { ModelsStaffProfileUpdateRequest } from '@beauty-salon-frontend/api
 import { WEB_ADDRESS_ERROR } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProfileMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import {
   controlOf,
@@ -27,13 +28,11 @@ import type { ProfileSave } from '../api/profile-api'
  * about the answers.
  */
 
-/** What the notification says once the profile was saved */
-export const SAVED =
-  'プロフィールを保存しました。お客様の画面に、すぐに出ます。'
+const { form } = adminProfileMessages
 
 /** What a change of the profile asks for: nothing, when nothing was changed. */
 type ProfileChange =
-  | FormRead<ModelsStaffProfileUpdateRequest>
+  | FormRead<ModelsStaffProfileUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 
 /**
@@ -59,36 +58,26 @@ export const readProfileChange = (
 /** What the form says after the API did not take it. */
 export const afterProfileSave = (
   outcome: Exclude<ProfileSave, { type: 'saved' } | { type: 'unavailable' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values
         .map(({ field }) => controlOf(field))
         .filter((control) => INTRODUCTION_CONTROLS.includes(control))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map((control) => [
             control,
-            inJapanese(
-              control === 'imageUrl'
-                ? WEB_ADDRESS_ERROR
-                : REFUSED_VALUE_MESSAGE,
-            ),
+            control === 'imageUrl' ? WEB_ADDRESS_ERROR : REFUSED_VALUE_MESSAGE,
           ]),
         ),
       }
     })
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        'プロフィールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(form.failed))
     .exhaustive()

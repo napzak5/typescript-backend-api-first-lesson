@@ -10,13 +10,17 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminChartMessages,
+  adminCustomerMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -31,7 +35,7 @@ import {
   readChartConditions,
 } from '../utils/chart-search'
 
-const TITLE = 'カルテを探す'
+const { loading, names, search: SEARCH, titles } = adminChartMessages
 
 type ChartSearchProps = {
   salon: ModelsSalonResponse
@@ -46,7 +50,10 @@ type ChartSearchProps = {
  */
 const ChartSearch = ({ salon }: ChartSearchProps) => {
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const say = useSay()
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = chartConditionsIn(query)
   const asked = chartQueryOf(conditions).toString()
   const narrowed = asked !== ''
@@ -76,12 +83,18 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
   }
 
   const ledger = (
-    <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
+    <ButtonLink href={customersHrefOf(salon.id)}>
+      {say(adminCustomerMessages.notFound.toLedger)}
+    </ButtonLink>
   )
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} actions={ledger} />
+      <PageHeader
+        title={say(titles.search)}
+        description={salon.name}
+        actions={ledger}
+      />
       <ChartFilter
         conditions={conditions}
         errors={errors}
@@ -89,14 +102,10 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
         onSubmit={filter}
       />
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))
-        .with(undefined, () => (
-          <LoadingIndicator label='カルテを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.charts)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('カルテ'), reason),
-            )}
+            message={say(unreadMessageOf(names.charts, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -104,13 +113,13 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合うカルテはありません'
-              description='条件を変えて探してください。'
+              title={say(SEARCH.noneMatching)}
+              description={say(SEARCH.noneMatchingDescription)}
             />
           ) : (
             <EmptyState
-              title='カルテはありません'
-              description='カルテは、お客様の台帳から作ります。'
+              title={say(SEARCH.none)}
+              description={say(SEARCH.noneDescription)}
               actions={ledger}
             />
           ),
@@ -119,7 +128,7 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
           <ChartTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合うカルテ' : 'カルテ'}
+            caption={say(narrowed ? SEARCH.narrowedCaption : SEARCH.caption)}
             rows={items}
             total={total}
             more={moreOf(rest, {
@@ -141,9 +150,10 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
 /** The search of the charts of the customers, below the salon of the address. */
 export const ChartSearchScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.search)}>
       {(salon) => <ChartSearch key={salon.id} salon={salon} />}
     </WithSalon>
   )

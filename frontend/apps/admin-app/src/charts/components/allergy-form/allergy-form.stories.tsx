@@ -1,8 +1,11 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { anAllergy } from '../examples'
 import { AllergyForm } from './allergy-form'
+
+const { entry, form } = adminChartMessages.allergies
 
 const meta: Meta<typeof AllergyForm> = {
   title: 'Admin/Charts/AllergyForm',
@@ -35,9 +38,9 @@ export const Opened: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      allergenName: 'このお客様には、同じアレルゲンの記録があります。',
-      severityType: '重篤度を選んでください。',
-      confirmedDate: '確かめた日は、今日までにしてください。',
+      allergenName: form.errors.allergenExists,
+      severityType: form.errors.severityMissing,
+      confirmedDate: form.errors.dateTooLate,
     },
   },
 }
@@ -50,7 +53,6 @@ export const Sending: Story = {
 /** The allergy could not be sent */
 export const NotSent: Story = {
   args: {
-    message:
-      'アレルギーを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: entry.failed,
   },
 }

@@ -470,9 +470,9 @@ export const afterProductWrite = (
 export const afterProductRemoval = (
   outcome: ProductRemoval,
   name: string,
-): TreatmentRemovalSays<LocalizedText> =>
+): TreatmentRemovalSays =>
   match(outcome)
-    .returnType<TreatmentRemovalSays<LocalizedText>>()
+    .returnType<TreatmentRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
       message: removal.done(name),

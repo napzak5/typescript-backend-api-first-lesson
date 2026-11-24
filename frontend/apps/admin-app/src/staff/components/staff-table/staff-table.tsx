@@ -3,16 +3,19 @@ import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   activityNameOf,
   bookingsNameOf,
   fullStaffNameOf,
   levelNameOf,
 } from '../../utils/staff-format'
+
+const { ledger, titles, words } = adminStaffMessages
 
 export type StaffTableProps = {
   /** The members that were read so far, in the order they were registered in; at least one */
@@ -37,48 +40,52 @@ export const StaffTable = ({
   more,
   onMore,
   memberHref,
-}: StaffTableProps) => (
-  <PagedTable
-    caption='スタッフ'
-    columns={[
-      {
-        key: 'displayName',
-        header: '表示名',
-        cell: (member) => (
-          <Link href={memberHref(member.id)}>{member.displayName}</Link>
-        ),
-      },
-      {
-        key: 'name',
-        header: '氏名',
-        cell: (member) => fullStaffNameOf(member),
-      },
-      {
-        key: 'level',
-        header: 'レベル',
-        cell: ({ level }) => levelNameOf(level),
-      },
-      {
-        key: 'position',
-        header: '役職',
-        cell: ({ position }) => position,
-      },
-      {
-        key: 'canReceiveBookings',
-        header: '予約',
-        cell: (member) => bookingsNameOf(member),
-      },
-      {
-        key: 'isActive',
-        header: '状態',
-        cell: (member) => activityNameOf(member),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ id }) => id}
-    emptyMessage='スタッフはいません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.people))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: StaffTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(titles.ledger)}
+      columns={[
+        {
+          key: 'displayName',
+          header: say(words.displayName),
+          cell: (member) => (
+            <Link href={memberHref(member.id)}>{member.displayName}</Link>
+          ),
+        },
+        {
+          key: 'name',
+          header: say(words.fullName),
+          cell: (member) => say(fullStaffNameOf(member)),
+        },
+        {
+          key: 'level',
+          header: say(words.level),
+          cell: ({ level }) => say(levelNameOf(level)),
+        },
+        {
+          key: 'position',
+          header: say(words.position),
+          cell: ({ position }) => position,
+        },
+        {
+          key: 'canReceiveBookings',
+          header: say(words.bookings),
+          cell: (member) => say(bookingsNameOf(member)),
+        },
+        {
+          key: 'isActive',
+          header: say(words.status),
+          cell: (member) => say(activityNameOf(member)),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ id }) => id}
+      emptyMessage={say(ledger.none)}
+      count={say(countOf(total, rows.length, COUNTED.people))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

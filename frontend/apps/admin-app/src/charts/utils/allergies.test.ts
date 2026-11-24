@@ -1,4 +1,5 @@
 import type { ModelsAllergySeverityType } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { AllergyRemoval } from '../api/allergies-api'
 import { anAllergy } from '../components/examples'
@@ -68,42 +69,76 @@ describe('readAllergy', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'no allergen',
       { allergenName: '  ' },
-      { allergenName: 'アレルゲンを入力してください。' },
+      {
+        allergenName: {
+          en: 'Enter the allergen.',
+          ja: 'アレルゲンを入力してください。',
+        },
+      },
     ],
     [
       'an allergen longer than 255 characters',
       { allergenName: 'あ'.repeat(256) },
-      { allergenName: 'アレルゲンは、255 文字以内で入力してください。' },
+      {
+        allergenName: {
+          en: 'Allergen: enter up to 255 characters.',
+          ja: 'アレルゲンは、255 文字以内で入力してください。',
+        },
+      },
     ],
-    ['no kind', { allergyType: '' }, { allergyType: '種類を選んでください。' }],
+    [
+      'no kind',
+      { allergyType: '' },
+      { allergyType: { en: 'Choose the type.', ja: '種類を選んでください。' } },
+    ],
     [
       'a kind the contract does not name',
       { allergyType: 'dust' },
-      { allergyType: '種類を選んでください。' },
+      { allergyType: { en: 'Choose the type.', ja: '種類を選んでください。' } },
     ],
     [
       'no severity',
       { severityType: '' },
-      { severityType: '重篤度を選んでください。' },
+      {
+        severityType: {
+          en: 'Choose the severity.',
+          ja: '重篤度を選んでください。',
+        },
+      },
     ],
     [
       'a day after today at the salon',
       { confirmedDate: '2026-11-21' },
-      { confirmedDate: '確かめた日は、今日までにしてください。' },
+      {
+        confirmedDate: {
+          en: 'Make the day it was confirmed on today or earlier.',
+          ja: '確かめた日は、今日までにしてください。',
+        },
+      },
     ],
     [
       'a day before 1900',
       { confirmedDate: '1899-12-31' },
-      { confirmedDate: '確かめた日は、1900年1月1日以降にしてください。' },
+      {
+        confirmedDate: {
+          en: 'Make the day it was confirmed on January 1, 1900 or later.',
+          ja: '確かめた日は、1900年1月1日以降にしてください。',
+        },
+      },
     ],
     [
       'a day that is none',
       { confirmedDate: '2026-02-30' },
-      { confirmedDate: '確かめた日を、日付で入力してください。' },
+      {
+        confirmedDate: {
+          en: 'Enter the day it was confirmed on as a date.',
+          ja: '確かめた日を、日付で入力してください。',
+        },
+      },
     ],
   ])('should refuse %s at its control', (_, changes, errors) => {
     // Act
@@ -140,10 +175,19 @@ describe('readAllergy', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        allergyType: '種類を選んでください。',
-        allergenName: 'アレルゲンを入力してください。',
-        severityType: '重篤度を選んでください。',
-        confirmedDate: '確かめた日は、今日までにしてください。',
+        allergyType: { en: 'Choose the type.', ja: '種類を選んでください。' },
+        allergenName: {
+          en: 'Enter the allergen.',
+          ja: 'アレルゲンを入力してください。',
+        },
+        severityType: {
+          en: 'Choose the severity.',
+          ja: '重篤度を選んでください。',
+        },
+        confirmedDate: {
+          en: 'Make the day it was confirmed on today or earlier.',
+          ja: '確かめた日は、今日までにしてください。',
+        },
       },
     })
   })
@@ -204,31 +248,64 @@ describe('readAllergyChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'invalid',
-      errors: { allergenName: 'アレルゲンを入力してください。' },
+      errors: {
+        allergenName: {
+          en: 'Enter the allergen.',
+          ja: 'アレルゲンを入力してください。',
+        },
+      },
     })
   })
 })
 
 describe('afterAllergyWrite', () => {
-  it.each<[string, string, string]>([
-    ['allergyType', 'invalid_value', '種類を選んでください。'],
+  it.each<[string, string, LocalizedText]>([
+    [
+      'allergyType',
+      'invalid_value',
+      { en: 'Choose the type.', ja: '種類を選んでください。' },
+    ],
     [
       'allergenName',
       'too_big',
-      'アレルゲンは、255 文字以内で入力してください。',
+      {
+        en: 'Allergen: enter up to 255 characters.',
+        ja: 'アレルゲンは、255 文字以内で入力してください。',
+      },
     ],
-    ['allergenName', 'custom', 'アレルゲンを入力してください。'],
-    ['severityType', 'invalid_value', '重篤度を選んでください。'],
-    ['confirmedDate', 'too_big', '確かめた日は、今日までにしてください。'],
+    [
+      'allergenName',
+      'custom',
+      { en: 'Enter the allergen.', ja: 'アレルゲンを入力してください。' },
+    ],
+    [
+      'severityType',
+      'invalid_value',
+      { en: 'Choose the severity.', ja: '重篤度を選んでください。' },
+    ],
+    [
+      'confirmedDate',
+      'too_big',
+      {
+        en: 'Make the day it was confirmed on today or earlier.',
+        ja: '確かめた日は、今日までにしてください。',
+      },
+    ],
     [
       'confirmedDate',
       'too_small',
-      '確かめた日は、1900年1月1日以降にしてください。',
+      {
+        en: 'Make the day it was confirmed on January 1, 1900 or later.',
+        ja: '確かめた日は、1900年1月1日以降にしてください。',
+      },
     ],
     [
       'confirmedDate',
       'invalid_format',
-      '確かめた日を、日付で入力してください。',
+      {
+        en: 'Enter the day it was confirmed on as a date.',
+        ja: '確かめた日を、日付で入力してください。',
+      },
     ],
   ])('should say at %s what the API refused with %s', (field, rule, said) => {
     // Act
@@ -257,9 +334,15 @@ describe('afterAllergyWrite', () => {
 
     // Assert
     expect(says).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {
-        allergenName: 'アレルゲンは、255 文字以内で入力してください。',
+        allergenName: {
+          en: 'Allergen: enter up to 255 characters.',
+          ja: 'アレルゲンは、255 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -272,33 +355,48 @@ describe('afterAllergyWrite', () => {
     expect(says).toEqual({
       message: undefined,
       errors: {
-        allergenName: 'このお客様には、同じアレルゲンの記録があります。',
+        allergenName: {
+          en: 'This customer has a record of the same allergen already.',
+          ja: 'このお客様には、同じアレルゲンの記録があります。',
+        },
       },
     })
   })
 
   it.each<
-    [Parameters<typeof afterAllergyWrite>[0], 'entry' | 'change', string]
+    [Parameters<typeof afterAllergyWrite>[0], 'entry' | 'change', LocalizedText]
   >([
     [
       { type: 'forbidden' },
       'entry',
-      'このアカウントでは、アレルギーを記録できません。',
+      {
+        en: 'This account cannot record allergies.',
+        ja: 'このアカウントでは、アレルギーを記録できません。',
+      },
     ],
     [
       { type: 'tooManyRequests' },
       'change',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
       'entry',
-      'アレルギーを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not record the allergy. Check your connection and try again.',
+        ja: 'アレルギーを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
       'change',
-      'アレルギーの記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the allergy record. Check your connection and try again.',
+        ja: 'アレルギーの記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %o in a %s', (outcome, write, message) => {
     // Act
@@ -310,15 +408,27 @@ describe('afterAllergyWrite', () => {
 })
 
 describe('allergyWrittenOf', () => {
-  it.each<['entry' | 'change', string]>([
-    ['entry', '山田 花子 様のアレルギー（PPD）を記録しました。'],
-    ['change', '山田 花子 様のアレルギー（PPD）の記録を直しました。'],
+  it.each<['entry' | 'change', LocalizedText]>([
+    [
+      'entry',
+      {
+        en: 'Recorded the allergy (PPD) of 山田 花子.',
+        ja: '山田 花子 様のアレルギー（PPD）を記録しました。',
+      },
+    ],
+    [
+      'change',
+      {
+        en: 'Saved the record of the allergy (PPD) of 山田 花子.',
+        ja: '山田 花子 様のアレルギー（PPD）の記録を直しました。',
+      },
+    ],
   ])('should name the customer and the allergen after a %s', (write, said) => {
     // Act
     const message = allergyWrittenOf('山田 花子', 'PPD', write)
 
     // Assert
-    expect(message).toBe(said)
+    expect(message).toEqual(said)
   })
 })
 
@@ -328,39 +438,50 @@ describe('afterAllergyRemoval', () => {
       { type: 'removed' },
       {
         type: 'done',
-        message: '山田 花子 様のアレルギー（PPD）の記録を削除しました。',
+        message: {
+          en: 'Removed the record of the allergy (PPD) of 山田 花子.',
+          ja: '山田 花子 様のアレルギー（PPD）の記録を削除しました。',
+        },
       },
     ],
     [
       { type: 'notFound' },
       {
         type: 'refused',
-        message:
-          'その間に、ほかのアカウントがこのアレルギーの記録を削除していました。',
+        message: {
+          en: 'Another account removed this allergy record meanwhile.',
+          ja: 'その間に、ほかのアカウントがこのアレルギーの記録を削除していました。',
+        },
       },
     ],
     [
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このアカウントでは、アレルギーの記録を削除できません。間違えて記録したアレルギーの削除は、オーナーとマネージャーができます。',
+        message: {
+          en: 'This account cannot remove allergy records. Owners and managers can remove an allergy recorded by mistake.',
+          ja: 'このアカウントでは、アレルギーの記録を削除できません。間違えて記録したアレルギーの削除は、オーナーとマネージャーができます。',
+        },
       },
     ],
     [
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'アレルギーの記録を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Could not remove the allergy record. Check your connection and try again.',
+          ja: 'アレルギーの記録を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should take %o as %o', (outcome, says) => {

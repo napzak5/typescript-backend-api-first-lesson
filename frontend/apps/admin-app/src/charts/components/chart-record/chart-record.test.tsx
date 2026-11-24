@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as chartRecordStories from './chart-record.stories'
 
 const stories = composeStories(chartRecordStories)
@@ -85,5 +86,56 @@ describe('ChartRecord', () => {
       within(part('カルテ')).getByRole('link', { name: 'カルテを作る' }),
     ).toHaveAttribute('href', stories.NoChart.args.entryHref)
     expect(screen.queryByRole('region', { name: '過去の施術' })).toBeNull()
+  })
+})
+
+describe('ChartRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the chart and the treatments had before, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Written.run()
+
+    // Assert
+    expect(termsOf(part('Chart')).map(([term]) => term)).toEqual([
+      'Medical conditions',
+      'Preferred products',
+      'Products to avoid',
+      'Notes',
+      'Last written',
+    ])
+    expect(termsOf(part('Chart'))[4]).toEqual([
+      'Last written',
+      'Wed, November 18, 2026 at 14:30',
+    ])
+    expect(
+      within(part('Chart')).getByRole('link', { name: 'Edit the chart' }),
+    ).toHaveAttribute('href', stories.Written.args.changeHref)
+    expect(rowsOf(part('Past treatments'))).toEqual([
+      [
+        'Sat, March 14, 2026',
+        'Color',
+        'ヘアサロン 青山',
+        '根元から明るめのブラウン。',
+      ],
+      ['Sun, November 2, 2025', 'Perm', 'Not recorded', 'Not recorded'],
+    ])
+  })
+
+  it('should say what a chart holds to a customer who has none, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoChart.run()
+
+    // Assert
+    expect(screen.getByText(/^This customer has no chart yet\./)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Create the chart' })).toBeVisible()
   })
 })

@@ -13,7 +13,10 @@ import {
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -38,7 +41,7 @@ import {
 } from '../utils/chart-form'
 import { WithChart } from './with-chart'
 
-const TITLE = 'カルテを直す'
+const { change: CHANGE, screens, titles, words } = adminChartMessages
 
 type ChartChangeProps = {
   salon: ModelsSalonResponse
@@ -56,7 +59,8 @@ const ChartChange = ({ salon, customer, chart }: ChartChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const back = chartHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
   const change = useMutation({
@@ -106,14 +110,14 @@ const ChartChange = ({ salon, customer, chart }: ChartChangeProps) => {
     <ChartForm
       chart={chart}
       today={today}
-      submitLabel='変更を保存する'
+      submitLabel={say(CHANGE.submit)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -123,22 +127,28 @@ const ChartChange = ({ salon, customer, chart }: ChartChangeProps) => {
 /** Changes the chart of a customer, below the salon of the address; one who has none is led to make it. */
 export const ChartChangeScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(titles.change)}
+          fresh
+        >
           {(customer) => (
             <WithChart key={customer.id} customerId={customer.id} fresh>
               {(chart) =>
                 chart === null ? (
                   <EmptyState
-                    title='このお客様のカルテは、まだありません。'
+                    title={say(screens.noneYet)}
                     actions={
                       <ButtonLink
                         href={chartEntryHrefOf(salon.id, customer.id)}
                       >
-                        カルテを作る
+                        {say(words.entry)}
                       </ButtonLink>
                     }
                   />

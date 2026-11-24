@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as introductionFieldsStories from './introduction-fields.stories'
 
 const stories = composeStories(introductionFieldsStories)
@@ -60,5 +61,37 @@ describe('IntroductionFields', () => {
     )
     expect(text('写真の URL')).toHaveAttribute('aria-invalid', 'true')
     expect(text('専門')).not.toHaveAttribute('aria-invalid', 'true')
+  })
+})
+
+describe('IntroductionFields on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the controls and say how they are filled in, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(text('Specialties')).toHaveValue('カット, カラー')
+    expect(text('Specialties')).toHaveAccessibleDescription(
+      'The services and techniques they are good at. Separate them with “,” or “、”.',
+    )
+    expect(text('Certifications')).toHaveAccessibleDescription(
+      'Separate them with “,” or “、”.',
+    )
+    expect(text('Years of experience')).toHaveAccessibleDescription(
+      'A whole number from 0 to 100.',
+    )
+    expect(text('Bio')).toHaveValue(
+      'ショートカットと、透明感のあるカラーが得意です。\nお気軽にご相談ください。',
+    )
+    expect(text('Photo URL')).toHaveAccessibleDescription(
+      'A URL that begins with http:// or https://. Up to 500 characters.',
+    )
   })
 })

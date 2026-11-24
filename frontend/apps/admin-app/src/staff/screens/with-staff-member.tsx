@@ -6,12 +6,12 @@ import type {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -20,19 +20,23 @@ import { staffLedgerHrefOf } from '../../navigation'
 import { readStaffMember, staffKeyOf } from '../api/staff-api'
 import { fullStaffNameOf, mayKeepStaffLedger } from '../utils/staff-format'
 
+const { keepers, loading, names, notFound, words } = adminStaffMessages
+
 /**
  * What an account is told that does not keep the staff ledger of the salon:
  * a manager or a member of the staff, or the owner of another salon. The
  * start leads to their own salon.
  */
-export const StaffLedgerForbidden = () => (
-  <>
-    <p>
-      このサロンのスタッフ台帳は、扱えません。スタッフ台帳を扱えるのは、そのサロンのオーナーと、管理者です。
-    </p>
-    <ButtonLink href='/'>トップへ戻る</ButtonLink>
-  </>
-)
+export const StaffLedgerForbidden = () => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(keepers.forbidden)}</p>
+      <ButtonLink href='/'>{say(keepers.toStart)}</ButtonLink>
+    </>
+  )
+}
 
 /**
  * Whether the signed-in account has a role that keeps a staff ledger: one
@@ -55,19 +59,25 @@ export const useSignedInUserId = (): string | undefined => {
 type StaffNotFoundProps = { salon: ModelsSalonResponse }
 
 /** What a screen of a member says when there is none to show. */
-const StaffNotFound = ({ salon }: StaffNotFoundProps) => (
-  <>
-    <PageHeader
-      title='スタッフが見つかりません'
-      description='アドレスが正しいか、お確かめください。台帳から削除したスタッフは、表示できません。'
-    />
-    <ButtonLink href={staffLedgerHrefOf(salon.id)}>スタッフ台帳へ</ButtonLink>
-  </>
-)
+const StaffNotFound = ({ salon }: StaffNotFoundProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(notFound.title)}
+        description={say(notFound.description)}
+      />
+      <ButtonLink href={staffLedgerHrefOf(salon.id)}>
+        {say(words.toLedger)}
+      </ButtonLink>
+    </>
+  )
+}
 
 export type WithStaffMemberProps = {
   salon: ModelsSalonResponse
-  /** The title of the screen */
+  /** The title of the screen, said in the language of the page */
   title: string
   /**
    * Whether the screen shows the member only once they were read anew: a
@@ -94,6 +104,7 @@ export const WithStaffMember = ({
 }: WithStaffMemberProps) => {
   const { staffId = '' } = useParams()
   const keeps = useKeepsStaffLedger()
+  const say = useSay()
   const read = useQuery({
     queryKey: staffKeyOf(staffId),
     queryFn: () => readStaffMember(salon.id, staffId),
@@ -117,13 +128,13 @@ export const WithStaffMember = ({
     .with(undefined, () => (
       <>
         <PageHeader title={title} description={salon.name} />
-        <LoadingIndicator label='スタッフを読み込んでいます' />
+        <LoadingIndicator label={say(loading.member)} />
       </>
     ))
     .with({ type: 'found' }, ({ member }) => (
       <>
         <PageHeader title={title} description={salon.name} />
-        <p>{fullStaffNameOf(member)}</p>
+        <p>{say(fullStaffNameOf(member))}</p>
         {children(member)}
       </>
     ))
@@ -138,9 +149,7 @@ export const WithStaffMember = ({
       <>
         <PageHeader title={title} description={salon.name} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-          )}
+          message={say(unreadMessageOf(names.member, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
