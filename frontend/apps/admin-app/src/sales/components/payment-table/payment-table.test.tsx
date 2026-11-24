@@ -46,6 +46,24 @@ describe('PaymentTable', () => {
     expect(rowsOf('支払い')).toEqual([['まだ支払いはありません']])
   })
 
+  it('should tell a payment that was never received by the moment it was recorded', async () => {
+    // Act
+    await stories.NotReceived.run()
+
+    // Assert
+    expect(rowsOf('支払い')).toEqual([
+      [
+        'PT-7KQM-4F2H',
+        '2026年11月20日（金） 11:04',
+        'クレジットカード',
+        '￥5,500',
+        'VISA 下 4 桁 4242',
+        '失敗',
+        'なし',
+      ],
+    ])
+  })
+
   it('should name a method the salon removed, and what was recorded of the card', async () => {
     // Act
     await stories.Refunded.run()

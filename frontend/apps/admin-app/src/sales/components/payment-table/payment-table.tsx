@@ -15,6 +15,7 @@ import {
   cardNameOf,
   methodNameOf,
   paymentNameOf,
+  receivedAtOf,
   refundNameOf,
 } from '../../utils/sale-format'
 
@@ -80,8 +81,8 @@ export const PaymentTable = ({
           {
             key: 'processedAt',
             header: say(words.receivedAt),
-            cell: ({ processedAt, createdAt }) =>
-              say(momentNameAt(processedAt ?? createdAt, timezone)),
+            cell: (payment) =>
+              say(momentNameAt(receivedAtOf(payment), timezone)),
           },
           {
             key: 'method',

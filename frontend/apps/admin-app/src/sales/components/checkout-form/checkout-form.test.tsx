@@ -9,6 +9,7 @@ import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { services, staff } from '../examples'
+import type { OfferedService } from './checkout-form'
 import * as checkoutFormStories from './checkout-form.stories'
 
 const stories = composeStories(checkoutFormStories)
@@ -68,7 +69,7 @@ describe('CheckoutForm', () => {
 
   it('should add the service that is chosen', async () => {
     // Arrange
-    const onAdd = vi.fn<(serviceId: string) => void>()
+    const onAdd = vi.fn<(service: OfferedService) => void>()
     await stories.AsBooked.run({
       args: { ...stories.AsBooked.args, onAdd },
     })
@@ -78,12 +79,43 @@ describe('CheckoutForm', () => {
     await userEvent.click(screen.getByRole('button', { name: '施術を足す' }))
 
     // Assert
-    expect(onAdd).toHaveBeenCalledExactlyOnceWith(services[1]?.id)
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith(services[1])
+  })
+
+  it('should add nothing where the menu offers nothing', async () => {
+    // Arrange
+    const onAdd = vi.fn<(service: OfferedService) => void>()
+    await stories.NothingOffered.run({
+      args: { ...stories.NothingOffered.args, onAdd },
+    })
+    expect(within(toAdd()).queryAllByRole('option')).toEqual([])
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '施術を足す' }))
+
+    // Assert
+    expect(onAdd).not.toHaveBeenCalled()
+  })
+
+  it('should say that no kind of payment takes the total at once', async () => {
+    // Act
+    await stories.NoneRecommended.run()
+
+    // Assert
+    const amounts = screen
+      .getByRole('heading', { name: '金額' })
+      .closest('section')
+    expect(
+      within(amounts ?? document.body)
+        .getAllByRole('definition')
+        .map((one) => one.textContent)
+        .at(-1),
+    ).toBe('なし')
   })
 
   it('should list what was added, say so, and take it off again with the focus on the choice of a service', async () => {
     // Arrange
-    const onRemove = vi.fn<(index: number) => void>()
+    const onRemove = vi.fn<(index: number, name: string) => void>()
     await stories.WithAddition.run({
       args: { ...stories.WithAddition.args, onRemove },
     })
@@ -98,7 +130,7 @@ describe('CheckoutForm', () => {
     )
 
     // Assert
-    expect(onRemove).toHaveBeenCalledExactlyOnceWith(0)
+    expect(onRemove).toHaveBeenCalledExactlyOnceWith(0, 'カラー')
     expect(toAdd()).toHaveFocus()
   })
 

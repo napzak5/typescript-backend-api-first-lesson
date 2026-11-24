@@ -7,6 +7,7 @@ import {
   sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
+import { QueryClient } from '@tanstack/react-query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   aBooking,
@@ -25,6 +26,7 @@ import {
   attemptVoid,
   calculateSale,
   createSale,
+  forgetListsOf,
   readPaymentMethods,
   readReceipt,
   readSale,
@@ -32,16 +34,20 @@ import {
   readSalesOfBooking,
   recordPayment,
   refundPayment,
+  saleKeyOf,
+  saleListsKeyOf,
+  salesOfBookingKeyOf,
   updateSale,
   voidSale,
 } from './sales-api'
 
 /*
- * The answers the real API gives are met in the screen tests
- * (`sales.integration.test.tsx`). Here are the ones a test cannot bring
- * about there (too many requests, an error of the server, no answer, a
- * status the contract does not name, a body the API did not read), what
- * every call sends, and how a conflict is found out about.
+ * The answers the real API gives are met in the screen tests of the
+ * sales. Here are the ones a test cannot bring about there (too many
+ * requests, an error of the server, no answer, a status the contract does
+ * not name, a body the API did not read, a value the screen checks before
+ * it sends it), what every call sends, and how a conflict is found out
+ * about.
  */
 
 const sale = aSale()
@@ -127,6 +133,35 @@ describe('the functions that call the API', () => {
       },
     )
   })
+
+  // The screens refuse a reason that is blank and more than a payment
+  // took before they send them: the API never sees these values from them
+  it.each<[string, () => Promise<{ type: string }>, string, string]>([
+    [
+      'voidSale',
+      () => voidSale(sale.id, VOIDING),
+      'voidReason',
+      'invalid_format',
+    ],
+    [
+      'refundPayment',
+      () => refundPayment(payment.id, REFUND),
+      'refundAmount',
+      'too_big',
+    ],
+  ])(
+    'should name the values the API refused (%s)',
+    async (_name, call, field, rule) => {
+      // Arrange
+      answering(() => problem(400, [{ field, rule }]))
+
+      // Act, Assert
+      expect(await call()).toEqual({
+        type: 'invalid',
+        values: [{ field, rule }],
+      })
+    },
+  )
 
   describe.each(WRITES)('%s', (_name, call) => {
     it.each([413, 415])(
@@ -440,5 +475,56 @@ describe('the attempts that find out why the API refused', () => {
       type: 'refunded',
     })
     expect(fetched).toHaveBeenCalledOnce()
+  })
+})
+
+describe('forgetListsOf', () => {
+  /** A query client that has read the lists of a sale, and the sale itself. */
+  const clientThatRead = (bookingId: string): QueryClient => {
+    const queryClient = new QueryClient()
+    for (const key of [
+      [...saleListsKeyOf(salon.id), 'today'],
+      salesOfBookingKeyOf(bookingId),
+      saleKeyOf(sale.id),
+    ]) {
+      queryClient.setQueryData(key, { type: 'read' })
+    }
+
+    return queryClient
+  }
+
+  it('should drop the ledger of the salon and the sales of the booking of a sale, and keep the sale', () => {
+    // Arrange
+    const queryClient = clientThatRead(booking.id)
+
+    // Act
+    forgetListsOf(queryClient, { salonId: salon.id, bookingId: booking.id })
+
+    // Assert
+    expect(
+      queryClient.getQueryData([...saleListsKeyOf(salon.id), 'today']),
+    ).toBeUndefined()
+    expect(
+      queryClient.getQueryData(salesOfBookingKeyOf(booking.id)),
+    ).toBeUndefined()
+    expect(queryClient.getQueryData(saleKeyOf(sale.id))).toEqual({
+      type: 'read',
+    })
+  })
+
+  it('should drop the ledger alone for a sale that bills no booking', () => {
+    // Arrange
+    const queryClient = clientThatRead(booking.id)
+
+    // Act
+    forgetListsOf(queryClient, { salonId: salon.id, bookingId: null })
+
+    // Assert
+    expect(
+      queryClient.getQueryData([...saleListsKeyOf(salon.id), 'today']),
+    ).toBeUndefined()
+    expect(queryClient.getQueryData(salesOfBookingKeyOf(booking.id))).toEqual({
+      type: 'read',
+    })
   })
 })

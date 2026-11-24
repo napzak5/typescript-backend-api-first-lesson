@@ -24,10 +24,9 @@ import { match, P } from 'ts-pattern'
 import { saleHrefOf } from '../../navigation'
 import {
   attemptRefund,
+  forgetListsOf,
   type SaleRead,
   saleKeyOf,
-  saleListsKeyOf,
-  salesOfBookingKeyOf,
 } from '../api/sales-api'
 import { RefundForm } from '../components/refund-form/refund-form'
 import {
@@ -67,14 +66,6 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
   const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
-  const forgetLists = (): void => {
-    queryClient.removeQueries({ queryKey: saleListsKeyOf(salon.id) })
-    if (sale.bookingId !== null) {
-      queryClient.removeQueries({
-        queryKey: salesOfBookingKeyOf(sale.bookingId),
-      })
-    }
-  }
   const refund = useMutation({
     mutationFn: (request: ModelsPaymentRefundRequest) =>
       attemptRefund(sale.id, payment.id, request),
@@ -82,7 +73,7 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
       match(afterRefund(outcome))
         .with({ type: 'done' }, () => {
           queryClient.removeQueries({ queryKey: key, exact: true })
-          forgetLists()
+          forgetListsOf(queryClient, sale)
           notify({
             tone: 'success',
             message: voidableAfter(sale, payment.id, request)
@@ -98,7 +89,7 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
         .with({ type: 'refused' }, ({ sale: now }) => {
           const read: SaleRead = { type: 'found', sale: now }
           queryClient.setQueryData(key, read)
-          forgetLists()
+          forgetListsOf(queryClient, sale)
         })
         // The payment or its sale was removed meanwhile, or is no longer this account's to see
         .with({ type: 'gone' }, () => {

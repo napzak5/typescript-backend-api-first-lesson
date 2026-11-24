@@ -27,6 +27,27 @@ export const Empty: Story = {
   args: { payments: [] },
 }
 
+/** A payment by card that was refused: never received, so it is told by the moment it was recorded */
+export const NotReceived: Story = {
+  args: {
+    payments: [
+      aPayment({
+        paymentMethodId: paymentMethods[1]?.id ?? '',
+        amount: 5500,
+        status: 'failed',
+        cardLastFour: '4242',
+        cardBrand: 'VISA',
+        errorCode: 'card_declined',
+        errorMessage: 'The card was declined.',
+        processedAt: null,
+        failedAt: moment(66),
+        createdAt: moment(64),
+        updatedAt: moment(66),
+      }),
+    ],
+  },
+}
+
 /** A payment by a method the salon removed, with only the brand of the card, given back in part */
 export const Refunded: Story = {
   args: {

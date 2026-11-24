@@ -33,10 +33,9 @@ import {
 } from '../../salons/api/salons-api'
 import {
   attemptSaleChange,
+  forgetListsOf,
   type SaleRead,
   saleKeyOf,
-  saleListsKeyOf,
-  salesOfBookingKeyOf,
 } from '../api/sales-api'
 import { SaleChangeForm } from '../components/sale-change-form/sale-change-form'
 import {
@@ -76,12 +75,7 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
   const show = (now: ModelsSaleResponse): void => {
     const read: SaleRead = { type: 'found', sale: now }
     queryClient.setQueryData(key, read)
-    queryClient.removeQueries({ queryKey: saleListsKeyOf(salon.id) })
-    if (now.bookingId !== null) {
-      queryClient.removeQueries({
-        queryKey: salesOfBookingKeyOf(now.bookingId),
-      })
-    }
+    forgetListsOf(queryClient, now)
   }
   const change = useMutation({
     mutationFn: (request: ModelsSaleUpdateRequest) =>

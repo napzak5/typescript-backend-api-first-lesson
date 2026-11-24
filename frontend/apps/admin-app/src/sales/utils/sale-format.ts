@@ -80,6 +80,16 @@ export const cardNameOf = ({
 >): LocalizedText | null => payments.cardOf(cardBrand, cardLastFour)
 
 /**
+ * When a payment was received; for one that was not (it is on its way,
+ * or failed), when it was recorded.
+ */
+export const receivedAtOf = ({
+  processedAt,
+  createdAt,
+}: Pick<ModelsPaymentResponse, 'processedAt' | 'createdAt'>): string =>
+  processedAt ?? createdAt
+
+/**
  * What was given back of a payment, and when, as far as it was recorded
  * (「￥500、2026年11月20日（金） 11:30」); null when nothing was. Why is
  * said apart: it is a sentence, and a cell of a table keeps to one line.

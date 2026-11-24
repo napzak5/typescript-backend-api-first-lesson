@@ -65,12 +65,13 @@ export type BillLine = {
 /**
  * The lines a booking is billed for: its own lines at the amounts it took
  * when it was booked, in their order, then the services added at the
- * counter at the prices of the menu now, done by the member of the
- * booking. These are the lines the API calculates the bill from.
+ * counter at the prices of the menu now (`added`, as the menu has them),
+ * done by the member of the booking. These are the lines the API
+ * calculates the bill from.
  */
 export const billLinesOf = (
   booking: Pick<ModelsBookingResponse, 'services' | 'staffId'>,
-  added: readonly string[],
+  added: readonly ModelsServiceResponse[],
   services: readonly ModelsServiceResponse[],
 ): BillLine[] => [
   ...booking.services
@@ -87,28 +88,24 @@ export const billLinesOf = (
         staffId: line.staffId,
       }
     }),
-  ...added.flatMap((id): BillLine[] => {
-    const service = services.find((one) => one.id === id)
-
-    return service === undefined
-      ? []
-      : [
-          {
-            serviceId: service.id,
-            name: service.name,
-            unitPrice: service.price,
-            discountAmount:
-              service.price - (service.discountPrice ?? service.price),
-            taxIncluded: service.taxIncluded,
-            staffId: booking.staffId,
-          },
-        ]
-  }),
+  ...added.map(
+    (service): BillLine => ({
+      serviceId: service.id,
+      name: service.name,
+      unitPrice: service.price,
+      discountAmount: service.price - (service.discountPrice ?? service.price),
+      taxIncluded: service.taxIncluded,
+      staffId: booking.staffId,
+    }),
+  ),
 ]
 
 /** What a line costs before the tax: its price less its discount. */
 const netOf = ({ unitPrice, discountAmount }: BillLine): number =>
   unitPrice - discountAmount
+
+/** A line of a bill, with its share of the tax. */
+export type TaxShare = { line: BillLine; tax: number }
 
 /**
  * The tax of each line. The API adds the tax once to the sum of the lines
@@ -120,20 +117,30 @@ const netOf = ({ unitPrice, discountAmount }: BillLine): number =>
 export const taxSharesOf = (
   lines: readonly BillLine[],
   taxAmount: number,
-): number[] => {
-  const taxed = lines.map((line) => (line.taxIncluded ? 0 : netOf(line)))
-  const base = taxed.reduce((sum, net) => sum + net, 0)
+): TaxShare[] => {
+  const taxed = lines.map((line) => ({
+    line,
+    net: line.taxIncluded ? 0 : netOf(line),
+  }))
+  const base = taxed.reduce((sum, { net }) => sum + net, 0)
   if (base === 0) {
-    return lines.map(() => 0)
+    return lines.map((line) => ({ line, tax: 0 }))
   }
-  const shares = taxed.map((net) => Math.floor((taxAmount * net) / base))
-  const left = taxAmount - shares.reduce((sum, share) => sum + share, 0)
-  const receivers = taxed.flatMap((net, index) => (net > 0 ? [index] : []))
+  const shares = taxed.map(({ line, net }) => ({
+    line,
+    net,
+    tax: Math.floor((taxAmount * net) / base),
+  }))
+  const left = taxAmount - shares.reduce((sum, { tax }) => sum + tax, 0)
+  const receivers = shares.filter(({ net }) => net > 0)
 
-  return shares.map((share, index) => {
-    const rank = receivers.indexOf(index)
+  return shares.map((share) => {
+    const rank = receivers.indexOf(share)
 
-    return rank !== -1 && rank < left ? share + 1 : share
+    return {
+      line: share.line,
+      tax: rank !== -1 && rank < left ? share.tax + 1 : share.tax,
+    }
   })
 }
 
@@ -146,29 +153,22 @@ export const saleDetailsOf = (
   lines: readonly BillLine[],
   taxAmount: number,
   removedService: string,
-): ModelsSalesDetail[] => {
-  const shares = taxSharesOf(lines, taxAmount)
-
-  return lines.map((line, index) => {
-    const tax = shares[index] ?? 0
-
-    return {
-      itemType: 'service',
-      itemId: line.serviceId,
-      itemName: line.name ?? removedService,
-      quantity: 1,
-      unitPrice: line.unitPrice,
-      discountAmount: line.discountAmount,
-      taxAmount: tax,
-      totalAmount: netOf(line) + tax,
-      staffId: line.staffId,
-      commissionRate: null,
-      commissionAmount: null,
-      notes: null,
-      sortOrder: index,
-    }
-  })
-}
+): ModelsSalesDetail[] =>
+  taxSharesOf(lines, taxAmount).map(({ line, tax }, index) => ({
+    itemType: 'service',
+    itemId: line.serviceId,
+    itemName: line.name ?? removedService,
+    quantity: 1,
+    unitPrice: line.unitPrice,
+    discountAmount: line.discountAmount,
+    taxAmount: tax,
+    totalAmount: netOf(line) + tax,
+    staffId: line.staffId,
+    commissionRate: null,
+    commissionAmount: null,
+    notes: null,
+    sortOrder: index,
+  }))
 
 /** The amounts of a bill, as the screen has them. */
 export type Bill =
@@ -240,6 +240,11 @@ export const readCheckout = (values: FormData): CheckoutValues => {
   }
 }
 
+/** A sale that bills a booking: the checkout enters no other. */
+export type SaleOfBookingRequest = ModelsSaleCreateRequest & {
+  bookingId: string
+}
+
 /**
  * The sale of a booking: for its customer, at the moment it is sent. The
  * points are left to the ledger of the points, which records them.
@@ -249,7 +254,7 @@ export const saleRequestOf = (
   { staffId, notes }: CheckoutValues,
   details: ModelsSalesDetail[],
   now: Date,
-): ModelsSaleCreateRequest => ({
+): SaleOfBookingRequest => ({
   salonId: booking.salonId,
   customerId: booking.customerId,
   staffId,

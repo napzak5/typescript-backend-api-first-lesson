@@ -1,7 +1,6 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
-  ModelsSaleCreateRequest,
   ModelsSalonResponse,
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
@@ -39,10 +38,10 @@ import { servicesKeyOf } from '../../salons/api/salons-api'
 import {
   attemptSale,
   calculateSale,
+  forgetListsOf,
   readSalesOfBooking,
   type SaleRead,
   saleKeyOf,
-  saleListsKeyOf,
   salesOfBookingKeyOf,
 } from '../api/sales-api'
 import { CheckoutForm } from '../components/checkout-form/checkout-form'
@@ -53,6 +52,7 @@ import {
   billLinesOf,
   NO_CASHIER,
   readCheckout,
+  type SaleOfBookingRequest,
   saleDetailsOf,
   saleOfBooking,
   saleRequestOf,
@@ -61,7 +61,12 @@ import {
 } from '../utils/checkout'
 
 const { loading, names, titles, words } = adminSaleMessages
-const { again, bill: billed, notices, ...texts } = adminSaleMessages.checkout
+const {
+  again,
+  bill: whyUnbilled,
+  notices,
+  ...texts
+} = adminSaleMessages.checkout
 
 type CheckoutProps = {
   salon: ModelsSalonResponse
@@ -87,33 +92,38 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
   const [added, setAdded] = useState<readonly string[]>([])
   const [changed, setChanged] = useState<LocalizedText>()
   const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  // The services added, as the menu has them: one that is no longer on it
+  // when the menu is read again falls off the bill, as the form shows no
+  // line of it to take off
+  const billed = added.flatMap((id) => services.filter((one) => one.id === id))
+  const billedIds = billed.map(({ id }) => id)
   const calculation = useQuery({
-    queryKey: ['sales', 'calculation', salon.id, booking.id, ...added],
+    queryKey: ['sales', 'calculation', salon.id, booking.id, ...billedIds],
     queryFn: () =>
       calculateSale({
         salonId: salon.id,
         bookingId: booking.id,
-        services: [...added],
+        services: billedIds,
       }),
     staleTime: 0,
     refetchOnReconnect: false,
   })
-  const lines = billLinesOf(booking, added, services)
+  const lines = billLinesOf(booking, billed, services)
   const bill = match(calculation.data)
     .returnType<Bill>()
     .with(undefined, () => ({ type: 'calculating' }))
     .with({ type: 'calculated' }, (calculated) =>
       agreesWith(lines, calculated.calculation.breakdown)
         ? calculated
-        : { type: 'uncalculated', message: billed.otherPrices },
+        : { type: 'uncalculated', message: whyUnbilled.otherPrices },
     )
     .with({ type: 'invalid' }, ({ values }) => ({
       type: 'uncalculated',
-      message: whyNotCalculated(values, added, services),
+      message: whyNotCalculated(values, billedIds, services),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'uncalculated',
-      message: billed.forbidden,
+      message: whyUnbilled.forbidden,
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
@@ -122,16 +132,13 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
     .exhaustive()
 
   const checkout = useMutation({
-    mutationFn: (request: ModelsSaleCreateRequest) => attemptSale(request),
+    mutationFn: (request: SaleOfBookingRequest) => attemptSale(request),
     onSuccess: (outcome) =>
       match(afterCheckout(outcome))
         .with({ type: P.union('done', 'billed') }, ({ type, sale }) => {
           const read: SaleRead = { type: 'found', sale }
           queryClient.setQueryData(saleKeyOf(sale.id), read)
-          queryClient.removeQueries({ queryKey: saleListsKeyOf(salon.id) })
-          queryClient.removeQueries({
-            queryKey: salesOfBookingKeyOf(booking.id),
-          })
+          forgetListsOf(queryClient, sale)
           notify(
             type === 'done'
               ? { tone: 'success', message: notices.done }
@@ -165,9 +172,6 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
     )
   }
 
-  const nameOf = (serviceId: string): string =>
-    services.find(({ id }) => id === serviceId)?.name ?? ''
-
   return (
     <CheckoutForm
       booked={lines.slice(0, booking.services.length)}
@@ -182,13 +186,13 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
       currency={salon.currency}
       bill={bill}
       changed={changed}
-      onAdd={(serviceId) => {
-        setAdded([...added, serviceId])
-        setChanged(notices.added(nameOf(serviceId)))
+      onAdd={({ id, name }) => {
+        setAdded([...billedIds, id])
+        setChanged(notices.added(name))
       }}
-      onRemove={(index) => {
-        setAdded(added.filter((_id, at) => at !== index))
-        setChanged(notices.removed(nameOf(added[index] ?? '')))
+      onRemove={(index, name) => {
+        setAdded(billedIds.filter((_id, at) => at !== index))
+        setChanged(notices.removed(name))
       }}
       onRecalculate={() => {
         // A price that changed is read anew with the menu
