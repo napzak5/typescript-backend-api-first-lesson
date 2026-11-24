@@ -48,7 +48,6 @@ import { StockForm } from '../components/stock-form/stock-form'
 import {
   afterStockRemoval,
   afterStockWrite,
-  productsChanged,
   readStockChange,
 } from '../utils/stock-form'
 import { productOf, stockRowNameOf } from '../utils/stock-format'
@@ -66,10 +65,11 @@ type StockChangeProps = {
 /**
  * The form of a stock row, opened with what the salon has of it now. It
  * sends what was changed and nothing else, and a form sent as it was
- * opened asks the API for nothing. When the API says that the product
- * was marked otherwise as to its lots meanwhile, the products are read
- * anew, and the form follows them. Beside the form, the row is removed
- * after a dialog; one that still counts stock stays.
+ * opened asks the API for nothing. The form checks every value before it
+ * is sent, so the API refuses one only when the product was marked
+ * otherwise as to its lots meanwhile: the products are read anew, and the
+ * form follows them. Beside the form, the row is removed after a dialog;
+ * one that still counts stock stays.
  */
 const StockChange = ({ salon, row, products }: StockChangeProps) => {
   const say = useSay()
@@ -114,11 +114,9 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
         })
         .with({ type: 'notFound' }, gone)
         .with({ type: 'invalid' }, (refused) => {
-          if (productsChanged(refused.values)) {
-            void queryClient.invalidateQueries({
-              queryKey: productsKeyOf(salon.id),
-            })
-          }
+          void queryClient.invalidateQueries({
+            queryKey: productsKeyOf(salon.id),
+          })
           setSaid(
             afterStockWrite(refused, typeof request.lotNumber === 'string'),
           )

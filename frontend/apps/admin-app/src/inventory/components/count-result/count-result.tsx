@@ -17,7 +17,7 @@ const { result } = adminInventoryMessages.count
 export type CountResultProps = {
   /** The rows that differed from the books, in the order they were counted */
   discrepancies: readonly ModelsInventoryStockCountDiscrepancy[]
-  /** The rows as they were read before the count, which name the rows that differed */
+  /** The rows the count was entered on, as they were read before it: those that differed are among them */
   rows: readonly ModelsInventoryResponse[]
   /** The products of the salon, which name the rows */
   products: readonly ModelsProductResponse[]
@@ -27,7 +27,7 @@ export type CountResultProps = {
 
 /** A row that differed, with the row and the product that name it */
 type Differed = ModelsInventoryStockCountDiscrepancy & {
-  row: ModelsInventoryResponse | undefined
+  row: ModelsInventoryResponse
   product: ModelsProductResponse | undefined
 }
 
@@ -44,16 +44,16 @@ export const CountResult = ({
   rowHref,
 }: CountResultProps) => {
   const say = useSay()
-  const differed: Differed[] = discrepancies.map((discrepancy) => {
-    const row = rows.find(({ id }) => id === discrepancy.inventoryId)
-
-    return {
-      ...discrepancy,
-      row,
-      product:
-        row === undefined ? undefined : productOf(products, row.productId),
-    }
-  })
+  // In the order of the rows, which is the order they were counted in
+  const differed: Differed[] = rows.flatMap((row) =>
+    discrepancies
+      .filter(({ inventoryId }) => inventoryId === row.id)
+      .map((discrepancy) => ({
+        ...discrepancy,
+        row,
+        product: productOf(products, row.productId),
+      })),
+  )
 
   return differed.length === 0 ? (
     <p>{say(result.same)}</p>
@@ -66,9 +66,7 @@ export const CountResult = ({
           header: say(result.row),
           cell: ({ inventoryId, row, product }) => (
             <Link href={rowHref(inventoryId)}>
-              {say(
-                row === undefined ? result.row : stockRowNameOf(row, product),
-              )}
+              {say(stockRowNameOf(row, product))}
             </Link>
           ),
         },

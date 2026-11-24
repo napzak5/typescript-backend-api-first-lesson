@@ -12,6 +12,7 @@ const meta: Meta<typeof AlertDialog> = {
     docs: { story: { inline: false, height: '36rem' } },
   },
   args: {
+    open: true,
     alert: outOfGlovesAlert,
     onClose: fn(),
     onSubmit: fn(),
@@ -44,5 +45,5 @@ export const Failed: Story = {
 
 /** Closed: nothing is seen to */
 export const Closed: Story = {
-  args: { alert: undefined },
+  args: { open: false },
 }

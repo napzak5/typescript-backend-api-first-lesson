@@ -35,11 +35,7 @@ import {
   stockRowKeyOf,
 } from '../api/inventory-api'
 import { StockForm } from '../components/stock-form/stock-form'
-import {
-  afterStockWrite,
-  productsChanged,
-  readStockEntry,
-} from '../utils/stock-form'
+import { afterStockWrite, readStockEntry } from '../utils/stock-form'
 import { productOf, stockRowNameOf } from '../utils/stock-format'
 import { StockForbidden, useKeepsStock } from './keeps-stock'
 
@@ -53,9 +49,10 @@ type StockEntryProps = {
 
 /**
  * The form of a new stock row, of a product the salon carries. The rows
- * that were read are dropped: the new one belongs among them. When the
- * API says that a product was removed or marked otherwise meanwhile, the
- * products are read anew, and the form follows them.
+ * that were read are dropped: the new one belongs among them. The form
+ * checks every value before it is sent, so the API refuses one only when
+ * a product was removed or marked otherwise meanwhile: the products are
+ * read anew, and the form follows them.
  */
 const StockEntry = ({ salon, carried }: StockEntryProps) => {
   const say = useSay()
@@ -84,11 +81,9 @@ const StockEntry = ({ salon, carried }: StockEntryProps) => {
           queryClient.setQueryData(salonKeyOf(salon.id), NOT_FOUND),
         )
         .with({ type: 'invalid' }, (refused) => {
-          if (productsChanged(refused.values)) {
-            void queryClient.invalidateQueries({
-              queryKey: productsKeyOf(salon.id),
-            })
-          }
+          void queryClient.invalidateQueries({
+            queryKey: productsKeyOf(salon.id),
+          })
           setSaid(afterStockWrite(refused, request.lotNumber !== null))
         })
         .with(

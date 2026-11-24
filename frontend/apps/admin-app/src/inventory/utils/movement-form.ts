@@ -1,6 +1,5 @@
 import {
   CHECK_THE_VALUES_MESSAGE,
-  REFUSED_VALUE_MESSAGE,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -43,13 +42,16 @@ const MOST_COST = 2_147_483_647
 const { movements } = adminInventoryMessages
 const { errors: words } = movements
 
-/** The controls of the form, under the names of the properties of the request */
-const CONTROLS: readonly string[] = [
-  'transactionType',
-  'quantity',
-  'unitCost',
-  'reason',
-]
+/**
+ * What is said at each control of the form, under the names of the
+ * properties of the request, when the API refused its value by a rule.
+ */
+const REFUSED_AT = new Map<string, (rule: string) => LocalizedText>([
+  ['transactionType', () => words.kind],
+  ['quantity', () => words.quantity],
+  ['unitCost', (rule) => (rule === 'too_big' ? words.cost : words.unitCost)],
+  ['reason', () => words.reason],
+])
 
 /** Which way the stock goes: that of the kind, or the one chosen for a kind that moves either way. */
 const wayIn = (
@@ -172,15 +174,6 @@ export const readMovement = (
   }
 }
 
-/** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): LocalizedText =>
-  match(field)
-    .with('transactionType', () => words.kind)
-    .with('quantity', () => words.quantity)
-    .with('unitCost', () => (rule === 'too_big' ? words.cost : words.unitCost))
-    .with('reason', () => words.reason)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
-
 /**
  * What the form says after the API did not take it. A movement that would
  * take the stock out of the range of the row was sent from a stock that
@@ -197,13 +190,18 @@ export const afterMovementRecord = (
   match(outcome)
     .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
-      const said = values.filter(({ field }) => CONTROLS.includes(field))
+      // A value of no control is said above the form
+      const said = values.flatMap(
+        ({ field, rule }): [string, LocalizedText][] => {
+          const at = REFUSED_AT.get(field)
+
+          return at === undefined ? [] : [[field, at(rule)]]
+        },
+      )
 
       return {
         message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        errors: Object.fromEntries(
-          said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
-        ),
+        errors: Object.fromEntries(said),
       }
     })
     .with({ type: 'outOfRange' }, () => ({

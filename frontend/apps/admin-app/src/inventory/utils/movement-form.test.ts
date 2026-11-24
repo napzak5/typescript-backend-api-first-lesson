@@ -321,6 +321,33 @@ describe('afterMovementRecord', () => {
     })
   })
 
+  it('should say at the kind and at the unit cost what each takes', () => {
+    expect(
+      afterMovementRecord(
+        {
+          type: 'invalid',
+          values: [
+            { field: 'transactionType', rule: 'invalid' },
+            { field: 'unitCost', rule: 'too_small' },
+          ],
+        },
+        1,
+      ),
+    ).toEqual({
+      message: undefined,
+      errors: {
+        transactionType: {
+          en: 'Choose the kind.',
+          ja: '区分を選んでください。',
+        },
+        unitCost: {
+          en: 'Enter the unit cost as a whole number of yen, 0 or more.',
+          ja: '単価は、0 以上の円の整数で入力してください。',
+        },
+      },
+    })
+  })
+
   it('should say above the form what it has no control for', () => {
     expect(
       afterMovementRecord(
