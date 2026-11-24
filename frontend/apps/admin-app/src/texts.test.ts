@@ -7,14 +7,17 @@ describe('the texts of the parts of the admin application that are done', () => 
     'main.tsx',
     'navigation.ts',
     'bookings',
+    'charts',
     'customers',
     'inventory',
     'menu',
+    'own-profile',
     'payment-methods',
     'products',
     'purchase-orders',
     'sales',
     'settings',
+    'staff',
     'treatments',
   ])
 })

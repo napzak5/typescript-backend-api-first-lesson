@@ -262,9 +262,9 @@ export const afterPaymentMethodWrite = (
 export const afterPaymentMethodRemoval = (
   outcome: PaymentMethodRemoval,
   name: string,
-): TreatmentRemovalSays<LocalizedText> =>
+): TreatmentRemovalSays =>
   match(outcome)
-    .returnType<TreatmentRemovalSays<LocalizedText>>()
+    .returnType<TreatmentRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
       message: removal.done(name),

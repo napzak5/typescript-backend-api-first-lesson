@@ -25,14 +25,14 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { numberOf } from '../../treatments/utils/treatment-form'
@@ -50,12 +50,21 @@ import { LEVELS } from './staff-format'
  * named as the property of the request is.
  */
 
+const { change, entry, form } = adminStaffMessages
+const { errors: ERRORS } = form
+
 type Whole = ModelsStaffCreateRequest
 
+type Errors = FormErrors<LocalizedText>
+
+/** The longest display name the API takes */
 const LONGEST_DISPLAY_NAME = 255
-const MOST_RATE = 100
-const MOST_CONCURRENT = 10
-const MOST_BUFFER = 120
+/** The largest commission rate, in percent */
+export const MOST_RATE = 100
+/** The most bookings a member takes at a time */
+export const MOST_CONCURRENT = 10
+/** The most minutes kept before or after a booking */
+export const MOST_BUFFER = 120
 
 /** The lengths of the texts that may be left empty, under the names of their controls */
 const LONGEST: Record<string, number> = {
@@ -66,20 +75,11 @@ const LONGEST: Record<string, number> = {
   employmentType: 50,
 }
 
-const HIRE_DATE_OUT_OF_RANGE =
-  '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。'
+const RATE_ERROR = ERRORS.commissionRate(MOST_RATE)
 
-const SALARY_ERROR = '基本給は、0 以上の円の整数で入力してください。'
+const CONCURRENT_ERROR = ERRORS.maxConcurrentBookings(MOST_CONCURRENT)
 
-const RATE_ERROR = `歩合率は、0 から ${MOST_RATE} までの数で、小数第 2 位まで入力してください。`
-
-const CONCURRENT_ERROR = `同時に担当できる予約の数は、1 から ${MOST_CONCURRENT} までの整数で入力してください。`
-
-const BUFFER_ERROR = `0 から ${MOST_BUFFER} までの分を、整数で入力してください。`
-
-/** What is said at the control of being active, of the member the account is linked to */
-export const OWN_RECORD_STAYS_ACTIVE =
-  'ご自身のスタッフ情報は、無効にできません。無効にすると、このアカウントでサロンの画面を使えなくなります。'
+const BUFFER_ERROR = ERRORS.bufferTime(MOST_BUFFER)
 
 /** A whole number from `least` to `most`; `undefined` for anything else, nothing included. */
 const wholeNumberIn = (
@@ -101,7 +101,7 @@ const wholeNumberIn = (
  * Everything the form holds, as the API takes a member: a control that was
  * left empty is `null` where the API allows that.
  */
-const readWhole = (values: FormData): FormRead<Whole> => {
+const readWhole = (values: FormData): FormRead<Whole, Errors> => {
   const text = (name: string): string => textOf(values, name).trim()
   const optional = (name: string): string | null => textOrNull(text(name))
   const lastName = text('lastName')
@@ -130,34 +130,36 @@ const readWhole = (values: FormData): FormRead<Whole> => {
     MOST_BUFFER,
   )
   const bufferTimeAfter = wholeNumberIn(text('bufferTimeAfter'), 0, MOST_BUFFER)
-  const found: Record<string, string | undefined> = {
-    lastName: inJapaneseIfAny(lastNameError(lastName)),
-    firstName: inJapaneseIfAny(firstNameError(firstName)),
+  const found: Record<string, LocalizedText | undefined> = {
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
     displayName: match(displayName.length)
-      .with(0, () => '表示名を入力してください。')
+      .returnType<LocalizedText | undefined>()
+      .with(0, () => ERRORS.displayNameMissing)
       .when(
         (length) => length > LONGEST_DISPLAY_NAME,
-        () => inJapanese(tooLong(LONGEST_DISPLAY_NAME)),
+        () => tooLong(LONGEST_DISPLAY_NAME),
       )
       .otherwise(() => undefined),
-    email: inJapaneseIfAny(emailError(email)),
-    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
-    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
-    level: level === undefined ? 'レベルを選んでください。' : undefined,
+    email: emailError(email),
+    phoneNumber: phoneError(phoneNumber),
+    alternativePhone: alternativePhoneError(alternativePhone),
+    level: level === undefined ? ERRORS.levelMissing : undefined,
     hireDate:
-      hireDate === null || isDay(hireDate) ? undefined : HIRE_DATE_OUT_OF_RANGE,
-    baseSalary: baseSalary === undefined ? SALARY_ERROR : undefined,
+      hireDate === null || isDay(hireDate) ? undefined : ERRORS.hireDate,
+    baseSalary: baseSalary === undefined ? ERRORS.baseSalary : undefined,
     commissionRate: commissionRate === undefined ? RATE_ERROR : undefined,
     maxConcurrentBookings:
       maxConcurrentBookings === undefined ? CONCURRENT_ERROR : undefined,
     bufferTimeBefore: bufferTimeBefore === undefined ? BUFFER_ERROR : undefined,
     bufferTimeAfter: bufferTimeAfter === undefined ? BUFFER_ERROR : undefined,
-    ...errorsInJapanese(lengthErrors(LONGEST, optional)),
+    ...lengthErrors(LONGEST, optional),
   }
-  const errors = {
+  const errors: Errors = {
     ...Object.fromEntries(
-      Object.entries(found).flatMap(([name, error]): [string, string][] =>
-        error === undefined ? [] : [[name, error]],
+      Object.entries(found).flatMap(
+        ([name, error]): [string, LocalizedText][] =>
+          error === undefined ? [] : [[name, error]],
       ),
     ),
     ...(introduction.type === 'invalid' ? introduction.errors : {}),
@@ -204,7 +206,7 @@ const readWhole = (values: FormData): FormRead<Whole> => {
 }
 
 /** A new member, from the form. */
-export const readStaffEntry = (values: FormData): FormRead<Whole> =>
+export const readStaffEntry = (values: FormData): FormRead<Whole, Errors> =>
   readWhole(values)
 
 /**
@@ -274,7 +276,7 @@ const changesOf = (
 
 /** What a change of a member asks for: nothing, when nothing was changed. */
 export type StaffChange =
-  | FormRead<ModelsStaffUpdateRequest>
+  | FormRead<ModelsStaffUpdateRequest, Errors>
   | { type: 'unchanged' }
 
 /**
@@ -295,7 +297,10 @@ export const readStaffChange = (
   }
   const changes = changesOf(read.value, shown)
   if (own && changes.isActive === false) {
-    return { type: 'invalid', errors: { isActive: OWN_RECORD_STAYS_ACTIVE } }
+    return {
+      type: 'invalid',
+      errors: { isActive: ERRORS.ownRecordStaysActive },
+    }
   }
 
   return Object.keys(changes).length === 0
@@ -352,32 +357,29 @@ const CONTROLS: readonly string[] = [
 ]
 
 /** What is said at a control of a value the API refused. */
-const messageAt = (control: string): string =>
+const messageAt = (control: string): LocalizedText =>
   match(control)
-    .with('hireDate', () => HIRE_DATE_OUT_OF_RANGE)
-    .with('imageUrl', () => inJapanese(WEB_ADDRESS_ERROR))
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .returnType<LocalizedText>()
+    .with('hireDate', () => ERRORS.hireDate)
+    .with('imageUrl', () => WEB_ADDRESS_ERROR)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
-const DUPLICATES: Record<'email' | 'staffCode', string> = {
-  email:
-    'このメールアドレスのスタッフが、すでに台帳にいます。別のメールアドレスを入力してください。',
-  staffCode:
-    'このスタッフコードは、ほかのスタッフが使っています（台帳から削除したスタッフも含みます）。別のコードを入力してください。',
+const DUPLICATES: Record<'email' | 'staffCode', LocalizedText> = {
+  email: ERRORS.emailTaken,
+  staffCode: ERRORS.staffCodeTaken,
 }
 
 /** What a form of the ledger says when the API refuses the account: it does not keep the ledger of the salon. */
-const CANNOT_KEEP_STAFF: FormSays = aboutTheAttempt(
-  'このアカウントでは、このサロンのスタッフ台帳を扱えません。',
+const CANNOT_KEEP_STAFF: FormSays<LocalizedText> = aboutTheAttempt(
+  form.forbidden,
 )
 
 /** Which write a form makes: the words of its failure differ. */
 export type StaffWrite = 'entry' | 'change'
 
-const FAILED_WRITES: Record<StaffWrite, string> = {
-  entry:
-    'スタッフを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-  change:
-    'スタッフ情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+const FAILED_WRITES: Record<StaffWrite, LocalizedText> = {
+  entry: entry.failed,
+  change: change.failed,
 }
 
 /**
@@ -387,18 +389,16 @@ const FAILED_WRITES: Record<StaffWrite, string> = {
 export const afterStaffWrite = (
   outcome: Exclude<StaffWriteAttempt, { type: 'written' } | NotFound>,
   write: StaffWrite,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values
         .map(({ field }) => controlOf(field))
         .filter((control) => CONTROLS.includes(control))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map((control) => [control, messageAt(control)]),
         ),
@@ -410,11 +410,11 @@ export const afterStaffWrite = (
     }))
     .with({ type: 'ownRecord' }, () => ({
       message: undefined,
-      errors: { isActive: OWN_RECORD_STAYS_ACTIVE },
+      errors: { isActive: ERRORS.ownRecordStaysActive },
     }))
     .with({ type: 'forbidden' }, () => CANNOT_KEEP_STAFF)
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

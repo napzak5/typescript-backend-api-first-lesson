@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -17,7 +18,7 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import {
   customerIdOf,
   removedMeanwhile,
@@ -656,5 +657,134 @@ describe('the allergies of the customers, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the allergies of the customers on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the allergies with their severity and kind, in English', async () => {
+    // Act
+    await openAs(
+      chartHrefOf(await salonIdOf(TOKYO), await customerIdOf(YUKI.email)),
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    await heading('Chart')
+    const table = await screen.findByRole('table', {
+      name: 'List of allergies',
+    })
+    expect(rowsOf(table)).toEqual([
+      [
+        PPD,
+        'Severe',
+        'Chemical',
+        'カラー剤で頭皮に赤みとかゆみが出た',
+        'ジアミンを含まないカラー剤を使う',
+        'Tue, June 10, 2025',
+        'EditRemove',
+      ],
+      [
+        FRAGRANCE,
+        'Mild',
+        'Fragrance',
+        'Not recorded',
+        '無香料のスタイリング剤を使う',
+        'Unknown',
+        'EditRemove',
+      ],
+    ])
+    expect(
+      within(screen.getByRole('region', { name: 'Allergies' })).getByText(
+        '2 items',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say what is missing, then record an allergy, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      allergyEntryHrefOf(
+        await salonIdOf(TOKYO),
+        await customerIdOf(KENJI.email),
+      ),
+      OWNER,
+      'en',
+    )
+    await heading('Record an allergy')
+    await screen.findByRole('radiogroup', { name: 'Severity' })
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+    expect(
+      screen.getByRole('textbox', { name: 'Allergen' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the allergen.'),
+    )
+    expect(
+      screen.getByRole('combobox', { name: 'Type' }),
+    ).toHaveAccessibleDescription(expect.stringContaining('Choose the type.'))
+
+    // Act
+    await user.type(screen.getByRole('textbox', { name: 'Allergen' }), 'Latex')
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Type' }),
+      'Latex',
+    )
+    await user.click(screen.getByRole('radio', { name: 'Life-threatening' }))
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    await heading('Chart')
+    expect(notifications()).toContain(
+      `Recorded the allergy (Latex) of ${KENJI.name}.`,
+    )
+    expect(await storedAllergiesOf(KENJI.email)).toEqual([
+      {
+        allergyType: 'latex',
+        allergenName: 'Latex',
+        severityType: 'life_threatening',
+        symptoms: null,
+        notes: null,
+        confirmedDate: null,
+      },
+    ])
+  })
+
+  it('should remove an allergy after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      chartHrefOf(await salonIdOf(TOKYO), await customerIdOf(YUKI.email)),
+      OWNER,
+      'en',
+    )
+    await screen.findByRole('table', { name: 'List of allergies' })
+    await user.click(
+      screen.getByRole('button', { name: `Remove the record of ${FRAGRANCE}` }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: `Remove the record of ${FRAGRANCE}?`,
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(notifications()).toContain(
+      `Removed the record of the allergy (${FRAGRANCE}) of ${YUKI.name}.`,
+    )
+    expect(await storedAllergiesOf(YUKI.email)).toEqual([SEEDED[0]])
   })
 })

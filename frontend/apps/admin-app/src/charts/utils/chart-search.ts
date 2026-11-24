@@ -1,11 +1,15 @@
 import { keywordError, keywordIn } from '@beauty-salon-frontend/salon-screens'
 import {
-  type ChoiceOption,
+  type FormErrors,
   type FormRead,
-  inJapaneseIfAny,
+  type NamedChoice,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ChartConditions } from '../api/charts-api'
+
+const { search: SEARCH } = adminChartMessages
 
 /*
  * Which charts the search shows, kept in the query of the address: a
@@ -18,9 +22,9 @@ type Allergies = NonNullable<ChartConditions['allergies']>
 const ALLERGIES: readonly Allergies[] = ['with', 'without']
 
 /** The choices of the allergies recorded of the customer */
-export const ALLERGY_OPTIONS: readonly ChoiceOption[] = [
-  { value: 'with', label: 'ある' },
-  { value: 'without', label: 'ない' },
+export const ALLERGY_CHOICES: readonly NamedChoice[] = [
+  { value: 'with', label: SEARCH.withAllergies },
+  { value: 'without', label: SEARCH.withoutAllergies },
 ]
 
 const allergiesFrom = (value: string | null): Allergies | undefined =>
@@ -40,9 +44,9 @@ export const chartConditionsIn = (query: URLSearchParams): ChartConditions => {
 /** The conditions that were filled in: each may be left empty. */
 export const readChartConditions = (
   values: FormData,
-): FormRead<ChartConditions> => {
+): FormRead<ChartConditions, FormErrors<LocalizedText>> => {
   const search = textOf(values, 'search').trim()
-  const searchError = inJapaneseIfAny(keywordError(search))
+  const searchError = keywordError(search)
   if (searchError !== undefined) {
     return { type: 'invalid', errors: { search: searchError } }
   }

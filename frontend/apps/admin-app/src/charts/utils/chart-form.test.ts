@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aChart } from '../components/examples'
 import {
@@ -69,16 +70,16 @@ const shownValues = (changes: Filled = {}): FormData =>
   })
 
 describe('treatmentNameOf', () => {
-  it.each<[Parameters<typeof treatmentNameOf>[0], string]>([
-    ['head_spa', 'ヘッドスパ'],
-    ['eyelash', 'まつげ'],
-    ['other', 'その他'],
+  it.each<[Parameters<typeof treatmentNameOf>[0], LocalizedText]>([
+    ['head_spa', { en: 'Head spa', ja: 'ヘッドスパ' }],
+    ['eyelash', { en: 'Eyelashes', ja: 'まつげ' }],
+    ['other', { en: 'Other', ja: 'その他' }],
   ])('should call %s %s', (treatment, name) => {
     // Act
     const called = treatmentNameOf(treatment)
 
     // Assert
-    expect(called).toBe(name)
+    expect(called).toEqual(name)
   })
 })
 
@@ -143,13 +144,26 @@ describe('readChartEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        'previousTreatments.1.treatment': '施術を選んでください。',
-        'previousTreatments.1.date': '施術日を入力してください。',
-        'previousTreatments.2.date':
-          '施術日は、1900年1月1日以降にしてください。',
-        'previousTreatments.2.salonName':
-          'サロンの名前は、255 文字以内で入力してください。',
-        'previousTreatments.3.date': '施術日は、今日までにしてください。',
+        'previousTreatments.1.treatment': {
+          en: 'Choose the treatment.',
+          ja: '施術を選んでください。',
+        },
+        'previousTreatments.1.date': {
+          en: 'Enter the treatment date.',
+          ja: '施術日を入力してください。',
+        },
+        'previousTreatments.2.date': {
+          en: 'Make the treatment date January 1, 1900 or later.',
+          ja: '施術日は、1900年1月1日以降にしてください。',
+        },
+        'previousTreatments.2.salonName': {
+          en: 'Salon name: enter up to 255 characters.',
+          ja: 'サロンの名前は、255 文字以内で入力してください。',
+        },
+        'previousTreatments.3.date': {
+          en: 'Make the treatment date today or earlier.',
+          ja: '施術日は、今日までにしてください。',
+        },
       },
     })
   })
@@ -167,16 +181,22 @@ describe('readChartEntry', () => {
     expect(read.type).toBe('valid')
   })
 
-  it.each<[string, string, string]>([
+  it.each<[string, string, LocalizedText]>([
     [
       'a name of more than 100 characters',
       'あ'.repeat(101),
-      '商材の名前は、1 つ 100 文字以内で入力してください。',
+      {
+        en: 'Product names: enter up to 100 characters for each entry.',
+        ja: '商材の名前は、1 つ 100 文字以内で入力してください。',
+      },
     ],
     [
       'more than 50 names',
       Array.from({ length: 51 }, (_, index) => `商材${index}`).join('、'),
-      '商材は、50 件までで入力してください。',
+      {
+        en: 'Enter up to 50 products.',
+        ja: '商材は、50 件までで入力してください。',
+      },
     ],
   ])('should refuse %s of products', (_, products, message) => {
     // Arrange
@@ -314,7 +334,12 @@ describe('readChartChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'invalid',
-      errors: { 'previousTreatments.0.date': '施術日を入力してください。' },
+      errors: {
+        'previousTreatments.0.date': {
+          en: 'Enter the treatment date.',
+          ja: '施術日を入力してください。',
+        },
+      },
     })
   })
 })
@@ -339,15 +364,30 @@ describe('afterChartWrite', () => {
     expect(said).toEqual({
       message: undefined,
       errors: {
-        'previousTreatments.2.date': '施術日は、今日までにしてください。',
-        'previousTreatments.0.date':
-          '施術日は、1900年1月1日以降にしてください。',
-        'previousTreatments.1.salonName':
-          'サロンの名前は、255 文字以内で入力してください。',
-        'previousTreatments.1.treatment': '施術を選んでください。',
-        preferredProducts:
-          '商材の名前は、1 つ 100 文字以内で入力してください。',
-        avoidProducts: '商材は、50 件までで入力してください。',
+        'previousTreatments.2.date': {
+          en: 'Make the treatment date today or earlier.',
+          ja: '施術日は、今日までにしてください。',
+        },
+        'previousTreatments.0.date': {
+          en: 'Make the treatment date January 1, 1900 or later.',
+          ja: '施術日は、1900年1月1日以降にしてください。',
+        },
+        'previousTreatments.1.salonName': {
+          en: 'Salon name: enter up to 255 characters.',
+          ja: 'サロンの名前は、255 文字以内で入力してください。',
+        },
+        'previousTreatments.1.treatment': {
+          en: 'Choose the treatment.',
+          ja: '施術を選んでください。',
+        },
+        preferredProducts: {
+          en: 'Product names: enter up to 100 characters for each entry.',
+          ja: '商材の名前は、1 つ 100 文字以内で入力してください。',
+        },
+        avoidProducts: {
+          en: 'Enter up to 50 products.',
+          ja: '商材は、50 件までで入力してください。',
+        },
       },
     })
   })
@@ -364,7 +404,10 @@ describe('afterChartWrite', () => {
 
     // Assert
     expect(said).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
@@ -373,28 +416,40 @@ describe('afterChartWrite', () => {
     [
       Parameters<typeof afterChartWrite>[0],
       Parameters<typeof afterChartWrite>[1],
-      string,
+      LocalizedText,
     ]
   >([
     [
       { type: 'forbidden' },
       'entry',
-      'このアカウントでは、カルテを書けません。',
+      {
+        en: 'This account cannot write charts.',
+        ja: 'このアカウントでは、カルテを書けません。',
+      },
     ],
     [
       { type: 'tooManyRequests' },
       'change',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
       'entry',
-      'カルテを作れませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not create the chart. Check your connection and try again.',
+        ja: 'カルテを作れませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
       'change',
-      'カルテを直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the chart. Check your connection and try again.',
+        ja: 'カルテを直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say after %o of the %s', (outcome, write, message) => {
     // Act
@@ -406,14 +461,26 @@ describe('afterChartWrite', () => {
 })
 
 describe('chartWrittenOf', () => {
-  it.each<[Parameters<typeof chartWrittenOf>[1], string]>([
-    ['entry', '山田 花子 様のカルテを作りました。'],
-    ['change', '山田 花子 様のカルテを直しました。'],
+  it.each<[Parameters<typeof chartWrittenOf>[1], LocalizedText]>([
+    [
+      'entry',
+      {
+        en: 'Created the chart of 山田 花子.',
+        ja: '山田 花子 様のカルテを作りました。',
+      },
+    ],
+    [
+      'change',
+      {
+        en: 'Saved the chart of 山田 花子.',
+        ja: '山田 花子 様のカルテを直しました。',
+      },
+    ],
   ])('should say what was done after the %s', (write, message) => {
     // Act
     const said = chartWrittenOf('山田 花子', write)
 
     // Assert
-    expect(said).toBe(message)
+    expect(said).toEqual(message)
   })
 })

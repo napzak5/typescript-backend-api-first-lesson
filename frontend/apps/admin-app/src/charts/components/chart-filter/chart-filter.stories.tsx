@@ -1,3 +1,4 @@
+import { keywordError } from '@beauty-salon-frontend/salon-screens'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ChartFilter } from './chart-filter'
@@ -29,6 +30,6 @@ export const Narrowed: Story = {
 /** A keyword that is too long */
 export const WithErrors: Story = {
   args: {
-    errors: { search: 'キーワードは、100 文字以内で入力してください。' },
+    errors: { search: keywordError('あ'.repeat(101)) },
   },
 }

@@ -1,17 +1,20 @@
 import { WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import {
   type FormErrors,
-  inJapanese,
   TextArea,
   TextField,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
-import type { Introduced } from '../../utils/introduction'
+import { type Introduced, MOST_YEARS } from '../../utils/introduction'
+
+const { introduction: WORDS } = adminStaffMessages
 
 export type IntroductionFieldsProps = {
   /** The introduction the controls open with; `null` for a new member, whose controls are empty */
   shown: Introduced | null
-  /** What is said at a control, under its name */
+  /** What is said at a control, under its name, in the language of the page */
   errors: FormErrors
 }
 
@@ -24,53 +27,57 @@ export type IntroductionFieldsProps = {
 export const IntroductionFields = ({
   shown,
   errors,
-}: IntroductionFieldsProps) => (
-  <>
-    <TextField
-      label='専門'
-      name='specialties'
-      autoComplete='off'
-      description='得意なメニューや技術を、「、」か「,」で区切って書きます。'
-      defaultValue={inJapanese(tagsTextOf(shown?.specialties ?? []))}
-      error={errors['specialties']}
-    />
-    <TextField
-      label='資格'
-      name='certifications'
-      autoComplete='off'
-      description='「、」か「,」で区切って書きます。'
-      defaultValue={inJapanese(tagsTextOf(shown?.certifications ?? []))}
-      error={errors['certifications']}
-    />
-    <TextField
-      label='経験年数（年）'
-      name='yearsOfExperience'
-      inputMode='numeric'
-      autoComplete='off'
-      width='short'
-      description='0 から 100 までの整数。'
-      defaultValue={
-        shown === null || shown.yearsOfExperience === null
-          ? undefined
-          : String(shown.yearsOfExperience)
-      }
-      error={errors['yearsOfExperience']}
-    />
-    <TextArea
-      label='紹介文'
-      name='bio'
-      rows={4}
-      defaultValue={shown?.bio ?? undefined}
-      error={errors['bio']}
-    />
-    <TextField
-      label='写真の URL'
-      name='imageUrl'
-      type='url'
-      autoComplete='off'
-      description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
-      defaultValue={shown?.imageUrl ?? undefined}
-      error={errors['imageUrl']}
-    />
-  </>
-)
+}: IntroductionFieldsProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <TextField
+        label={say(WORDS.specialties)}
+        name='specialties'
+        autoComplete='off'
+        description={say(WORDS.specialtiesDescription)}
+        defaultValue={say(tagsTextOf(shown?.specialties ?? []))}
+        error={errors['specialties']}
+      />
+      <TextField
+        label={say(WORDS.certifications)}
+        name='certifications'
+        autoComplete='off'
+        description={say(WORDS.certificationsDescription)}
+        defaultValue={say(tagsTextOf(shown?.certifications ?? []))}
+        error={errors['certifications']}
+      />
+      <TextField
+        label={say(WORDS.yearsOfExperience)}
+        name='yearsOfExperience'
+        inputMode='numeric'
+        autoComplete='off'
+        width='short'
+        description={say(WORDS.yearsOfExperienceDescription(MOST_YEARS))}
+        defaultValue={
+          shown === null || shown.yearsOfExperience === null
+            ? undefined
+            : String(shown.yearsOfExperience)
+        }
+        error={errors['yearsOfExperience']}
+      />
+      <TextArea
+        label={say(WORDS.bio)}
+        name='bio'
+        rows={4}
+        defaultValue={shown?.bio ?? undefined}
+        error={errors['bio']}
+      />
+      <TextField
+        label={say(WORDS.imageUrl)}
+        name='imageUrl'
+        type='url'
+        autoComplete='off'
+        description={say(WEB_ADDRESS_DESCRIPTION)}
+        defaultValue={shown?.imageUrl ?? undefined}
+        error={errors['imageUrl']}
+      />
+    </>
+  )
+}

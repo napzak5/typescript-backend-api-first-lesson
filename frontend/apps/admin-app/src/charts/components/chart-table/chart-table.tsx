@@ -2,17 +2,25 @@ import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
   NONE,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminChartMessages,
+  adminCustomerMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { customerNameOf } from '../../../customers/api/customers-api'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import type { FoundChart } from '../../api/charts-api'
 
+const { search: SEARCH, words } = adminChartMessages
+
 export type ChartTableProps = {
-  /** What the table lists: 「カルテ」, or 「条件に合うカルテ」 */
+  /** What the table lists, in the language of the page: 「カルテ」, or 「条件に合うカルテ」 */
   caption: string
   /** The charts that were read so far, the latest made first; at least one */
   rows: readonly FoundChart[]
@@ -28,8 +36,8 @@ export type ChartTableProps = {
 }
 
 /** The names of products, as the form takes them */
-const productsOrNone = (names: readonly string[]) =>
-  inJapanese(names.length === 0 ? NONE : tagsTextOf(names))
+const productsOrNone = (names: readonly string[]): LocalizedText =>
+  names.length === 0 ? NONE : tagsTextOf(names)
 
 /**
  * The charts that were found: each by the name of its customer, which
@@ -45,52 +53,59 @@ export const ChartTable = ({
   onMore,
   timezone,
   chartHref,
-}: ChartTableProps) => (
-  <PagedTable
-    caption={caption}
-    columns={[
-      {
-        key: 'customer',
-        header: 'お客様',
-        cell: ({ chart, customer }) =>
-          customer === undefined ? (
-            '台帳から削除されたお客様'
-          ) : (
-            <Link href={chartHref(chart.customerId)}>
-              {`${customerNameOf(customer)} 様`}
-            </Link>
-          ),
-      },
-      {
-        key: 'medicalConditions',
-        header: '持病や体調',
-        wrap: 'lines',
-        cell: ({ chart }) => chart.medicalConditions,
-      },
-      {
-        key: 'preferredProducts',
-        header: '好みの商材',
-        wrap: 'words',
-        cell: ({ chart }) => productsOrNone(chart.preferredProducts),
-      },
-      {
-        key: 'avoidProducts',
-        header: '避ける商材',
-        wrap: 'words',
-        cell: ({ chart }) => productsOrNone(chart.avoidProducts),
-      },
-      {
-        key: 'updatedAt',
-        header: '最後に書いた日時',
-        cell: ({ chart }) =>
-          inJapanese(momentNameAt(chart.updatedAt, timezone)),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ chart }) => chart.id}
-    emptyMessage='カルテはありません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: ChartTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={caption}
+      columns={[
+        {
+          key: 'customer',
+          header: say(words.customer),
+          cell: ({ chart, customer }) =>
+            customer === undefined ? (
+              say(adminTreatmentMessages.removedCustomer)
+            ) : (
+              <Link href={chartHref(chart.customerId)}>
+                {say(
+                  adminCustomerMessages.naming.honored(
+                    customerNameOf(customer),
+                  ),
+                )}
+              </Link>
+            ),
+        },
+        {
+          key: 'medicalConditions',
+          header: say(words.medicalConditions),
+          wrap: 'lines',
+          cell: ({ chart }) => chart.medicalConditions,
+        },
+        {
+          key: 'preferredProducts',
+          header: say(words.preferredProducts),
+          wrap: 'words',
+          cell: ({ chart }) => say(productsOrNone(chart.preferredProducts)),
+        },
+        {
+          key: 'avoidProducts',
+          header: say(words.avoidProducts),
+          wrap: 'words',
+          cell: ({ chart }) => say(productsOrNone(chart.avoidProducts)),
+        },
+        {
+          key: 'updatedAt',
+          header: say(words.updatedAt),
+          cell: ({ chart }) => say(momentNameAt(chart.updatedAt, timezone)),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ chart }) => chart.id}
+      emptyMessage={say(SEARCH.none)}
+      count={say(countOf(total, rows.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

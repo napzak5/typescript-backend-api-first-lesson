@@ -592,9 +592,7 @@ export const afterServiceWrite = (
     .exhaustive()
 
 /** What is said after a service was to be removed; one in use is said with the packages it is in. */
-export type ServiceRemovalSays =
-  | TreatmentRemovalSays<LocalizedText>
-  | { type: 'inUse' }
+export type ServiceRemovalSays = TreatmentRemovalSays | { type: 'inUse' }
 
 /**
  * What is said after a service was to be removed. One that is in use is

@@ -6,15 +6,22 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ChartConditions } from '../../api/charts-api'
-import { ALLERGY_OPTIONS, chartQueryOf } from '../../utils/chart-search'
+import { ALLERGY_CHOICES, chartQueryOf } from '../../utils/chart-search'
+
+const { search: SEARCH } = adminChartMessages
 
 export type ChartFilterProps = {
   /** The conditions that are shown: those of the address */
   conditions: ChartConditions
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of every chart, when the conditions narrow them */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -43,6 +50,9 @@ export const ChartFilter = ({
   clearHref,
   onSubmit,
 }: ChartFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(undefined, errors)
   const [values, hold] = useFilterValues(
     chartQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -50,30 +60,30 @@ export const ChartFilter = ({
 
   return (
     <FilterForm
-      label='カルテを探す'
+      label={say(SEARCH.label)}
       errors={errors}
       clearHref={clearHref}
       onSubmit={onSubmit}
       conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
       conditions={
         <Select
-          label='アレルギーの記録'
+          label={say(SEARCH.allergies)}
           name='allergies'
-          options={ALLERGY_OPTIONS}
-          placeholder='すべて'
+          options={options(ALLERGY_CHOICES)}
+          placeholder={say(SEARCH.all)}
           value={values.allergies}
           onChange={(event) => hold('allergies', event.target.value)}
         />
       }
     >
       <TextField
-        label='キーワード'
+        label={say(SEARCH.keyword)}
         name='search'
         autoComplete='off'
         type='search'
-        description='持病や体調、メモ、好みの商材と避ける商材の名前の一部。'
+        description={say(SEARCH.keywordDescription)}
         value={values.search}
-        error={errors['search']}
+        error={said.errors['search']}
         onChange={(event) => hold('search', event.target.value)}
       />
     </FilterForm>

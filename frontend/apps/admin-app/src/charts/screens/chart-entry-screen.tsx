@@ -11,7 +11,10 @@ import {
   type FormSays,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -31,13 +34,12 @@ import {
 import { ChartForm } from '../components/chart-form/chart-form'
 import {
   afterChartWrite,
-  CHART_EXISTS,
   chartWrittenOf,
   readChartEntry,
 } from '../utils/chart-form'
 import { WithChart } from './with-chart'
 
-const TITLE = 'カルテを作る'
+const { entry: ENTRY, screens, titles, words } = adminChartMessages
 
 type ChartEntryProps = {
   salon: ModelsSalonResponse
@@ -53,7 +55,8 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [exists, setExists] = useState(false)
   const back = chartHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
@@ -74,7 +77,7 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
         })
         .with({ type: 'exists' }, () => {
           setExists(true)
-          setSaid(aboutTheAttempt(CHART_EXISTS))
+          setSaid(aboutTheAttempt(ENTRY.exists))
         })
         // The customer was removed from the ledger meanwhile
         .with({ type: 'notFound' }, () => {
@@ -103,7 +106,7 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
   return (
     <ChartForm
       today={today}
-      submitLabel='カルテを作る'
+      submitLabel={say(ENTRY.submit)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
@@ -112,11 +115,11 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
         <>
           {exists && (
             <ButtonLink href={chartChangeHrefOf(salon.id, customer.id)}>
-              そのカルテを直す
+              {say(ENTRY.changeExisting)}
             </ButtonLink>
           )}
           <ButtonLink href={back} variant='quiet'>
-            やめる
+            {say(words.cancel)}
           </ButtonLink>
         </>
       }
@@ -127,11 +130,17 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
 /** Makes the chart of a customer, below the salon of the address; one who has one is led to change it. */
 export const ChartEntryScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(titles.entry)}
+          fresh
+        >
           {(customer) => (
             <WithChart key={customer.id} customerId={customer.id} fresh>
               {(chart) =>
@@ -139,9 +148,9 @@ export const ChartEntryScreen = () => {
                   <ChartEntry salon={salon} customer={customer} />
                 ) : (
                   <>
-                    <p>このお客様には、カルテがあります。</p>
+                    <p>{say(screens.exists)}</p>
                     <ButtonLink href={chartChangeHrefOf(salon.id, customer.id)}>
-                      カルテを直す
+                      {say(words.change)}
                     </ButtonLink>
                   </>
                 )

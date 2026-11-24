@@ -4,18 +4,32 @@ import {
   Checkbox,
   FieldRow,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { LEVEL_OPTIONS } from '../../utils/staff-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { MOST_BUFFER, MOST_CONCURRENT, MOST_RATE } from '../../utils/staff-form'
+import { LEVEL_CHOICES } from '../../utils/staff-format'
 import { IntroductionFields } from '../introduction-fields/introduction-fields'
+
+const { form: FORM, words } = adminStaffMessages
 
 export type StaffFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What went wrong with the attempt as a whole */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /**
    * The member the form opens with. `null` for a new one: the form then
    * opens with what the ledger gives a member nobody said more of, who is
@@ -39,210 +53,223 @@ const numberText = (number: number | null | undefined): string | undefined =>
  * The values are those of a person the owner enters for somebody else, so
  * the browser is asked not to fill them in from what it knows of the user.
  */
-export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
-  <Form {...form} errors={errors}>
-    <FormPart label='名前'>
-      <FieldRow>
+export const StaffForm = ({
+  member,
+  message,
+  errors = NO_ERRORS,
+  ...form
+}: StaffFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(words.name)}>
+        <FieldRow>
+          <TextField
+            label={say(words.lastName)}
+            name='lastName'
+            autoComplete='off'
+            required
+            defaultValue={member?.lastName}
+            error={said.errors['lastName']}
+          />
+          <TextField
+            label={say(words.firstName)}
+            name='firstName'
+            autoComplete='off'
+            required
+            defaultValue={member?.firstName}
+            error={said.errors['firstName']}
+          />
+        </FieldRow>
+        <FieldRow>
+          <TextField
+            label={say(words.lastNameKana)}
+            name='lastNameKana'
+            autoComplete='off'
+            defaultValue={member?.lastNameKana ?? undefined}
+            error={said.errors['lastNameKana']}
+          />
+          <TextField
+            label={say(words.firstNameKana)}
+            name='firstNameKana'
+            autoComplete='off'
+            defaultValue={member?.firstNameKana ?? undefined}
+            error={said.errors['firstNameKana']}
+          />
+        </FieldRow>
         <TextField
-          label='姓'
-          name='lastName'
+          label={say(words.displayName)}
+          name='displayName'
           autoComplete='off'
           required
-          defaultValue={member?.lastName}
-          error={errors['lastName']}
+          description={say(FORM.displayNameDescription)}
+          defaultValue={member?.displayName}
+          error={said.errors['displayName']}
         />
+      </FormPart>
+      <FormPart label={say(words.contact)}>
         <TextField
-          label='名'
-          name='firstName'
+          label={say(words.email)}
+          name='email'
+          type='email'
           autoComplete='off'
           required
-          defaultValue={member?.firstName}
-          error={errors['firstName']}
+          description={say(FORM.emailDescription)}
+          defaultValue={member?.email}
+          error={said.errors['email']}
         />
-      </FieldRow>
-      <FieldRow>
+        <FieldRow>
+          <TextField
+            label={say(words.phoneNumber)}
+            name='phoneNumber'
+            type='tel'
+            autoComplete='off'
+            required
+            defaultValue={member?.phoneNumber}
+            error={said.errors['phoneNumber']}
+          />
+          <TextField
+            label={say(words.alternativePhone)}
+            name='alternativePhone'
+            type='tel'
+            autoComplete='off'
+            defaultValue={member?.alternativePhone ?? undefined}
+            error={said.errors['alternativePhone']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart label={say(words.employment)}>
+        <FieldRow>
+          <TextField
+            label={say(words.staffCode)}
+            name='staffCode'
+            autoComplete='off'
+            description={say(FORM.staffCodeDescription)}
+            defaultValue={member?.staffCode ?? undefined}
+            error={said.errors['staffCode']}
+          />
+          <Select
+            label={say(words.level)}
+            name='level'
+            required
+            placeholder={say(FORM.choose)}
+            options={options(LEVEL_CHOICES)}
+            defaultValue={member?.level ?? ''}
+            error={said.errors['level']}
+          />
+        </FieldRow>
+        <FieldRow>
+          <TextField
+            label={say(words.position)}
+            name='position'
+            autoComplete='off'
+            defaultValue={member?.position ?? undefined}
+            error={said.errors['position']}
+          />
+          <TextField
+            label={say(words.employmentType)}
+            name='employmentType'
+            autoComplete='off'
+            description={say(FORM.employmentTypeDescription)}
+            defaultValue={member?.employmentType ?? undefined}
+            error={said.errors['employmentType']}
+          />
+        </FieldRow>
         <TextField
-          label='姓（フリガナ）'
-          name='lastNameKana'
+          label={say(words.hireDate)}
+          name='hireDate'
+          type='date'
           autoComplete='off'
-          defaultValue={member?.lastNameKana ?? undefined}
-          error={errors['lastNameKana']}
+          min={EARLIEST_DAY}
+          max={LATEST_DAY}
+          width='short'
+          description={say(FORM.hireDateDescription)}
+          defaultValue={member?.hireDate ?? undefined}
+          error={said.errors['hireDate']}
+        />
+        <FieldRow>
+          <TextField
+            label={say(FORM.baseSalary)}
+            name='baseSalary'
+            inputMode='numeric'
+            autoComplete='off'
+            description={say(FORM.baseSalaryDescription)}
+            defaultValue={numberText(member?.baseSalary)}
+            error={said.errors['baseSalary']}
+          />
+          <TextField
+            label={say(FORM.commissionRate)}
+            name='commissionRate'
+            inputMode='decimal'
+            autoComplete='off'
+            description={say(FORM.commissionRateDescription(MOST_RATE))}
+            defaultValue={numberText(member?.commissionRate)}
+            error={said.errors['commissionRate']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart
+        label={say(words.introduction)}
+        description={say(FORM.introductionDescription)}
+      >
+        <IntroductionFields shown={member} errors={said.errors} />
+      </FormPart>
+      <FormPart label={say(words.bookingSettings)}>
+        <Checkbox
+          label={say(FORM.canReceiveBookings)}
+          name='canReceiveBookings'
+          description={say(FORM.canReceiveBookingsDescription)}
+          defaultChecked={member?.canReceiveBookings ?? true}
+          error={said.errors['canReceiveBookings']}
         />
         <TextField
-          label='名（フリガナ）'
-          name='firstNameKana'
-          autoComplete='off'
-          defaultValue={member?.firstNameKana ?? undefined}
-          error={errors['firstNameKana']}
-        />
-      </FieldRow>
-      <TextField
-        label='表示名'
-        name='displayName'
-        autoComplete='off'
-        required
-        description='お客様が予約するときに見る名前です。'
-        defaultValue={member?.displayName}
-        error={errors['displayName']}
-      />
-    </FormPart>
-    <FormPart label='連絡先'>
-      <TextField
-        label='メールアドレス'
-        name='email'
-        type='email'
-        autoComplete='off'
-        required
-        description='サロンのスタッフの間で、同じアドレスは使えません。'
-        defaultValue={member?.email}
-        error={errors['email']}
-      />
-      <FieldRow>
-        <TextField
-          label='電話番号'
-          name='phoneNumber'
-          type='tel'
-          autoComplete='off'
-          required
-          defaultValue={member?.phoneNumber}
-          error={errors['phoneNumber']}
-        />
-        <TextField
-          label='予備の電話番号'
-          name='alternativePhone'
-          type='tel'
-          autoComplete='off'
-          defaultValue={member?.alternativePhone ?? undefined}
-          error={errors['alternativePhone']}
-        />
-      </FieldRow>
-    </FormPart>
-    <FormPart label='雇用'>
-      <FieldRow>
-        <TextField
-          label='スタッフコード'
-          name='staffCode'
-          autoComplete='off'
-          description='社員番号など。台帳から削除したスタッフのものも含めて、同じコードは使えません。'
-          defaultValue={member?.staffCode ?? undefined}
-          error={errors['staffCode']}
-        />
-        <Select
-          label='レベル'
-          name='level'
-          required
-          placeholder='選んでください'
-          options={LEVEL_OPTIONS}
-          defaultValue={member?.level ?? ''}
-          error={errors['level']}
-        />
-      </FieldRow>
-      <FieldRow>
-        <TextField
-          label='役職'
-          name='position'
-          autoComplete='off'
-          defaultValue={member?.position ?? undefined}
-          error={errors['position']}
-        />
-        <TextField
-          label='雇用形態'
-          name='employmentType'
-          autoComplete='off'
-          description='正社員、パート、業務委託など。'
-          defaultValue={member?.employmentType ?? undefined}
-          error={errors['employmentType']}
-        />
-      </FieldRow>
-      <TextField
-        label='入社日'
-        name='hireDate'
-        type='date'
-        autoComplete='off'
-        min={EARLIEST_DAY}
-        max={LATEST_DAY}
-        width='short'
-        description='これから入社するスタッフも、先に登録できます。'
-        defaultValue={member?.hireDate ?? undefined}
-        error={errors['hireDate']}
-      />
-      <FieldRow>
-        <TextField
-          label='基本給（円）'
-          name='baseSalary'
-          inputMode='numeric'
-          autoComplete='off'
-          description='0 以上の整数。'
-          defaultValue={numberText(member?.baseSalary)}
-          error={errors['baseSalary']}
-        />
-        <TextField
-          label='歩合率（%）'
-          name='commissionRate'
-          inputMode='decimal'
-          autoComplete='off'
-          description='0 から 100 まで。小数第 2 位まで。'
-          defaultValue={numberText(member?.commissionRate)}
-          error={errors['commissionRate']}
-        />
-      </FieldRow>
-    </FormPart>
-    <FormPart
-      label='紹介'
-      description='表示名、レベル、役職と一緒に、お客様に見せるスタッフの紹介です。'
-    >
-      <IntroductionFields shown={member} errors={errors} />
-    </FormPart>
-    <FormPart label='予約の受け方'>
-      <Checkbox
-        label='予約を受ける'
-        name='canReceiveBookings'
-        description='外すと、お客様が予約するときの空き枠に出なくなります。サロンが入れる予約の担当には、どちらでも選べます。'
-        defaultChecked={member?.canReceiveBookings ?? true}
-        error={errors['canReceiveBookings']}
-      />
-      <TextField
-        label='同時に担当できる予約の数'
-        name='maxConcurrentBookings'
-        inputMode='numeric'
-        autoComplete='off'
-        required
-        width='short'
-        description='1 から 10 まで。'
-        defaultValue={numberText(member?.maxConcurrentBookings ?? 1)}
-        error={errors['maxConcurrentBookings']}
-      />
-      <FieldRow>
-        <TextField
-          label='予約の前に確保する時間（分）'
-          name='bufferTimeBefore'
-          inputMode='numeric'
-          autoComplete='off'
-          required
-          description='準備の時間。0 から 120 まで。'
-          defaultValue={numberText(member?.bufferTimeBefore ?? 0)}
-          error={errors['bufferTimeBefore']}
-        />
-        <TextField
-          label='予約の後に確保する時間（分）'
-          name='bufferTimeAfter'
+          label={say(FORM.maxConcurrentBookings)}
+          name='maxConcurrentBookings'
           inputMode='numeric'
           autoComplete='off'
           required
-          description='片付けの時間。0 から 120 まで。'
-          defaultValue={numberText(member?.bufferTimeAfter ?? 0)}
-          error={errors['bufferTimeAfter']}
+          width='short'
+          description={say(
+            FORM.maxConcurrentBookingsDescription(MOST_CONCURRENT),
+          )}
+          defaultValue={numberText(member?.maxConcurrentBookings ?? 1)}
+          error={said.errors['maxConcurrentBookings']}
         />
-      </FieldRow>
-    </FormPart>
-    <FormPart label='在籍'>
-      <Checkbox
-        label='有効なスタッフ'
-        name='isActive'
-        description='休職や退職の手続きの間は外します。外すと、このスタッフのログインアカウントはサロンの画面を使えなくなり、お客様が予約するときにも出なくなります。付け直すと、元に戻ります。'
-        defaultChecked={member?.isActive ?? true}
-        error={errors['isActive']}
-      />
-    </FormPart>
-  </Form>
-)
+        <FieldRow>
+          <TextField
+            label={say(FORM.bufferTimeBefore)}
+            name='bufferTimeBefore'
+            inputMode='numeric'
+            autoComplete='off'
+            required
+            description={say(FORM.bufferTimeBeforeDescription(MOST_BUFFER))}
+            defaultValue={numberText(member?.bufferTimeBefore ?? 0)}
+            error={said.errors['bufferTimeBefore']}
+          />
+          <TextField
+            label={say(FORM.bufferTimeAfter)}
+            name='bufferTimeAfter'
+            inputMode='numeric'
+            autoComplete='off'
+            required
+            description={say(FORM.bufferTimeAfterDescription(MOST_BUFFER))}
+            defaultValue={numberText(member?.bufferTimeAfter ?? 0)}
+            error={said.errors['bufferTimeAfter']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart label={say(FORM.activity)}>
+        <Checkbox
+          label={say(FORM.isActive)}
+          name='isActive'
+          description={say(FORM.isActiveDescription)}
+          defaultChecked={member?.isActive ?? true}
+          error={said.errors['isActive']}
+        />
+      </FormPart>
+    </Form>
+  )
+}

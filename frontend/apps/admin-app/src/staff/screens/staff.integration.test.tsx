@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -17,7 +18,7 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import {
   staffChangeHrefOf,
   staffEntryHrefOf,
@@ -650,5 +651,201 @@ describe('the staff ledger, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the staff ledger on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the members and show one with everything the ledger keeps, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeLedgerOrder()
+    const salonId = await salonIdOf(TOKYO)
+    await openAs(staffLedgerHrefOf(salonId), OWNER, 'en')
+    await heading('Staff')
+    const ledger = await screen.findByRole('table', { name: 'Staff' })
+    expect(
+      within(ledger)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Display name',
+      'Full name',
+      'Level',
+      'Position',
+      'Online bookings',
+      'Status',
+    ])
+    expect(within(ledger).getAllByRole('row')[3]).toHaveTextContent(
+      'Hiroshi TanakaTanaka Hiroshi (タナカ ヒロシ)SeniorSenior StylistAcceptedActive',
+    )
+    expect(screen.getByText('5 people')).toBeInTheDocument()
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Hiroshi Tanaka' }))
+
+    // Assert
+    expect(await heading('Staff member details')).toHaveFocus()
+    await screen.findByRole('region', { name: 'Staff member' })
+    expect(termsOf('Staff member').slice(0, 7)).toEqual([
+      ['Display name', 'Hiroshi Tanaka'],
+      ['Full name', 'Tanaka Hiroshi (タナカ ヒロシ)'],
+      ['Staff code', 'STF001'],
+      ['Level', 'Senior'],
+      ['Position', 'Senior Stylist'],
+      ['Status', 'Active'],
+      ['Sign-in account', 'Linked'],
+    ])
+    expect(termsOf('Employment')).toEqual([
+      ['Employment type', 'full-time'],
+      ['Hire date', 'Tue, April 1, 2014'],
+      ['Base salary', '¥350,000'],
+      ['Commission rate', '15%'],
+    ])
+    expect(termsOf('Bookings')).toEqual([
+      ['Online bookings', 'Accepted'],
+      ['Concurrent bookings', 'Up to 2 bookings'],
+      ['Time kept before a booking', '10 min'],
+      ['Time kept after a booking', '10 min'],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Edit the staff member' }),
+    ).toHaveAttribute(
+      'href',
+      staffChangeHrefOf(salonId, await staffIdOf(TANAKA)),
+    )
+  })
+
+  it('should say what is wrong before sending a new member, then register them, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(staffEntryHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+    await screen.findByRole('group', { name: 'Name' })
+    await user.type(text('Last name'), NEW_MEMBER.lastName)
+    await user.type(text('First name'), NEW_MEMBER.firstName)
+    await user.type(text('Display name'), NEW_MEMBER.displayName)
+    await user.type(text('Email address'), NEW_MEMBER.email)
+    await user.type(text('Phone number'), NEW_MEMBER.phoneNumber)
+    await user.type(text('Commission rate (%)'), '120')
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+    expect(screen.getByRole('combobox', { name: 'Level' })).toHaveFocus()
+    expect(
+      screen.getByRole('combobox', { name: 'Level' }),
+    ).toHaveAccessibleDescription(expect.stringContaining('Choose the level.'))
+    expect(text('Commission rate (%)')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Enter the commission rate as a number from 0 to 100, with up to 2 decimal places.',
+      ),
+    )
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Level' }),
+      'stylist',
+    )
+    await user.clear(text('Commission rate (%)'))
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    await heading('Staff member details')
+    expect(notifications()).toContain(
+      'Registered Rina Kato in the staff ledger.',
+    )
+    expect(termsOf('Staff member')).toContainEqual([
+      'Sign-in account',
+      'Not linked',
+    ])
+  })
+
+  it('should say why a member whose bookings are not finished is not removed, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      staffMemberHrefOf(await salonIdOf(TOKYO), await staffIdOf(TANAKA)),
+      OWNER,
+      'en',
+    )
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove Hiroshi Tanaka from the staff ledger?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Hiroshi Tanaka is assigned to bookings that are not finished (Draft, Awaiting confirmation, Confirmed, In progress), so they cannot be removed.',
+    )
+  })
+
+  it('should remove a member after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeMembers(1)
+    await openAs(
+      staffMemberHrefOf(await salonIdOf(TOKYO), await crowdIdOf(1)),
+      OWNER,
+      'en',
+    )
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove Crowd 01 from the staff ledger?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(await heading('Staff')).toHaveFocus()
+    expect(notifications()).toContain('Removed Crowd 01 from the staff ledger.')
+    expect(await storedMemberOf('crowd-1@beautysalon.jp')).toMatchObject({
+      removed: true,
+    })
+  })
+
+  it('should tell a manager that the staff ledger is not theirs to keep, in English', async () => {
+    // Act
+    await openAs(staffLedgerHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'The staff ledger of this salon cannot be kept from this account. Only the owner of that salon and administrators can keep its staff ledger.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the start' }),
+    ).toHaveAttribute('href', '/')
+  })
+
+  it('should say that the member is not found when another owner removed them, in English', async () => {
+    // Arrange
+    await arrangeMembers(1)
+    const staffId = await crowdIdOf(1)
+    await removedMeanwhile(staffId)
+
+    // Act
+    await openAs(
+      staffMemberHrefOf(await salonIdOf(TOKYO), staffId),
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    expect(await heading('Staff member not found')).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the staff ledger' }),
+    ).toBeVisible()
   })
 })

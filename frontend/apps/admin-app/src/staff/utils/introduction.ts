@@ -4,11 +4,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { webAddressError } from '@beauty-salon-frontend/fields'
 import {
+  type FormErrors,
   type FormRead,
-  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import { numberOf } from '../../treatments/utils/treatment-form'
 
@@ -28,9 +30,11 @@ export type Introduced = Pick<
   'specialties' | 'bio' | 'imageUrl' | 'yearsOfExperience' | 'certifications'
 >
 
-const MOST_YEARS = 100
+/** The most years of experience the API takes */
+export const MOST_YEARS = 100
 
-const YEARS_ERROR = `経験年数は、0 から ${MOST_YEARS} までの整数で入力してください。`
+const YEARS_ERROR =
+  adminStaffMessages.introduction.yearsOfExperienceError(MOST_YEARS)
 
 /** A number up to `most` that may be left empty; `undefined` for what is none. */
 export const optionalNumberUpTo = (
@@ -49,7 +53,9 @@ export const optionalNumberUpTo = (
  * The introduction a form holds: the specialties and the certifications
  * as lists, and a control that was left empty as `null`.
  */
-export const readIntroduction = (values: FormData): FormRead<Introduction> => {
+export const readIntroduction = (
+  values: FormData,
+): FormRead<Introduction, FormErrors<LocalizedText>> => {
   const optional = (name: string): string | null =>
     textOrNull(textOf(values, name).trim())
   const yearsOfExperience = optionalNumberUpTo(
@@ -66,7 +72,7 @@ export const readIntroduction = (values: FormData): FormRead<Introduction> => {
         ...(yearsOfExperience === undefined
           ? { yearsOfExperience: YEARS_ERROR }
           : {}),
-        ...(urlError === undefined ? {} : { imageUrl: inJapanese(urlError) }),
+        ...(urlError === undefined ? {} : { imageUrl: urlError }),
       },
     }
   }

@@ -73,17 +73,14 @@ export const customerInASentence = (customer: Customer): LocalizedText =>
     ? names.removedCustomer
     : naming.honored(customerNameOf(customer))
 
-/**
- * What a removal comes to on the screen. An area whose texts are messages
- * says messages (`TreatmentRemovalSays<LocalizedText>`).
- */
-export type TreatmentRemovalSays<Text = string> =
+/** What a removal comes to on the screen. */
+export type TreatmentRemovalSays =
   /** The record was removed: said in a notification on the list */
-  | { type: 'done'; message: Text }
+  | { type: 'done'; message: LocalizedText }
   /** Nothing was removed, and another attempt may: said in the dialog */
-  | { type: 'again'; message: Text }
+  | { type: 'again'; message: LocalizedText }
   /** What another attempt does not change: said above the record */
-  | { type: 'refused'; message: Text }
+  | { type: 'refused'; message: LocalizedText }
   /** The record was removed meanwhile: the screen says it is not found */
   | { type: 'gone' }
 
@@ -91,9 +88,9 @@ export type TreatmentRemovalSays<Text = string> =
 export const afterTreatmentRemoval = (
   outcome: TreatmentRemoval,
   customer: LocalizedText,
-): TreatmentRemovalSays<LocalizedText> =>
+): TreatmentRemovalSays =>
   match(outcome)
-    .returnType<TreatmentRemovalSays<LocalizedText>>()
+    .returnType<TreatmentRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
       message: removal.done(customer),

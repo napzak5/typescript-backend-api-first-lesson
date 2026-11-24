@@ -1,8 +1,12 @@
+import { FAILED, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import { allergies, anAllergy } from '../examples'
 import { AllergyList } from './allergy-list'
+
+const { removal } = adminChartMessages.allergies
 
 const chartHref = `/salons/${salon.id}/customers/${aCustomer().id}/chart`
 
@@ -68,8 +72,7 @@ export const Unread: Story = {
   args: {
     shown: {
       type: 'unread',
-      message:
-        'アレルギーを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: unreadMessageOf(adminChartMessages.names.allergies, FAILED),
       retrying: false,
     },
   },
@@ -89,15 +92,13 @@ export const Removing: Story = {
 export const RemovalFailed: Story = {
   args: {
     removing: anAllergy(),
-    message:
-      'アレルギーの記録を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: removal.failed,
   },
 }
 
 /** Another account removed the allergy meanwhile: said under the heading */
 export const Gone: Story = {
   args: {
-    refusal:
-      'その間に、ほかのアカウントがこのアレルギーの記録を削除していました。',
+    refusal: removal.gone,
   },
 }

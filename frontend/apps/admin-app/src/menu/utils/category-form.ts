@@ -208,9 +208,9 @@ export const afterCategoryWrite = (
 export const afterCategoryRemoval = (
   outcome: CategoryRemoval,
   name: string,
-): TreatmentRemovalSays<LocalizedText> =>
+): TreatmentRemovalSays =>
   match(outcome)
-    .returnType<TreatmentRemovalSays<LocalizedText>>()
+    .returnType<TreatmentRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
       message: REMOVAL.done(name),

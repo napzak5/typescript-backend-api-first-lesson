@@ -4,10 +4,22 @@ import {
   DescriptionList,
   Note,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import {
+  adminProfileMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
-import { bookingsNameOf, levelNameOf } from '../../../staff/utils/staff-format'
+import {
+  bookingsNameOf,
+  levelNameOf,
+  yearsNameOf,
+} from '../../../staff/utils/staff-format'
+
+const { record } = adminProfileMessages
+const { words } = adminStaffMessages
 
 export type ProfileRecordProps = {
   profile: ModelsStaffProfileResponse
@@ -26,46 +38,57 @@ export const ProfileRecord = ({
   profile,
   customerView,
   headingRef,
-}: ProfileRecordProps) => (
-  <Card title='お客様に見せるプロフィール' headingRef={headingRef}>
-    <DescriptionList
-      items={[
-        { term: '表示名', description: profile.displayName },
-        { term: 'レベル', description: levelNameOf(profile.level) },
-        { term: '役職', description: profile.position },
-        { term: '予約', description: bookingsNameOf(profile) },
-        {
-          term: '専門',
-          description: <TagList label={'専門'} items={profile.specialties} />,
-        },
-        {
-          term: '資格',
-          description: (
-            <TagList label={'資格'} items={profile.certifications} />
-          ),
-        },
-        {
-          term: '経験年数',
-          description:
-            profile.yearsOfExperience === null
-              ? null
-              : `${profile.yearsOfExperience} 年`,
-        },
-        {
-          term: '紹介文',
-          description: <WrittenText>{profile.bio}</WrittenText>,
-        },
-        {
-          term: '写真の URL',
-          description: profile.imageUrl === null ? null : profile.imageUrl,
-        },
-      ]}
-    />
-    <Note>
-      表示名、レベル、役職、予約の受け方は、サロンがスタッフ台帳で決めます。変えたいときは、サロンのオーナーに伝えてください。
-    </Note>
-    <p>
-      <a href={customerView}>お客様からの見え方を、サロンのページで見る</a>
-    </p>
-  </Card>
-)
+}: ProfileRecordProps) => {
+  const say = useSay()
+  const years = yearsNameOf(profile.yearsOfExperience)
+
+  return (
+    <Card title={say(record.title)} headingRef={headingRef}>
+      <DescriptionList
+        items={[
+          { term: say(words.displayName), description: profile.displayName },
+          {
+            term: say(words.level),
+            description: say(levelNameOf(profile.level)),
+          },
+          { term: say(words.position), description: profile.position },
+          {
+            term: say(words.bookings),
+            description: say(bookingsNameOf(profile)),
+          },
+          {
+            term: say(words.specialties),
+            description: (
+              <TagList
+                label={say(words.specialties)}
+                items={profile.specialties}
+              />
+            ),
+          },
+          {
+            term: say(words.certifications),
+            description: (
+              <TagList
+                label={say(words.certifications)}
+                items={profile.certifications}
+              />
+            ),
+          },
+          {
+            term: say(words.yearsOfExperience),
+            description: years === null ? null : say(years),
+          },
+          {
+            term: say(words.bio),
+            description: <WrittenText>{profile.bio}</WrittenText>,
+          },
+          { term: say(words.imageUrl), description: profile.imageUrl },
+        ]}
+      />
+      <Note>{say(record.note)}</Note>
+      <p>
+        <a href={customerView}>{say(record.customerView)}</a>
+      </p>
+    </Card>
+  )
+}

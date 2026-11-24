@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import * as chartTableStories from './chart-table.stories'
 
@@ -57,5 +58,48 @@ describe('ChartTable', () => {
 
     // Assert
     expect(stories.More.args.onMore).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ChartTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the charts by their customers, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Found.run()
+
+    // Assert
+    expect(
+      screen.getAllByRole('columnheader').map((header) => header.textContent),
+    ).toEqual([
+      'Customer',
+      'Medical conditions',
+      'Preferred products',
+      'Products to avoid',
+      'Last written',
+    ])
+    // The caption is the screen's, said by it
+    expect(rowsOf('カルテ')).toEqual([
+      [
+        '山田 花子',
+        '頭皮が乾燥しやすく、かゆみが出ることがあります。',
+        'オーガニックシャンプー, 無香料のオイル',
+        '香りの強い整髪料',
+        'Wed, November 18, 2026 at 14:30',
+      ],
+      [
+        'Removed from the ledger',
+        'Not recorded',
+        'None',
+        'ジアミンを含むカラー剤',
+        'Tue, November 10, 2026 at 09:00',
+      ],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('2 items')
   })
 })

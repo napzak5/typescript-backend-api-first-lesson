@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -17,7 +18,7 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import {
   arrangeCrowd,
   customerIdOf,
@@ -518,5 +519,137 @@ describe('the charts of the customers, against the API', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the charts of the customers on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  /** Opens the chart of a customer in the salon in Tokyo, or a screen below it, on a page in English. */
+  const openInEnglish = async (
+    email: string,
+    below: '' | '/new' = '',
+    account = OWNER,
+  ): Promise<{ salonId: string; customerId: string }> => {
+    const customerId = await customerIdOf(email)
+    const salonId = await salonIdOf(TOKYO)
+    await openAs(`${chartHrefOf(salonId, customerId)}${below}`, account, 'en')
+
+    return { salonId, customerId }
+  }
+
+  it('should show the chart of the customer, with the treatments they had before, in English', async () => {
+    // Act
+    const { salonId, customerId } = await openInEnglish(YUKI.email)
+    await heading('Chart')
+    const treatments = await screen.findByRole('region', {
+      name: 'Past treatments',
+    })
+
+    // Assert
+    expect(
+      within(part('Chart'))
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual([
+      'Medical conditions',
+      'Preferred products',
+      'Products to avoid',
+      'Notes',
+      'Last written',
+    ])
+    expect(rowsOf(within(treatments).getByRole('table'))).toEqual([
+      [
+        'Sat, March 14, 2026',
+        'Color',
+        'Hair Studio Aoyama',
+        'ブリーチ 1 回のハイライト',
+      ],
+      ['Sun, November 2, 2025', 'Perm', 'Not recorded', 'Not recorded'],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Back to the customer' }),
+    ).toHaveAttribute('href', customerHrefOf(salonId, customerId))
+  })
+
+  it('should say what is wrong with a treatment, then make the chart, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openInEnglish(KENJI.email, '/new')
+    await heading('Create the chart')
+    await screen.findByRole('group', { name: 'To check before a treatment' })
+    await user.type(
+      screen.getByRole('textbox', { name: 'Medical conditions' }),
+      'Stiff shoulders',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add a treatment' }))
+    const first = screen.getByRole('group', { name: 'Treatment 1' })
+    await user.selectOptions(
+      within(first).getByRole('combobox', { name: 'Treatment' }),
+      'Head spa',
+    )
+    await user.type(
+      within(first).getByLabelText('Treatment date'),
+      '2999-12-31',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create the chart' }))
+    await waitFor(() =>
+      expect(
+        within(first).getByLabelText('Treatment date'),
+      ).toHaveAccessibleDescription(
+        'Make the treatment date today or earlier.',
+      ),
+    )
+
+    // Act
+    await user.clear(within(first).getByLabelText('Treatment date'))
+    await user.type(
+      within(first).getByLabelText('Treatment date'),
+      '2026-10-01',
+    )
+    await user.click(screen.getByRole('button', { name: 'Create the chart' }))
+
+    // Assert
+    await heading('Chart')
+    expect(notifications()).toContain(`Created the chart of ${KENJI.name}.`)
+    expect(await storedChartOf(KENJI.email)).toMatchObject({
+      previousTreatments: [
+        { treatment: 'head_spa', date: '2026-10-01', salonName: null },
+      ],
+      medicalConditions: 'Stiff shoulders',
+    })
+  })
+
+  it('should find the charts by the allergies recorded, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(chartSearchHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+    await heading('Search the charts')
+    await screen.findByRole('table', { name: 'Chart' })
+    expect(customersListed('Chart')).toEqual([SAKURA.name, YUKI.name])
+    expect(screen.getByText('2 items')).toBeInTheDocument()
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Allergy records' }),
+      'Recorded',
+    )
+    await user.click(screen.getByRole('button', { name: 'Search' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(customersListed('Charts matching the filters')).toEqual([
+        YUKI.name,
+      ]),
+    )
   })
 })

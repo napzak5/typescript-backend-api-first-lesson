@@ -1,11 +1,11 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
 import {
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
@@ -28,6 +28,7 @@ type WithChartProps = {
  * written at every salon: the chart is read whenever the part is shown.
  */
 export const WithChart = ({ customerId, fresh, children }: WithChartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: chartKeyOf(customerId),
     queryFn: () => readChart(customerId),
@@ -38,14 +39,12 @@ export const WithChart = ({ customerId, fresh, children }: WithChartProps) => {
 
   return match(!fresh || read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
-      <LoadingIndicator label='カルテを読み込んでいます' />
+      <LoadingIndicator label={say(adminChartMessages.loading.chart)} />
     ))
     .with({ type: 'read' }, ({ chart }) => children(chart))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('カルテ'), reason),
-        )}
+        message={say(unreadMessageOf(adminChartMessages.names.chart, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

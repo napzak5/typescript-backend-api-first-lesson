@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as chartFilterStories from './chart-filter.stories'
 
 const stories = composeStories(chartFilterStories)
@@ -91,5 +92,33 @@ describe('ChartFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('ChartFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and choices, and say what is wrong, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('searchbox', { name: 'Keyword' }),
+    ).toHaveAccessibleDescription(
+      'Part of the medical conditions, the notes, or the names of the preferred products and the products to avoid. Keyword: enter up to 100 characters.',
+    )
+    expect(
+      [
+        ...screen
+          .getByRole('combobox', { name: 'Allergy records' })
+          .querySelectorAll('option'),
+      ].map((option) => option.textContent),
+    ).toEqual(['All', 'Recorded', 'None'])
   })
 })

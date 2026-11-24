@@ -7,15 +7,16 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   Card,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProfileMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
@@ -28,19 +29,9 @@ import {
 } from '../api/profile-api'
 import { ProfileForm } from '../components/profile-form/profile-form'
 import { ProfileRecord } from '../components/profile-record/profile-record'
-import {
-  afterProfileSave,
-  readProfileChange,
-  SAVED,
-} from '../utils/profile-form'
+import { afterProfileSave, readProfileChange } from '../utils/profile-form'
 
-/** What an administrator is told: no member of a salon is theirs */
-const NO_PROFILE_OF_AN_ADMINISTRATOR =
-  '管理者のアカウントには、スタッフのプロフィールがありません。プロフィールは、サロンのスタッフに紐づいたアカウントで見て、直します。'
-
-/** What is said when the API has no profile for the account */
-const UNAVAILABLE_NOW =
-  'このアカウントのプロフィールは、いまは使えません。スタッフ情報が無効になったか、ログインアカウントの紐づけが解除されています。サロンのオーナーに確かめてください。'
+const { form: FORM } = adminProfileMessages
 
 /** The page of the salon in the application of the customers, where they read the profile. */
 const customerViewOf = (salonId: string): string =>
@@ -61,7 +52,8 @@ type Opened = { profile: ModelsStaffProfileResponse; saves: number }
 const Loaded = ({ profile }: LoadedProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [opened, setOpened] = useState<Opened>({ profile, saves: 0 })
   const heading = useRef<HTMLHeadingElement>(null)
 
@@ -79,7 +71,7 @@ const Loaded = ({ profile }: LoadedProps) => {
         .with({ type: 'saved' }, ({ profile: saved }) => {
           const read: ProfileRead = { type: 'found', profile: saved }
           queryClient.setQueryData(OWN_PROFILE, read)
-          notify({ tone: 'success', message: SAVED })
+          notify({ tone: 'success', message: FORM.saved })
           setOpened(({ saves }) => ({ profile: saved, saves: saves + 1 }))
         })
         // The member was made inactive or removed, or the account unlinked, meanwhile
@@ -115,7 +107,7 @@ const Loaded = ({ profile }: LoadedProps) => {
         customerView={customerViewOf(profile.salonId)}
         headingRef={heading}
       />
-      <Card title='紹介を直す'>
+      <Card title={say(FORM.title)}>
         <ProfileForm
           key={opened.saves}
           profile={opened.profile}
@@ -131,6 +123,7 @@ const Loaded = ({ profile }: LoadedProps) => {
 
 /** The profile of the member the account is linked to, read whenever the screen opens. */
 const ProfilePart = () => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_PROFILE,
     queryFn: readOwnProfile,
@@ -139,13 +132,15 @@ const ProfilePart = () => {
 
   return match(read.data)
     .with(undefined, () => (
-      <LoadingIndicator label='プロフィールを読み込んでいます' />
+      <LoadingIndicator label={say(adminProfileMessages.loading)} />
     ))
-    .with({ type: 'unavailable' }, () => <p>{UNAVAILABLE_NOW}</p>)
+    .with({ type: 'unavailable' }, () => (
+      <p>{say(adminProfileMessages.unavailable)}</p>
+    ))
     .with({ type: P.union(...UNREAD_TYPES) }, (unread) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('プロフィール'), unread),
+        message={say(
+          unreadMessageOf(adminProfileMessages.names.profile, unread),
         )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
@@ -162,17 +157,18 @@ const ProfilePart = () => {
  */
 export const OwnProfileScreen = () => {
   const session = useSession()
+  const say = useSay()
   const administrator =
     session.type === 'signedIn' && session.user.role === 'admin'
 
   return (
     <>
       <PageHeader
-        title='プロフィール'
-        description='お客様に見せる、あなたの紹介です。お客様は、サロンのページで読みます。'
+        title={say(adminProfileMessages.title)}
+        description={say(adminProfileMessages.description)}
       />
       {administrator ? (
-        <p>{NO_PROFILE_OF_AN_ADMINISTRATOR}</p>
+        <p>{say(adminProfileMessages.administrator)}</p>
       ) : (
         <ProfilePart />
       )}

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readStaffChange, readStaffEntry } from '../../utils/staff-form'
 import { aStaffMember } from '../examples'
 import * as staffFormStories from './staff-form.stories'
@@ -175,12 +176,24 @@ describe('StaffForm', () => {
     expect(values === undefined ? undefined : readStaffEntry(values)).toEqual({
       type: 'invalid',
       errors: {
-        lastName: '姓を入力してください。',
-        firstName: '名を入力してください。',
-        displayName: '表示名を入力してください。',
-        email: 'メールアドレスを入力してください。',
-        phoneNumber: '電話番号を入力してください。',
-        level: 'レベルを選んでください。',
+        lastName: { en: 'Enter the last name.', ja: '姓を入力してください。' },
+        firstName: {
+          en: 'Enter the first name.',
+          ja: '名を入力してください。',
+        },
+        displayName: {
+          en: 'Enter the display name.',
+          ja: '表示名を入力してください。',
+        },
+        email: {
+          en: 'Enter an email address.',
+          ja: 'メールアドレスを入力してください。',
+        },
+        phoneNumber: {
+          en: 'Enter a phone number.',
+          ja: '電話番号を入力してください。',
+        },
+        level: { en: 'Choose the level.', ja: 'レベルを選んでください。' },
       },
     })
   })
@@ -249,5 +262,93 @@ describe('StaffForm', () => {
     )
     expect(box('有効なスタッフ')).toHaveAttribute('aria-invalid', 'true')
     expect(text('姓')).not.toHaveAttribute('aria-invalid')
+  })
+})
+
+describe('StaffForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the parts of the form and its controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Change.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual([
+      'Name',
+      'Contact',
+      'Employment',
+      'Introduction',
+      'Bookings',
+      'Employment status',
+    ])
+    expect(optionsOf('Level')).toEqual([
+      'Choose',
+      'Junior',
+      'Stylist',
+      'Senior',
+      'Expert',
+      'Director',
+    ])
+    expect(text('Display name')).toHaveAccessibleDescription(
+      'The name customers see when they book.',
+    )
+    expect(text('Commission rate (%)')).toHaveAccessibleDescription(
+      'From 0 to 100, with up to 2 decimal places.',
+    )
+    expect(text('Number of concurrent bookings')).toHaveAccessibleDescription(
+      'From 1 to 10.',
+    )
+    expect(
+      text('Time kept before a booking (min)'),
+    ).toHaveAccessibleDescription('Time to prepare. From 0 to 120.')
+    expect(text('Time kept after a booking (min)')).toHaveAccessibleDescription(
+      'Time to tidy up. From 0 to 120.',
+    )
+    expect(text('Specialties')).toHaveValue('カット, カラー')
+    expect(text('Years of experience')).toHaveAccessibleDescription(
+      'A whole number from 0 to 100.',
+    )
+    expect(box('Take bookings')).toBeChecked()
+    expect(box('Active staff member')).toBeChecked()
+  })
+
+  it('should say what is wrong under the control, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('Staff code')).toHaveAccessibleDescription(
+      'Such as an employee number. No two staff members can have the same code, staff members removed from the ledger included. Another staff member uses this staff code (staff members removed from the ledger included). Enter another code.',
+    )
+    expect(box('Active staff member')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Your own staff record cannot be made inactive: this account could no longer use the screens of the salon.',
+      ),
+    )
+  })
+
+  it('should say what went wrong with the attempt above the form, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This account cannot keep the staff ledger of this salon.',
+    )
   })
 })

@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aProfile } from '../components/examples'
 import { afterProfileSave, readProfileChange } from './profile-form'
@@ -76,37 +77,45 @@ describe('readProfileChange', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'more than 100 years',
       { yearsOfExperience: '101' },
       {
-        yearsOfExperience:
-          '経験年数は、0 から 100 までの整数で入力してください。',
+        yearsOfExperience: {
+          en: 'Enter the years of experience as a whole number from 0 to 100.',
+          ja: '経験年数は、0 から 100 までの整数で入力してください。',
+        },
       },
     ],
     [
       'a part of a year',
       { yearsOfExperience: '2.5' },
       {
-        yearsOfExperience:
-          '経験年数は、0 から 100 までの整数で入力してください。',
+        yearsOfExperience: {
+          en: 'Enter the years of experience as a whole number from 0 to 100.',
+          ja: '経験年数は、0 から 100 までの整数で入力してください。',
+        },
       },
     ],
     [
       'an address that is no web address',
       { imageUrl: 'ftp://photos.example.com/misaki.jpg' },
       {
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     ],
     [
       'an address of more than 500 letters',
       { imageUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       {
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     ],
   ])('should say at the control what is wrong with %s', (_, values, errors) => {
@@ -145,29 +154,46 @@ describe('afterProfileSave', () => {
     expect(said).toEqual({
       message: undefined,
       errors: {
-        specialties:
-          'この値は受け付けられませんでした。入力を確かめてください。',
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        specialties: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     })
   })
 
-  it.each<[string, Parameters<typeof afterProfileSave>[0], string]>([
+  it.each<[string, Parameters<typeof afterProfileSave>[0], LocalizedText]>([
     [
       'a refusal of a value the form does not have',
       {
         type: 'invalid',
         values: [{ field: 'displayName', rule: 'unrecognized_keys' }],
       },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
-    ['no answer', { type: 'failed' }, 'プロフィールを保存できませんでした。'],
+    [
+      'no answer',
+      { type: 'failed' },
+      {
+        en: 'Could not save the profile. Check your connection and try again.',
+        ja: 'プロフィールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
+    ],
   ])(
     'should say above the form what went wrong after %s',
     (_, outcome, message) => {
@@ -175,10 +201,7 @@ describe('afterProfileSave', () => {
       const said = afterProfileSave(outcome)
 
       // Assert
-      expect(said).toEqual({
-        message: expect.stringContaining(message),
-        errors: {},
-      })
+      expect(said).toEqual({ message, errors: {} })
     },
   )
 })

@@ -9,14 +9,15 @@ import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminChartMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -40,7 +41,7 @@ import {
   readAllergyChange,
 } from '../utils/allergies'
 
-const TITLE = 'アレルギーの記録を直す'
+const { allergies, loading, names, titles, words } = adminChartMessages
 
 type WithAllergyProps = {
   salon: ModelsSalonResponse
@@ -61,6 +62,7 @@ const WithAllergy = ({
   allergyId,
   children,
 }: WithAllergyProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: allergyKeyOf(customer.id, allergyId),
     queryFn: () => findAllergy(customer.id, allergyId),
@@ -70,25 +72,19 @@ const WithAllergy = ({
   })
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
-    .with(undefined, () => (
-      <LoadingIndicator label='アレルギーを読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(loading.allergy)} />)
     .with({ type: 'found' }, ({ allergy }) => children(allergy))
     .with({ type: 'notFound' }, () => (
       <>
-        <p>
-          このアレルギーの記録は、ありません。ほかのアカウントが削除したのかもしれません。
-        </p>
+        <p>{say(allergies.notFound)}</p>
         <ButtonLink href={chartHrefOf(salon.id, customer.id)}>
-          カルテへ
+          {say(words.toChart)}
         </ButtonLink>
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('アレルギー'), reason),
-        )}
+        message={say(unreadMessageOf(names.allergy, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -112,7 +108,8 @@ const AllergyChange = ({ salon, customer, allergy }: AllergyChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const back = chartHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
   const change = useMutation({
@@ -176,14 +173,14 @@ const AllergyChange = ({ salon, customer, allergy }: AllergyChangeProps) => {
     <AllergyForm
       allergy={allergy}
       today={today}
-      submitLabel='変更を保存する'
+      submitLabel={say(allergies.change.submit)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -193,11 +190,17 @@ const AllergyChange = ({ salon, customer, allergy }: AllergyChangeProps) => {
 /** Changes an allergy of a customer, below the salon of the address. */
 export const AllergyChangeScreen = () => {
   const { salonId = '', allergyId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.allergyChange)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(titles.allergyChange)}
+          fresh
+        >
           {(customer) => (
             <WithAllergy
               key={customer.id}

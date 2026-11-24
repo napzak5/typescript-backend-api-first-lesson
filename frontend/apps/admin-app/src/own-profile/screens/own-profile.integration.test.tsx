@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -9,7 +10,7 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { OWN_PROFILE_PATH } from '../../navigation'
 import {
   arrangeInactive,
@@ -37,12 +38,12 @@ const openProfileAs = async (email: string): Promise<void> => {
 
 const RECORD = 'お客様に見せるプロフィール'
 
-const recordHeading = () =>
-  screen.findByRole('heading', { level: 2, name: RECORD })
+const recordHeading = (record = RECORD) =>
+  screen.findByRole('heading', { level: 2, name: record })
 
 /** What the record says, term by term. */
-const terms = (): [string, string][] =>
-  within(screen.getByRole('region', { name: RECORD }))
+const terms = (record = RECORD): [string, string][] =>
+  within(screen.getByRole('region', { name: record }))
     .getAllByRole('term')
     .map((term) => [
       term.textContent ?? '',
@@ -402,5 +403,95 @@ describe('the own profile, against the API', () => {
       // Assert
       expect(violations).toEqual([])
     })
+  })
+})
+
+describe('the own profile on a page in English', () => {
+  /** The record as a page in English names it */
+  const RECORD_IN_ENGLISH = 'Profile shown to customers'
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    vi.stubEnv('VITE_PORTAL_APP_URL', PORTAL)
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show the profile the customers are shown, and save what the member changed, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(OWN_PROFILE_PATH, STYLIST, 'en')
+    await recordHeading(RECORD_IN_ENGLISH)
+    expect(terms(RECORD_IN_ENGLISH)).toEqual([
+      ['Display name', 'Hiroshi Tanaka'],
+      ['Level', 'Senior'],
+      ['Position', 'Senior Stylist'],
+      ['Online bookings', 'Accepted'],
+      ['Specialties', 'cutcolorperm'],
+      ['Certifications', '美容師免許管理美容師'],
+      ['Years of experience', '10 years'],
+      [
+        'Bio',
+        'Over 10 years of experience in hair styling. Specializes in modern cuts and color techniques.',
+      ],
+      ['Photo URL', 'Not recorded'],
+    ])
+    expect(
+      screen.getByRole('link', {
+        name: 'See it as customers do, on the page of the salon',
+      }),
+    ).toHaveAttribute('href', `${PORTAL}/salons/${await salonIdOf(TOKYO)}`)
+    expect(text('Specialties')).toHaveValue('cut, color, perm')
+
+    // Act
+    await rewrite(user, 'Specialties', 'cut, mens cut')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Saved the profile. Customers see it at once.'),
+    ).toBeInTheDocument()
+    expect(await storedMemberOf(STYLIST)).toMatchObject({
+      specialties: ['cut', 'mens cut'],
+    })
+  })
+
+  it('should say at the control what is wrong, and that nothing was changed, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(OWN_PROFILE_PATH, STYLIST, 'en')
+    await recordHeading(RECORD_IN_ENGLISH)
+    await rewrite(user, 'Years of experience', '101')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(text('Years of experience')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Enter the years of experience as a whole number from 0 to 100.',
+      ),
+    )
+
+    // Act
+    await rewrite(user, 'Years of experience', '10')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // Assert
+    expect(await screen.findByText('Nothing was changed.')).toBeInTheDocument()
+  })
+
+  it('should tell an administrator that the account has no profile, in English', async () => {
+    // Act
+    await openAs(OWN_PROFILE_PATH, OPERATOR, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'An administrator account has no staff profile. A profile is shown and edited with an account linked to a staff member of a salon.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 })

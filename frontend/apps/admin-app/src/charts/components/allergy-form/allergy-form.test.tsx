@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as allergyFormStories from './allergy-form.stories'
 
 const stories = composeStories(allergyFormStories)
@@ -160,5 +161,61 @@ describe('AllergyForm', () => {
     expect(
       screen.getByRole('button', { name: '変更を保存する' }),
     ).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('AllergyForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls, its choices and what is wrong, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(optionsOf('Type')).toEqual([
+      'Choose',
+      'Chemical',
+      'Fragrance',
+      'Metal',
+      'Latex',
+      'Plant',
+      'Other',
+    ])
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Severity' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual(['Life-threatening', 'Severe', 'Moderate', 'Mild'])
+    expect(
+      screen.getByRole('textbox', { name: 'Allergen' }),
+    ).toHaveAccessibleDescription(
+      'The name of an ingredient of a product, a fragrance, a metal or the like. A customer has one record of an allergen. This customer has a record of the same allergen already.',
+    )
+    expect(screen.getByLabelText('Confirmed on')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the day it was confirmed on today or earlier.',
+      ),
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Care during a treatment' }),
+    ).toBeVisible()
+  })
+
+  it('should say above the form what went wrong, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not record the allergy. Check your connection and try again.',
+    )
   })
 })

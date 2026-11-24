@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as chartFormStories from './chart-form.stories'
 
 const stories = composeStories(chartFormStories)
@@ -212,5 +213,80 @@ describe('ChartForm', () => {
         'カルテを作れませんでした。通信の状態を確かめて、もう一度お試しください。',
       ),
     ).toBeInTheDocument()
+  })
+})
+
+describe('ChartForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts, its rows and its controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Opened.run()
+
+    // Assert
+    const first = screen.getByRole('group', { name: 'Treatment 1' })
+    expect(
+      within(first).getByRole('combobox', { name: 'Treatment' }),
+    ).toHaveDisplayValue('Color')
+    expect(within(first).getByLabelText('Treatment date')).toHaveValue(
+      '2026-03-14',
+    )
+    expect(
+      within(first).getByRole('button', { name: 'Remove treatment 1' }),
+    ).toHaveTextContent('Remove')
+    expect(
+      screen.getByRole('textbox', { name: 'Preferred products' }),
+    ).toHaveValue('オーガニックシャンプー, 無香料のオイル')
+    expect(
+      screen.getByRole('group', { name: 'Past treatments' }),
+    ).toHaveAccessibleDescription(
+      'Treatments had at other salons, or before the salon kept a chart.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Add a treatment' }),
+    ).toBeVisible()
+  })
+
+  it('should say what is wrong at the controls and above the form, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('group', { name: 'Treatment 2' })).getByLabelText(
+        'Treatment date',
+      ),
+    ).toHaveAccessibleDescription('Make the treatment date today or earlier.')
+    expect(
+      screen.getByRole('textbox', { name: 'Products to avoid' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Product names: enter up to 100 characters for each entry.',
+      ),
+    )
+
+    // Act
+    await stories.Full.run()
+
+    // Assert
+    expect(
+      screen.getByText('Up to 50 past treatments can be written.'),
+    ).toBeVisible()
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not create the chart. Check your connection and try again.',
+    )
   })
 })
