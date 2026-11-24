@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as chosenCustomerStories from './chosen-customer.stories'
 
 const stories = composeStories(chosenCustomerStories)
@@ -36,5 +37,29 @@ describe('ChosenCustomer', () => {
 
     // Assert
     expect(terms()).toContainEqual(['フリガナ', '記録なし'])
+  })
+})
+
+describe('ChosenCustomer on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say who the customer is, and lead back, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Customer.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('region', { name: 'Customer' }))
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual(['Name', 'Phonetic name', 'Phone number', 'Email address'])
+    expect(
+      screen.getByRole('link', { name: 'Choose another customer' }),
+    ).toHaveAttribute('href', '?date=2026-11-20&search=%E5%B1%B1%E7%94%B0')
   })
 })

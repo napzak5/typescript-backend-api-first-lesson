@@ -2,22 +2,17 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
-import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
-import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import {
-  adminCustomerMessages,
-  adminMenuMessages,
-  adminStaffMessages,
-} from '@beauty-salon-shared/i18n/messages/admin'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> =
   termMessages.bookingStatus
 
 /** The state of a booking, in the word the salon uses. */
-export const statusNameOf = (status: ModelsBookingStatusType): string =>
-  inJapanese(STATUS_NAMES[status])
+export const statusNameOf = (status: ModelsBookingStatusType): LocalizedText =>
+  STATUS_NAMES[status]
 
 const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',
@@ -37,14 +32,4 @@ export const statusToneOf = (status: ModelsBookingStatusType): BadgeTone =>
 export const hoursOf = (
   { startTime, endTime }: Pick<ModelsBookingResponse, 'startTime' | 'endTime'>,
   timezone: string,
-): string =>
-  `${inJapanese(timeOfDayAt(startTime, timezone))}〜${inJapanese(timeOfDayAt(endTime, timezone))}`
-
-/** What is said of a customer who was removed. */
-export const GONE_CUSTOMER = inJapanese(adminCustomerMessages.naming.removed)
-
-/** What is said of a member of the staff the salon no longer shows. */
-export const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
-
-/** What is said of a service that was removed. */
-export const GONE_SERVICE = inJapanese(adminMenuMessages.removedService)
+): LocalizedText => formats.timeRangeAt(startTime, endTime, timezone)

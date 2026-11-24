@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingLineRecordStories from './booking-line-record.stories'
 
 const stories = composeStories(bookingLineRecordStories)
@@ -50,6 +51,40 @@ describe('BookingLineRecord', () => {
       ['支払う額', '￥7,800（税別）'],
       ['完了', '済み（2026年11月20日（金） 12:35）'],
       ['メモ', '根元だけ'],
+    ])
+  })
+})
+
+describe('BookingLineRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what the line is, who does it, when and what it costs, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Done.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('region', { name: 'Service line' }))
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Service', 'カラー'],
+      ['Staff', 'Unassigned'],
+      ['Time', 'Fri, November 20, 2026, 11:00–12:30'],
+      ['Duration', '90 min'],
+      ['Price', '¥8,800'],
+      ['Discount', '¥1,000'],
+      ['Amount to pay', '¥7,800 (before tax)'],
+      ['Done', 'Done (Fri, November 20, 2026 at 12:35)'],
+      ['Notes', '根元だけ'],
     ])
   })
 })

@@ -21,15 +21,15 @@ import {
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   moreOfRows,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -57,7 +57,7 @@ import {
 } from '../utils/booking-day'
 import { customerIdsOf, rowsOf } from '../utils/day-bookings'
 
-const TITLE = '予約台帳'
+const { titles, names, ledger, words } = adminBookingMessages
 
 type DayBookingsProps = {
   salon: ModelsSalonResponse
@@ -74,6 +74,8 @@ type DayBookingsProps = {
  * the customers of each page in one request.
  */
 const DayBookings = ({ salon }: DayBookingsProps) => {
+  const say = useSay()
+  const title = say(titles.ledger)
   const [query, setQuery] = useSearchParams()
   const today = dayAt(new Date(), salon.timezone)
   const conditions = conditionsIn(query, today)
@@ -140,12 +142,12 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
     setQuery(next, { replace: true })
   }
 
-  const heading = `${inJapanese(dayNameOf(conditions.date))}の予約`
+  const day = dayNameOf(conditions.date)
 
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
+        <PageHeader title={title} description={salon.name} />
         <OtherSalonNotice />
       </>
     )
@@ -162,29 +164,29 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={title}
         description={salon.name}
         actions={
           <ButtonLink
             href={bookingEntryHrefOf(salon.id, conditions.date)}
             variant='primary'
           >
-            予約を入れる
+            {say(words.entry)}
           </ButtonLink>
         }
       />
       {match([listing, staff.data, services.data])
         .with([P._, undefined, P._], [P._, P._, undefined], () => (
-          <LoadingIndicator label='予約を読み込んでいます' />
+          <LoadingIndicator label={say(ledger.loading)} />
         ))
         .with(
           [P._, { type: P.union(...UNREAD_TYPES) }, P._],
           [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
           ([, ofStaff, ofServices]) => (
             <UnreadNotice
-              message={inJapanese(
+              message={say(
                 unreadMessageOf(
-                  writtenInJapanese('スタッフとメニュー'),
+                  names.staffAndServices,
                   whyUnread([ofStaff, ofServices]),
                 ),
               )}
@@ -201,7 +203,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
           ([ofBookings, ofStaff, ofServices]) => (
             <>
               <PeriodSwitch
-                label='予約の日'
+                label={say(ledger.day)}
                 unit='day'
                 beforeHref={hrefOf(dayAfter(conditions.date, -1))}
                 currentHref={hrefOf(today)}
@@ -219,24 +221,22 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
               />
               {match(ofBookings)
                 .with(undefined, () => (
-                  <LoadingIndicator label='予約を読み込んでいます' />
+                  <LoadingIndicator label={say(ledger.loading)} />
                 ))
                 .with({ type: 'unread' }, ({ reason }) => (
                   <UnreadNotice
-                    message={inJapanese(
-                      unreadMessageOf(writtenInJapanese('予約'), reason),
-                    )}
+                    message={say(unreadMessageOf(names.bookings, reason))}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />
                 ))
                 .with({ type: 'listed', items: [] }, () => (
                   <EmptyState
-                    title={
+                    title={say(
                       narrows(conditions)
-                        ? `${heading}のうち、条件に合うものはありません`
-                        : `${heading}はありません`
-                    }
+                        ? ledger.noneMatchingOn(day)
+                        : ledger.noneOn(day),
+                    )}
                   />
                 ))
                 .with({ type: 'listed' }, ({ items, total, rest: pages }) => {
@@ -249,24 +249,21 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                   return match([rows, rest])
                     .with([[], { type: 'unread' }], ([, { reason }]) => (
                       <UnreadNotice
-                        message={inJapanese(
-                          unreadMessageOf(
-                            writtenInJapanese('予約のお客様'),
-                            reason,
-                          ),
+                        message={say(
+                          unreadMessageOf(names.customersOfBookings, reason),
                         )}
                         onRetry={readCustomersAgain}
                         pending={readingCustomersAgain}
                       />
                     ))
                     .with([[], P._], () => (
-                      <LoadingIndicator label='予約を読み込んでいます' />
+                      <LoadingIndicator label={say(ledger.loading)} />
                     ))
                     .otherwise(() => (
                       <DayBookingTable
                         // Another day, or other conditions, is another list
                         key={asked}
-                        caption={heading}
+                        caption={ledger.bookingsOn(day)}
                         rows={rows}
                         total={total}
                         timezone={salon.timezone}
@@ -304,10 +301,11 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
 
 /** The bookings of the salon of the address, a day at a time. */
 export const DayBookingsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.ledger)}>
       {(salon) => <DayBookings key={salon.id} salon={salon} />}
     </WithSalon>
   )

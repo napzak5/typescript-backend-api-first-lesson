@@ -1,9 +1,18 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
-import { ButtonLink, Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  Card,
+  DescriptionList,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   customerKanaOf,
   customerNameOf,
 } from '../../../customers/api/customers-api'
+
+const { customer: WORDS } = adminBookingMessages.entry
 
 export type ChosenCustomerProps = {
   customer: Pick<
@@ -27,23 +36,36 @@ export const ChosenCustomer = ({
   customer,
   againHref,
 }: ChosenCustomerProps) => {
+  const say = useSay()
   const kana = customerKanaOf(customer)
 
   return (
     <Card
-      title='お客様'
+      title={say(WORDS.chosen)}
       actions={
         <ButtonLink href={againHref} size='small'>
-          お客様を選び直す
+          {say(WORDS.chooseAgain)}
         </ButtonLink>
       }
     >
       <DescriptionList
         items={[
-          { term: 'お名前', description: customerNameOf(customer) },
-          { term: 'フリガナ', description: kana === '' ? null : kana },
-          { term: '電話番号', description: customer.phoneNumber },
-          { term: 'メールアドレス', description: customer.email },
+          {
+            term: say(customerMessages.parts.name),
+            description: customerNameOf(customer),
+          },
+          {
+            term: say(customerMessages.kana),
+            description: kana === '' ? null : kana,
+          },
+          {
+            term: say(customerMessages.phoneNumber),
+            description: customer.phoneNumber,
+          },
+          {
+            term: say(customerMessages.email),
+            description: customer.email,
+          },
         ]}
       />
     </Card>

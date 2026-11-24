@@ -5,6 +5,9 @@ import type {
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 
 /*
  * What the stories and the tests of the booking screens show: a salon in
@@ -70,6 +73,12 @@ const profile = (
   certifications: [],
   canReceiveBookings: true,
 })
+
+/** When the booking of the stories is, as a dialog names it: 「2026年11月20日（金） 10:00〜11:00」 */
+export const WHEN = adminBookingMessages.whenOf(
+  dayNameOf(DAY),
+  formats.timeRangeAt(moment(0), moment(60), salon.timezone),
+)
 
 export const staff: ModelsStaffProfileResponse[] = [
   profile('7c4a9e2b-1f3d-4b8a-9e6c-5d2f8a1b3c70', '田中 美咲'),

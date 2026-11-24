@@ -1,5 +1,9 @@
 import type { ModelsBookingServiceResponse } from '@beauty-salon-frontend/api-client'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import { useSay } from '@beauty-salon-frontend/ui'
+import {
+  adminBookingMessages,
+  adminMenuMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { LineCheck } from '../../api/bookings-api'
 import { hoursOf } from '../../utils/booking-format'
 import {
@@ -9,6 +13,8 @@ import {
 } from '../../utils/day-bookings'
 import { LineCheckNote } from '../line-check-note/line-check-note'
 import styles from './moved-lines.module.css'
+
+const { move: WORDS } = adminBookingMessages.moves
 
 export type MovedLinesProps = {
   /** The lines as the move would leave them, in their order */
@@ -32,28 +38,43 @@ export const MovedLines = ({
   services,
   timezone,
   checks,
-}: MovedLinesProps) => (
-  <ol className={styles['lines']}>
-    {lines.map((line, index) => {
-      const check = checks?.[index]
+}: MovedLinesProps) => {
+  const say = useSay()
 
-      return (
-        <li key={line.id} className={styles['line']}>
-          <p className={styles['service']}>
-            {`明細 ${index + 1} ${serviceNameOf(line.serviceId, services)}`}
-          </p>
-          <p>
-            {`${hoursOf(line, timezone)} 担当 ${inJapanese(memberNameOf(line.staffId, staff))}`}
-          </p>
-          {check !== undefined && (
-            <LineCheckNote
-              check={check}
-              timezone={timezone}
-              className={styles['check']}
-            />
-          )}
-        </li>
-      )
-    })}
-  </ol>
-)
+  return (
+    <ol className={styles['lines']}>
+      {lines.map((line, index) => {
+        const check = checks?.[index]
+
+        return (
+          <li key={line.id} className={styles['line']}>
+            <p className={styles['service']}>
+              {say(
+                WORDS.movedLine(
+                  index + 1,
+                  serviceNameOf(line.serviceId, services) ??
+                    say(adminMenuMessages.removedService),
+                ),
+              )}
+            </p>
+            <p>
+              {say(
+                WORDS.movedHours(
+                  hoursOf(line, timezone),
+                  memberNameOf(line.staffId, staff),
+                ),
+              )}
+            </p>
+            {check !== undefined && (
+              <LineCheckNote
+                check={check}
+                timezone={timezone}
+                className={styles['check']}
+              />
+            )}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}

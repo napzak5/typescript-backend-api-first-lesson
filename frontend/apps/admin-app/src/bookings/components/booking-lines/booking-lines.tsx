@@ -5,10 +5,20 @@ import type {
 import {
   Button,
   type FormErrors,
+  type NamedChoice,
   Select,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminBookingMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { LineCheck } from '../../api/bookings-api'
 import {
   lineControlOf,
@@ -19,6 +29,8 @@ import {
 import { LineCheckNote } from '../line-check-note/line-check-note'
 import styles from './booking-lines.module.css'
 
+const { lines: WORDS } = adminBookingMessages.entry
+
 export type BookingLinesProps = {
   /** The members of the staff of the salon */
   staff: readonly ModelsStaffProfileResponse[]
@@ -28,7 +40,7 @@ export type BookingLinesProps = {
    * What is wrong with a value, under the name of its control
    * (`services.1.startTime`). A new object is the answer to another attempt
    */
-  errors: FormErrors
+  errors: FormErrors<LocalizedText>
   /** What was found out about the member of each line, row by row; `undefined` while nothing is */
   checks?: readonly LineCheck[] | undefined
   /** The time zone of the salon: the overlapping bookings are said on its clock */
@@ -38,19 +50,24 @@ export type BookingLinesProps = {
 }
 
 /** The services a line is for, by name and length; one the salon takes no bookings for says so. */
-export const serviceOptionsOf = (services: readonly ModelsServiceResponse[]) =>
+export const serviceOptionsOf = (
+  services: readonly ModelsServiceResponse[],
+): NamedChoice[] =>
   services.map(({ id, name, duration, isActive }) => ({
     value: id,
-    label: `${name}（${duration} 分）${isActive ? '' : '（受付停止中）'}`,
+    label: WORDS.serviceChoice(name, formats.minutesOf(duration), isActive),
   }))
 
 /** Who does a line: the member of the booking, a member of the staff, or nobody. */
 export const staffOptionsOf = (
   staff: readonly ModelsStaffProfileResponse[],
-) => [
-  { value: SAME_STAFF, label: '予約の担当と同じ' },
-  ...staff.map(({ id, displayName }) => ({ value: id, label: displayName })),
-  { value: NO_STAFF, label: '決めない' },
+): NamedChoice[] => [
+  { value: SAME_STAFF, label: WORDS.sameStaff },
+  ...staff.map(({ id, displayName }) => ({
+    value: id,
+    label: adminStaffMessages.named(displayName),
+  })),
+  { value: NO_STAFF, label: WORDS.noStaff },
 ]
 
 /**
@@ -73,10 +90,13 @@ export const BookingLines = ({
   timezone,
   onRowsChange,
 }: BookingLinesProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
   // A line holds nothing but its controls
-  const lines = useRepeatedRows<null>(() => [null], errors)
-  const serviceOptions = serviceOptionsOf(services)
-  const staffOptions = staffOptionsOf(staff)
+  const lines = useRepeatedRows<null, LocalizedText>(() => [null], errors)
+  const said = useSaidForm(undefined, lines.errors)
+  const serviceOptions = options(serviceOptionsOf(services))
+  const staffOptions = options(staffOptionsOf(staff))
 
   const add = (): void => {
     lines.add(null)
@@ -92,42 +112,42 @@ export const BookingLines = ({
     <div className={styles['lines']}>
       <ol className={styles['rows']}>
         {lines.rows.map(({ key }, index) => {
-          const name = `明細 ${index + 1}`
+          const number = index + 1
           const check = checks?.[index]
 
           return (
             <li key={key} ref={lines.rowRef(key)} className={styles['row']}>
               <Select
                 className={styles['wide']}
-                label={`${name} のメニュー`}
+                label={say(WORDS.serviceOf(number))}
                 name={lineControlOf(index, 'serviceId')}
                 options={serviceOptions}
-                placeholder='選んでください'
+                placeholder={say(adminBookingMessages.words.choose)}
                 required
                 defaultValue=''
-                error={lines.errors[lineControlOf(index, 'serviceId')]}
+                error={said.errors[lineControlOf(index, 'serviceId')]}
               />
               <Select
-                label={`${name} の担当`}
+                label={say(WORDS.staffOf(number))}
                 name={lineControlOf(index, 'staffId')}
                 options={staffOptions}
                 defaultValue={SAME_STAFF}
-                error={lines.errors[lineControlOf(index, 'staffId')]}
+                error={said.errors[lineControlOf(index, 'staffId')]}
               />
               <TextField
-                label={`${name} の開始`}
+                label={say(WORDS.startOf(number))}
                 name={lineControlOf(index, 'startTime')}
                 autoComplete='off'
                 type='time'
                 required
-                error={lines.errors[lineControlOf(index, 'startTime')]}
+                error={said.errors[lineControlOf(index, 'startTime')]}
               />
               <TextField
                 className={styles['wide']}
-                label={`${name} のメモ`}
+                label={say(WORDS.notesOf(number))}
                 name={lineControlOf(index, 'notes')}
                 autoComplete='off'
-                error={lines.errors[lineControlOf(index, 'notes')]}
+                error={said.errors[lineControlOf(index, 'notes')]}
               />
               {check !== undefined && (
                 <LineCheckNote
@@ -142,7 +162,7 @@ export const BookingLines = ({
                   className={styles['remove']}
                   onClick={() => remove(key)}
                 >
-                  {`${name} を外す`}
+                  {say(WORDS.removeLine(number))}
                 </Button>
               )}
             </li>
@@ -151,10 +171,10 @@ export const BookingLines = ({
       </ol>
       {lines.rows.length < MOST_LINES ? (
         <Button ref={lines.addRef} onClick={add}>
-          明細を追加する
+          {say(WORDS.add)}
         </Button>
       ) : (
-        <p>明細は {MOST_LINES} までです。</p>
+        <p>{say(WORDS.most(formats.numberOf(MOST_LINES)))}</p>
       )}
     </div>
   )

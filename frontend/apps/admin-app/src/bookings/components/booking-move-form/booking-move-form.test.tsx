@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as bookingMoveFormStories from './booking-move-form.stories'
 
 const stories = composeStories(bookingMoveFormStories)
@@ -146,5 +147,50 @@ describe('BookingMoveForm', () => {
       '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。',
     )
     expect(within(moved()).getByText('BK-9QWE-3RTY 09:30〜10:30')).toBeVisible()
+  })
+})
+
+describe('BookingMoveForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and show the lines after the move, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Opened.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: 'Staff member' }),
+    ).toHaveAccessibleDescription(
+      'The staff member of the booking. The lines of the current staff member of the booking go to the new one. Lines of other staff members, and lines without one, keep theirs.',
+    )
+    expect(screen.getByLabelText('Start time')).toHaveAccessibleDescription(
+      'When the first line begins. Every line moves by the same time.',
+    )
+    expect(
+      screen.getByRole('region', { name: 'The lines after the move' }),
+    ).toHaveTextContent('Line 1: カット10:00–11:00, staff: 田中 美咲')
+    expect(
+      screen.getByRole('button', { name: 'Change the date, time and staff' }),
+    ).toBeVisible()
+  })
+
+  it('should say what the API refused, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The date, time and staff could not be changed: the time of a staff member overlaps another booking. Each line was checked, where it would be after the move, for the other bookings it overlaps.',
+      ),
+    ).toBeVisible()
   })
 })

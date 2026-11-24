@@ -3,11 +3,7 @@ import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import { termMessages } from '../ui/terms'
 import * as catalogues from './index'
-import {
-  adminBookingMessages,
-  adminCustomerMessages,
-  adminStaffMessages,
-} from './index'
+import { adminCustomerMessages, adminStaffMessages } from './index'
 
 const FOUND = messagesOf(catalogues, '')
 
@@ -80,17 +76,6 @@ const MISSING_EMAIL = {
 
 /** Every message that is made from a value, with the value and what it says */
 const MADE: [string, LocalizedText, LocalizedText][] = [
-  [
-    'adminBookingMessages.frame.bookingOf',
-    adminBookingMessages.frame.bookingOf('BK-2KQM-9F4H', DAY, {
-      en: '10:00–11:00',
-      ja: '10:00〜11:00',
-    }),
-    {
-      en: 'Booking BK-2KQM-9F4H (Tue, December 1, 2026, 10:00–11:00)',
-      ja: '予約番号 BK-2KQM-9F4H（2026年12月1日（火） 10:00〜11:00）',
-    },
-  ],
   [
     'adminStaffMessages.named',
     adminStaffMessages.named('田中 美咲'),
@@ -808,6 +793,7 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
 
 /** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`, `menu.test.ts`, `sales.test.ts`) */
 const TESTED_APART = [
+  'adminBookingMessages',
   'adminInventoryMessages',
   'adminMenuMessages',
   'adminSaleMessages',
@@ -822,11 +808,16 @@ const WRITTEN_ALIKE = [
   'adminCustomerMessages.items.bySms',
 ]
 
+/** The remarks that follow the word of a badge, in brackets */
+const AFTER_A_WORD = ['adminBookingMessages.moves.check.withinCapacity']
+
 describe('the messages of the admin application', () => {
   it.each(
     FOUND.texts.filter(
       ([where]) =>
-        !INSIDE_A_SENTENCE.test(where) && !WRITTEN_ALIKE.includes(where),
+        !INSIDE_A_SENTENCE.test(where) &&
+        !WRITTEN_ALIKE.includes(where) &&
+        !AFTER_A_WORD.includes(where),
     ),
   )('should be written in each language: %s', (_where, written) => {
     // Assert
@@ -841,6 +832,16 @@ describe('the messages of the admin application', () => {
       // Assert
       expect(written.en).toMatch(/^[a-z]/)
       expect(written.en).not.toMatch(JAPANESE)
+      expect(written.ja).toMatch(JAPANESE)
+    },
+  )
+
+  it.each(FOUND.texts.filter(([where]) => AFTER_A_WORD.includes(where)))(
+    'should be written in each language as a remark in brackets after a word: %s',
+    (_where, written) => {
+      // Assert
+      expect(written.en).toMatch(/^ \([a-z][^)]*\)$/)
+      expect(written.ja).toMatch(/^（[^）]+）$/)
       expect(written.ja).toMatch(JAPANESE)
     },
   )

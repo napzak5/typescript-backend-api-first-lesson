@@ -1,5 +1,15 @@
-import { Alert, Button, ButtonLink, Dialog } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Dialog,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import styles from './booking-changes.module.css'
+
+const { changes: WORDS } = adminBookingMessages.details
 
 export type BookingChangesProps = {
   /** The address of the screen that moves the booking; `undefined` when it is not moved in its state */
@@ -11,7 +21,7 @@ export type BookingChangesProps = {
   /** The account may remove a booking: the owner, a manager, the operator of the platform */
   removable: boolean
   /** When the booking is, as the dialog names it: 「2026年11月20日（金） 10:00〜11:00」 */
-  when: string
+  when: LocalizedText
   /** The dialog that asks before the booking is removed is open */
   open: boolean
   /** The button that removes was pressed: the dialog is to be opened */
@@ -21,8 +31,8 @@ export type BookingChangesProps = {
    * Set `open` to false here
    */
   onClose: () => void
-  /** What went wrong with the attempt to remove; it is said in the dialog */
-  message?: string | undefined
+  /** What went wrong with the attempt to remove; it is said in the dialog, in the language of the page */
+  message?: LocalizedText | undefined
   /** The removal is on its way */
   pending?: boolean | undefined
   /** The removal was confirmed */
@@ -48,37 +58,43 @@ export const BookingChanges = ({
   message,
   pending = false,
   onRemove,
-}: BookingChangesProps) => (
-  <div className={styles['changes']}>
-    {moveHref !== undefined && (
-      <ButtonLink href={moveHref}>日時と担当を変える</ButtonLink>
-    )}
-    {lineEntryHref !== undefined && (
-      <ButtonLink href={lineEntryHref}>施術明細を追加する</ButtonLink>
-    )}
-    <ButtonLink href={notesHref}>要望とメモを変える</ButtonLink>
-    {removable && (
-      <>
-        <Button variant='danger' onClick={onOpen}>
-          予約を削除する
-        </Button>
-        <Dialog
-          open={open}
-          onClose={onClose}
-          title='予約を削除しますか？'
-          description={`${when}の予約を、施術明細とともに台帳から取り除きます。誤って入れた予約や、重複した予約を取り除くためのものです。行われない予約は、削除せずにキャンセルしてください。削除した予約は、元に戻せません。`}
-          actions={
-            <>
-              <Button onClick={onClose}>戻る</Button>
-              <Button variant='danger' pending={pending} onClick={onRemove}>
-                削除する
-              </Button>
-            </>
-          }
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-        </Dialog>
-      </>
-    )}
-  </div>
-)
+}: BookingChangesProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['changes']}>
+      {moveHref !== undefined && (
+        <ButtonLink href={moveHref}>{say(WORDS.move)}</ButtonLink>
+      )}
+      {lineEntryHref !== undefined && (
+        <ButtonLink href={lineEntryHref}>{say(WORDS.addLine)}</ButtonLink>
+      )}
+      <ButtonLink href={notesHref}>{say(WORDS.changeNotes)}</ButtonLink>
+      {removable && (
+        <>
+          <Button variant='danger' onClick={onOpen}>
+            {say(WORDS.remove)}
+          </Button>
+          <Dialog
+            open={open}
+            onClose={onClose}
+            title={say(WORDS.removal.title)}
+            description={say(WORDS.removal.description(when))}
+            actions={
+              <>
+                <Button onClick={onClose}>{say(WORDS.removal.back)}</Button>
+                <Button variant='danger' pending={pending} onClick={onRemove}>
+                  {say(WORDS.removal.submit)}
+                </Button>
+              </>
+            }
+          >
+            {message !== undefined && (
+              <Alert tone='danger'>{say(message)}</Alert>
+            )}
+          </Dialog>
+        </>
+      )}
+    </div>
+  )
+}

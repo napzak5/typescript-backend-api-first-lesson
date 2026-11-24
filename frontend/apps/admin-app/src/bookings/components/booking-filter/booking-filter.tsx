@@ -3,10 +3,14 @@ import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   countNarrowing,
   FilterForm,
+  type NamedChoice,
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { type DayConditions, queryOf, STATUSES } from '../../utils/booking-day'
 import { statusNameOf } from '../../utils/booking-format'
 
@@ -21,7 +25,9 @@ export type BookingFilterProps = {
   onSubmit: (values: FormData) => void
 }
 
-const STATUS_OPTIONS = STATUSES.map((status) => ({
+const { filter: WORDS } = adminBookingMessages.ledger
+
+const STATUS_OPTIONS: readonly NamedChoice[] = STATUSES.map((status) => ({
   value: status,
   label: statusNameOf(status),
 }))
@@ -50,13 +56,15 @@ export const BookingFilter = ({
   clearHref,
   onSubmit,
 }: BookingFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(queryOf(conditions).toString(), () =>
     valuesOf(conditions),
   )
 
   return (
     <FilterForm
-      label='予約を絞り込む'
+      label={say(WORDS.label)}
       purpose='view'
       clearHref={clearHref}
       onSubmit={onSubmit}
@@ -64,21 +72,21 @@ export const BookingFilter = ({
       conditions={
         <>
           <Select
-            label='状態'
+            label={say(WORDS.status)}
             name='status'
-            options={STATUS_OPTIONS}
-            placeholder='すべて'
+            options={options(STATUS_OPTIONS)}
+            placeholder={say(WORDS.all)}
             value={values.status}
             onChange={(event) => hold('status', event.target.value)}
           />
           <Select
-            label='担当'
+            label={say(WORDS.staff)}
             name='staffId'
             options={staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             }))}
-            placeholder='すべて'
+            placeholder={say(WORDS.all)}
             value={values.staffId}
             onChange={(event) => hold('staffId', event.target.value)}
           />
@@ -86,7 +94,7 @@ export const BookingFilter = ({
       }
     >
       <TextField
-        label='日付'
+        label={say(WORDS.date)}
         name='date'
         autoComplete='off'
         type='date'

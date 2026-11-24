@@ -7,10 +7,20 @@ import type {
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
+import {
+  adminMenuMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../../customers/api/customers-api'
 import { quantityOf } from '../../products/utils/quantity'
 import type { TreatmentRemoval } from '../api/treatments-api'
+
+/** What is said of a member of the staff the salon no longer shows. */
+export const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
+
+/** What is said of a service that was removed. */
+export const GONE_SERVICE = inJapanese(adminMenuMessages.removedService)
 
 /*
  * How a treatment record is said: its satisfaction, its time, its

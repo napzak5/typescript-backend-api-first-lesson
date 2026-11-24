@@ -3,10 +3,11 @@ import type {
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { FormErrors } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aBooking, moment } from '../components/examples'
 import {
-  ADDITION_TAKEN,
   type AdditionAttempt,
   afterAddition,
   afterLineRemoval,
@@ -15,7 +16,6 @@ import {
   type LineRemovalAttempt,
   type LineRemovalSays,
   lineRequestOf,
-  MOVE_TAKEN,
   type MoveAttempt,
   mayAddLine,
   mayRemoveLine,
@@ -103,31 +103,36 @@ describe('the rules of a booking that is changed', () => {
   it('should say why a booking is not moved, by its state', () => {
     // Act, Assert
     expect(whyUnmovable(withLines(1))).toBeUndefined()
-    expect(whyUnmovable(withLines(1, 'in_progress'))).toBe(
-      'この予約は施術中のため、日時と担当を変えられません。日時と担当を変えられるのは、下書き、確定待ち、確定の予約です。',
-    )
+    expect(whyUnmovable(withLines(1, 'in_progress'))).toEqual({
+      en: 'This booking is in the status “In progress”, so its date, time and staff cannot be changed. They can be changed for bookings in these statuses: Draft, Awaiting confirmation, Confirmed.',
+      ja: 'この予約は施術中のため、日時と担当を変えられません。日時と担当を変えられるのは、下書き、確定待ち、確定の予約です。',
+    })
   })
 
   it('should say why no line is added: the state, or the most lines', () => {
     // Act, Assert
     expect(whyNoLineAdded(withLines(1, 'in_progress'))).toBeUndefined()
-    expect(whyNoLineAdded(withLines(1, 'completed'))).toBe(
-      'この予約は完了のため、施術明細を足せません。施術明細を変えられるのは、下書き、確定待ち、確定、施術中の予約です。',
-    )
-    expect(whyNoLineAdded(withLines(20))).toBe(
-      '施術明細は 20 件までです。この予約には、もう足せません。',
-    )
+    expect(whyNoLineAdded(withLines(1, 'completed'))).toEqual({
+      en: 'This booking is in the status “Completed”, so no line can be added to it. The lines can be changed for bookings in these statuses: Draft, Awaiting confirmation, Confirmed, In progress.',
+      ja: 'この予約は完了のため、施術明細を足せません。施術明細を変えられるのは、下書き、確定待ち、確定、施術中の予約です。',
+    })
+    expect(whyNoLineAdded(withLines(20))).toEqual({
+      en: 'A booking has up to 20 lines. No more can be added to this one.',
+      ja: '施術明細は 20 件までです。この予約には、もう足せません。',
+    })
   })
 
   it('should say why a line stays: the state, or that it is the last', () => {
     // Act, Assert
     expect(whyLineStays(withLines(2))).toBeUndefined()
-    expect(whyLineStays(withLines(2, 'cancelled'))).toBe(
-      'この予約はキャンセルのため、施術明細を外せません。',
-    )
-    expect(whyLineStays(withLines(1))).toBe(
-      '予約に残る最後の明細は、外せません。行われない来店は、予約をキャンセルしてください。',
-    )
+    expect(whyLineStays(withLines(2, 'cancelled'))).toEqual({
+      en: 'This booking is in the status “Cancelled”, so no line can be taken off it.',
+      ja: 'この予約はキャンセルのため、施術明細を外せません。',
+    })
+    expect(whyLineStays(withLines(1))).toEqual({
+      en: 'The last line of a booking cannot be taken off. Cancel the booking of a visit that will not take place.',
+      ja: '予約に残る最後の明細は、外せません。行われない来店は、予約をキャンセルしてください。',
+    })
   })
 })
 
@@ -243,9 +248,18 @@ describe('readMove', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        staffId: '担当スタッフを選んでください。',
-        date: '来店日を入力してください。',
-        startTime: '開始の時刻を入力してください。',
+        staffId: {
+          en: 'Choose the staff member.',
+          ja: '担当スタッフを選んでください。',
+        },
+        date: {
+          en: 'Enter the date of the visit.',
+          ja: '来店日を入力してください。',
+        },
+        startTime: {
+          en: 'Enter the start time.',
+          ja: '開始の時刻を入力してください。',
+        },
       },
     })
   })
@@ -265,8 +279,10 @@ describe('readMove', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        startTime:
-          'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。',
+        startTime: {
+          en: 'The clock of the salon skips this time on this day (daylight saving time begins). Enter another time.',
+          ja: 'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。',
+        },
       },
     })
   })
@@ -330,8 +346,14 @@ describe('readAddition', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        serviceId: 'メニューを選んでください。',
-        startTime: '開始の時刻を入力してください。',
+        serviceId: {
+          en: 'Choose a service.',
+          ja: 'メニューを選んでください。',
+        },
+        startTime: {
+          en: 'Enter the start time.',
+          ja: '開始の時刻を入力してください。',
+        },
       },
     })
   })
@@ -362,8 +384,10 @@ describe('readAddition', () => {
     expect(beyond).toEqual({
       type: 'invalid',
       errors: {
-        startTime:
-          'すべての明細は、最も早い明細の開始から 24 時間以内に始まります。開始の時刻を確かめてください。',
+        startTime: {
+          en: 'Every line begins within 24 hours of the start of the earliest line. Check the start time.',
+          ja: 'すべての明細は、最も早い明細の開始から 24 時間以内に始まります。開始の時刻を確かめてください。',
+        },
       },
     })
   })
@@ -374,33 +398,55 @@ describe('afterMove', () => {
     [
       string,
       Exclude<MoveAttempt, { type: 'moved' | 'unmovable' | 'notFound' }>,
-      string | undefined,
-      Record<string, string>,
+      LocalizedText | undefined,
+      FormErrors<LocalizedText>,
     ]
   >([
     [
       'a member that is not the salon’s at its control',
       { type: 'invalid', values: [{ field: 'staffId', rule: 'not_found' }] },
       undefined,
-      { staffId: 'このスタッフは、もう選べません。選び直してください。' },
+      {
+        staffId: {
+          en: 'This staff member cannot be chosen any more. Choose again.',
+          ja: 'このスタッフは、もう選べません。選び直してください。',
+        },
+      },
     ],
-    ['a member that is taken', { type: 'taken', checks: [] }, MOVE_TAKEN, {}],
+    [
+      'a member that is taken',
+      { type: 'taken', checks: [] },
+      {
+        en: 'The date, time and staff could not be changed: the time of a staff member overlaps another booking. Each line was checked, where it would be after the move, for the other bookings it overlaps.',
+        ja: '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。',
+      },
+      {},
+    ],
     [
       'an account that may not',
       { type: 'forbidden' },
-      'このアカウントでは、この予約を変えられません。',
+      {
+        en: 'This account cannot change this booking.',
+        ja: 'このアカウントでは、この予約を変えられません。',
+      },
       {},
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
       {},
     ],
     [
       'a failure',
       { type: 'failed' },
-      '予約の日時と担当を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The date, time and staff of the booking could not be changed. Check your connection and try again.',
+        ja: '予約の日時と担当を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
       {},
     ],
   ])('should say what follows %s', (_case, outcome, message, errors) => {
@@ -414,32 +460,46 @@ describe('afterAddition', () => {
     [
       string,
       Exclude<AdditionAttempt, { type: 'added' | 'unaddable' | 'notFound' }>,
-      string | undefined,
-      Record<string, string>,
+      LocalizedText | undefined,
+      FormErrors<LocalizedText>,
     ]
   >([
     [
       'a service that is not the salon’s at its control',
       { type: 'invalid', values: [{ field: 'serviceId', rule: 'not_found' }] },
       undefined,
-      { serviceId: 'このメニューは、もう選べません。選び直してください。' },
+      {
+        serviceId: {
+          en: 'This service cannot be chosen any more. Choose again.',
+          ja: 'このメニューは、もう選べません。選び直してください。',
+        },
+      },
     ],
     [
       'a member that is taken',
       { type: 'taken', check: { type: 'taken', overlapping: [] } },
-      ADDITION_TAKEN,
+      {
+        en: 'The line could not be added: the time of its staff member overlaps another booking. The other bookings that overlap the line were checked.',
+        ja: '担当の時間が、ほかの予約と重なっているため、施術明細を足せませんでした。足す明細に重なる、ほかの予約を確かめました。',
+      },
       {},
     ],
     [
       'amounts beyond what a booking holds',
       { type: 'tooMuch' },
-      '金額の合計が、1 件の予約で扱える上限を超えるため、施術明細を足せませんでした。',
+      {
+        en: 'The line could not be added: the total would go beyond what one booking can hold.',
+        ja: '金額の合計が、1 件の予約で扱える上限を超えるため、施術明細を足せませんでした。',
+      },
       {},
     ],
     [
       'a failure',
       { type: 'failed' },
-      '施術明細を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The line could not be added. Check your connection and try again.',
+        ja: '施術明細を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
       {},
     ],
   ])('should say what follows %s', (_case, outcome, message, errors) => {
@@ -463,8 +523,10 @@ describe('afterLineRemoval', () => {
       { type: 'unsummed' },
       {
         type: 'again',
-        message:
-          '施術明細を外せませんでした。この明細を外すと、予約の金額を算出し直せません。',
+        message: {
+          en: 'The line could not be taken off: without it, the amounts of the booking cannot be worked out again.',
+          ja: '施術明細を外せませんでした。この明細を外すと、予約の金額を算出し直せません。',
+        },
       },
     ],
     ['a line that was gone', { type: 'notFound' }, { type: 'gone' }],
@@ -473,7 +535,10 @@ describe('afterLineRemoval', () => {
       { type: 'forbidden' },
       {
         type: 'again',
-        message: 'このアカウントでは、この予約を変えられません。',
+        message: {
+          en: 'This account cannot change this booking.',
+          ja: 'このアカウントでは、この予約を変えられません。',
+        },
       },
     ],
     [
@@ -481,8 +546,10 @@ describe('afterLineRemoval', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '施術明細を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The line could not be taken off. Check your connection and try again.',
+          ja: '施術明細を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what follows %s', (_case, outcome, said) => {

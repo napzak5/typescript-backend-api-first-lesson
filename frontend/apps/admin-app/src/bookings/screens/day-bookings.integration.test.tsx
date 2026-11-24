@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -24,11 +25,10 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, arrangeMany } from '../__tests__/arrangements'
 
 const navigationItems = () =>
@@ -44,7 +44,7 @@ const navigationItems = () =>
 const rowsOfDay = async (day: string): Promise<string[][]> =>
   rowsOf(
     await screen.findByRole('table', {
-      name: `${inJapanese(dayNameOf(day))}の予約`,
+      name: `${dayNameOf(day).ja}の予約`,
     }),
   )
 
@@ -493,9 +493,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       expect(
-        await screen.findByText(
-          `${inJapanese(dayNameOf(later))}の予約はありません`,
-        ),
+        await screen.findByText(`${dayNameOf(later).ja}の予約はありません`),
       ).toBeVisible()
       expect(screen.queryByRole('table')).toBeNull()
     })
@@ -513,7 +511,7 @@ describe('the bookings of a salon, against the API', () => {
       // Assert
       expect(
         await screen.findByText(
-          `${inJapanese(dayNameOf(later))}の予約のうち、条件に合うものはありません`,
+          `${dayNameOf(later).ja}の予約のうち、条件に合うものはありません`,
         ),
       ).toBeVisible()
       expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
@@ -568,7 +566,7 @@ describe('the bookings of a salon, against the API', () => {
         ),
       )
       const table = screen.getByRole('table', {
-        name: `${inJapanese(dayNameOf(day))}の予約`,
+        name: `${dayNameOf(day).ja}の予約`,
       })
       expect(within(table).getAllByRole('link').at(50)).toHaveFocus()
       expect(screen.getByText('55 件')).toBeVisible()
@@ -605,5 +603,129 @@ describe('the bookings of a salon, against the API', () => {
         ],
       ])
     })
+  })
+})
+
+describe('the bookings of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should list the bookings of a day with their states, and narrow them, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await arrange({
+      bookingNumber: 'BK-TEST-0001',
+      day: 0,
+      at: '10:00',
+      customer: KENJI.email,
+    })
+    await arrange({
+      bookingNumber: 'BK-TEST-0002',
+      day: 0,
+      at: '12:30',
+      minutes: 45,
+      status: 'cancelled',
+      customer: SAKURA.email,
+      staffCode: 'STF004',
+      service: 'Mens Cut',
+    })
+    const today = await dayFromToday(0)
+    const { container } = await openAs(`/salons/${tokyo}/bookings`, OWNER, 'en')
+    expect(await heading('Booking ledger')).toHaveFocus()
+    const table = await screen.findByRole('table', {
+      name: `Bookings on ${dayNameOf(today).en}`,
+    })
+    expect(rowsOf(table)).toEqual([
+      [
+        '10:00–11:00',
+        KENJI.name,
+        'Hiroshi Tanaka',
+        'Ladies Cut',
+        'Awaiting confirmation',
+        'BK-TEST-0001',
+      ],
+      [
+        '12:30–13:15',
+        SAKURA.name,
+        'Yui Watanabe',
+        'Mens Cut',
+        'Cancelled',
+        'BK-TEST-0002',
+      ],
+    ])
+    expect(screen.getByText('2 items')).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Make a booking' }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/bookings/new?date=${today}`)
+    expect(await findAccessibilityViolations(container)).toEqual([])
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Status' }),
+      'Cancelled',
+    )
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(
+        rowsOf(
+          screen.getByRole('table', {
+            name: `Bookings on ${dayNameOf(today).en}`,
+          }),
+        ),
+      ).toEqual([
+        [
+          '12:30–13:15',
+          SAKURA.name,
+          'Yui Watanabe',
+          'Mens Cut',
+          'Cancelled',
+          'BK-TEST-0002',
+        ],
+      ]),
+    )
+  })
+
+  it('should say that a day has no bookings, and that none meets the conditions, in English', async () => {
+    // Arrange
+    const tokyo = await salonIdOf(TOKYO)
+    await arrange({ bookingNumber: 'BK-TEST-0001', day: 30, at: '10:00' })
+    const later = await dayFromToday(30)
+    const empty = await dayFromToday(31)
+
+    // Act
+    await openAs(
+      `/salons/${tokyo}/bookings?date=${later}&status=completed`,
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        `No bookings on ${dayNameOf(later).en} match the conditions`,
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toHaveAttribute(
+      'href',
+      `/salons/${tokyo}/bookings?date=${later}`,
+    )
+
+    // Act: the day after, whose bookings no condition narrows
+    renderAt(`/salons/${tokyo}/bookings?date=${empty}`)
+
+    // Assert
+    expect(
+      await screen.findByText(`No bookings on ${dayNameOf(empty).en}`),
+    ).toBeVisible()
   })
 })

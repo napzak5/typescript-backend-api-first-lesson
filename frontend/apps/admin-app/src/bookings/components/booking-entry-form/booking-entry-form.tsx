@@ -7,20 +7,32 @@ import {
   Button,
   FieldRow,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { LineCheck } from '../../api/bookings-api'
 import { BookingLines } from '../booking-lines/booking-lines'
 import { BookingNotesFields } from '../booking-notes-fields/booking-notes-fields'
 import styles from './booking-entry-form.module.css'
 
+const { form: WORDS } = adminBookingMessages.entry
+
 export type BookingEntryFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The members of the staff of the salon */
   staff: readonly ModelsStaffProfileResponse[]
   /** The services of the salon, those it does not take bookings for as well */
@@ -34,7 +46,7 @@ export type BookingEntryFormProps = Pick<
   /** The members of the lines are being checked */
   checking?: boolean | undefined
   /** What the last check found, in a sentence */
-  checked?: string | undefined
+  checked?: LocalizedText | undefined
   /** The button that checks the members was pressed: with the values of the form */
   onCheck: (values: FormData) => void
   /** The member of the booking, the day or a line changed: what was found out is out of date */
@@ -61,63 +73,76 @@ export const BookingEntryForm = ({
   checked,
   onCheck,
   onLinesChange,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
-}: BookingEntryFormProps) => (
-  <Form {...form} errors={errors} submitLabel='予約を入れる'>
-    <FormPart label='担当と日時' onChange={onLinesChange}>
-      <FieldRow>
-        <Select
-          label='担当スタッフ'
-          name='staffId'
-          options={staff.map(({ id, displayName }) => ({
-            value: id,
-            label: displayName,
-          }))}
-          placeholder='選んでください'
-          required
-          defaultValue=''
-          description='予約の担当です。明細の担当が「予約の担当と同じ」なら、この人が施術します。'
-          error={errors['staffId']}
+}: BookingEntryFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      {...form}
+      message={said.message}
+      errors={errors}
+      submitLabel={say(WORDS.submit)}
+    >
+      <FormPart label={say(WORDS.staffAndDate)} onChange={onLinesChange}>
+        <FieldRow>
+          <Select
+            label={say(WORDS.staff)}
+            name='staffId'
+            options={staff.map(({ id, displayName }) => ({
+              value: id,
+              label: displayName,
+            }))}
+            placeholder={say(WORDS.choose)}
+            required
+            defaultValue=''
+            description={say(WORDS.staffDescription)}
+            error={said.errors['staffId']}
+          />
+          <TextField
+            label={say(WORDS.date)}
+            name='date'
+            autoComplete='off'
+            type='date'
+            required
+            defaultValue={date}
+            min={EARLIEST_DAY}
+            max={LATEST_DAY}
+            description={say(WORDS.dateDescription)}
+            error={said.errors['date']}
+          />
+        </FieldRow>
+        <BookingLines
+          staff={staff}
+          services={services}
+          errors={errors}
+          checks={checks}
+          timezone={timezone}
+          onRowsChange={onLinesChange}
         />
-        <TextField
-          label='来店日'
-          name='date'
-          autoComplete='off'
-          type='date'
-          required
-          defaultValue={date}
-          min={EARLIEST_DAY}
-          max={LATEST_DAY}
-          description='サロンの時計の日付です。明細は、この日の時刻に始まります。'
-          error={errors['date']}
-        />
-      </FieldRow>
-      <BookingLines
-        staff={staff}
-        services={services}
-        errors={errors}
-        checks={checks}
-        timezone={timezone}
-        onRowsChange={onLinesChange}
-      />
-      <div className={styles['check']}>
-        <Button
-          pending={checking}
-          onClick={(event) => {
-            const { form: values } = event.currentTarget
-            if (values !== null) {
-              onCheck(new FormData(values))
-            }
-          }}
-        >
-          担当の空きを確かめる
-        </Button>
-        <p role='status'>{checked}</p>
-      </div>
-    </FormPart>
-    <FormPart label='受付の記録'>
-      <BookingNotesFields errors={errors} />
-    </FormPart>
-  </Form>
-)
+        <div className={styles['check']}>
+          <Button
+            pending={checking}
+            onClick={(event) => {
+              const { form: values } = event.currentTarget
+              if (values !== null) {
+                onCheck(new FormData(values))
+              }
+            }}
+          >
+            {say(WORDS.check)}
+          </Button>
+          <p role='status'>
+            {checked === undefined ? undefined : say(checked)}
+          </p>
+        </div>
+      </FormPart>
+      <FormPart label={say(WORDS.record)}>
+        <BookingNotesFields errors={errors} />
+      </FormPart>
+    </Form>
+  )
+}

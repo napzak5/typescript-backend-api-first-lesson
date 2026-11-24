@@ -14,7 +14,10 @@ import {
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -36,7 +39,8 @@ import {
 } from '../utils/booking-moves'
 import { Unchangeable, WithBooking, WithStaffAndServices } from './with-booking'
 
-const TITLE = '日時と担当を変える'
+const { titles } = adminBookingMessages
+const { move: MOVE } = adminBookingMessages.moves
 
 type MoveProps = {
   salon: ModelsSalonResponse
@@ -57,10 +61,11 @@ type MoveProps = {
  * is shown as it is now, and the screen says why.
  */
 const Move = ({ salon, booking, staff, services }: MoveProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [moved, setMoved] = useState<
     readonly ModelsBookingServiceResponse[] | undefined
   >(() =>
@@ -83,7 +88,7 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
           const read: BookingRead = { type: 'found', booking: now }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
-          notify({ tone: 'success', message: '予約の日時と担当を変えました。' })
+          notify({ tone: 'success', message: MOVE.done })
           void navigate(back)
         })
         // The booking changed meanwhile: the screen shows it as it is now
@@ -154,7 +159,7 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(MOVE.cancel)}
         </ButtonLink>
       }
     />
@@ -163,15 +168,17 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
 
 /** Moves a booking of the salon of the address to another time, or another member of the staff. */
 export const BookingMoveScreen = () => {
+  const say = useSay()
+  const title = say(titles.move)
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+        <WithBooking key={salon.id} salon={salon} title={title}>
           {(booking) =>
             match(whyUnmovable(booking))
-              .with(P.string, (why) => (
+              .with(P.nonNullable, (why) => (
                 <Unchangeable
                   why={why}
                   back={bookingHrefOf(salon.id, booking.id)}

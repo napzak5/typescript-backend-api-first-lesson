@@ -8,7 +8,6 @@ import type {
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { CustomersRead } from '../../customers/api/customers-api'
-import { GONE_SERVICE } from './booking-format'
 
 /** What the names of the bookings are read from. */
 export type Names = {
@@ -69,11 +68,11 @@ export const memberNameOf = (
     : adminStaffMessages.named(name)
 }
 
-/** The service of a line of a booking, by name, or that it was removed. */
+/** The name of the service of a line of a booking; `null`: it was removed. */
 export const serviceNameOf = (
   serviceId: string,
   services: Names['services'],
-): string => services.find(({ id }) => id === serviceId)?.name ?? GONE_SERVICE
+): string | null => services.find(({ id }) => id === serviceId)?.name ?? null
 
 /** The names of the services of a booking, in its order. */
 export const serviceNamesOf = (
@@ -82,9 +81,7 @@ export const serviceNamesOf = (
 ): (string | null)[] =>
   services
     .toSorted((one, other) => one.sortOrder - other.sortOrder)
-    .map(
-      ({ serviceId }) => known.find(({ id }) => id === serviceId)?.name ?? null,
-    )
+    .map(({ serviceId }) => serviceNameOf(serviceId, known))
 
 /**
  * The bookings as rows, in their order, as far as their customers were

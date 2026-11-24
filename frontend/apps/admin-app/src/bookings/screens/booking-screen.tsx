@@ -21,13 +21,14 @@ import {
   Alert,
   ButtonLink,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -91,8 +92,9 @@ import {
 import { afterRemoval } from '../utils/booking-entry'
 import { hoursOf } from '../utils/booking-format'
 import { isMovable, mayAddLine } from '../utils/booking-moves'
+import { BookingNotFound } from './with-booking'
 
-const TITLE = '予約の内容'
+const { titles, names, frame, details, whenOf } = adminBookingMessages
 
 /** An operation on the state of a booking, with what it sends. */
 type Operation =
@@ -112,7 +114,7 @@ const send = (id: string, operation: Operation): Promise<StatusChange> =>
     .exhaustive()
 
 /** What is said about an attempt, and where: in the open dialog, or where the state is. */
-type Said = { where: 'dialog' | 'page'; message: string }
+type Said = { where: 'dialog' | 'page'; message: LocalizedText }
 
 /** Who may remove a booking from the ledger: a member of the staff cancels it instead */
 const REMOVERS: readonly string[] = ['owner', 'manager', 'admin']
@@ -134,6 +136,7 @@ type BookingDetailsProps = {
  * screen leads to the bookings of its day.
  */
 const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const session = useSession()
@@ -171,8 +174,10 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const [asking, setAsking] = useState<AskedAction>()
   const [said, setSaid] = useState<Said>()
   const [removing, setRemoving] = useState(false)
-  const [removalSaid, setRemovalSaid] = useState<string>()
-  const [completionErrors, setCompletionErrors] = useState<FormErrors>({})
+  const [removalSaid, setRemovalSaid] = useState<LocalizedText>()
+  const [completionErrors, setCompletionErrors] = useState<
+    FormErrors<LocalizedText>
+  >({})
   const statusHeading = useRef<HTMLHeadingElement>(null)
   /**
    * When the booking was last changed, as the screen showed it when an
@@ -241,7 +246,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
         .with({ type: 'done' }, () => {
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
           queryClient.setQueryData(key, NOT_FOUND)
-          notify({ tone: 'success', message: '予約を削除しました。' })
+          notify({ tone: 'success', message: details.changes.removal.done })
           void navigate(
             `${bookingsHrefOf(salon.id)}?date=${booking.bookingDate}`,
           )
@@ -270,12 +275,17 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
     setAsking(action)
   }
 
+  const when = whenOf(
+    dayNameOf(booking.bookingDate),
+    hoursOf(booking, salon.timezone),
+  )
+
   return match([customer.data, staff.data, services.data])
     .with(
       [undefined, P._, P._],
       [P._, undefined, P._],
       [P._, P._, undefined],
-      () => <LoadingIndicator label='予約の内容を読み込んでいます' />,
+      () => <LoadingIndicator label={say(details.loading)} />,
     )
     .with(
       [
@@ -286,12 +296,12 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
       ([ofCustomer, ofStaff, ofServices]) => (
         <>
           {said?.where === 'page' && (
-            <Alert tone='danger'>{said.message}</Alert>
+            <Alert tone='danger'>{say(said.message)}</Alert>
           )}
           <StatusActions
             status={booking.status}
             actions={actionsOf(booking, new Date())}
-            when={`${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}`}
+            when={when}
             headingRef={statusHeading}
             pending={change.isPending ? change.variables.type : undefined}
             asking={asking}
@@ -300,9 +310,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             recordedStart={
               booking.actualStartTime === null
                 ? undefined
-                : inJapanese(
-                    momentNameAt(booking.actualStartTime, salon.timezone),
-                  )
+                : momentNameAt(booking.actualStartTime, salon.timezone)
             }
             onAct={(action) => act({ type: action })}
             onAsk={ask}
@@ -370,7 +378,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
               session.type === 'signedIn' &&
               REMOVERS.includes(session.user.role)
             }
-            when={`${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}`}
+            when={when}
             open={removing}
             onOpen={() => {
               // What was said about an attempt before is said no longer
@@ -395,9 +403,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
       [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('予約の内容'), whyUnread(reads)),
-          )}
+          message={say(unreadMessageOf(names.details, whyUnread(reads)))}
           onRetry={() => {
             void customer.refetch()
             void staff.refetch()
@@ -417,6 +423,8 @@ type BookingOfSalonProps = {
 }
 
 const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
+  const say = useSay()
+  const title = say(titles.booking)
   const { bookingId = '' } = useParams()
   const read = useQuery({
     queryKey: bookingKeyOf(bookingId),
@@ -431,45 +439,37 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
     match(read.data)
       .with(undefined, () => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <LoadingIndicator label='予約を読み込んでいます' />
+          <PageHeader title={title} description={salon.name} />
+          <LoadingIndicator label={say(frame.loading)} />
         </>
       ))
       .with(
         { type: 'found', booking: { salonId: salon.id } },
         ({ booking }) => (
           <>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={title} description={salon.name} />
             <BookingDetails salon={salon} booking={booking} />
             <ButtonLink href={`${bookings}?date=${booking.bookingDate}`}>
-              この日の予約へ
+              {say(details.toDay)}
             </ButtonLink>
           </>
         ),
       )
       // A booking of another salon is not one of this salon's
       .with({ type: P.union('found', 'notFound') }, () => (
-        <>
-          <PageHeader
-            title='予約が見つかりません'
-            description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
-          />
-          <ButtonLink href={bookings}>今日の予約へ</ButtonLink>
-        </>
+        <BookingNotFound salonId={salon.id} />
       ))
       .with({ type: 'forbidden' }, () => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={title} description={salon.name} />
           <OtherSalonNotice />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={title} description={salon.name} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('予約'), reason),
-            )}
+            message={say(unreadMessageOf(names.booking, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -481,10 +481,11 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
 
 /** A booking of the salon of the address, and what can be done to its state. */
 export const BookingScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.booking)}>
       {(salon) => <BookingOfSalon key={salon.id} salon={salon} />}
     </WithSalon>
   )

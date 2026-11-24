@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingLinesStories from './booking-lines.stories'
 
 const stories = composeStories(bookingLinesStories)
@@ -152,5 +153,35 @@ describe('BookingLines', () => {
     // Assert
     expect(screen.getByText(said)).toBeVisible()
     expect(screen.queryByText('重なる予約があります')).toBeNull()
+  })
+})
+
+describe('BookingLines on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the controls of a line and the way to add one, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(combobox('Service of line 1')).toHaveAccessibleDescription(
+      'Choose a service.',
+    )
+    expect(optionsOf(combobox('Staff of line 1'))).toEqual([
+      'Same as the booking',
+      '田中 美咲',
+      '佐藤 健',
+      'Not decided',
+    ])
+    expect(
+      screen.getByLabelText('Start of line 1'),
+    ).toHaveAccessibleDescription('Enter the start time.')
+    expect(screen.getByLabelText('Notes of line 1')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Add a line' })).toBeVisible()
   })
 })

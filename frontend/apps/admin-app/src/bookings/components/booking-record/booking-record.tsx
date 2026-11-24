@@ -10,17 +10,19 @@ import {
 import {
   Card,
   DescriptionList,
-  inJapanese,
   Link,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import {
+  adminBookingMessages,
+  adminCustomerMessages,
+  adminMenuMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { customerNameOf } from '../../../customers/api/customers-api'
 import { sourceNameOf } from '../../utils/booking-entry'
-import {
-  GONE_CUSTOMER,
-  hoursOf,
-  UNLISTED_STAFF,
-} from '../../utils/booking-format'
+import { hoursOf } from '../../utils/booking-format'
 import {
   memberNameOf,
   type Names,
@@ -28,6 +30,9 @@ import {
   staffNameOf,
 } from '../../utils/day-bookings'
 import styles from './booking-record.module.css'
+
+const { record: WORDS } = adminBookingMessages.details
+const { amountWithTax } = adminBookingMessages
 
 export type BookingRecordProps = {
   booking: ModelsBookingResponse
@@ -64,18 +69,18 @@ export const BookingRecord = ({
   currency,
   lineHrefOf,
 }: BookingRecordProps) => {
+  const say = useSay()
+  const amount = (value: number): string => say(amountOf(value, currency))
   const happened = [
     ...(booking.cancelledAt === null
       ? []
       : [
           {
-            term: 'キャンセルした日時',
-            description: inJapanese(
-              momentNameAt(booking.cancelledAt, timezone),
-            ),
+            term: say(WORDS.cancelledAt),
+            description: say(momentNameAt(booking.cancelledAt, timezone)),
           },
           {
-            term: 'キャンセルの理由',
+            term: say(WORDS.cancellationReason),
             description: booking.cancellationReason,
           },
         ]),
@@ -83,50 +88,50 @@ export const BookingRecord = ({
       ? []
       : [
           {
-            term: '実際の開始',
-            description: inJapanese(
-              momentNameAt(booking.actualStartTime, timezone),
-            ),
+            term: say(WORDS.actualStart),
+            description: say(momentNameAt(booking.actualStartTime, timezone)),
           },
         ]),
     ...(booking.actualEndTime === null
       ? []
       : [
           {
-            term: '実際の終了',
-            description: inJapanese(
-              momentNameAt(booking.actualEndTime, timezone),
-            ),
+            term: say(WORDS.actualEnd),
+            description: say(momentNameAt(booking.actualEndTime, timezone)),
           },
         ]),
     ...(booking.completedAt === null
       ? []
       : [
           {
-            term: '完了を記録した日時',
-            description: inJapanese(
-              momentNameAt(booking.completedAt, timezone),
-            ),
+            term: say(WORDS.completedAt),
+            description: say(momentNameAt(booking.completedAt, timezone)),
           },
         ]),
   ]
 
   return (
     <div className={styles['record']}>
-      <Card title='予約'>
+      <Card title={say(WORDS.booking)}>
         <DescriptionList
           items={[
-            { term: '予約番号', description: booking.bookingNumber },
             {
-              term: '来店日',
-              description: inJapanese(dayNameOf(booking.bookingDate)),
+              term: say(WORDS.bookingNumber),
+              description: booking.bookingNumber,
             },
-            { term: '時刻', description: hoursOf(booking, timezone) },
             {
-              term: 'お客様',
+              term: say(WORDS.date),
+              description: say(dayNameOf(booking.bookingDate)),
+            },
+            {
+              term: say(WORDS.hours),
+              description: say(hoursOf(booking, timezone)),
+            },
+            {
+              term: say(WORDS.customer),
               description:
                 customer === null ? (
-                  GONE_CUSTOMER
+                  say(adminCustomerMessages.naming.removed)
                 ) : (
                   <Link href={customerHref}>{customerNameOf(customer)}</Link>
                 ),
@@ -135,103 +140,114 @@ export const BookingRecord = ({
               ? []
               : [
                   {
-                    term: 'お客様の電話番号',
+                    term: say(WORDS.phoneNumber),
                     description: customer.phoneNumber,
                   },
                 ]),
             {
-              term: '担当',
+              term: say(WORDS.staff),
               description:
-                staffNameOf(booking.staffId, staff) ?? UNLISTED_STAFF,
+                staffNameOf(booking.staffId, staff) ??
+                say(adminStaffMessages.unlisted),
             },
             {
-              term: 'お客様の要望',
+              term: say(WORDS.customerRequest),
               description: booking.customerRequest,
             },
             {
-              term: 'サロン内のメモ',
+              term: say(WORDS.internalNotes),
               description: booking.internalNotes,
             },
             {
-              term: '受付の経路',
+              term: say(WORDS.source),
               description:
-                booking.source === null ? null : sourceNameOf(booking.source),
+                booking.source === null
+                  ? null
+                  : say(sourceNameOf(booking.source)),
             },
             {
-              term: '予約金',
+              term: say(WORDS.deposit),
               description:
                 booking.depositAmount === null
                   ? null
-                  : inJapanese(amountOf(booking.depositAmount, currency)),
+                  : amount(booking.depositAmount),
             },
             ...happened,
           ]}
         />
       </Card>
-      <Card title='施術明細'>
+      <Card title={say(WORDS.lines)}>
         <Table
-          caption='施術明細'
+          caption={say(WORDS.lines)}
           captionHidden
           columns={[
             {
               key: 'service',
-              header: 'メニュー',
+              header: say(WORDS.service),
               cell: ({ id, serviceId }) => (
                 <Link href={lineHrefOf(id)}>
-                  {serviceNameOf(serviceId, services)}
+                  {serviceNameOf(serviceId, services) ??
+                    say(adminMenuMessages.removedService)}
                 </Link>
               ),
             },
             {
               key: 'staff',
-              header: '担当',
-              cell: ({ staffId }) => inJapanese(memberNameOf(staffId, staff)),
+              header: say(WORDS.staff),
+              cell: ({ staffId }) => say(memberNameOf(staffId, staff)),
             },
             {
               key: 'hours',
-              header: '時刻',
-              cell: (line) => hoursOf(line, timezone),
+              header: say(WORDS.hours),
+              cell: (line) => say(hoursOf(line, timezone)),
             },
             {
               key: 'price',
-              header: '金額',
+              header: say(WORDS.amount),
               align: 'end',
               cell: ({ finalPrice, discountAmount, taxIncluded }) =>
-                `${inJapanese(amountOf(finalPrice, currency))}${discountAmount > 0 ? `（割引 ${inJapanese(amountOf(discountAmount, currency))}）` : ''}${taxIncluded ? '（税込）' : '（税別）'}`,
+                say(
+                  amountWithTax(
+                    amountOf(finalPrice, currency),
+                    discountAmount > 0
+                      ? amountOf(discountAmount, currency)
+                      : null,
+                    taxIncluded,
+                  ),
+                ),
             },
             {
               key: 'completed',
-              header: '完了',
-              cell: ({ isCompleted }) => (isCompleted ? '済み' : '未'),
+              header: say(WORDS.completed),
+              cell: ({ isCompleted }) =>
+                say(isCompleted ? WORDS.done : WORDS.notDone),
             },
           ]}
           rows={booking.services.toSorted(
             (one, other) => one.sortOrder - other.sortOrder,
           )}
           rowKey={({ id }) => id}
-          emptyMessage='施術明細はありません'
+          emptyMessage={say(WORDS.noLines)}
         />
       </Card>
-      <Card title='金額'>
+      <Card title={say(WORDS.amounts)}>
         <DescriptionList
           items={[
             {
-              term: '小計',
-              description: inJapanese(amountOf(booking.subtotal, currency)),
+              term: say(WORDS.subtotal),
+              description: amount(booking.subtotal),
             },
             {
-              term: '割引',
-              description: inJapanese(
-                amountOf(booking.discountAmount, currency),
-              ),
+              term: say(WORDS.discount),
+              description: amount(booking.discountAmount),
             },
             {
-              term: '消費税',
-              description: inJapanese(amountOf(booking.taxAmount, currency)),
+              term: say(WORDS.tax),
+              description: amount(booking.taxAmount),
             },
             {
-              term: '合計',
-              description: inJapanese(amountOf(booking.totalAmount, currency)),
+              term: say(WORDS.total),
+              description: amount(booking.totalAmount),
             },
           ]}
         />

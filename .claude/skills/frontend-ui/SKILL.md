@@ -422,9 +422,12 @@ In an area of an application that is done, the same rules hold, and:
   change and voiding in files of their own), the menu
   (`adminMenuMessages`, its categories, its services, the form of a
   service and the change of several services in files of their own, and
-  the name another screen gives a removed service), the frame of a screen
-  of a booking that the checkout opens in (`adminBookingMessages`) and the
-  words a screen names a member of the staff with (`adminStaffMessages`).
+  the name another screen gives a removed service), the bookings
+  (`adminBookingMessages`, the bookings of a day, the page of a booking,
+  the entry of one, and its move and its lines in files of their own, with
+  the frame of a screen of a booking that the checkout and the treatments
+  open in) and the words a screen names a member of the staff with
+  (`adminStaffMessages`).
   How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
@@ -460,21 +463,26 @@ In an area of an application that is done, the same rules hold, and:
   and of the dashboard); what the tests share (`__tests__`) is not read.
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
-  area is and its name takes their place (`'customers'`, `'inventory'`,
-  `'menu'` and `'sales'` of the admin application; the frame of a screen of a
-  booking, which the sales open in, is `'bookings/screens/with-booking.tsx'`
-  until the bookings are done).
+  area is and its name takes their place (`'bookings'`, `'customers'`,
+  `'inventory'`, `'menu'` and `'sales'` of the admin application).
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese` (the purchase orders say
-  `quantityNameOf` and `stockRowNameOf` of the inventory so, and the
-  bookings say `memberNameOf` and the names of a removed customer, of a
-  member not listed and of a removed service), and an area
-  that is done hands on the strings of one that is not as they are. A type
-  of an area that is not done takes the type of its texts as a parameter
-  where one that is done uses it (`TreatmentRemovalSays<Text = string>` of
-  the treatments, which the removal of a stock row and of a category or a
-  service of the menu use as `TreatmentRemovalSays<LocalizedText>`). The portal and the dashboard
-  have none of these any more.
+  `quantityNameOf` and `stockRowNameOf` of the inventory and the name of a
+  member not listed so, and the treatments the names of a member not
+  listed and of a removed service, `UNLISTED_STAFF` and `GONE_SERVICE` of
+  `treatment-format.ts`), and makes a message of a string it hands to an
+  area that is done with `writtenInJapanese` (the sentence of a booking
+  whose treatment has not begun, which the treatments hand to
+  `Unchangeable` of the bookings). An area that is done hands on the
+  strings of one that is not as they are. A type of an area that is not
+  done takes the type of its texts as a parameter where one that is done
+  uses it (`TreatmentRemovalSays<Text = string>` of the treatments, which
+  the removal of a stock row and of a category or a service of the menu
+  use as `TreatmentRemovalSays<LocalizedText>`), and a type of an area that
+  is done that one that is not uses takes it with strings for the default
+  (`ChangeSays<Text = string>` of the operations of the state of a booking,
+  which the operations of a purchase order use with strings). The portal
+  and the dashboard have none of these any more.
 - An area that is done in two parts splits a file of both, so that the
   file of the part that is done holds none of the texts of the other (the
   export and the erasure requests of the page of a customer are
@@ -1617,13 +1625,13 @@ comes on top.
 - **After an operation the answer is the booking.** It is written into the
   query of the booking (`setQueryData`), the lists of the salon are removed
   (`removeQueries`: no list shows the state before), a notification says
-  what was done, and the focus goes to the heading 「状態」 (`headingRef`),
-  because the button that was pressed may be gone. What can be sent again
-  is said where it was sent: on the page for 確定 and 開始, in the dialog
-  for the rest.
+  what was done, and the focus goes to the heading “Status” (「状態」,
+  `headingRef`), because the button that was pressed may be gone. What can
+  be sent again is said where it was sent: on the page for the
+  confirmation and the start, in the dialog for the rest.
 - **A state changed elsewhere (409)** is said on the page, in one sentence
   (`CHANGED_ELSEWHERE`), the dialog closes, the lists are removed and the
-  booking is read again; the focus goes to the heading 「状態」.
+  booking is read again; the focus goes to the heading “Status”.
 - **A search by a keyword is `KeywordSearch`** (`salon-screens`), a
   `FilterForm` with one control: a `search` landmark named after what it finds, the keyword (`keywordIn`
   of `keyword.ts` there: trimmed, at most 100 characters, none when blank) in
@@ -1636,7 +1644,8 @@ comes on top.
 - **A screen of steps keeps its steps in the address**
   (`booking-entry.ts`: `date`, `search`, `customerId`). Each search and the
   choice are entries of their own (a `Link`, `setQuery` without `replace`),
-  so 戻る of the browser goes back a step; 「お客様を選び直す」 is a link to
+  so the back button of the browser goes back a step; “Choose another customer”
+  (「お客様を選び直す」) is a link to
   the address without the choice. The step that follows a choice is keyed
   by it, and the heading takes the focus when the choice changes. What was
   chosen is read again (`GET /customers/{id}`): one that is gone is said,
@@ -1645,11 +1654,12 @@ comes on top.
   slots of the portal (the component keeps the keys, the browser the
   values, the focus follows a press, removing a row renumbers the rest and
   hides the errors that named them). A row is named by its number
-  (「明細 2 のメニュー」); the control names are those of the request
+  (“Service of line 2”, 「明細 2 のメニュー」); the control names are those of the request
   (`services.1.serviceId`), so a refusal of the API lands at its control.
   What does not change from row to row (the member of the booking, the day
-  of the visit) is asked once, above the rows; a row takes 「予約の担当と同じ」
-  or 「決めない」 beside the members.
+  of the visit) is asked once, above the rows; a row takes “Same as the
+  booking” (「予約の担当と同じ」) or “Not decided” (「決めない」) beside the
+  members.
 - **What can be found out before sending is a button of the form**, not a
   submit: it hands `new FormData(event.currentTarget.form)` to the screen,
   which reads what it needs (`readLines`), says what is missing at the

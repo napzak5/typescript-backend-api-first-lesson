@@ -5,11 +5,18 @@ import type {
 import {
   FieldRow,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { LineCheck } from '../../api/bookings-api'
 import { SAME_STAFF } from '../../utils/booking-entry'
 import {
@@ -18,16 +25,23 @@ import {
 } from '../booking-lines/booking-lines'
 import { LineCheckNote } from '../line-check-note/line-check-note'
 
+const { addition: WORDS } = adminBookingMessages.moves
+const { lines: LINES } = adminBookingMessages.entry
+
 export type BookingLineFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The members of the staff of the salon */
   staff: readonly ModelsStaffProfileResponse[]
   /** The services of the salon, those it does not take bookings for as well */
   services: readonly ModelsServiceResponse[]
   /** The day of the visit, as it is named: 「2026年11月20日（金）」 */
-  day: string
+  day: LocalizedText
   /** The time zone of the salon: the overlapping bookings are said on its clock */
   timezone: string
   /** What was found out about the member of the line, after the API refused it */
@@ -48,48 +62,60 @@ export const BookingLineForm = ({
   timezone,
   check,
   onValuesChange,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
-}: BookingLineFormProps) => (
-  <Form {...form} errors={errors} submitLabel='施術明細を追加する'>
-    <FormPart label='足す明細' onChange={onValuesChange}>
-      <Select
-        label='メニュー'
-        name='serviceId'
-        options={serviceOptionsOf(services)}
-        placeholder='選んでください'
-        required
-        defaultValue=''
-        error={errors['serviceId']}
-      />
-      <FieldRow>
+}: BookingLineFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      {...form}
+      message={said.message}
+      errors={errors}
+      submitLabel={say(WORDS.submit)}
+    >
+      <FormPart label={say(WORDS.line)} onChange={onValuesChange}>
         <Select
-          label='担当'
-          name='staffId'
-          options={staffOptionsOf(staff)}
-          defaultValue={SAME_STAFF}
-          description='「決めない」明細は、誰の時間も占有しません。'
-          error={errors['staffId']}
-        />
-        <TextField
-          label='開始の時刻'
-          name='startTime'
-          autoComplete='off'
-          type='time'
+          label={say(WORDS.service)}
+          name='serviceId'
+          options={options(serviceOptionsOf(services))}
+          placeholder={say(WORDS.choose)}
           required
-          description={`来店日（${day}）の、サロンの時計の時刻です。`}
-          error={errors['startTime']}
+          defaultValue=''
+          error={said.errors['serviceId']}
         />
-      </FieldRow>
-      <TextField
-        label='メモ'
-        name='notes'
-        autoComplete='off'
-        error={errors['notes']}
-      />
-      {check !== undefined && (
-        <LineCheckNote check={check} timezone={timezone} />
-      )}
-    </FormPart>
-  </Form>
-)
+        <FieldRow>
+          <Select
+            label={say(WORDS.staff)}
+            name='staffId'
+            options={options(staffOptionsOf(staff))}
+            defaultValue={SAME_STAFF}
+            description={say(WORDS.staffDescription(LINES.noStaff))}
+            error={said.errors['staffId']}
+          />
+          <TextField
+            label={say(WORDS.startTime)}
+            name='startTime'
+            autoComplete='off'
+            type='time'
+            required
+            description={say(WORDS.startTimeDescription(day))}
+            error={said.errors['startTime']}
+          />
+        </FieldRow>
+        <TextField
+          label={say(WORDS.notes)}
+          name='notes'
+          autoComplete='off'
+          error={said.errors['notes']}
+        />
+        {check !== undefined && (
+          <LineCheckNote check={check} timezone={timezone} />
+        )}
+      </FormPart>
+    </Form>
+  )
+}

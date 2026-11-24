@@ -7,9 +7,18 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
 import { momentOf } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, inJapanese, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { StatusChange } from '../api/bookings-api'
+
+const { status: STATUS } = adminBookingMessages.details
+const { completion: COMPLETION } = STATUS
 
 /** What can be done to the state of a booking. */
 export type StatusAction =
@@ -46,9 +55,6 @@ export const actionsOf = (
       action !== 'noShow' || now.getTime() >= new Date(startTime).getTime(),
   )
 
-const NOT_A_MOMENT =
-  '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。'
-
 /** The moment of a field, if it is one, on a day the API takes. */
 const momentIn = (local: string, timezone: string): string | undefined => {
   const moment = momentOf(local, timezone)
@@ -69,14 +75,18 @@ export const readCompletion = (
     timezone,
     recordedStart,
   }: { timezone: string; recordedStart: string | null },
-): FormRead<ModelsBookingCompleteRequest> => {
+): FormRead<ModelsBookingCompleteRequest, FormErrors<LocalizedText>> => {
   const start = textOf(values, 'actualStartTime').trim()
   const end = textOf(values, 'actualEndTime').trim()
   const actualStartTime = start === '' ? null : momentIn(start, timezone)
   const actualEndTime = end === '' ? null : momentIn(end, timezone)
-  const errors: Record<string, string> = {
-    ...(actualStartTime === undefined ? { actualStartTime: NOT_A_MOMENT } : {}),
-    ...(actualEndTime === undefined ? { actualEndTime: NOT_A_MOMENT } : {}),
+  const errors: FormErrors<LocalizedText> = {
+    ...(actualStartTime === undefined
+      ? { actualStartTime: COMPLETION.notAMoment }
+      : {}),
+    ...(actualEndTime === undefined
+      ? { actualEndTime: COMPLETION.notAMoment }
+      : {}),
   }
   if (actualStartTime === undefined || actualEndTime === undefined) {
     return { type: 'invalid', errors }
@@ -92,8 +102,8 @@ export const readCompletion = (
       errors: {
         actualEndTime:
           actualStartTime === null
-            ? '終了は、記録した開始より後の時刻にしてください。'
-            : '終了は、開始より後の時刻にしてください。',
+            ? COMPLETION.endAfterRecordedStart
+            : COMPLETION.endAfterStart,
       },
     }
   }
@@ -110,42 +120,36 @@ export const readCancellation = (
   return { cancellationReason: reason === '' ? null : reason }
 }
 
-/** What an operation does, as a sentence says it was done or not */
-const DONE: Record<StatusAction, string> = {
-  confirm: '予約を確定',
-  start: '施術の開始を記録',
-  complete: '予約を完了に',
-  cancel: '予約をキャンセル',
-  noShow: '無断キャンセルを記録',
-}
-
 /** What is said when the booking changed elsewhere in the meantime. */
-export const CHANGED_ELSEWHERE =
-  '予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
+export const CHANGED_ELSEWHERE = STATUS.changedElsewhere
 
-/** What follows an operation on the state of a booking. */
-export type ChangeSays =
+/**
+ * What follows an operation on the state of a booking, or of another
+ * record that goes from state to state. An area whose texts are messages
+ * says messages (`ChangeSays<LocalizedText>`).
+ */
+export type ChangeSays<Text = string> =
   /** The booking is in its new state: a notification says so */
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: Text }
   /** Nothing was done, and nothing is known to have changed: try again */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: Text }
   /**
    * The booking changed elsewhere: it is read again, and the screen says
    * so where its state is
    */
-  | { type: 'changed'; message: string }
+  | { type: 'changed'; message: Text }
   /** The booking is gone, or out of reach: it is read again, and the screen says so */
   | { type: 'gone' }
 
 export const afterChange = (
   outcome: StatusChange,
   action: StatusAction,
-): ChangeSays =>
+): ChangeSays<LocalizedText> =>
   match(outcome)
-    .returnType<ChangeSays>()
+    .returnType<ChangeSays<LocalizedText>>()
     .with({ type: 'changed' }, () => ({
       type: 'done',
-      message: `${DONE[action]}しました。`,
+      message: STATUS.done[action],
     }))
     .with({ type: 'conflict' }, () => ({
       type: 'changed',
@@ -154,10 +158,10 @@ export const afterChange = (
     .with({ type: 'notFound' }, { type: 'forbidden' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: `${DONE[action]}できませんでした。通信の状態を確かめて、もう一度お試しください。`,
+      message: STATUS.failed[action],
     }))
     .exhaustive()

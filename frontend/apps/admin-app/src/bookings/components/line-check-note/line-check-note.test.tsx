@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as lineCheckNoteStories from './line-check-note.stories'
 
 const stories = composeStories(lineCheckNoteStories)
@@ -35,5 +36,31 @@ describe('LineCheckNote', () => {
       screen.getAllByRole('listitem').map((item) => item.textContent),
     ).toEqual(['BK-4F7H-2KQM 10:30〜11:30'])
     expect(screen.queryByRole('link')).toBeNull()
+  })
+})
+
+describe('LineCheckNote on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it.each<[keyof typeof stories, string]>([
+    ['Free', 'Free'],
+    [
+      'FreeBeside',
+      'Free (bookings overlap, within the number taken at once)BK-4F7H-2KQM 10:00–11:00',
+    ],
+    ['Taken', 'Overlapping bookingsBK-4F7H-2KQM 10:30–11:30'],
+    ['Unassigned', 'A line without a staff member takes nobody’s time.'],
+    ['Unchecked', 'Could not check'],
+  ])('should say in %s, in English: %s', async (story, said) => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories[story].run()
+
+    // Assert
+    expect(document.body).toHaveTextContent(said)
   })
 })

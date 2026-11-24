@@ -1,6 +1,8 @@
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn } from 'storybook/test'
+import { WHEN } from '../examples'
 import { BookingChanges } from './booking-changes'
 
 const meta: Meta<typeof BookingChanges> = {
@@ -15,7 +17,7 @@ const meta: Meta<typeof BookingChanges> = {
     lineEntryHref: '/salons/1/bookings/2/services/new',
     notesHref: '/salons/1/bookings/2/edit',
     removable: true,
-    when: '2026年11月20日（金） 10:00〜11:00',
+    when: WHEN,
     open: false,
     onOpen: fn(),
     onClose: fn(),
@@ -54,8 +56,7 @@ export const Removing: Story = {
 export const Unremoved: Story = {
   args: {
     open: true,
-    message:
-      '予約を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminBookingMessages.details.changes.removal.failed,
   },
 }
 

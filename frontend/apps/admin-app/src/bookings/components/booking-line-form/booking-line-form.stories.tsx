@@ -1,8 +1,11 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { ADDITION_TAKEN } from '../../utils/booking-moves'
-import { aBooking, moment, salon, services, staff } from '../examples'
+import { aBooking, DAY, moment, salon, services, staff } from '../examples'
 import { BookingLineForm } from './booking-line-form'
+
+const { errors } = adminBookingMessages.entry
 
 const meta: Meta<typeof BookingLineForm> = {
   title: 'Admin/Bookings/BookingLineForm',
@@ -10,7 +13,7 @@ const meta: Meta<typeof BookingLineForm> = {
   args: {
     staff,
     services,
-    day: '2026年11月20日（金）',
+    day: dayNameOf(DAY),
     timezone: salon.timezone,
     onValuesChange: fn(),
     onSubmit: fn(),
@@ -28,8 +31,8 @@ export const Empty: Story = {}
 export const WithErrors: Story = {
   args: {
     errors: {
-      serviceId: 'メニューを選んでください。',
-      startTime: '開始の時刻を入力してください。',
+      serviceId: errors.service,
+      startTime: errors.startTime,
     },
   },
 }
@@ -37,7 +40,7 @@ export const WithErrors: Story = {
 /** The API refused the line: its member is taken by another booking */
 export const Refused: Story = {
   args: {
-    message: ADDITION_TAKEN,
+    message: adminBookingMessages.moves.addition.taken,
     check: {
       type: 'taken',
       overlapping: [

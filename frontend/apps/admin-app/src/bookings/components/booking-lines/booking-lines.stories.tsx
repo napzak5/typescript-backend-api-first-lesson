@@ -1,7 +1,10 @@
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aBooking, moment, salon, service, services, staff } from '../examples'
 import { BookingLines } from './booking-lines'
+
+const { errors } = adminBookingMessages.entry
 
 const meta: Meta<typeof BookingLines> = {
   title: 'Admin/Bookings/BookingLines',
@@ -33,8 +36,8 @@ export const OneLine: Story = {}
 export const WithErrors: Story = {
   args: {
     errors: {
-      'services.0.serviceId': 'メニューを選んでください。',
-      'services.0.startTime': '開始の時刻を入力してください。',
+      'services.0.serviceId': errors.service,
+      'services.0.startTime': errors.startTime,
     },
   },
 }

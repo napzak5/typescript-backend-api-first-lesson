@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -7,7 +8,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DayConditions } from '../../utils/booking-day'
 import { DAY, staff } from '../examples'
 import { BookingFilter, type BookingFilterProps } from './booking-filter'
@@ -149,5 +150,44 @@ describe('BookingFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('BookingFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and every state in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WholeDay.run()
+
+    // Assert
+    const date = screen.getByLabelText('Date')
+    // The element `search`: the testing library does not know its role yet
+    expect(date.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Narrow the bookings',
+    )
+    expect(optionsOf(screen.getByRole('combobox', { name: 'Status' }))).toEqual(
+      [
+        'All',
+        'Awaiting confirmation',
+        'Confirmed',
+        'In progress',
+        'Completed',
+        'Cancelled',
+        'No-show',
+        'Draft',
+      ],
+    )
+    expect(optionsOf(screen.getByRole('combobox', { name: 'Staff' }))).toEqual([
+      'All',
+      '田中 美咲',
+      '佐藤 健',
+    ])
   })
 })

@@ -4,25 +4,36 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
-import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
+import { timeAt } from '@beauty-salon-frontend/salon-screens'
 import {
   FieldRow,
   Form,
+  type FormErrors,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   Select,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useId } from 'react'
 import type { LineCheck } from '../../api/bookings-api'
 import type { Names } from '../../utils/day-bookings'
 import { MovedLines } from '../moved-lines/moved-lines'
 import styles from './booking-move-form.module.css'
 
+const { move: WORDS } = adminBookingMessages.moves
+
 export type BookingMoveFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The members of the staff of the salon */
   staff: readonly ModelsStaffProfileResponse[]
   /** The services of the salon, by name */
@@ -54,13 +65,21 @@ export const BookingMoveForm = ({
   moved,
   checks,
   onValuesChange,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: BookingMoveFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const movedName = useId()
 
   return (
-    <Form {...form} errors={errors} submitLabel='日時と担当を変える'>
+    <Form
+      {...form}
+      message={said.message}
+      errors={errors}
+      submitLabel={say(WORDS.submit)}
+    >
       <fieldset
         className={styles['part']}
         onChange={(event) => {
@@ -70,24 +89,24 @@ export const BookingMoveForm = ({
           }
         }}
       >
-        <legend className={styles['name']}>移す先</legend>
+        <legend className={styles['name']}>{say(WORDS.to)}</legend>
         <div className={styles['controls']}>
           <Select
-            label='担当スタッフ'
+            label={say(WORDS.staff)}
             name='staffId'
             options={staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             }))}
-            placeholder='選んでください'
+            placeholder={say(WORDS.choose)}
             required
             defaultValue={booking.staffId}
-            description='予約の担当です。いまの担当が受け持つ明細は、新しい担当に替わります。ほかのスタッフの明細と、担当を決めない明細は、担当がそのままです。'
-            error={errors['staffId']}
+            description={say(WORDS.staffDescription)}
+            error={said.errors['staffId']}
           />
           <FieldRow>
             <TextField
-              label='来店日'
+              label={say(WORDS.date)}
               name='date'
               autoComplete='off'
               type='date'
@@ -95,32 +114,28 @@ export const BookingMoveForm = ({
               defaultValue={booking.bookingDate}
               min={EARLIEST_DAY}
               max={LATEST_DAY}
-              description='サロンの時計の日付です。'
-              error={errors['date']}
+              description={say(WORDS.dateDescription)}
+              error={said.errors['date']}
             />
             <TextField
-              label='開始の時刻'
+              label={say(WORDS.startTime)}
               name='startTime'
               autoComplete='off'
               type='time'
               required
-              defaultValue={inJapanese(
-                timeOfDayAt(booking.startTime, timezone),
-              )}
-              description='最初の明細が始まる時刻です。すべての明細が、同じ時間だけ動きます。'
-              error={errors['startTime']}
+              defaultValue={timeAt(booking.startTime, timezone)}
+              description={say(WORDS.startTimeDescription)}
+              error={said.errors['startTime']}
             />
           </FieldRow>
         </div>
       </fieldset>
       <section className={styles['part']} aria-labelledby={movedName}>
         <h2 className={styles['name']} id={movedName}>
-          動かしたあとの明細
+          {say(WORDS.moved)}
         </h2>
         {moved === undefined ? (
-          <p>
-            担当スタッフ、来店日、開始の時刻を入れると、動かしたあとの明細を出します。
-          </p>
+          <p>{say(WORDS.noMove)}</p>
         ) : (
           <MovedLines
             lines={moved}

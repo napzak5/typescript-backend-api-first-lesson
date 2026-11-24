@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingChangesStories from './booking-changes.stories'
 
 const stories = composeStories(bookingChangesStories)
@@ -142,5 +143,45 @@ describe('BookingChanges', () => {
 
     // Assert
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('BookingChanges on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the changes, and ask before the booking is removed, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unremoved.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'Change the date, time and staff' }),
+    ).toHaveAttribute('href', '/salons/1/bookings/2/reschedule')
+    expect(screen.getByRole('link', { name: 'Add a line' })).toHaveAttribute(
+      'href',
+      '/salons/1/bookings/2/services/new',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Edit the requests and notes' }),
+    ).toHaveAttribute('href', '/salons/1/bookings/2/edit')
+    expect(
+      screen.getByRole('button', { name: 'Remove the booking' }),
+    ).toBeVisible()
+    const asking = screen.getByRole('dialog', { name: 'Remove the booking?' })
+    expect(asking).toHaveAccessibleDescription(
+      'The booking of Fri, November 20, 2026, 10:00–11:00 will be taken out of the ledger with its lines. This is for a booking made by mistake or made twice. Cancel a booking that will not take place instead of removing it. A removed booking cannot be brought back.',
+    )
+    expect(
+      within(asking).getByText(
+        'The booking could not be removed. Check your connection and try again.',
+      ),
+    ).toBeVisible()
+    expect(within(asking).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(within(asking).getByRole('button', { name: 'Remove' })).toBeVisible()
   })
 })

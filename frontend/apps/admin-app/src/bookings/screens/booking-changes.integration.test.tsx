@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
@@ -32,7 +33,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, refuse } from '../__tests__/arrangements'
 
 const MOVE_TAKEN =
@@ -954,5 +955,181 @@ describe('moving a booking and changing its lines, against the API', () => {
         screen.getByRole('link', { name: '予約の内容へ' }),
       ).toHaveAttribute('href', `/salons/${tokyo}/bookings/${id}`)
     })
+  })
+})
+
+describe('moving a booking and changing its lines on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  /** Opens a booking of the Tokyo salon in English, signed in as the owner. */
+  const toTheBookingInEnglish = async (id: string): Promise<string> => {
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(`/salons/${tokyo}/bookings/${id}`, OWNER, 'en')
+    await screen.findByRole('region', { name: 'Status' })
+
+    return tokyo
+  }
+
+  /** The lines of the page of a booking in English: the service, who does it and the hours. */
+  const linesInEnglish = (): string[][] =>
+    rowsOf('Service lines').map((row) => row.slice(0, 3))
+
+  it('should show where the lines would be, and move the booking, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0002',
+      day: DAY,
+      at: '10:00',
+      staffCode: 'STF002',
+    })
+    await addLine(id, {
+      service: 'Kids Cut (Under 12)',
+      staffCode: null,
+      at: '11:00',
+      minutes: 30,
+    })
+    await toTheBookingInEnglish(id)
+    await user.click(
+      screen.getByRole('link', { name: 'Change the date, time and staff' }),
+    )
+    const moved = await screen.findByRole('region', {
+      name: 'The lines after the move',
+    })
+    await user.selectOptions(combobox('Staff member'), 'Yui Watanabe')
+    await user.clear(field('Start time'))
+    await user.type(field('Start time'), '14:30')
+    expect(
+      within(moved)
+        .getAllByRole('listitem')
+        .filter((item) => item.parentElement?.tagName === 'OL')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Line 1: Ladies Cut14:30–15:30, staff: Yui Watanabe',
+      'Line 2: Kids Cut (Under 12)15:30–16:00, staff: Unassigned',
+    ])
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Change the date, time and staff' }),
+    )
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(notifications()).toContain(
+      'Changed the date, time and staff of the booking.',
+    )
+    expect(linesInEnglish()).toEqual([
+      ['Ladies Cut', 'Yui Watanabe', '14:30–15:30'],
+      ['Kids Cut (Under 12)', 'Unassigned', '15:30–16:00'],
+    ])
+  })
+
+  it('should say in English why a booking whose treatment began is not moved', async () => {
+    // Arrange
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0002',
+      day: DAY,
+      at: '10:00',
+      status: 'in_progress',
+    })
+    const tokyo = await salonIdOf(TOKYO)
+
+    // Act
+    await openAs(`/salons/${tokyo}/bookings/${id}/reschedule`, OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This booking is in the status “In progress”, so its date, time and staff cannot be changed. They can be changed for bookings in these statuses: Draft, Awaiting confirmation, Confirmed.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the booking' }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/bookings/${id}`)
+  })
+
+  it('should add a line, show it on its page and take it off after asking, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0002',
+      day: DAY,
+      at: '10:00',
+      staffCode: 'STF002',
+    })
+    await toTheBookingInEnglish(id)
+    await user.click(screen.getByRole('link', { name: 'Add a line' }))
+    await screen.findByRole('combobox', { name: 'Service' })
+    expect(combobox('Staff')).toHaveDisplayValue('Same as the booking')
+    await user.selectOptions(combobox('Service'), 'Mens Cut (45 min)')
+    await user.type(field('Start time'), '11:00')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add a line' }))
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(notifications()).toContain('Added the line.')
+    expect(
+      await screen.findByRole('table', { name: 'Service lines' }),
+    ).toBeVisible()
+    expect(linesInEnglish()).toEqual([
+      ['Ladies Cut', 'Mika Suzuki', '10:00–11:00'],
+      ['Mens Cut', 'Mika Suzuki', '11:00–11:45'],
+    ])
+
+    // Act
+    await user.click(
+      within(screen.getByRole('table', { name: 'Service lines' })).getByRole(
+        'link',
+        { name: 'Mens Cut' },
+      ),
+    )
+
+    // Assert
+    expect(await heading('Line details')).toBeVisible()
+    expect(
+      within(await screen.findByRole('region', { name: 'Service line' }))
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual([
+      'Service',
+      'Staff',
+      'Time',
+      'Duration',
+      'Price',
+      'Discount',
+      'Amount to pay',
+      'Done',
+      'Notes',
+    ])
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Take this line off' }))
+    const dialog = screen.getByRole('dialog', { name: 'Take the line off?' })
+    expect(dialog).toHaveAccessibleDescription(
+      expect.stringMatching(/^Mens Cut \(11:00–11:45\) will be taken off/),
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Take off' }))
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(notifications()).toContain('Took the line off.')
+    expect(
+      await screen.findByRole('table', { name: 'Service lines' }),
+    ).toBeVisible()
+    expect(linesInEnglish()).toEqual([
+      ['Ladies Cut', 'Mika Suzuki', '10:00–11:00'],
+    ])
   })
 })

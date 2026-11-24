@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as bookingEntryFormStories from './booking-entry-form.stories'
 
 const stories = composeStories(bookingEntryFormStories)
@@ -152,7 +153,9 @@ describe('BookingEntryForm', () => {
     await stories.Refused.run()
 
     // Assert
-    expect(screen.getByText('入力内容を確かめてください。')).toBeVisible()
+    expect(
+      screen.getByText('入力した内容を確かめて、もう一度お試しください。'),
+    ).toBeVisible()
     expect(combobox('担当スタッフ')).toHaveAccessibleDescription(
       expect.stringContaining('担当スタッフを選んでください。'),
     )
@@ -169,5 +172,52 @@ describe('BookingEntryForm', () => {
     expect(
       screen.getByRole('button', { name: '予約を入れる' }),
     ).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('BookingEntryForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls, and say what is wrong with the values, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(
+      screen.getByText('Check what you entered and try again.'),
+    ).toBeVisible()
+    expect(combobox('Staff member')).toHaveAccessibleDescription(
+      'The staff member of the booking. This person does the lines whose staff is “Same as the booking”. Choose the staff member.',
+    )
+    expect(combobox('Service of line 1')).toHaveAccessibleDescription(
+      'Choose a service.',
+    )
+    expect(screen.getByLabelText('Date of visit')).toHaveAccessibleDescription(
+      'A date on the clock of the salon. The lines begin at times of this day.',
+    )
+    expect(screen.getByRole('button', { name: 'Make a booking' })).toBeVisible()
+  })
+
+  it('should say what the check of the members found, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Checked.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The staff of line 1 have an overlapping booking. The time a staff member keeps free before and after a booking counts as well. Change the staff member or the start time.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Check whether the staff are free' }),
+    ).toBeVisible()
   })
 })

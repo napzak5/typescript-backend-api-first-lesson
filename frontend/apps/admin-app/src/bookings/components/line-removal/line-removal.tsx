@@ -1,11 +1,15 @@
-import { Alert, Button, Dialog } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Dialog, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import styles from './line-removal.module.css'
+
+const { removal: WORDS } = adminBookingMessages.moves
 
 export type LineRemovalProps = {
   /** Why the line stays on the booking; `undefined` when it is taken away */
-  why: string | undefined
+  why: LocalizedText | undefined
   /** The line, as the dialog names it: 「カット（10:00〜11:00）」 */
-  what: string
+  what: LocalizedText
   /** The dialog that asks before the line is taken away is open */
   open: boolean
   /** The button that takes the line away was pressed: the dialog is to be opened */
@@ -15,8 +19,8 @@ export type LineRemovalProps = {
    * Set `open` to false here
    */
   onClose: () => void
-  /** What went wrong with the attempt; it is said in the dialog */
-  message?: string | undefined
+  /** What went wrong with the attempt; it is said in the dialog, in the language of the page */
+  message?: LocalizedText | undefined
   /** The removal is on its way */
   pending?: boolean | undefined
   /** The removal was confirmed */
@@ -38,32 +42,33 @@ export const LineRemoval = ({
   message,
   pending = false,
   onRemove,
-}: LineRemovalProps) =>
-  why === undefined ? (
+}: LineRemovalProps) => {
+  const say = useSay()
+
+  return why === undefined ? (
     <div className={styles['removal']}>
-      <p>
-        明細の担当や開始の時刻は、変えられません。新しい明細を足してから、この明細を外してください。
-      </p>
+      <p>{say(WORDS.unchangeable)}</p>
       <Button variant='danger' onClick={onOpen}>
-        この明細を外す
+        {say(WORDS.open)}
       </Button>
       <Dialog
         open={open}
         onClose={onClose}
-        title='施術明細を外しますか？'
-        description={`${what}を、予約から外します。予約の時刻と金額は、残る明細から算出し直します。外した明細は、元に戻せません。`}
+        title={say(WORDS.title)}
+        description={say(WORDS.description(what))}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(WORDS.back)}</Button>
             <Button variant='danger' pending={pending} onClick={onRemove}>
-              外す
+              {say(WORDS.submit)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </div>
   ) : (
-    <p>{why}</p>
+    <p>{say(why)}</p>
   )
+}

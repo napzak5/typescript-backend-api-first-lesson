@@ -1,6 +1,11 @@
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
+import { moment, salon, WHEN } from '../examples'
 import { StatusActions } from './status-actions'
+
+const { status: STATUS } = adminBookingMessages.details
 
 const meta: Meta<typeof StatusActions> = {
   title: 'Admin/Bookings/StatusActions',
@@ -8,7 +13,7 @@ const meta: Meta<typeof StatusActions> = {
   args: {
     status: 'pending',
     actions: ['confirm', 'cancel'],
-    when: '2026年11月20日（金） 10:00〜11:00',
+    when: WHEN,
     onAct: fn(),
     onAsk: fn(),
     onClose: fn(),
@@ -49,7 +54,7 @@ export const AskingCompletion: Story = {
     status: 'in_progress',
     actions: ['complete'],
     asking: 'complete',
-    recordedStart: '2026年11月20日（金） 10:05',
+    recordedStart: momentNameAt(moment(5), salon.timezone),
   },
 }
 
@@ -58,7 +63,7 @@ export const CompletionRefused: Story = {
   args: {
     ...AskingCompletion.args,
     completionErrors: {
-      actualEndTime: '終了は、開始より後の時刻にしてください。',
+      actualEndTime: STATUS.completion.endAfterStart,
     },
   },
 }
@@ -72,8 +77,7 @@ export const AskingCancellation: Story = {
 export const CancellationUnsent: Story = {
   args: {
     asking: 'cancel',
-    message:
-      '予約をキャンセルできませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: STATUS.failed.cancel,
   },
 }
 
