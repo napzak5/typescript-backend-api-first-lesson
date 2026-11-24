@@ -44,6 +44,8 @@ export const uiMessages = {
   appShell: {
     mainMenu: text({ en: 'Main menu', ja: 'メインメニュー' }),
     skipToContent: text({ en: 'Skip to content', ja: '本文へ移動' }),
+    /** The name of the choice of the language of the page */
+    language: text({ en: 'Language', ja: '言語' }),
   },
   filterForm: {
     /** What sending the conditions does: it looks for what was typed */

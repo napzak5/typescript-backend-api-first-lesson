@@ -1,3 +1,4 @@
+import type { Locale } from '@beauty-salon-shared/i18n'
 import {
   createContext,
   type ReactNode,
@@ -8,12 +9,19 @@ import {
   useMemo,
   useRef,
 } from 'react'
+import { usePageLanguage } from '../../hooks/language'
+
+/** A screen as it was shown: its title, in the language of the page then */
+type ShownScreen = {
+  title: string
+  language: Locale
+}
 
 type Screens = {
   /** The name of the application: how the title of every document ends */
   applicationTitle: string
-  /** The title of the screen that was shown last; `null` before the first one */
-  shown: RefObject<string | null>
+  /** The screen that was shown last; `null` before the first one */
+  shown: RefObject<ShownScreen | null>
   /** The heading of the screen that was shown last; `null` before the first one */
   heading: RefObject<HTMLHeadingElement | null>
 }
@@ -30,7 +38,7 @@ export const ScreensProvider = ({
   applicationTitle,
   children,
 }: ScreensProviderProps) => {
-  const shown = useRef<string | null>(null)
+  const shown = useRef<ShownScreen | null>(null)
   const heading = useRef<HTMLHeadingElement | null>(null)
   const screens = useMemo(
     () => ({ applicationTitle, shown, heading }),
@@ -54,6 +62,10 @@ export const ScreensProvider = ({
  * paints it: whoever waits for the screen finds the focus on it, and not for
  * a moment where the screen it replaced has left it.
  *
+ * A title that is said anew in another language is the same screen: the
+ * document is named in that language, and the focus stays where it is, on
+ * the choice of the language that changed it.
+ *
  * Outside the frame of an application it does nothing.
  */
 export const useScreen = (
@@ -61,6 +73,7 @@ export const useScreen = (
 ): RefObject<HTMLHeadingElement | null> => {
   const screens = useContext(ScreensContext)
   const heading = useRef<HTMLHeadingElement>(null)
+  const { language } = usePageLanguage()
 
   useLayoutEffect(() => {
     if (screens === null) {
@@ -72,12 +85,16 @@ export const useScreen = (
         : `${title} | ${screens.applicationTitle}`
 
     const previous = screens.shown.current
-    screens.shown.current = title
+    screens.shown.current = { title, language }
     screens.heading.current = heading.current
-    if (previous !== null && previous !== title) {
+    if (
+      previous !== null &&
+      previous.title !== title &&
+      previous.language === language
+    ) {
       heading.current?.focus()
     }
-  }, [screens, title])
+  }, [screens, title, language])
 
   return heading
 }

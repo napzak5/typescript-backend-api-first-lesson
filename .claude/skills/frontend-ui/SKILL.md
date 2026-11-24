@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), and how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/` |
+| The language of the page: where the choice is kept (`languageStore`), the choice in the header (`LanguageChoice`, which `AppShell` shows), the hooks that say a message in it (`useSay`, `usePageLanguage`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), and how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/components/language-choice/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
@@ -316,23 +316,23 @@ nobody reads is removed.
 
 ## The language of the page
 
-A page has one language: the one its visitor chose, and Japanese when they
-chose none. `languageStore` of `io` keeps the choice (`localStorage`,
+A page has one language: the one its visitor chose with the choice in the
+header (`LanguageChoice`, which `AppShell` shows in every application: at
+the end of the header on a wide screen, at the end of the sheet of the menu
+on a narrow one), else the one the browser is set to (`navigator.languages`),
+else Japanese. `languageStore` of `io` keeps the choice (`localStorage`,
 `beauty-salon:language`). The fetch function says it to the API in
 `Accept-Language`, so the API tells its errors in it; `startApplication`
-keeps `<html lang>` at it; and a component says its texts in it. The whole
-is in `docs/i18n.md` (「画面の言語」).
+keeps `<html lang>` at it; and a component says its texts in it. When it
+changes, nothing is loaded again: every component says its texts anew, and
+the focus stays where it is (a heading said anew is the same screen). The
+whole is in `docs/i18n.md` (「画面の言語」).
 
-The texts become messages a package at a time, and in an application an
-area at a time. `ui`, `fields`, `answers`, `session`, `app-frame`,
-`salon-screens` and `preferences` are done, and so are `io` and
-`api-client`, which say nothing. Every area of the portal and of the
-dashboard is done. Of the admin application, the frame (the links of the
-header) and the ledger of the customers are done; its other areas still
-write their texts in Japanese, in the source, and no application shows a
-control that chooses the language yet.
+Every text of every package and application is a message, and every
+package and application has the test that fails on a text written in
+Japanese in its source (`src/texts.test.ts`).
 
-In a package that is done:
+In a package and an application:
 
 - A text is a message of `shared-i18n/src/messages/<who says it>/`, written
   in every language with `text({ en, ja })`; one whose words depend on a
@@ -405,7 +405,7 @@ In a package that is done:
 - `src/texts.test.ts` of the package fails on a text that is written in
   Japanese in its source. A comment may be.
 
-In an area of an application that is done, the same rules hold, and:
+In an area of an application, the same rules hold, and:
 
 - Its texts are the messages of a file of the application in
   `shared-i18n/src/messages/<application>/` (`portal/bookings.ts`:
@@ -2787,7 +2787,8 @@ A share link opens a file for somebody who has no account
 
 | Component | Use it for |
 |-----------|------------|
-| `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and the `account` at its end), the links of `navigation` in a row under the header, the main content with the notification at its top. Below 40rem the header is one row, and the links and the account are in its menu |
+| `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and at its end the choice of the language and the `account`), the links of `navigation` in a row under the header, the main content with the notification at its top. Below 40rem the header is one row, and the links, the account and the choice of the language are in its menu; without links the choice and the account stay in the header |
+| `LanguageChoice` | The choice of the language of the page, which `AppShell` shows: a `select` whose options name each language in that language (`lang` on each). `place='header'` is as high as the small buttons of the account and its name is read, not shown; `place='menu'` shows its name above it |
 | `Navigation` | Links to screens or to views of one, under a name of their own. The application says which one is `current`; a row too long for the screen is scrolled to it, and `orientation='vertical'` puts them below each other, in as many columns as there is room for |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (`actions` always in sight, `otherActions` in the same row from 40rem and in a sheet behind 「ほかの操作」 below it) |
@@ -2869,7 +2870,9 @@ A share link opens a file for somebody who has no account
   the application alone on the screen that carries it). When another screen
   takes the place of one, the focus moves to its `h1`: a screen reader says
   where the user is now, and the keyboard goes on from the top. The first
-  screen of a page load leaves the focus where the browser put it. A screen
+  screen of a page load leaves the focus where the browser put it, and so
+  does a title that is said anew in another language: it is the same
+  screen. A screen
   needs nothing for this but its `PageHeader`, which it shows in every
   state: while its content loads, when there is none, when it failed. The
   one exception is a screen that is named after what it reads (the page of

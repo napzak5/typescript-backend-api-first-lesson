@@ -548,7 +548,7 @@ describe('the screen of the alerts of the stock', () => {
       ),
     ).toBeVisible()
     expect(screen.queryByRole('table')).toBeNull()
-    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(within(screen.getByRole('main')).queryByRole('combobox')).toBeNull()
   })
 
   it('should say that a salon without stock has no alerts', async () => {

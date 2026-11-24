@@ -1,10 +1,14 @@
 import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { createContext, type ReactNode, useContext, useState } from 'react'
-import { useSay } from '../../hooks/language'
+import { usePageLanguage, useSay } from '../../hooks/language'
 import { useWideScreen } from '../../hooks/wide-screen'
 import { classNames } from '../../utils/class-names'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'
+import {
+  LanguageChoice,
+  type LanguageChoicePlace,
+} from '../language-choice/language-choice'
 import { Link } from '../link/link'
 import { Navigation, type NavigationItem } from '../navigation/navigation'
 import { NotificationOutlet } from '../notifications/notifications'
@@ -71,18 +75,26 @@ const MenuIcon = () => (
   </svg>
 )
 
+/** The choice of the language of the page, where the frame puts it */
+const PageLanguageChoice = ({ place }: { place: LanguageChoicePlace }) => {
+  const { language, choose } = usePageLanguage()
+
+  return <LanguageChoice language={language} onChoose={choose} place={place} />
+}
+
 type MenuProps = {
   items: readonly NavigationItem[]
   account: ReactNode
 }
 
 /**
- * The navigation and the account of a narrow screen, behind one button:
- * a sheet that comes up from the bottom edge, where a thumb reaches its
- * links. It closes when one of its links or buttons is pressed, as well as
- * on the overlay, on its own button and on the Escape key; the focus goes
- * back to the button that opened it, and from there to the heading of the
- * screen a link opened.
+ * The navigation, the account and the choice of the language of a narrow
+ * screen, behind one button: a sheet that comes up from the bottom edge,
+ * where a thumb reaches its links. It closes when one of its links or
+ * buttons is pressed, as well as on the overlay, on its own button and on
+ * the Escape key; the focus goes back to the button that opened it, and
+ * from there to the heading of the screen a link opened. A language that
+ * is chosen leaves it open, saying its texts in that language.
  */
 const Menu = ({ items, account }: MenuProps) => {
   const say = useSay()
@@ -117,6 +129,9 @@ const Menu = ({ items, account }: MenuProps) => {
             <InMenuContext value>{account}</InMenuContext>
           </div>
         )}
+        <div className={styles['menuLanguage']}>
+          <PageLanguageChoice place='menu' />
+        </div>
       </Dialog>
     </>
   )
@@ -130,11 +145,12 @@ const Menu = ({ items, account }: MenuProps) => {
  * navigation. The notification of the application (`NotificationProvider`)
  * is shown at the top of the content.
  *
- * On a wide screen the account stands at the end of the header, and the
- * links of the navigation in a row under it. A narrow screen has no room
- * for either: the header is one row, with a button at its end that opens
- * the menu, the links and the account in a sheet. Without links the
- * account stays in the header, beside the name: the way in, for whoever is
+ * On a wide screen the choice of the language and the account stand at
+ * the end of the header, and the links of the navigation in a row under
+ * it. A narrow screen has no room for them: the header is one row, with a
+ * button at its end that opens the menu, the links, the account and the
+ * choice of the language in a sheet. Without links the choice and the
+ * account stay in the header, beside the name: the way in, for whoever is
  * not signed in.
  *
  * The screen inside it says what it is with a `PageHeader`: the frame names
@@ -168,9 +184,10 @@ export const AppShell = ({
           {!wide && hasLinks ? (
             <Menu items={navigation} account={account} />
           ) : (
-            account !== undefined && (
-              <div className={styles['account']}>{account}</div>
-            )
+            <div className={styles['account']}>
+              <PageLanguageChoice place='header' />
+              {account}
+            </div>
           )}
         </div>
       </header>

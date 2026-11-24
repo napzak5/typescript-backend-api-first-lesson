@@ -12,7 +12,7 @@
 - そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`api-client` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
 - セッション: ブラウザーに保存したトークンをリクエストに付け、期限が切れたら再発行して送り直す仕組み（保存は `io`、再発行と送り直しは `api-client`）と、サインインしているのがだれかを返すフック、サインインとサインアウト、サインインの画面、サインインが要る画面の出し分け、ヘッダーのアカウント欄（`@beauty-salon-frontend/session`）。[セッション](#セッション)を参照
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
-- ページの言語: 訪れた人が選んだ言語（選んでいなければ日本語）を保つ所（`io` の `languageStore`）。どのリクエストも、その言語を `Accept-Language` で API に言い、`<html lang>` も、共通の部品（`ui`）が自分で言う文言も、その言語になる。[ページの言語](#ページの言語)を参照
+- ページの言語: 訪れた人がヘッダーで選んだ言語（選んでいなければブラウザーの言語、それもなければ日本語）を保つ所（`io` の `languageStore`）。どのリクエストも、その言語を `Accept-Language` で API に言い、`<html lang>` も、共通の部品（`ui`）が自分で言う文言も、その言語になる。[ページの言語](#ページの言語)を参照
 - UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
 - アカウントの画面（portal-app の `src/account/`）: 登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ。[アカウントの画面](#アカウントの画面)を参照
 - サロンの画面（portal-app の `src/salons/`）: サロンを探す画面（`/`）と、サロンの詳細の画面（`/salons/:salonId`）。[サロンの画面](#サロンの画面)を参照
@@ -217,16 +217,16 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 ## ページの言語
 
-画面には、言語が 1 つあります。訪れた人が選んだ言語で、選んでいなければ日本語です。決まりの全体は、[多言語](./i18n.md#画面の言語)にあります。
+画面には、言語が 1 つあります。訪れた人がヘッダーで選んだ言語で、選んでいなければブラウザーの言語、それも製品の言語でなければ日本語です。決まりの全体は、[多言語](./i18n.md#画面の言語)にあります。
 
-- 選択は、`io` の `languageStore` が、`localStorage` の `beauty-salon:language` に保つ（`frontend/packages/io/src/libs/language/stored-language.ts`）。値がないとき、製品の言語でない値のとき、ブラウザーが `localStorage` へのアクセスを拒むときは、日本語。`subscribe` で、同じタブの選択と、ほかのタブの選択（`storage` イベント）が伝わる
+- 選択は、`io` の `languageStore` が、`localStorage` の `beauty-salon:language` に保つ（`frontend/packages/io/src/libs/language/stored-language.ts`）。値がないとき、製品の言語でない値のとき、ブラウザーが `localStorage` へのアクセスを拒むときは、選択はなく、ブラウザーの言語（`navigator.languages` の、製品の言語を名指す最初のもの）、それもなければ日本語。`localStorage` が保存を断っても、選んだ言語は、読み込み直すまで、そのページの言語になる。`subscribe` で、同じタブの選択と、ほかのタブの選択（`storage` イベント）と、ブラウザーの言語の変化（`languagechange`）が伝わる
 - `customInstance` と、セッションの再発行は、その言語を `Accept-Language` で API に言う。API は、エラーの `title`、`detail`、`errors[].message` を、その言語で返す（`Content-Language`）
 - `startApplication` は、`<html lang>` を、その言語に合わせ続ける（`frontend/packages/app-frame/src/utils/page-language.ts`）
 - `ui` の部品は、自分の文言（「閉じる」「必須」「さらに表示」など）を、その言語で言う（`useSay`）。文言は、`@beauty-salon-shared/i18n/messages/ui` のメッセージで、どれも、すべての言語で書いてある
 - 入力の決まり（`fields`）と、応答の読み方（`answers`）の文も、同じ所のメッセージ（`fieldMessages`、`answerMessages`）で、2 つのパッケージは、それを返す。セッションの画面（`session`）、アプリの枠（`app-frame`）、サロンの画面が共有する部分（`salon-screens`）、好み設定（`preferences`）の文言も、同じ所のメッセージ（`sessionMessages`、`securityMessages`、`frameMessages`、`salonScreenMessages`、`preferenceMessages`）で、フォームは、誤りと文をメッセージで持ち、表示する部品が `ui` の `useSaidForm` で言う。2 つ以上のアプリかパッケージが名前を言う列挙の値（予約の状態、性別、会員ランク、ロール、レベル、サービスと支払いの種類、レビューの通報の理由、ファイルの種類）も、業務の言葉のメッセージ（`termMessages`）で、アプリの名前の表は、それから作る。ポータルのプロフィールと管理画面の顧客台帳が同じに言う、お客様の記録の欄の名前も、同じ所のメッセージ（`customerMessages`）。ポータルと管理画面が同じに言うレビューの言葉（評価の項目、評価ごとの件数、並び順、通報のダイアログ）も、同じ所のメッセージ（`reviewMessages`）。管理画面のすべての画面と、ヘッダーのリンクの文言は、`shared-i18n/src/messages/admin/` のメッセージで、値の書き方とフォームの関数も、メッセージを返す。通知（`notify`）も、メッセージを受け取り、表示する所で言う
 - ポータルのすべての画面と、ヘッダーのリンクの文言は、ポータルのメッセージ（`@beauty-salon-shared/i18n/messages/portal` の `portalFrameMessages`、`portalAccountMessages`、`portalSalonMessages`、`portalBookingMessages`、`portalProfileMessages`、`portalPreferenceMessages`、`portalReviewMessages`、`portalShareMessages`）で、値の書き方とフォームの関数も、メッセージを返す。ヘッダーのリンクは、名前をメッセージで持ち（`app-frame` の `FrameLink`）、アプリの枠が言う
 - ダッシュボードのすべての画面と、ヘッダーのリンクの文言は、ダッシュボードのメッセージ（`@beauty-salon-shared/i18n/messages/dashboard` の `dashboardFrameMessages`、`dashboardReportMessages`）で、値の書き方とフォームの関数も、メッセージを返す
-- 言語を選ぶ部品は、まだ、どのアプリにも出していない
+- 言語を選ぶ部品（`ui` の `LanguageChoice`）は、`AppShell` がヘッダーに出す（狭い画面でメニューがあれば、メニューのシートの終わり）。選ぶと、`languageStore.choose` が保ち、読み込み直さずに、そのページとほかのタブが言い直す。言い直した見出しでは、フォーカスを動かさない
 
 ## セッション
 
@@ -334,8 +334,8 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 - **1 行の欄で Enter キーを押すと、フォームを送る**（ブラウザーの動き）。1 行の欄を持つフォームは、どれも、そのことをテストで確かめる（`@beauty-salon-frontend/testing` の `itShouldBeSentByTheEnterKey`）。複数行の欄（`TextArea`）の Enter キーは、改行になる
 - **`SessionAccount`** は、ヘッダーのアカウント欄。サインインしている人のメールアドレスと、サインアウトのボタンを出す。狭い画面ではメールアドレスを隠す（読み上げには残る）。`signInHref` を渡すと、サインインしていない人にサインインの画面へのリンクを出す（portal-app）。`securityHref` を渡すと、サインアウトのボタンの前に「アカウントの安全」のリンクを出す（admin-app と dashboard-app。どちらにも、マイページがない）
 - **サインアウト**すると、「サインアウトしました。」と通知し、サインインが要る画面はサインインの画面に替わる。ほかのタブも同じ状態になる
-- **画面が替わったとき**は、`ui` の `AppShell` と `PageHeader` が、文書のタイトルを「画面の名前 | アプリの名前」にし、フォーカスを画面の見出し（`h1`）へ移す。サインインのあとも、サインアウトのあとも、ルートの移動でも同じ。ページを読み込んだ直後の最初の画面では、フォーカスを動かさない
-- **スマートフォンの幅（40rem 未満）では、ヘッダーは 1 段**で、アプリの名前と「メインメニュー」のボタン（3 本線）だけを置く。ボタンは、下から出るシート（`ui` の `Dialog` の `kind='menu'`）を開き、シートには、ヘッダーのリンク（2 列）と、アカウント（メールアドレスの全体、「アカウントの安全」、「サインアウト」）がある。シートのリンクかボタンを押すと、シートは閉じる（オーバーレイ、「閉じる」、Escape キーでも閉じる）。フォーカスはボタンに戻り、リンクで移った先の画面では、その見出しへ移る。リンクのない人（ポータルのサインインの前など）には、アカウント（「サインイン」）を名前の横に置く。どちらを描くかは、`AppShell` がブラウザーに幅を問い合わせて決め、同じリンクを 2 か所に描いて片方を隠すことはしない
+- **画面が替わったとき**は、`ui` の `AppShell` と `PageHeader` が、文書のタイトルを「画面の名前 | アプリの名前」にし、フォーカスを画面の見出し（`h1`）へ移す。サインインのあとも、サインアウトのあとも、ルートの移動でも同じ。ページを読み込んだ直後の最初の画面では、フォーカスを動かさない。言語が変わって見出しが言い直されたときも、同じ画面なので、フォーカスを動かさない
+- **スマートフォンの幅（40rem 未満）では、ヘッダーは 1 段**で、アプリの名前と「メインメニュー」のボタン（3 本線）だけを置く。ボタンは、下から出るシート（`ui` の `Dialog` の `kind='menu'`）を開き、シートには、ヘッダーのリンク（2 列）と、アカウント（メールアドレスの全体、「アカウントの安全」、「サインアウト」）と、言語の選択（「言語」）がある。言語を選んでも、シートは閉じない。シートのリンクかボタンを押すと、シートは閉じる（オーバーレイ、「閉じる」、Escape キーでも閉じる）。フォーカスはボタンに戻り、リンクで移った先の画面では、その見出しへ移る。リンクのない人（ポータルのサインインの前など）には、言語の選択とアカウント（「サインイン」）を名前の横に置く。どちらを描くかは、`AppShell` がブラウザーに幅を問い合わせて決め、同じリンクを 2 か所に描いて片方を隠すことはしない
 - **画面の見出しの操作**は、どの幅でも横に並べる。スマートフォンの幅では、10rem 以上の列に 2 つずつ並べ、ボタンは列の幅に伸ばす。操作が 3 つ以上の画面（顧客台帳、在庫、メニュー）は、主の操作だけを見出しに置き、ほかの操作は「ほかの操作」のボタンが開く下からのシートに入れる（`PageHeader` の `otherActions`）。シートの操作を押すと、シートは閉じる。広い画面では、すべての操作を見出しの行に並べる
 - **一覧の絞り込み**は、どの一覧も `ui` の `FilterForm`（枠、欄の列、ボタン）で、各画面は欄だけを渡す。欄の値は、アドレスの条件を写す（`useFilterValues`）。広い画面では、すべての欄を 1 つの列の並びに置き、列は 12rem 以上で幅に入るだけ並べる（日付と選択を行の端まで伸ばさない）。キーワードと 2 つの日付の組は、2 列を使う。スマートフォンの幅では、キーワード、一覧の日や期間、選んだお客様だけを置き、ほかの条件は「条件」のボタンが開く下からのシートに入れる。ボタンは、指定している条件の数を「条件（2）」と示す。シートはフォームの一部で、閉じても選んだ値は残り、ページの「探す」でも送られる。送るとシートは閉じ、シートの欄にエラーがあれば開き直して、その欄にフォーカスを移す。送るボタンは、入れた言葉で探すフォームは「探す」、選んだ条件で一覧を絞るフォームは「表示する」。条件を外すリンクは、どれも「条件を外す」
 - **ヘッダーのリンク**の列が、それより広い画面に収まらないときは、列だけを横にスクロールして、いまの画面のリンクを列の中央に出す（`ui` の `Navigation`。列の端のリンクは、端まで）。列のリンクか、いまの画面のリンクが替わったときに動かす。画面が替わったときと、サインインした人のロールのリンクが加わったとき（admin-app の「スタッフ」と「プロフィール」）。ページは縦にスクロールしない。画面を描き直しただけでは動かさないので、利用者が動かした列はそのまま
@@ -1346,7 +1346,7 @@ const found = useInfiniteQuery({
 
 ## テスト
 
-フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。`io`、`api-client`、`session` のテストも jsdom で実行します（セッションと、ページの言語の選択を `localStorage` に置くため）。テストのページは、言語を選んでいないページ（日本語）です。英語は、テストが `languageStore.choose('en')` で選び、終わったら `localStorage` を消します。
+フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。`io`、`api-client`、`session` のテストも jsdom で実行します（セッションと、ページの言語の選択を `localStorage` に置くため）。テストのブラウザーは、日本語に設定してあります（`@beauty-salon-frontend/testing/setup` が `navigator.languages` を `['ja-JP']` にする。`setBrowserLanguages` で変えられ、テストのあとに戻る）。テストのページは、言語を選んでいないページ（日本語）です。英語は、テストが `languageStore.choose('en')` で選び、終わったら `localStorage` を消します。
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある。部品が自分で言う文言は、英語のページでも確かめる。`src/catalogue.test.tsx` は、カタログのツールバーの言語が、ストーリーの言語になること。`src/texts.test.ts` は、パッケージのソースに、日本語で書いた文がないこと（`io` と `api-client` にも、同じテストがある）
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app では、存在しないパスのページと `/sign-in`。トップページは API を読むので、結合テストにある）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
@@ -1355,7 +1355,7 @@ const found = useInfiniteQuery({
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - フォームの値を読む関数のテストは、フォームが送る値を `formOf({ 名前: 値 })` で作る。同じ名前に複数の値があるときは、`formOfEntries([[名前, 値], …])`（`@beauty-salon-frontend/testing/forms`）。行を並べるフォームなど、そのフォームだけの作り方のほかは、テストのファイルが `FormData` を自分で組み立てない
 - `api-client` の `src/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件、ページの言語を `Accept-Language` で言うこと）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い、再発行の途中に `1004` を受け取ったリクエストが、再発行を待ってから、新しいセッションで送り直されること）。`src/fetcher/renew-session.test.ts`: 再発行のパスが、生成されたものと同じであること。`src/made-up-answers.test.ts`: テストが作る API の応答（`@beauty-salon-frontend/testing/answers` の `problem`、`problemWithCode`、`record`、`page`）が、生成された型の値と、すべてのプロパティで同じであること。`testing` は `api-client` に依存できない（`api-client` が使う `io` のテストが `testing` を使うので、pnpm がサイクルとして拒む）ので、契約の型との照らし合わせは、型のあるこのパッケージに置く
-- `io` の `src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更。`src/libs/language/stored-language.test.ts`: ページの言語の選択（選択がないとき、製品の言語でない値、保存を断るブラウザー、購読、ほかのタブ）。`src/libs/storage/kept-value.test.ts`: 2 つが共有する、1 つのキーの値の保ち方。`src/libs/file/save-file.test.ts`: ファイルの名前と保存
+- `io` の `src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更。`src/libs/language/stored-language.test.ts`: ページの言語の選択（選択がないとき、ブラウザーの言語、製品の言語でない値、保存を断るブラウザーと、そのページの間の選択、購読、ほかのタブ、ブラウザーの言語の変化）。`src/libs/storage/kept-value.test.ts`: 2 つが共有する、1 つのキーの値の保ち方。`src/libs/file/save-file.test.ts`: ファイルの名前と保存
 - `answers` の `src/reading.test.ts`: 応答を読めなかったわけにすること、いくつかを読む部分のわけ、パターンの部品（セッションの要らない操作のものも）、断られた値、ページ、一覧を最後まで読むこと（つなぐこと、止まること、10 ページまで）、読めなかったときと送れなかったときの文。`src/pages.test.ts`: 続く一覧の組み立てと、次のページの起点。`src/outside-the-contract.test.ts`: 契約にない状態
 - `fields` の `src/*.test.ts`: 値の決まりごとのテスト（`days.test.ts`: 日であるもの、ないもの。`names.test.ts`、`email.test.ts`、`phones.test.ts`: 空、長すぎる値、形の違う値と、その文。`lengths.test.ts`: 長さの文と、欄ごとの確かめ。`choices.test.ts`: 選択肢の値、空、選択肢にない値。`web-addresses.test.ts`: API が受け取る URL と断る URL、その文、1 行に 1 つ書く一覧で確かめる行、長さの決まりのない一覧、リンクにしてよいアドレス。`lines.test.ts`: 1 行に 1 つずつ書く一覧の読み取り。`customers.test.ts`: 性別とメニューの区分の並び、列の長さ、生年月日の範囲、好みのメニューとメモの読み方、断られた値の欄と文）
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
@@ -1455,7 +1455,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 | `admin/`、`dashboard/`、`portal/` | そのアプリの画面のテスト。ファイルの名前は、確かめることだけを言う（`admin/bookings.e2e.test.ts`、`portal/bookings.e2e.test.ts`）。サインインの画面は、admin-app のアドレスで確かめる（`admin/sign-in.e2e.test.ts`）。ほかのアプリで終わるテストは、確かめる画面のアプリに置く（`portal/account.e2e.test.ts` は、招待された人が admin-app にサインインする所まで） |
 | `applications/` | 3 つのアプリのそれぞれについて確かめること。だれに開くか（`applications.e2e.test.ts`）、名前、アイコン、共有リンクの画像（`brand.e2e.test.ts`）、ページの言語（`language.e2e.test.ts`） |
 | `layout/` | アプリが共有する部品が、ブラウザーでどう置かれるか。ページの上のダイアログ、一覧の条件、画面の操作、ヘッダーのリンク、狭い画面、書体と密度 |
-| `support/` | テストが共有するもの。フィクスチャー、実行のはじめの用意（`global-setup.ts`）とアプリの一覧、サインイン、ページの検査、キーボードの操作、API を通した用意、ページの言語の選択（`language.ts`: 開く前に選ぶ `openInLanguage`、開いているページで選ぶ `chooseLanguage`） |
+| `support/` | テストが共有するもの。フィクスチャー、実行のはじめの用意（`global-setup.ts`）とアプリの一覧、サインイン、ページの検査、キーボードの操作、API を通した用意、ページの言語の選択（`language.ts`: 開く前に選んでおく `openInLanguage`、ヘッダーの選択で選ぶ `chooseLanguage`、その選択の `languageChoice` と、メニューの中の `languageChoiceIn`） |
 
 - 実行のはじめに、テスト用のサーバーを起動し、その上に API を 1 つ、ポート 4100 で起動します。この API は、3 つのアプリのオリジンからの呼び出しを許可し（CORS）、メールのリンクを、テスト中の portal-app に向けて書きます
 - 3 つのアプリを、その API のために `vite build --mode test` でビルドして（`VITE_BACKEND_BASE_URL` と、ほかのアプリのオリジンは、環境変数が `.env.test` より優先されます）、配信します。portal-app は 4101、admin-app は 4102、dashboard-app は 4103 です。どれもこのマシンだけで待ち受け、開発サーバー（3000〜3003）とは別のポートなので、`pnpm dev` と同時に動かせます
@@ -1468,7 +1468,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 
 - `src/admin/sign-in.e2e.test.ts`: 開こうとしたアドレスにサインインの画面が出て、サインインするとそのアドレスの画面が出ること、空の欄では何も送らず、最初の欄へフォーカスが移ること、誤ったパスワード、キーボードだけでのサインイン、読み込み直してもサインインが続くこと、別のタブでのサインアウトがこのタブにも及ぶこと、2 要素認証のコード
 - `src/applications/applications.e2e.test.ts`: アプリごとの、使えるロールと使えないロール、portal-app のサインインとサインアウト、スマートフォンの幅（390px）の画面
-- `src/applications/language.e2e.test.ts`: 3 つのアプリのどれも、言語を選んでいないページでは日本語、英語を選んだページでは英語で、`<html lang>` と、枠の「本文へ移動」を言うこと。ページが、ブラウザーの言語（テストのブラウザーは `en-US`）ではなく、ページの言語で API に頼み、API が、その言語で答えること（サインインの失敗の `Accept-Language`、`Content-Language`、本文）。ほかのタブで選んだ言語に、開いているページが、読み込み直さずに従うこと
+- `src/applications/language.e2e.test.ts`: 3 つのアプリのどれも、言語を選んでいないページでは日本語（テストのブラウザーは `ja-JP`）、英語を選んだページでは英語で、`<html lang>` と、枠の「本文へ移動」を言うこと。ヘッダーの選択で選ぶと、読み込み直さずに、その言語になり、読み込み直したあとも、その言語であること。Tab キーで、アプリの名前のあとに選択に届き、名前を打って選べ、フォーカスが選択に残ること。`en-US` のブラウザーでは、選んでいないページは英語で、英語で API に頼み、日本語を選ぶと日本語で頼むこと。`fr-FR` のブラウザーでは、日本語であること。ページの言語で API に頼み、API が、その言語で答えること（サインインの失敗の `Accept-Language`、`Content-Language`、本文）。狭い画面では、選択はメニューのシートにあり、選んでもシートが開いたまま、その言語で言うこと。320px のポータルのヘッダーに、選択と「サインイン」が収まること。ほかのタブで選んだ言語に、開いているページが、読み込み直さずに従うこと
 - `src/layout/navigation.e2e.test.ts`: スマートフォンの幅で、ヘッダーのリンクの列が収まらないとき、いまの画面のリンクが見えること。dashboard-app の最後のリンク（「区分別の売上」）の画面をアドレスから開いたとき、admin-app の「設定」の画面を開いてサインインし、ロールのリンクがその前後に加わったとき、ほかの画面から戻ったとき。ページは縦にスクロールしないこと
 - `src/layout/dialog.e2e.test.ts`: 開いたダイアログのオーバーレイが、画面の四隅まで覆うこと、開いている間は後ろのページがスクロールせず、閉じるとスクロールすること。スマートフォンの幅では、下の端に付く幅いっぱいのシートで、ボタンが縦に並ぶこと、内容が長いときも画面の高さを超えず、ボタンが見えていること。幅のある画面では、中央にあり、ボタンが横に並ぶこと
 - `src/layout/dialog-scrollbar.e2e.test.ts`: スクロールバーが幅を取るブラウザーで、ダイアログを開いている間はスクロールバーが消え、オーバーレイが画面の四隅まで覆い、後ろの内容が横に動かないこと、閉じるとスクロールバーが戻ること。このファイルだけ、スクロールバーを描くブラウザーで動く（ほかのテストのブラウザーは、スクロールバーを描かない）
