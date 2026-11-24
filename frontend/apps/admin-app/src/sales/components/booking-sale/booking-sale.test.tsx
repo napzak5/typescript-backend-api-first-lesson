@@ -97,6 +97,17 @@ describe('BookingSale', () => {
     // Assert
     expect(onRetry).toHaveBeenCalledOnce()
   })
+
+  it('should say that the checkout of the booking is not for this account when its sales were refused', async () => {
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(
+      within(part()).getByText('この予約の会計は、見られません。'),
+    ).toBeVisible()
+    expect(within(part()).queryByRole('link')).toBeNull()
+  })
 })
 
 describe('BookingSale on a page in English', () => {

@@ -45,6 +45,12 @@ const method = (
   ...changes,
 })
 
+/** A method of cash of the salon, with what a story or a test changes of it. */
+export const aPaymentMethod = (
+  changes: Partial<ModelsPaymentMethodResponse> = {},
+): ModelsPaymentMethodResponse =>
+  method('1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d', 'cash', '現金', changes)
+
 /** Cash; a card from 1,000 yen; electronic money up to 20,000 yen; a QR payment the salon uses no more */
 export const paymentMethods: ModelsPaymentMethodResponse[] = [
   method('1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d', 'cash', '現金'),

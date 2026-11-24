@@ -13,6 +13,7 @@ import {
   cardNameOf,
   methodNameOf,
   owedOf,
+  receivedAtOf,
   receivedOf,
   refundedOf,
   refundNameOf,
@@ -172,6 +173,26 @@ describe('refundNameOf', () => {
   ])('should say %s', (_case, payment, said) => {
     // Act, Assert
     expect(refundNameOf(payment, salon.timezone, salon.currency)).toEqual(said)
+  })
+})
+
+describe('receivedAtOf', () => {
+  it.each<[string, string | null, string]>([
+    [
+      'when it was received',
+      '2026-11-20T02:30:00.000Z',
+      '2026-11-20T02:30:00.000Z',
+    ],
+    [
+      'when it was recorded, as it was not received',
+      null,
+      '2026-11-20T02:00:00.000Z',
+    ],
+  ])('should say %s', (_case, processedAt, expected) => {
+    // Act, Assert
+    expect(
+      receivedAtOf({ processedAt, createdAt: '2026-11-20T02:00:00.000Z' }),
+    ).toBe(expected)
   })
 })
 

@@ -24,7 +24,12 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -44,10 +49,9 @@ import {
 } from '../../salons/api/salons-api'
 import {
   attemptVoid,
+  forgetListsOf,
   type SaleRead,
   saleKeyOf,
-  saleListsKeyOf,
-  salesOfBookingKeyOf,
 } from '../api/sales-api'
 import { PaymentTable } from '../components/payment-table/payment-table'
 import { SalePoints } from '../components/sale-points/sale-points'
@@ -121,12 +125,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
     changedFrom.current = sale
     const read: SaleRead = { type: 'found', sale: now }
     queryClient.setQueryData(key, read)
-    queryClient.removeQueries({ queryKey: saleListsKeyOf(salon.id) })
-    if (now.bookingId !== null) {
-      queryClient.removeQueries({
-        queryKey: salesOfBookingKeyOf(now.bookingId),
-      })
-    }
+    forgetListsOf(queryClient, now)
   }
   const voidance = useMutation({
     mutationFn: (request: ModelsSaleVoidRequest) =>
@@ -161,8 +160,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
   })
   const customer = useQuery({
     queryKey: customerKeyOf(customerId ?? ''),
-    queryFn: () => readCustomer(customerId ?? ''),
-    enabled: customerId !== null,
+    queryFn: customerId === null ? skipToken : () => readCustomer(customerId),
   })
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),

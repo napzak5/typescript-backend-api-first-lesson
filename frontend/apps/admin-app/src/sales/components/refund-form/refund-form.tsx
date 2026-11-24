@@ -17,7 +17,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
-import { cardNameOf, methodNameOf } from '../../utils/sale-format'
+import { cardNameOf, methodNameOf, receivedAtOf } from '../../utils/sale-format'
 import styles from './refund-form.module.css'
 
 const { words } = adminSaleMessages
@@ -70,12 +70,7 @@ export const RefundForm = ({
             },
             {
               term: say(words.receivedAt),
-              description: say(
-                momentNameAt(
-                  payment.processedAt ?? payment.createdAt,
-                  timezone,
-                ),
-              ),
+              description: say(momentNameAt(receivedAtOf(payment), timezone)),
             },
             {
               term: say(words.method),

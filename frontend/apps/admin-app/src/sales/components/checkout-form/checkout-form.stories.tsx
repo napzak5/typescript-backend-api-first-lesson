@@ -85,6 +85,21 @@ export const WithAddition: Story = {
   },
 }
 
+/** The menu offers nothing to add: every service of it was stopped */
+export const NothingOffered: Story = {
+  args: { offered: [] },
+}
+
+/** A total that no kind of payment of the salon takes at once */
+export const NoneRecommended: Story = {
+  args: {
+    bill: {
+      type: 'calculated',
+      calculation: aCalculation({ recommendedMethods: [] }),
+    },
+  },
+}
+
 /** A service of the booking that was removed from the menu since, billed at its price */
 export const WithRemovedService: Story = {
   args: {

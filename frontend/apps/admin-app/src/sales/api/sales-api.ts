@@ -39,9 +39,14 @@ import {
   saleCrudUpdate,
   saleCrudVoidSale,
 } from '@beauty-salon-frontend/api-client'
+import type { QueryClient } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { type CheckoutAttempt, saleOfBooking } from '../utils/checkout'
+import {
+  type CheckoutAttempt,
+  type SaleOfBookingRequest,
+  saleOfBooking,
+} from '../utils/checkout'
 import type { PaymentAttempt } from '../utils/payments'
 import type { RefundAttempt } from '../utils/refunds'
 import type { SaleChangeAttempt, VoidAttempt } from '../utils/sale-changes'
@@ -168,6 +173,21 @@ export const paymentMethodsKeyOf = (salonId: string): string[] => [
   salonId,
   'payment-methods',
 ]
+
+/**
+ * Drops what was read of the lists a sale is in, after it was entered or
+ * changed: the ledger of its salon, and the sales of its booking when it
+ * bills one. They are read anew where they are shown next.
+ */
+export const forgetListsOf = (
+  queryClient: QueryClient,
+  { salonId, bookingId }: Pick<ModelsSaleResponse, 'salonId' | 'bookingId'>,
+): void => {
+  queryClient.removeQueries({ queryKey: saleListsKeyOf(salonId) })
+  if (bookingId !== null) {
+    queryClient.removeQueries({ queryKey: salesOfBookingKeyOf(bookingId) })
+  }
+}
 
 /**
  * The sales of a salon whose day is in a range, a page at a time, the
@@ -425,22 +445,19 @@ export const readPaymentMethods = async (
   })
 
 /**
- * Enters a sale, and finds out why the API refused it with a conflict,
- * which it says in a sentence only: the booking has a sale that is not
- * void (the one shown), or else the time zone of the salon is no name.
+ * Enters the sale of a booking, and finds out why the API refused it with
+ * a conflict, which it says in a sentence only: the booking has a sale
+ * that is not void (the one shown), or else the time zone of the salon is
+ * no name.
  */
 export const attemptSale = async (
-  request: ModelsSaleCreateRequest,
+  request: SaleOfBookingRequest,
 ): Promise<CheckoutAttempt> => {
   const outcome = await createSale(request)
   if (outcome.type !== 'conflict') {
     return outcome
   }
-  const { bookingId } = request
-  if (bookingId === null) {
-    return { type: 'unbillable' }
-  }
-  const now = await readSalesOfBooking(request.salonId, bookingId)
+  const now = await readSalesOfBooking(request.salonId, request.bookingId)
   if (now.type !== 'found') {
     return now
   }

@@ -1,3 +1,4 @@
+import type { ModelsPaymentMethodCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
   problem,
@@ -56,6 +57,20 @@ describe('readPaymentMethod', () => {
 })
 
 describe('addPaymentMethod', () => {
+  const CASH: ModelsPaymentMethodCreateRequest = {
+    method: 'cash',
+    displayName: '現金',
+    description: null,
+    processorName: null,
+    fee: null,
+    minimumAmount: null,
+    maximumAmount: null,
+    isOnlineEnabled: false,
+    isOfflineEnabled: true,
+    sortOrder: 1,
+    isActive: true,
+  }
+
   it.each(UNWRITTEN)(
     'should add no method after %s',
     async (_, given, type) => {
@@ -63,24 +78,28 @@ describe('addPaymentMethod', () => {
       answering(given)
 
       // Act
-      const written = await addPaymentMethod(salon.id, {
-        method: 'cash',
-        displayName: '現金',
-        description: null,
-        processorName: null,
-        fee: null,
-        minimumAmount: null,
-        maximumAmount: null,
-        isOnlineEnabled: false,
-        isOfflineEnabled: true,
-        sortOrder: 1,
-        isActive: true,
-      })
+      const written = await addPaymentMethod(salon.id, CASH)
 
       // Assert
       expect(written).toEqual({ type })
     },
   )
+
+  // The form refuses what the API would before it sends it: the API never
+  // sees such a value from the screen
+  it('should name the values the API refused', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'maximumAmount', rule: 'custom' }]))
+
+    // Act
+    const written = await addPaymentMethod(salon.id, CASH)
+
+    // Assert
+    expect(written).toEqual({
+      type: 'invalid',
+      values: [{ field: 'maximumAmount', rule: 'custom' }],
+    })
+  })
 })
 
 describe('changePaymentMethod', () => {

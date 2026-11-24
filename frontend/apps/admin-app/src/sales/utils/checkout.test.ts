@@ -128,7 +128,7 @@ describe('billLinesOf', () => {
     // Act
     const lines = billLinesOf(
       booking,
-      [discounted.id, cut?.id ?? ''],
+      [discounted, ...services.slice(0, 1)],
       [...services, discounted],
     )
 
@@ -169,9 +169,9 @@ describe('billLinesOf', () => {
     ])
   })
 
-  it('should bill a line whose service was removed under no service and no name, and leave out an added service that is not on the menu', () => {
+  it('should bill a line whose service was removed under no service and no name', () => {
     // Act
-    const lines = billLinesOf(aBooking(), ['not-on-the-menu'], [])
+    const lines = billLinesOf(aBooking(), [], [])
 
     // Assert
     expect(lines).toEqual([
@@ -220,8 +220,9 @@ describe('taxSharesOf', () => {
     const shared = taxSharesOf(lines, tax)
 
     // Assert
-    expect(shared).toEqual(shares)
-    expect(shared.reduce((sum, share) => sum + share, 0)).toBe(tax)
+    expect(shared.map(({ line: taxed }) => taxed)).toEqual(lines)
+    expect(shared.map(({ tax: share }) => share)).toEqual(shares)
+    expect(shared.reduce((sum, share) => sum + share.tax, 0)).toBe(tax)
   })
 })
 
@@ -408,6 +409,45 @@ describe('afterCheckout', () => {
         message: {
           en: 'The total is more than one sale can hold. Take off some of the added services.',
           ja: '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
+        },
+        errors: {},
+      },
+    ],
+    [
+      'a booking that is billed no more',
+      {
+        type: 'invalid',
+        values: [{ field: 'bookingId', rule: 'not_found' }],
+      },
+      {
+        type: 'again',
+        message: {
+          en: 'This booking can no longer be checked out. Check the booking.',
+          ja: 'この予約は、会計を入れられる予約ではなくなっていました。予約を確かめてください。',
+        },
+        errors: {},
+      },
+    ],
+    [
+      'a refusal of a value the checkout does not send of itself',
+      { type: 'invalid', values: [{ field: 'notes', rule: 'too_big' }] },
+      {
+        type: 'again',
+        message: {
+          en: 'The sale could not be entered. Check your connection and try again.',
+          ja: '会計を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
+        errors: {},
+      },
+    ],
+    [
+      'an account the API refused',
+      { type: 'forbidden' },
+      {
+        type: 'again',
+        message: {
+          en: 'You cannot check out at this salon. Only its staff and administrators can.',
+          ja: 'このサロンの会計は、入れられません。会計を入れられるのは、そのサロンのスタッフと、管理者です。',
         },
         errors: {},
       },

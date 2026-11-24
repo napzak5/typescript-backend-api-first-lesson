@@ -1,7 +1,12 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { aPayment, aSale, paymentMethods } from '../components/examples'
+import {
+  aPayment,
+  aPaymentMethod,
+  aSale,
+  paymentMethods,
+} from '../components/examples'
 import {
   afterPayment,
   limitsOf,
@@ -12,6 +17,12 @@ import {
 } from './payments'
 
 const [cash, card, money, qr] = paymentMethods
+
+/** What is said of a brand of a card that is too long, or that the API refused */
+const BRAND = {
+  en: 'Card brand: enter up to 50 characters.',
+  ja: 'カードのブランドは、50 文字以内で入力してください。',
+}
 
 describe('methodsInUse', () => {
   it('should offer the methods the salon uses, in its order', () => {
@@ -27,6 +38,29 @@ describe('methodsInUse', () => {
       '現金',
       'クレジットカード',
       '交通系 IC',
+    ])
+  })
+
+  it('should offer methods of the same place in the order of their IDs', () => {
+    // Arrange
+    const later = aPaymentMethod({
+      id: 'f0000000-0000-4000-8000-000000000002',
+      displayName: '後の現金',
+      sortOrder: 1,
+    })
+    const earlier = aPaymentMethod({
+      id: 'f0000000-0000-4000-8000-000000000001',
+      displayName: '先の現金',
+      sortOrder: 1,
+    })
+
+    // Act
+    const offered = methodsInUse([later, earlier])
+
+    // Assert
+    expect(offered.map(({ displayName }) => displayName)).toEqual([
+      '先の現金',
+      '後の現金',
     ])
   })
 })
@@ -229,12 +263,7 @@ describe('readPayment', () => {
         amount: '5500',
         cardBrand: 'あ'.repeat(51),
       },
-      {
-        cardBrand: {
-          en: 'Card brand: enter up to 50 characters.',
-          ja: 'カードのブランドは、50 文字以内で入力してください。',
-        },
-      },
+      { cardBrand: BRAND },
     ],
     [
       'a method the salon uses no more',
@@ -338,6 +367,44 @@ describe('afterPayment', () => {
           en: 'The payment could not be recorded. Check your connection and try again.',
           ja: '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
         },
+      },
+    ],
+    [
+      'the card the API refused, and a value it refused for a reason the form does not name',
+      {
+        type: 'invalid',
+        values: [
+          { field: 'cardLastFour', rule: 'custom' },
+          { field: 'cardBrand', rule: 'custom' },
+          { field: 'amount', rule: 'invalid_type' },
+        ],
+      },
+      {
+        type: 'again',
+        message: undefined,
+        errors: {
+          cardLastFour: {
+            en: 'Enter the last four digits of the card as 4 digits.',
+            ja: 'カードの下 4 桁は、4 桁の数字で入力してください。',
+          },
+          cardBrand: BRAND,
+          amount: {
+            en: 'This value was not accepted. Check what you entered.',
+            ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+          },
+        },
+      },
+    ],
+    [
+      'too many requests',
+      { type: 'tooManyRequests' },
+      {
+        type: 'again',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
+        errors: {},
       },
     ],
     ['a sale that is gone', { type: 'notFound' }, { type: 'gone' }],

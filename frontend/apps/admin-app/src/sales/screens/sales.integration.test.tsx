@@ -6,7 +6,6 @@ import {
   dayFromToday,
   refuse,
   salonIdOf,
-  signInAs,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
 import {
@@ -27,52 +26,21 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../../__tests__/screens'
+import { openAs } from '../../__tests__/screens'
 import { arrange } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
+  arrangeVisit,
   paySale,
   storedPaymentsOf,
   storedSaleOf,
   voidSale,
 } from '../__tests__/arrangements'
+import { describedIn, openAt, part, theSale } from '../__tests__/screens'
 
 /** The kinds of payment of the seed data that take a total between 100 and 10,000 yen at once */
 const ONE_PAYMENT =
   '現金、クレジットカード、デビットカード、電子マネー、QR コード決済、ポイント'
-
-/** What a part of a page describes, term by term. */
-const describedIn = (part: string): Record<string, string> => {
-  const section = screen.getByRole('heading', { name: part }).closest('section')
-
-  return Object.fromEntries(
-    within(section ?? document.body)
-      .getAllByRole('term')
-      .map((term) => [
-        term.textContent ?? '',
-        term.nextElementSibling?.textContent ?? '',
-      ]),
-  )
-}
-
-/** The part of a page under a heading. */
-const part = (name: string): HTMLElement =>
-  screen.getByRole('heading', { name }).closest('section') ?? document.body
-
-/** Waits for the page of a sale: its heading, then its parts, which are read after it. */
-const theSale = async (): Promise<void> => {
-  await heading('売上の内容')
-  await screen.findByRole('table', { name: '明細' })
-}
-
-/** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
-  const tokyo = await salonIdOf(TOKYO)
-  renderAt(path(tokyo))
-  await signInAs(email)
-
-  return tokyo
-}
 
 describe('the sales of a salon, against the API', () => {
   beforeEach(() => {
@@ -529,20 +497,8 @@ describe('the sales of a salon, against the API', () => {
   })
 
   describe('recording the payments of a sale', () => {
-    const arrangeUnpaid = async (number: string): Promise<string> => {
-      const id = await arrange({
-        bookingNumber: `BK-TEST-${number}`,
-        day: 0,
-        at: '10:00',
-        status: 'completed',
-      })
-
-      return arrangeSale({
-        saleNumber: `SL-TEST-${number}`,
-        bookingId: id,
-        at: '11:00',
-      })
-    }
+    const arrangeUnpaid = async (number: string): Promise<string> =>
+      (await arrangeVisit(number)).saleId
 
     it('should let a member of the staff take a payment in part and the rest by card, then hand over the receipt', async () => {
       // Arrange

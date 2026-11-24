@@ -14,6 +14,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  formValuesOf,
   LoadingIndicator,
   NO_ERRORS,
   NONE,
@@ -39,6 +40,12 @@ import styles from './checkout-form.module.css'
 const { loading, words } = adminSaleMessages
 const { form: texts } = adminSaleMessages.checkout
 
+/** A service of the menu that can be added to a bill. */
+export type OfferedService = Pick<
+  ModelsServiceResponse,
+  'id' | 'name' | 'price'
+>
+
 export type CheckoutFormProps = Pick<
   FormProps,
   'pending' | 'actions' | 'onSubmit'
@@ -52,7 +59,7 @@ export type CheckoutFormProps = Pick<
   /** The services added at the counter, at the prices of the menu */
   added: readonly BillLine[]
   /** The services that can be added: those of the menu that are offered */
-  offered: readonly Pick<ModelsServiceResponse, 'id' | 'name' | 'price'>[]
+  offered: readonly OfferedService[]
   /** The members of the staff the payment can be taken by */
   staff: readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[]
   /** Who is chosen at first to have taken the payment: an ID, or `NO_CASHIER` */
@@ -64,9 +71,9 @@ export type CheckoutFormProps = Pick<
   /** What the last addition or removal did, in a sentence; `undefined` before either */
   changed: LocalizedText | undefined
   /** Adds a service of the menu to the bill */
-  onAdd: (serviceId: string) => void
-  /** Takes the added service at this place off the bill */
-  onRemove: (index: number) => void
+  onAdd: (service: OfferedService) => void
+  /** Takes the added service at this place off the bill, named as the form shows it */
+  onRemove: (index: number, name: string) => void
   /** Asks for the amounts again */
   onRecalculate: () => void
   recalculating: boolean
@@ -174,7 +181,7 @@ export const CheckoutForm = ({
                     size='small'
                     aria-label={say(texts.removeLine(nameOf(line), index + 1))}
                     onClick={() => {
-                      onRemove(index)
+                      onRemove(index, nameOf(line))
                       toAdd.current?.focus()
                     }}
                   >
@@ -200,11 +207,11 @@ export const CheckoutForm = ({
             />
             <Button
               onClick={(event) => {
-                const { form: values } = event.currentTarget
-                const id =
-                  values === null ? null : new FormData(values).get(TO_ADD)
-                if (typeof id === 'string' && id !== '') {
-                  onAdd(id)
+                const chosen = formValuesOf(event.currentTarget).get(TO_ADD)
+                // Nothing is chosen where the menu offers nothing
+                const service = offered.find(({ id }) => id === chosen)
+                if (service !== undefined) {
+                  onAdd(service)
                 }
               }}
             >

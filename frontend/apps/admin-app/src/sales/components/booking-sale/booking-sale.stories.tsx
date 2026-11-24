@@ -60,3 +60,8 @@ export const Loading: Story = {
 export const Unread: Story = {
   args: { sales: { type: 'failed' } },
 }
+
+/** The account was refused the sales: it belongs to the salon no more */
+export const Refused: Story = {
+  args: { sales: { type: 'forbidden' } },
+}
