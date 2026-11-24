@@ -4,6 +4,7 @@ import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
   idsOf,
+  refuse,
   salonIdOf,
   signInAs,
   testApi,
@@ -34,7 +35,7 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, refuse } from '../__tests__/arrangements'
+import { arrange } from '../__tests__/arrangements'
 
 const MOVE_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。'

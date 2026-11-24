@@ -1,6 +1,9 @@
 import {
   FAILED,
+  from,
   outsideTheContract,
+  type Page,
+  pageOf,
   type RefusedValue,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
@@ -112,13 +115,7 @@ const SESSIONS_PER_PAGE = 20
 
 /** A page of the sessions of the account. */
 export type SessionPage =
-  | {
-      type: 'found'
-      sessions: ModelsSessionResponse[]
-      /** How many sessions the account has; `null` when the API did not count them */
-      total: number | null
-      nextCursor: string | null
-    }
+  | Page<ModelsSessionResponse>
   /**
    * The session that ended the page before, which names where this one
    * begins, has ended since: it expired, or was ended here or elsewhere
@@ -134,20 +131,15 @@ export const readOwnSessions = async (
   cursor: string | undefined,
 ): Promise<SessionPage> => {
   const answer = await sessionCrudGetSessions({
-    ...(cursor === undefined ? {} : { cursor }),
+    ...from(cursor),
     limit: SESSIONS_PER_PAGE,
   }).catch(() => null)
 
   return match(answer)
     .returnType<SessionPage>()
-    .with({ status: 200 }, ({ data }) => ({
-      type: 'found',
-      sessions: data.data,
-      total: data.meta.total,
-      nextCursor: data.meta.nextCursor,
-    }))
+    .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 400 }, ({ data }) =>
-      (data.errors ?? []).some(({ field }) => field === 'cursor')
+      refusedValuesOf(data).some(({ field }) => field === 'cursor')
         ? { type: 'cursorGone' }
         : FAILED,
     )

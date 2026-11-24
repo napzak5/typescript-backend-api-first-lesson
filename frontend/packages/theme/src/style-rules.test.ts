@@ -245,6 +245,17 @@ describe('checkStyleRules', () => {
     expect(broken).toEqual(['card/card.module.css: unused-class'])
   })
 
+  it('should report every class of a CSS Module that no component imports', () => {
+    // Act
+    const broken = rulesBrokenBy(
+      component('card/card.module.css', '.card { display: grid; }'),
+      component('card/card.tsx', 'export const Card = () => <div />'),
+    )
+
+    // Assert
+    expect(broken).toEqual(['card/card.module.css: unused-class'])
+  })
+
   it('should count the classes that several components read from one CSS Module', () => {
     // Act
     const broken = rulesBrokenBy(

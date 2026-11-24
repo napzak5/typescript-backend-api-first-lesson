@@ -48,7 +48,7 @@ import {
   cursorAfter,
   endsWithGoneCursor,
   listingOf,
-  withoutSession,
+  withoutSessionIn,
 } from '../utils/security-flow'
 import {
   afterRefusal,
@@ -285,7 +285,7 @@ const Sessions = ({ timeZone }: PartProps) => {
   const answered = useRef(false)
   const listing =
     read.data === undefined ? undefined : listingOf(read.data.pages)
-  const shown = listing?.type === 'listed' ? listing.sessions.length : 0
+  const shown = listing?.type === 'listed' ? listing.items.length : 0
   const shownBefore = useRef(shown)
 
   // In the commit that takes the row away, before the browser paints
@@ -305,9 +305,7 @@ const Sessions = ({ timeZone }: PartProps) => {
         .with({ type: P.union('ended', 'gone') }, () => {
           answered.current = true
           queryClient.setQueryData<SessionPages>(OWN_SESSIONS, (data) =>
-            data === undefined
-              ? data
-              : { ...data, pages: withoutSession(data.pages, id) },
+            withoutSessionIn(data, id),
           )
           // The row named where the next page begins: the pages are read
           // again behind the list, from its start
@@ -361,9 +359,9 @@ const Sessions = ({ timeZone }: PartProps) => {
             pending={read.isFetching}
           />
         ))
-        .with({ type: 'listed' }, ({ sessions, total, rest }) => (
+        .with({ type: 'listed' }, ({ items, total, rest }) => (
           <SessionList
-            sessions={sessions}
+            sessions={items}
             total={total}
             more={moreOf(rest, {
               nextPage: read.isFetchingNextPage,

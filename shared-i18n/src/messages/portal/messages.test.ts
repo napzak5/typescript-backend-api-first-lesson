@@ -615,6 +615,36 @@ describe('the messages of the portal', () => {
     },
   )
 
+  it.each<[string, LocalizedText, LocalizedText]>([
+    [
+      'the salon of a review, when it is no longer listed',
+      portalReviewMessages.subject(null, POSTED_ON),
+      {
+        en: 'Salon (no longer listed) (posted November 10, 2026)',
+        ja: 'サロン（掲載を終えています）（2026年11月10日 投稿）',
+      },
+    ],
+    [
+      'the member of the staff a review that is written rates, when their salon no longer shows them',
+      reviewForm.staffFixed(null),
+      {
+        en: 'Staff rated: Staff member (no longer listed). The staff rated cannot be changed.',
+        ja: '評価するスタッフ: スタッフ（掲載を終えています）。評価するスタッフは、変更できません。',
+      },
+    ],
+    [
+      'the member of the staff a review rates, when their salon no longer shows them',
+      own.ratedStaff(null),
+      {
+        en: 'Staff rated: Staff member (no longer listed)',
+        ja: '評価したスタッフ: スタッフ（掲載を終えています）',
+      },
+    ],
+  ])('should name what stands in for %s', (_what, made, expected) => {
+    // Assert
+    expect(made).toEqual(expected)
+  })
+
   it('should write a rating that is asked for to one decimal', () => {
     // Act
     const made = searchForm.atLeast(3.5)

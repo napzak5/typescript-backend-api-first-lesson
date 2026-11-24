@@ -7,7 +7,6 @@ import {
   UnreadNotice,
   useSay,
 } from '@beauty-salon-frontend/ui'
-import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   frameMessages,
   salonScreenMessages,
@@ -17,7 +16,7 @@ import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
 import { readSalon, salonKeyOf } from '../api/salons-api'
 
-const { names, otherSalon, withSalon: words } = salonScreenMessages
+const { names, withSalon: words } = salonScreenMessages
 
 export type WithSalonProps = {
   salonId: string
@@ -67,33 +66,4 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
       </>
     ))
     .exhaustive()
-}
-
-export type OtherSalonNoticeProps = {
-  /** What is not theirs to see (「売上」), as it stands inside the sentence */
-  what?: LocalizedText
-  /** Who may see it */
-  who?: LocalizedText
-  /** Where the start of the application leads a member: 「予約」 */
-  start?: LocalizedText
-}
-
-/**
- * What a member of the staff of another salon is told: the API shows what
- * is kept of a salon (its bookings, its sales) to its own staff. The start
- * leads to their own salon.
- */
-export const OtherSalonNotice = ({
-  what = names.bookings,
-  who = names.staffOfTheSalon,
-  start = names.bookings,
-}: OtherSalonNoticeProps) => {
-  const say = useSay()
-
-  return (
-    <>
-      <p>{say(otherSalon.notice(what, who))}</p>
-      <ButtonLink href='/'>{say(otherSalon.toOwnSalon(start))}</ButtonLink>
-    </>
-  )
 }

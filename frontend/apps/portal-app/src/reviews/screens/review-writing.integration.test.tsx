@@ -1,6 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
+import { giveBack, takeAway } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -20,12 +21,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../../__tests__/screens'
-import {
-  giveBack,
-  NOTHING,
-  signedInAs,
-  takeAway,
-} from '../../bookings/__tests__/arrangements'
+import { NOTHING, signedInAs } from '../../bookings/__tests__/arrangements'
 import {
   answers,
   bookingToCome,

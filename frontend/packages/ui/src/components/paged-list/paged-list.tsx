@@ -52,9 +52,9 @@ export const countOf = (
 }
 
 /** Out of the order of the keyboard: the focus is put there, and it is no control */
-const focusItem = (item: HTMLElement): void => {
-  item.tabIndex = -1
-  item.focus()
+const focusItem = (item: HTMLElement | null | undefined): void => {
+  item?.setAttribute('tabindex', '-1')
+  item?.focus()
 }
 
 /**
@@ -74,12 +74,9 @@ export const PagedList = <Item,>({
     const added = items.current
       ?.querySelectorAll<HTMLLIElement>(':scope > li')
       .item(index)
-    if (added === null || added === undefined) {
-      return
-    }
     const link =
-      focus === 'link' ? added.querySelector<HTMLAnchorElement>('a') : null
-    if (link === null) {
+      focus === 'link' ? added?.querySelector<HTMLAnchorElement>('a') : null
+    if (link === null || link === undefined) {
       focusItem(added)
     } else {
       link.focus()

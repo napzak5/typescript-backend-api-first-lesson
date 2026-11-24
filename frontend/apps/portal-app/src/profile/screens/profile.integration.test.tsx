@@ -2,7 +2,7 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -21,12 +21,10 @@ import { renderAt } from '../../__tests__/screens'
 import {
   accessTokenOf,
   ask,
-  giveBack,
   NEWCOMER,
   NEWCOMER_PASSWORD,
   registerNewcomer,
   signedInAs,
-  takeAway,
 } from '../../bookings/__tests__/arrangements'
 
 /*

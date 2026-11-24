@@ -85,6 +85,7 @@ export {
   same,
   textOf,
   textOrNull,
+  textsOf,
 } from './components/form/form-values'
 export {
   FormDialog,

@@ -10,7 +10,7 @@ import {
 } from '@beauty-salon-frontend/testing/seed'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { act, type ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { signIn } from '../api/sign-in'
 import { useOwnSalon } from './own-salon'
@@ -91,6 +91,24 @@ describe('the salon of who is signed in, against the API', () => {
       expect(asked(fetched)).toEqual(['GET /auth/me'])
     },
   )
+
+  it('should ask the API for the salon again when it is read again', async () => {
+    // Arrange
+    await signInAs(STYLIST)
+    const { result } = renderOwnSalon()
+    await waitFor(() =>
+      expect(result.current.salon).toMatchObject({ type: 'member' }),
+    )
+    const fetched = vi.spyOn(globalThis, 'fetch')
+
+    // Act
+    act(() => result.current.readAgain())
+
+    // Assert
+    await waitFor(() => expect(asked(fetched)).toEqual([`GET ${OWN_PROFILE}`]))
+    await waitFor(() => expect(result.current.readingAgain).toBe(false))
+    expect([result.current.salon]).toEqual(await memberOfTheDatabase(STYLIST))
+  })
 
   it('should have no salon to give, and ask for none, while nobody is signed in', async () => {
     // Arrange

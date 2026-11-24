@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { itShouldBeAccessibleInEveryStory } from '../stories/story-accessibility'
-import { findAccessibilityViolations } from './accessibility'
+import {
+  findAccessibilityViolations,
+  summarizeViolations,
+} from './accessibility'
 
 const show = (html: string): void => {
   document.body.innerHTML = `<main>${html}</main>`
@@ -76,6 +79,34 @@ describe('findAccessibilityViolations', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('summarizeViolations', () => {
+  it('should say that the impact of a rule is unknown when axe-core names none', () => {
+    // Act
+    const summary = summarizeViolations([
+      {
+        id: 'region',
+        help: 'All page content should be contained by landmarks',
+        helpUrl: 'https://dequeuniversity.com/rules/axe/4.11/region',
+        description: 'Ensure all page content is contained by landmarks',
+        tags: ['best-practice'],
+        nodes: [
+          { html: '<p>予約</p>', target: ['p'], any: [], all: [], none: [] },
+        ],
+      },
+    ])
+
+    // Assert
+    expect(summary).toEqual([
+      {
+        rule: 'region',
+        impact: 'unknown',
+        help: 'All page content should be contained by landmarks',
+        elements: ['<p>予約</p>'],
+      },
+    ])
   })
 })
 

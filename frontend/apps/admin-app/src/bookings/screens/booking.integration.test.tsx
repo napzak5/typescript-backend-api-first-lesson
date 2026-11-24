@@ -3,6 +3,7 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  refuse,
   salonIdOf,
   signInAs,
   testApi,
@@ -28,12 +29,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
-import {
-  arrange,
-  clockOf,
-  refuse,
-  storedBooking,
-} from '../__tests__/arrangements'
+import { arrange, clockOf, storedBooking } from '../__tests__/arrangements'
 
 const CHANGED_ELSEWHERE =
   '予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'

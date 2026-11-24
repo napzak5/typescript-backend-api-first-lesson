@@ -4,7 +4,7 @@ import {
   PDF_BYTES,
   PNG_BYTES,
 } from '@beauty-salon-frontend/testing'
-import { salonIdOf } from '@beauty-salon-frontend/testing/api'
+import { refuse, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
@@ -23,7 +23,6 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../../__tests__/screens'
-import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   attachmentHrefOf,
   attachmentsHrefOf,

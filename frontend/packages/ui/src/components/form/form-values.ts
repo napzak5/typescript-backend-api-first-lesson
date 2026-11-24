@@ -54,6 +54,16 @@ export const textOf = (values: FormData, name: string): string => {
   return typeof value === 'string' ? value : ''
 }
 
+/**
+ * The texts of the controls of a form that share a name, in their order:
+ * the boxes of a group that are checked, the options of a select of more
+ * than one. A file among them is none.
+ */
+export const textsOf = (values: FormData, name: string): string[] =>
+  values
+    .getAll(name)
+    .flatMap((value) => (typeof value === 'string' ? [value] : []))
+
 /** A text that was filled in, without the spaces around it; nothing, and only spaces, as `null`. */
 export const textOrNull = (text: string | null): string | null => {
   const trimmed = (text ?? '').trim()

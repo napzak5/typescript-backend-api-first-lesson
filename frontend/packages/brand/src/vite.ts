@@ -84,22 +84,25 @@ const headOf = (
  */
 export const brand = (key: ApplicationKey) => {
   const variable = ORIGIN_VARIABLES[key]
-  let origin = originSchema.safeParse(undefined)
+  let address: unknown
+  // Made at the start, which comes before the first page
+  let head: HtmlTagDescriptor[] = []
 
   return {
     name: 'beauty-salon-brand',
     config: () => ({ publicDir: PUBLIC_DIRECTORY }),
     configResolved: ({ env }: { env: Record<string, unknown> }) => {
-      origin = originSchema.safeParse(env[variable])
+      address = env[variable]
     },
     buildStart(this: { error: (message: string) => never }) {
+      const origin = originSchema.safeParse(address)
       if (!origin.success) {
         this.error(
           `${variable} is not the address of the application: ${z.prettifyError(origin.error)}`,
         )
       }
+      head = headOf(applications[key], origin.data)
     },
-    transformIndexHtml: () =>
-      origin.success ? headOf(applications[key], origin.data) : [],
+    transformIndexHtml: () => head,
   } satisfies Plugin
 }

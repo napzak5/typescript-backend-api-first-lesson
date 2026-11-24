@@ -8,6 +8,7 @@ import {
   same,
   textOf,
   textOrNull,
+  textsOf,
 } from './form-values'
 
 describe('textOf', () => {
@@ -27,6 +28,31 @@ describe('textOf', () => {
     values.set('photo', new File(['png'], 'photo.png', { type: 'image/png' }))
 
     expect(textOf(values, 'photo')).toBe('')
+  })
+})
+
+describe('textsOf', () => {
+  it('should give the texts of the controls of a name in their order, and no file', () => {
+    // Arrange
+    const values = new FormData()
+    values.append('services', 'cut')
+    values.append(
+      'services',
+      new File(['png'], 'photo.png', { type: 'image/png' }),
+    )
+    values.append('services', 'color')
+    values.set('notes', '前髪は短め')
+
+    // Act
+    const texts = textsOf(values, 'services')
+
+    // Assert
+    expect(texts).toEqual(['cut', 'color'])
+  })
+
+  it('should give none for a name that no control has', () => {
+    // Act, Assert
+    expect(textsOf(new FormData(), 'services')).toEqual([])
   })
 })
 

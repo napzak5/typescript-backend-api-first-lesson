@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf } from '@beauty-salon-frontend/testing/api'
+import { refuse, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
@@ -16,7 +16,6 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../../__tests__/screens'
-import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   customersHrefOf,
   reviewHrefOf,

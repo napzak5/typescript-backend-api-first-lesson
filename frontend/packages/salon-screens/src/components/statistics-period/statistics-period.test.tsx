@@ -57,7 +57,7 @@ describe('StatisticsPeriod', () => {
     expect(to()).toHaveAccessibleDescription('366 日まで集計できます。')
   })
 
-  it('should hand over the days under the names of the period', async () => {
+  it('should hand over the days that were typed, under the names of the period', async () => {
     // Arrange
     const received: [string, FormDataEntryValue][][] = []
     await stories.LastYear.run({
@@ -70,6 +70,8 @@ describe('StatisticsPeriod', () => {
     })
     await userEvent.clear(from())
     await userEvent.type(from(), '2026-11-01')
+    await userEvent.clear(to())
+    await userEvent.type(to(), '2026-11-15')
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: '集計する' }))
@@ -78,7 +80,7 @@ describe('StatisticsPeriod', () => {
     expect(received).toEqual([
       [
         ['from', '2026-11-01'],
-        ['to', '2026-11-20'],
+        ['to', '2026-11-15'],
       ],
     ])
   })

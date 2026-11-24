@@ -4,7 +4,12 @@ import {
   authCrudVerifyTwoFactor,
 } from '@beauty-salon-frontend/api-client'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  idOf,
+  refuse,
+  testApi,
+  unreadable,
+} from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { AppShell, NotificationProvider } from '@beauty-salon-frontend/ui'
@@ -58,6 +63,25 @@ const renderSecurity = () =>
       passwordHref='/account/security/password'
       twoFactorHref='/account/security/two-factor'
     />,
+  )
+
+/**
+ * The screen of the security of the account, after the guard let the
+ * session through: the guard reads the account as the screen does, and a
+ * read that fails stops it first.
+ */
+const renderSecurityPastTheGuard = () =>
+  render(
+    <QueryClientProvider client={queryClientOfATest()}>
+      <NotificationProvider>
+        <AppShell title='Kushi Admin'>
+          <AccountSecurityScreen
+            passwordHref='/account/security/password'
+            twoFactorHref='/account/security/two-factor'
+          />
+        </AppShell>
+      </NotificationProvider>
+    </QueryClientProvider>,
   )
 
 const signInAs = async (email: string): Promise<void> => {
@@ -142,22 +166,6 @@ const passwordOf = async (email: string) => {
   return row
 }
 
-/**
- * Lets the database refuse `what` on `table`, as a database that fails
- * does: the API answers with an error of the server. The copy of the
- * database goes with the test.
- */
-const refuse = async (what: string, table: string): Promise<void> => {
-  await testApi().query(
-    `create function refuse() returns trigger language plpgsql
-       as $$ begin raise exception 'refused by the test'; end $$`,
-  )
-  await testApi().query(
-    `create trigger refuse before ${what} on ${table}
-       for each row execute function refuse()`,
-  )
-}
-
 const devices = (): HTMLElement[] =>
   within(
     screen.getByRole('list', { name: 'サインインしている端末' }),
@@ -194,6 +202,32 @@ describe('the security of an account, against the API', () => {
   })
 
   describe('the screen of the security of the account', () => {
+    it('should say that the account could not be read, and show it once it is read again', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      const readable = await unreadable(
+        'users',
+        'lastLoginAt',
+        await idOf('select id from users where email = $1', [CUSTOMER]),
+      )
+      const user = userEvent.setup()
+      renderSecurityPastTheGuard()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'アカウントを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(screen.queryByRole('region', { name: 'パスワード' })).toBeNull()
+      await readable()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('region', { name: 'パスワード' }),
+      ).toBeVisible()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
     it('should show the password, the second factor and this device as the database has them', async () => {
       // Arrange
       await signInAs(CUSTOMER)
@@ -298,6 +332,62 @@ describe('the security of an account, against the API', () => {
   })
 
   describe('the devices that are signed in', () => {
+    it('should say that the devices could not be read, and list them once they are read again', async () => {
+      // Arrange
+      await signInElsewhere(CUSTOMER)
+      await signInAs(CUSTOMER)
+      const other = (await sessionsOf(CUSTOMER)).at(1)?.id ?? ''
+      const readable = await unreadable('sessions', 'lastActivityAt', other)
+      const user = userEvent.setup()
+      renderSecurity()
+      const part = await screen.findByRole('region', {
+        name: 'サインインしている端末',
+      })
+      expect(await within(part).findByRole('alert')).toHaveTextContent(
+        'サインインしている端末を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      await readable()
+
+      // Act
+      await user.click(
+        within(devicesPart()).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      await listed('2 台の端末でサインインしています')
+      expect(devices()).toHaveLength(2)
+      expect(within(devicesPart()).queryByRole('alert')).toBeNull()
+    })
+
+    it('should keep the devices that were read when the next ones could not be, and read them all once asked again', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      await addSessions(CUSTOMER, 20)
+      const last = (await sessionsOf(CUSTOMER)).at(-1)?.id ?? ''
+      const readable = await unreadable('sessions', 'lastActivityAt', last)
+      const user = userEvent.setup()
+      renderSecurity()
+      await listed('21 台の端末でサインインしています（20 台を表示しています）')
+      await user.click(
+        within(devicesPart()).getByRole('button', { name: 'さらに表示' }),
+      )
+      expect(await within(devicesPart()).findByRole('alert')).toHaveTextContent(
+        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(devices()).toHaveLength(20)
+      await readable()
+
+      // Act
+      await user.click(
+        within(devicesPart()).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      await listed('21 台の端末でサインインしています')
+      expect(devices()).toHaveLength(21)
+      expect(within(devicesPart()).queryByRole('alert')).toBeNull()
+    })
+
     it('should list another device beside this one, the latest first, and offer to sign out the other alone', async () => {
       // Arrange
       await signInElsewhere(CUSTOMER)

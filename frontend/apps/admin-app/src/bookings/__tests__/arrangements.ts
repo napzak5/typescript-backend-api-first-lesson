@@ -143,22 +143,6 @@ export const storedBooking = async (id: string) =>
     ),
   )[0]
 
-/**
- * Lets the database refuse `what` on `table`, as a database that fails
- * does: the API answers with an error of the server. The copy of the
- * database goes with the test.
- */
-export const refuse = async (what: string, table: string): Promise<void> => {
-  await testApi().query(
-    `create function refuse() returns trigger language plpgsql
-       as $$ begin raise exception 'refused by the test'; end $$`,
-  )
-  await testApi().query(
-    `create trigger refuse before ${what} on ${table}
-       for each row execute function refuse()`,
-  )
-}
-
 /** The time of day of a moment in Tokyo: 「10:30」. */
 export const clockOf = (moment: Date): string =>
   new Intl.DateTimeFormat('ja-JP', {

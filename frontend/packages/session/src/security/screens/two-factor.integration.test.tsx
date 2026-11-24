@@ -5,7 +5,12 @@ import {
   type ModelsAuthTwoFactorSetupResponse,
 } from '@beauty-salon-frontend/api-client'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  idOf,
+  refuse,
+  testApi,
+  unreadable,
+} from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { AppShell, NotificationProvider } from '@beauty-salon-frontend/ui'
@@ -25,6 +30,8 @@ import {
 const LOCK = '5 回続けて違うと、15 分間、サインインもできなくなります。'
 const NOT_SENT =
   '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const CODE_MISSING =
+  '認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。'
 const CHANGED_ELSEWHERE =
   '2 要素認証の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
 
@@ -49,6 +56,22 @@ const renderApplication = (shown: ReactNode) =>
 
 const renderSetup = () =>
   renderApplication(<TwoFactorSetupScreen securityHref='/account/security' />)
+
+/**
+ * The screen that sets the second factor up, after the guard let the
+ * session through: the guard reads the account as the screen does, and a
+ * read that fails stops it first.
+ */
+const renderSetupPastTheGuard = () =>
+  render(
+    <QueryClientProvider client={queryClientOfATest()}>
+      <NotificationProvider>
+        <AppShell title='Kushi Admin'>
+          <TwoFactorSetupScreen securityHref='/account/security' />
+        </AppShell>
+      </NotificationProvider>
+    </QueryClientProvider>,
+  )
 
 const renderSecurity = () =>
   renderApplication(
@@ -118,22 +141,6 @@ const signInWithBackupCode = async (code: string): Promise<number> =>
       twoFactorCode: code,
     })
   ).status
-
-/**
- * Lets the database refuse `what` on `table`, as a database that fails
- * does: the API answers with an error of the server. The copy of the
- * database goes with the test.
- */
-const refuse = async (what: string, table: string): Promise<void> => {
-  await testApi().query(
-    `create function refuse() returns trigger language plpgsql
-       as $$ begin raise exception 'refused by the test'; end $$`,
-  )
-  await testApi().query(
-    `create trigger refuse before ${what} on ${table}
-       for each row execute function refuse()`,
-  )
-}
 
 /**
  * Turns the second factor off in the database, as an operator who resets
@@ -455,6 +462,30 @@ describe('the second factor of an account, against the API', () => {
       expect(password).not.toHaveValue('')
       expect(await twoFactorOf(CUSTOMER)).toMatchObject({ status: 'disabled' })
     })
+
+    it('should say that the account could not be read, and begin with the password once it is read again', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      const readable = await unreadable(
+        'users',
+        'lastLoginAt',
+        await idOf('select id from users where email = $1', [CUSTOMER]),
+      )
+      const user = userEvent.setup()
+      renderSetupPastTheGuard()
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'アカウントを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(screen.queryByLabelText('パスワード')).toBeNull()
+      await readable()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(await screen.findByLabelText('パスワード')).toBeVisible()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
   })
 
   describe('the second factor on the screen of the security of the account', () => {
@@ -760,6 +791,111 @@ describe('the second factor of an account, against the API', () => {
         failedAttempts: 0,
         backupCodes: 10,
       })
+    })
+
+    it('should issue no backup codes without a code, and say at the code that it is missing', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      await enableThroughApi()
+      const user = userEvent.setup()
+      renderSecurity()
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'バックアップコードを発行し直す',
+        }),
+      )
+      const dialog = screen.getByRole('dialog', {
+        name: 'バックアップコードを発行し直す',
+      })
+
+      // Act
+      await user.click(
+        within(dialog).getByRole('button', { name: '発行し直す' }),
+      )
+
+      // Assert
+      const code = within(dialog).getByLabelText(
+        '認証アプリのコードかバックアップコード',
+      )
+      await waitFor(() => expect(code).toBeInvalid())
+      expect(code).toHaveAccessibleDescription(
+        expect.stringContaining(CODE_MISSING),
+      )
+      expect(await twoFactorOf(CUSTOMER)).toEqual({
+        status: 'enabled',
+        failedAttempts: 0,
+        backupCodes: 10,
+      })
+      expect(await subjectsTo(CUSTOMER)).toEqual([
+        '2 要素認証が有効になりました',
+      ])
+    })
+
+    it('should not turn the second factor off without the password and a code, and say at each that it is missing', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      await enableThroughApi()
+      const user = userEvent.setup()
+      renderSecurity()
+      await user.click(
+        await screen.findByRole('button', { name: '2 要素認証を無効にする' }),
+      )
+      const dialog = screen.getByRole('dialog', {
+        name: '2 要素認証を無効にしますか？',
+      })
+
+      // Act
+      await user.click(
+        within(dialog).getByRole('button', { name: '無効にする' }),
+      )
+
+      // Assert
+      const password = within(dialog).getByLabelText('パスワード')
+      await waitFor(() => expect(password).toBeInvalid())
+      expect(password).toHaveAccessibleDescription(
+        'パスワードを入力してください。',
+      )
+      expect(
+        within(dialog).getByLabelText('認証アプリのコードかバックアップコード'),
+      ).toHaveAccessibleDescription(expect.stringContaining(CODE_MISSING))
+      expect(await twoFactorOf(CUSTOMER)).toMatchObject({ status: 'enabled' })
+    })
+
+    it('should close the dialog and show the state of now when the second factor was turned off elsewhere before it is turned off here', async () => {
+      // Arrange
+      await signInAs(CUSTOMER)
+      const setup = await enableThroughApi()
+      const user = userEvent.setup()
+      renderSecurity()
+      await user.click(
+        await screen.findByRole('button', { name: '2 要素認証を無効にする' }),
+      )
+      const dialog = screen.getByRole('dialog', {
+        name: '2 要素認証を無効にしますか？',
+      })
+      // Another device turns the second factor off meanwhile
+      await turnOffElsewhere()
+
+      // Act
+      await user.type(
+        within(dialog).getByLabelText('パスワード'),
+        testApi().seedPassword,
+      )
+      await user.type(
+        within(dialog).getByLabelText('認証アプリのコードかバックアップコード'),
+        setup.backupCodes[0] ?? '',
+      )
+      await user.click(
+        within(dialog).getByRole('button', { name: '無効にする' }),
+      )
+
+      // Assert
+      const part = region('2 要素認証')
+      expect(
+        await within(part).findByRole('link', { name: '2 要素認証を設定する' }),
+      ).toBeVisible()
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(notifications()).toContain(CHANGED_ELSEWHERE)
     })
   })
 })

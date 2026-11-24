@@ -9,8 +9,8 @@ import {
   useNotifications,
 } from './notifications'
 
-/** A screen that notifies when its buttons are pressed. */
-const Screen = (notification: Notification) => {
+/** What a screen shows: the place of the notification, and the buttons that notify. */
+const Content = (notification: Notification) => {
   const { notify } = useNotifications()
 
   return (
@@ -36,16 +36,25 @@ const Screen = (notification: Notification) => {
   )
 }
 
+/**
+ * A screen that notifies when its buttons are pressed, inside the frame of
+ * an application, which provides the notification; `alone`, without it.
+ */
+const Screen = ({
+  alone = false,
+  ...notification
+}: Notification & { alone?: boolean }) =>
+  alone ? (
+    <Content {...notification} />
+  ) : (
+    <NotificationProvider>
+      <Content {...notification} />
+    </NotificationProvider>
+  )
+
 const meta: Meta<typeof Screen> = {
   title: 'Components/Notifications',
   component: Screen,
-  decorators: [
-    (Story) => (
-      <NotificationProvider>
-        <Story />
-      </NotificationProvider>
-    ),
-  ],
   args: {
     tone: 'success',
     message: { en: 'Confirmed the booking.', ja: '予約を確定しました。' },
@@ -107,5 +116,14 @@ export const Danger: Story = {
  */
 export const NothingChanged: Story = {
   args: { tone: 'info', message: NO_CHANGE_MESSAGE },
+  play: confirmTheBooking,
+}
+
+/**
+ * A screen drawn without the frame of an application, as a test may draw
+ * it: what it notifies is shown nowhere, and nothing fails.
+ */
+export const Alone: Story = {
+  args: { alone: true },
   play: confirmTheBooking,
 }

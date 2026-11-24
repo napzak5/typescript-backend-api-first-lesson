@@ -26,6 +26,7 @@ import {
   same,
   textOf,
   textOrNull,
+  textsOf,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
@@ -130,9 +131,7 @@ const enteredIn = (values: FormData): Entered => ({
   ...(values.has(PREFERRED_STAFF)
     ? {
         preferredStaffId: textOf(values, PREFERRED_STAFF),
-        avoidStaffIds: values
-          .getAll(AVOIDED_STAFF)
-          .flatMap((id) => (typeof id === 'string' ? [id] : [])),
+        avoidStaffIds: textsOf(values, AVOIDED_STAFF),
       }
     : { preferredStaffId: undefined, avoidStaffIds: undefined }),
   timeSlots: timeSlotsIn(values, 0),
@@ -214,11 +213,12 @@ const isTimeSlot = ({ startTime, endTime }: ModelsTimeSlot): boolean =>
  * ends after that one begins: two that touch do not overlap.
  */
 const timeSlotError = (
-  rows: readonly ModelsTimeSlot[],
+  row: ModelsTimeSlot,
   index: number,
+  rows: readonly ModelsTimeSlot[],
 ): [string, LocalizedText] | undefined => {
-  const startTime = rows[index]?.startTime.trim() ?? ''
-  const endTime = rows[index]?.endTime.trim() ?? ''
+  const startTime = row.startTime.trim()
+  const endTime = row.endTime.trim()
   const start = startOf(TIME_SLOTS, index)
   const end = endOf(TIME_SLOTS, index)
 
@@ -243,9 +243,9 @@ const timeSlotError = (
 
   return rows
     .slice(0, index)
-    .map((row) => ({
-      startTime: row.startTime.trim(),
-      endTime: row.endTime.trim(),
+    .map((before) => ({
+      startTime: before.startTime.trim(),
+      endTime: before.endTime.trim(),
     }))
     .filter(isTimeSlot)
     .some(
@@ -270,11 +270,11 @@ const errorsOf = (entered: Entered): FormErrors<LocalizedText> => {
   )
 
   const wrong: [string, LocalizedText][] = [
-    ...(wished !== '' && (entered.avoidStaffIds ?? []).includes(wished)
+    ...(wished !== '' && entered.avoidStaffIds?.includes(wished) === true
       ? [said(AVOIDED_STAFF, flow.avoidedIsWishedFor)]
       : []),
-    ...entered.timeSlots.flatMap((_, index) => {
-      const error = timeSlotError(entered.timeSlots, index)
+    ...entered.timeSlots.flatMap((row, index, rows) => {
+      const error = timeSlotError(row, index, rows)
 
       return error === undefined ? [] : [error]
     }),

@@ -1,7 +1,7 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -24,7 +24,6 @@ import { renderAt } from '../../__tests__/screens'
 import {
   ANOTHER_CUSTOMER,
   bookThroughApi,
-  giveBack,
   HIROSHI,
   LADIES_CUT,
   MIKA,
@@ -36,7 +35,6 @@ import {
   registerNewcomer,
   signedInAs,
   staffId,
-  takeAway,
 } from '../__tests__/arrangements'
 
 /*

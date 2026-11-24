@@ -1,3 +1,3 @@
 import { frontendTests } from '@beauty-salon-shared/config/vitest'
 
-export default frontendTests({ unit: { environment: 'jsdom' } })
+export default frontendTests({ unit: { environment: 'jsdom' }, full: true })

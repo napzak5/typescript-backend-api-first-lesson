@@ -1,3 +1,3 @@
 import { sharedTests } from '@beauty-salon-shared/config/vitest'
 
-export default sharedTests()
+export default sharedTests({ full: true })

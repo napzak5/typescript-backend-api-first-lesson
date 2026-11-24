@@ -544,6 +544,12 @@ describe('the mails of an API', () => {
     )
   })
 
+  it('fail the test that asks for the link of a mail, and say that the API wrote to nobody', async () => {
+    await expect(testApi().mailedLink('nobody@example.com')).rejects.toThrow(
+      'No mail with a link to nobody@example.com. The API wrote to: nobody',
+    )
+  })
+
   it('point at the application the API was started for, also after a reset', async () => {
     const PORTAL = 'http://127.0.0.1:4998'
     const api = await start({

@@ -8,4 +8,5 @@ export default frontendTests({
     setupFiles: ['./vitest.setup.ts'],
     pool: 'vmThreads',
   },
+  full: true,
 })

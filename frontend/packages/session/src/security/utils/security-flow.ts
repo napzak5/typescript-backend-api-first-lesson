@@ -1,10 +1,14 @@
 import {
   CHECK_THE_VALUES_MESSAGE,
+  cursorAfter as cursorAfterPage,
   FAILED,
+  type Listing,
+  listingOf as listingOfPages,
   NOT_SENT_MESSAGE,
+  type Page,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
-  type Unsent,
+  type Unread,
 } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthPasswordChangeRequest,
@@ -95,62 +99,35 @@ export const afterPasswordChange = (
     .exhaustive()
 
 /** What the pages of the sessions that were read so far amount to. */
-export type SessionListing =
-  /** Nothing is there to show: the first page was not read */
-  | { type: 'unread'; reason: Unsent }
-  | {
-      type: 'listed'
-      sessions: ModelsSessionResponse[]
-      /** How many sessions the account has; `null` when the API did not count them */
-      total: number | null
-      /**
-       * What comes after the sessions: nothing, a page that was not asked
-       * for yet (`more`), or one that was asked for and not read
-       * (`unread`): a page whose cursor had gone is one, until the list is
-       * read again from its start
-       */
-      rest: 'none' | 'more' | 'unread'
-    }
+export type SessionListing = Listing<ModelsSessionResponse>
 
 /**
- * Puts the pages that were read together. A page that was not read ends the
- * list where it is: what was read before it stays, and the list says that
- * something is missing.
+ * A page of the sessions as the list reads it: one whose cursor had gone
+ * was not read, until the list is read again from its start.
  */
-export const listingOf = (pages: readonly SessionPage[]): SessionListing => {
-  const [first] = pages
-  const last = pages.at(-1)
-  if (first === undefined || last === undefined) {
-    return { type: 'unread', reason: FAILED }
-  }
-  if (first.type !== 'found') {
-    return {
-      type: 'unread',
-      reason: first.type === 'cursorGone' ? FAILED : first,
-    }
-  }
-  const read = pages.flatMap((page) => (page.type === 'found' ? [page] : []))
+const asRead = (page: SessionPage): Page<ModelsSessionResponse> | Unread =>
+  page.type === 'cursorGone' ? FAILED : page
 
-  return {
-    type: 'listed',
-    sessions: read.flatMap((page) => page.sessions),
-    total: read.at(-1)?.total ?? null,
-    rest:
-      last.type !== 'found'
-        ? 'unread'
-        : last.nextCursor === null
-          ? 'none'
-          : 'more',
-  }
-}
+/** Puts the pages that were read together, as every list does. */
+export const listingOf = (pages: readonly SessionPage[]): SessionListing =>
+  listingOfPages(pages.map(asRead))
 
 /** Where the page after one begins, for the query that reads the pages. */
 export const cursorAfter = (page: SessionPage): string | undefined =>
-  page.type === 'found' ? (page.nextCursor ?? undefined) : undefined
+  cursorAfterPage(asRead(page))
 
 /** Whether the page that was read last could not be read because its cursor had gone. */
 export const endsWithGoneCursor = (pages: readonly SessionPage[]): boolean =>
   pages.at(-1)?.type === 'cursorGone'
+
+/** What was read of the sessions, without a session that was ended; nothing when nothing was read. */
+export const withoutSessionIn = <Read extends { pages: SessionPage[] }>(
+  read: Read | undefined,
+  sessionId: string,
+): Read | undefined =>
+  read === undefined
+    ? read
+    : { ...read, pages: withoutSession(read.pages, sessionId) }
 
 /**
  * The pages without a session that was ended: it leaves the list at once,
@@ -165,14 +142,14 @@ export const withoutSession = (
 ): SessionPage[] => {
   const shown = pages.some(
     (page) =>
-      page.type === 'found' && page.sessions.some(({ id }) => id === sessionId),
+      page.type === 'found' && page.items.some(({ id }) => id === sessionId),
   )
 
   return pages.map((page) =>
     shown && page.type === 'found'
       ? {
           ...page,
-          sessions: page.sessions.filter(({ id }) => id !== sessionId),
+          items: page.items.filter(({ id }) => id !== sessionId),
           total: page.total === null ? null : page.total - 1,
         }
       : page,

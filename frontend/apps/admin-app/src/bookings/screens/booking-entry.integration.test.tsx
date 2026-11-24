@@ -4,6 +4,7 @@ import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
   countOf,
   dayFromToday,
+  refuse,
   salonIdOf,
   signInAs,
   testApi,
@@ -35,7 +36,7 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, refuse } from '../__tests__/arrangements'
+import { arrange } from '../__tests__/arrangements'
 
 const TAKEN =
   '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'

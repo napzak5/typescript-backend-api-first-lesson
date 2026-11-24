@@ -32,10 +32,13 @@ type Notifications = {
   dismiss: () => void
 }
 
+/** What a screen drawn without the frame of an application does: nothing */
+const IGNORED = (): void => undefined
+
 const NotificationContext = createContext<Notifications>({
   current: null,
-  notify: () => undefined,
-  dismiss: () => undefined,
+  notify: IGNORED,
+  dismiss: IGNORED,
 })
 
 export type NotificationProviderProps = {

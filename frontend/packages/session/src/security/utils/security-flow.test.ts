@@ -12,6 +12,7 @@ import {
   listingOf,
   readPasswordChange,
   withoutSession,
+  withoutSessionIn,
 } from './security-flow'
 
 const CURRENT = 'kirei na kami de dekakeru'
@@ -187,7 +188,7 @@ const page = (
   sessions: ModelsSessionResponse[],
   total: number | null,
   nextCursor: string | null,
-): SessionPage => ({ type: 'found', sessions, total, nextCursor })
+): SessionPage => ({ type: 'found', items: sessions, total, nextCursor })
 
 describe('the pages of the sessions', () => {
   it('should put the pages together, with the count of the last', () => {
@@ -198,7 +199,7 @@ describe('the pages of the sessions', () => {
       ]),
     ).toEqual({
       type: 'listed',
-      sessions: [thisDevice, unrecorded, phone],
+      items: [thisDevice, unrecorded, phone],
       total: 3,
       rest: 'more',
     })
@@ -219,7 +220,7 @@ describe('the pages of the sessions', () => {
     (_case, last) => {
       expect(listingOf([page([thisDevice], 2, thisDevice.id), last])).toEqual({
         type: 'listed',
-        sessions: [thisDevice],
+        items: [thisDevice],
         total: 2,
         rest: 'unread',
       })
@@ -232,6 +233,13 @@ describe('the pages of the sessions', () => {
       reason: { type: 'tooManyRequests' },
     })
     expect(listingOf([])).toEqual({
+      type: 'unread',
+      reason: { type: 'failed' },
+    })
+  })
+
+  it('should say that nothing could be read when the first page began after a session that had ended', () => {
+    expect(listingOf([GONE])).toEqual({
       type: 'unread',
       reason: { type: 'failed' },
     })
@@ -270,7 +278,7 @@ describe('the pages of the sessions', () => {
     ])
     expect(listingOf(pages)).toEqual({
       type: 'listed',
-      sessions: [thisDevice, phone],
+      items: [thisDevice, phone],
       total: 2,
       rest: 'none',
     })
@@ -280,6 +288,21 @@ describe('the pages of the sessions', () => {
     const pages = [page([thisDevice], 2, thisDevice.id), page([phone], 2, null)]
 
     expect(withoutSession(pages, unrecorded.id)).toEqual(pages)
+  })
+
+  it('should take a session that was ended out of what was read, and leave nothing as nothing', () => {
+    // Arrange
+    const read = {
+      pages: [page([thisDevice, phone], 2, null)],
+      pageParams: [undefined],
+    }
+
+    // Act, Assert
+    expect(withoutSessionIn(read, phone.id)).toEqual({
+      pages: [page([thisDevice], 1, null)],
+      pageParams: [undefined],
+    })
+    expect(withoutSessionIn(undefined, phone.id)).toBeUndefined()
   })
 
   it('should leave a count the API did not give', () => {

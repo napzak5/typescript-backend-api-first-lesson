@@ -90,7 +90,8 @@ const importsOwnStyles = (): Plugin => ({
   // After the plugin of Vite that writes the stylesheets of a module
   enforce: 'post',
   renderChunk(code, chunk) {
-    const imports = [...(chunk.viteMetadata?.importedCss ?? [])].map(
+    // A chunk without the metadata of Vite has no stylesheet: a set of none
+    const imports = [...new Set(chunk.viteMetadata?.importedCss)].map(
       (stylesheet) =>
         `import "./${relative(dirname(chunk.fileName), stylesheet)}";\n`,
     )

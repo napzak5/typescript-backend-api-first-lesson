@@ -108,13 +108,12 @@ const Setup = ({ user, securityHref }: SetupProps) => {
   })
 
   const confirm = useMutation({
-    mutationFn: confirmTwoFactor,
-    onSuccess: (outcome) =>
+    mutationFn: ({ code }: { code: string; backupCodes: readonly string[] }) =>
+      confirmTwoFactor(code),
+    onSuccess: (outcome, { backupCodes }) =>
       match(outcome)
         .with({ type: 'enabled' }, () => {
-          if (step.type === 'app') {
-            moveTo({ type: 'enabled', backupCodes: step.setup.backupCodes })
-          }
+          moveTo({ type: 'enabled', backupCodes })
           // The screen of the security shows the second factor on at once,
           // and not what it read before
           queryClient.setQueryData<AccountRead>(OWN_ACCOUNT, (read) =>
@@ -139,13 +138,17 @@ const Setup = ({ user, securityHref }: SetupProps) => {
     start.mutate(read.value)
   }
 
-  const submitCode = (values: FormData): void => {
+  /** The code of the app that took `setup`; its backup codes are shown once the code confirms it */
+  const submitCode = (
+    setup: ModelsAuthTwoFactorSetupResponse,
+    values: FormData,
+  ): void => {
     const read = readCode(values, 'app')
     if (read.type === 'invalid') {
       setSays({ message: undefined, errors: read.errors })
       return
     }
-    confirm.mutate(read.value)
+    confirm.mutate({ code: read.value, backupCodes: setup.backupCodes })
   }
 
   return match(step)
@@ -177,7 +180,7 @@ const Setup = ({ user, securityHref }: SetupProps) => {
         errors={says.errors}
         pending={confirm.isPending}
         cancelHref={securityHref}
-        onSubmit={submitCode}
+        onSubmit={(values) => submitCode(setup, values)}
         headingRef={heading}
       />
     ))

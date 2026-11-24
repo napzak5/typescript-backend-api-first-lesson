@@ -1,3 +1,4 @@
+export { giveBack, refuse, takeAway, unreadable } from './failures'
 export { signInAs } from './sign-in'
 export {
   countOf,

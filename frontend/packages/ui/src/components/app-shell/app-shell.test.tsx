@@ -255,6 +255,21 @@ describe('AppShell', () => {
     expect(menu.getByRole('button', { name: '閉じる' })).toBeVisible()
   })
 
+  it.each([
+    ['in the header', stories.NavigationInHeader, true],
+    ['in the menu of a narrow screen', stories.MenuOnNarrowScreen, false],
+  ] as const)(
+    'should tell the account whether it stands in the menu: %s',
+    async (_where, story, small) => {
+      // Act
+      await story.run()
+
+      // Assert
+      const signOut = screen.getByRole('button', { name: 'サインアウト' })
+      expect(signOut.classList.contains('small')).toBe(small)
+    },
+  )
+
   it.each<[string, string]>([
     ['link', '顧客台帳'],
     ['button', 'サインアウト'],

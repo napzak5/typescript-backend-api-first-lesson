@@ -14,6 +14,7 @@ import {
   type FormSays,
   type NamedChoice,
   textOf,
+  textsOf,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
@@ -92,9 +93,7 @@ export type ServicesChangeRead =
  * none, on or off, a state, the days, and a level of the staff or none.
  */
 export const readServicesChange = (values: FormData): ServicesChangeRead => {
-  const serviceIds = values
-    .getAll('serviceIds')
-    .flatMap((value) => (typeof value === 'string' ? [value] : []))
+  const serviceIds = textsOf(values, 'serviceIds')
   const category = textOf(values, 'categoryId')
   const isActive = switchOf(textOf(values, 'isActive'))
   const serviceStatus = chosen(

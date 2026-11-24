@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {
+  BACKEND_TEST_SERVER,
   startTestServer,
   testServerClient,
 } from '@beauty-salon-frontend/testing/api/test-server'
@@ -15,11 +16,7 @@ import { handOver } from './run'
  * server, which removes the API and its database.
  */
 export default async (): Promise<() => Promise<void>> => {
-  const server = await startTestServer()
-  assert.ok(
-    server !== null,
-    'The test server of the backend did not start: what it reported is above this error',
-  )
+  const server = await startTestServer(BACKEND_TEST_SERVER)
   const client = testServerClient(server, (message) => assert.fail(message))
   const api = await client
     .start({

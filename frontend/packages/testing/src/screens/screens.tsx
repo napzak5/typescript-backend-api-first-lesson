@@ -6,7 +6,12 @@ import {
   within,
 } from '@testing-library/react'
 import { type ReactNode, useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
+import {
+  MemoryRouter,
+  type NavigateFunction,
+  useLocation,
+  useNavigate,
+} from 'react-router'
 
 /*
  * What the tests of screens share: an application at an address, the
@@ -21,16 +26,11 @@ export const queryClientOfATest = (): QueryClient =>
 type Shown = {
   address: string
   firstSight: [string, string]
-  goTo: (to: string) => void
-  goBack: () => void
+  /** How the router leads to another address: none before an application is rendered */
+  navigate: NavigateFunction | null
 }
 
-let shown: Shown = {
-  address: '',
-  firstSight: ['', ''],
-  goTo: () => undefined,
-  goBack: () => undefined,
-}
+let shown: Shown = { address: '', firstSight: ['', ''], navigate: null }
 
 /**
  * Keeps, beside the application, what the router says: the address, the
@@ -55,11 +55,7 @@ const Shown = () => {
     }
   }, [pathname, search])
   useLayoutEffect(() => {
-    shown = {
-      ...shown,
-      goTo: (to) => void navigate(to),
-      goBack: () => void navigate(-1),
-    }
+    shown = { ...shown, navigate }
   }, [navigate])
 
   return null
@@ -109,10 +105,14 @@ export const address = (): string => shown.address
 export const firstSight = (): [string, string] => shown.firstSight
 
 /** Leads the application to an address, as a link of its own would. Call it in `act`. */
-export const goTo = (to: string): void => shown.goTo(to)
+export const goTo = (to: string): void => {
+  void shown.navigate?.(to)
+}
 
 /** Leads the application a step back in its history. Call it in `act`. */
-export const goBack = (): void => shown.goBack()
+export const goBack = (): void => {
+  void shown.navigate?.(-1)
+}
 
 /** The heading of a screen, once it is there. */
 export const heading = (name: string | RegExp): Promise<HTMLElement> =>
@@ -122,7 +122,7 @@ export const heading = (name: string | RegExp): Promise<HTMLElement> =>
 export const notifications = (): string[] =>
   screen
     .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
+    .map((region) => region.textContent)
     .filter((said) => said !== '')
 
 /**
@@ -138,7 +138,7 @@ const termsIn = (card: HTMLElement): [string, string][] =>
   within(card)
     .getAllByRole('term')
     .map((term) => [
-      term.textContent ?? '',
+      term.textContent,
       term.nextElementSibling?.textContent ?? '',
     ])
 
@@ -165,7 +165,7 @@ export const rowsOf = (table: string | HTMLElement): string[][] =>
   within(tableOf(table))
     .getAllByRole('row')
     .slice(1)
-    .map((row) => Array.from(row.children, (cell) => cell.textContent ?? ''))
+    .map((row) => Array.from(row.children, (cell) => cell.textContent))
 
 /**
  * What the headers of the columns of a table say, in their order; the
@@ -175,7 +175,7 @@ export const rowsOf = (table: string | HTMLElement): string[][] =>
 export const columnsOf = (table: string | HTMLElement): string[] =>
   within(tableOf(table))
     .getAllByRole('columnheader')
-    .map((header) => header.textContent ?? '')
+    .map((header) => header.textContent)
 
 /**
  * What a select offers, option by option. The select is named by its
@@ -188,4 +188,4 @@ export const optionsOf = (select: string | HTMLElement): string[] =>
       : select,
   )
     .getAllByRole('option')
-    .map((option) => option.textContent ?? '')
+    .map((option) => option.textContent)

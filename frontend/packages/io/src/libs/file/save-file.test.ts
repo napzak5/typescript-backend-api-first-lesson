@@ -1,5 +1,5 @@
 import { savedFiles } from '@beauty-salon-frontend/testing'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fileNameOf, fileOfAnswer, saveFile } from './save-file'
 
 describe('fileNameOf', () => {
@@ -66,6 +66,19 @@ describe('fileOfAnswer', () => {
     })
   })
 
+  it('should hold a file of no type when the answer names none', () => {
+    // Arrange
+    const headers = new Headers({
+      'Content-Disposition': 'attachment; filename=receipt.txt',
+    })
+
+    // Act
+    const file = fileOfAnswer(headers, 'Kushi')
+
+    // Assert
+    expect(file).toEqual({ name: 'receipt.txt', type: '', content: 'Kushi' })
+  })
+
   it('should hold nothing when the answer names no file', () => {
     // Act, Assert
     expect(fileOfAnswer(new Headers(), 'date,sales\r\n')).toBeUndefined()
@@ -73,6 +86,11 @@ describe('fileOfAnswer', () => {
 })
 
 describe('saveFile', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
   it('should save the content under the name, with its type', async () => {
     // Act
     saveFile({
@@ -97,5 +115,22 @@ describe('saveFile', () => {
 
     // Assert
     expect(document.body).toBeEmptyDOMElement()
+  })
+
+  it('should let go of the address of the file a minute after the save, when the browser has read it', () => {
+    // Arrange
+    vi.useFakeTimers()
+    const made = vi.spyOn(URL, 'createObjectURL')
+    const revoked = vi.spyOn(URL, 'revokeObjectURL')
+
+    // Act
+    saveFile({ name: 'a.json', type: 'application/json', content: '{}' })
+    vi.advanceTimersByTime(59_999)
+    const before = [...revoked.mock.calls]
+    vi.advanceTimersByTime(1)
+
+    // Assert
+    expect(before).toEqual([])
+    expect(revoked.mock.calls).toEqual([[made.mock.results[0]?.value]])
   })
 })

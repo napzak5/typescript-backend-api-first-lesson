@@ -67,8 +67,13 @@ export const Navigation = ({
       current === undefined
         ? -1
         : addresses.split(NEXT_ADDRESS).indexOf(current)
-    const item = place < 0 ? null : (row?.children.item(place) ?? null)
-    if (orientation === 'horizontal' && row !== null && item !== null) {
+    const item = place < 0 ? null : row?.children.item(place)
+    if (
+      orientation === 'horizontal' &&
+      row !== null &&
+      item !== null &&
+      item !== undefined
+    ) {
       centreInRow(row, item)
     }
   }, [addresses, current, orientation])

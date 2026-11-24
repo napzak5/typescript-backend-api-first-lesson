@@ -1,7 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { salonIdOf } from '@beauty-salon-frontend/testing/api'
+import { refuse, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
@@ -30,7 +30,6 @@ import {
   vi,
 } from 'vitest'
 import { openAs } from '../../__tests__/screens'
-import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   changedMeanwhile,
   customerIdOf,
