@@ -12,12 +12,16 @@ import { SALE_WORDS } from './sale-words'
  */
 
 /** What a method takes at once: its smallest amount, its largest, or both */
-export type Limits =
+export type AmountLimits =
   | { least: LocalizedText; most: LocalizedText | null }
   | { least: null; most: LocalizedText }
 
-/** What a method takes at once, as a part of a sentence: 「￥1,000から」, 「￥50,000まで」, 「￥1,000から￥50,000まで」 */
-const limitsIn = ({ least, most }: Limits): LocalizedText => {
+/**
+ * What a method takes at once, as a part of a sentence: 「￥1,000から」,
+ * 「￥50,000まで」, 「￥1,000から￥50,000まで」. The payment methods say it of
+ * a method too.
+ */
+export const limitsIn = ({ least, most }: AmountLimits): LocalizedText => {
   if (least === null) {
     return text({ en: `up to ${most.en}`, ja: `${most.ja}まで` })
   }
@@ -45,13 +49,13 @@ export const salePaymentMessages = {
       ja: '括弧の中は、1 回に受け付ける金額です。',
     }),
     /** What a method takes at once, in a sentence */
-    limits: (limits: Limits) =>
+    limits: (limits: AmountLimits) =>
       text({
         en: `Takes ${limitsIn(limits).en} at a time.`,
         ja: `1 回 ${limitsIn(limits).ja}受け付けます。`,
       }),
     /** A method as it is offered, with what it takes at once when it has limits: 「現金（￥1,000から）」 */
-    methodLabel: (name: string, limits: Limits | null) => {
+    methodLabel: (name: string, limits: AmountLimits | null) => {
       if (limits === null) {
         return text({ en: name, ja: name })
       }
@@ -109,7 +113,7 @@ export const salePaymentMessages = {
         ja: `金額は、未払い残額（${owed.ja}）以下にしてください。`,
       }),
     /** What the method does not take at once */
-    outsideLimits: (name: string, limits: Limits) =>
+    outsideLimits: (name: string, limits: AmountLimits) =>
       text({
         en: `${name} takes ${limitsIn(limits).en} at a time.`,
         ja: `${name}は、1 回 ${limitsIn(limits).ja}受け付けます。`,

@@ -791,11 +791,13 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
-/** The catalogues whose messages that are made from a value are tested in a file of their own (`bookings.test.ts`, `inventory.test.ts`, `menu.test.ts`, `sales.test.ts`, `treatments.test.ts`) */
+/** The catalogues whose messages that are made from a value are tested in a file of their own (`bookings.test.ts`, `inventory.test.ts`, `menu.test.ts`, `payment-methods.test.ts`, `purchase-orders.test.ts`, `sales.test.ts`, `treatments.test.ts`) */
 const TESTED_APART = [
   'adminBookingMessages',
   'adminInventoryMessages',
   'adminMenuMessages',
+  'adminPaymentMethodMessages',
+  'adminPurchaseOrderMessages',
   'adminSaleMessages',
   'adminTreatmentMessages',
 ]
