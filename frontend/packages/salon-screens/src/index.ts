@@ -10,6 +10,10 @@ export {
   type KeywordSearchProps,
 } from './components/keyword-search/keyword-search'
 export {
+  OtherSalonNotice,
+  type OtherSalonNoticeProps,
+} from './components/other-salon-notice/other-salon-notice'
+export {
   PagedTable,
   type PagedTableProps,
 } from './components/paged-table/paged-table'
@@ -30,12 +34,7 @@ export {
   StartScreen,
   type StartScreenProps,
 } from './screens/start-screen'
-export {
-  OtherSalonNotice,
-  type OtherSalonNoticeProps,
-  WithSalon,
-  type WithSalonProps,
-} from './screens/with-salon'
+export { WithSalon, type WithSalonProps } from './screens/with-salon'
 export {
   amountOf,
   categoryNameOf,

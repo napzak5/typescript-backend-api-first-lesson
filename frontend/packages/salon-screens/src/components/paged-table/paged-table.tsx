@@ -43,10 +43,11 @@ export const PagedTable = <Row,>({
     const header = added?.querySelector<HTMLTableCellElement>('th')
     if (link !== null && link !== undefined) {
       link.focus()
-    } else if (header !== null && header !== undefined) {
-      // Out of the order of the keyboard: the focus is put there, and it is no control
-      header.tabIndex = -1
-      header.focus()
+    } else {
+      // Every row has its header. Out of the order of the keyboard: the
+      // focus is put there, and it is no control
+      header?.setAttribute('tabindex', '-1')
+      header?.focus()
     }
   })
 

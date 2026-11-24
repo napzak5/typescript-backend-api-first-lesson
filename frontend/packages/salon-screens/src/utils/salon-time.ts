@@ -52,27 +52,26 @@ const LOCAL_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 
 /** How far the clock of a time zone is ahead of UTC at a moment, in milliseconds. */
 const offsetAt = (moment: number, timezone: string): number => {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hourCycle: 'h23',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    })
-      .formatToParts(new Date(moment))
-      .map(({ type, value }) => [type, Number(value)]),
-  )
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(new Date(moment))
+  // The format gives every part it was asked for
+  const part = (type: Intl.DateTimeFormatPartTypes): number =>
+    Number(parts.find((shownPart) => shownPart.type === type)?.value)
   const shown = Date.UTC(
-    parts['year'] ?? 0,
-    (parts['month'] ?? 1) - 1,
-    parts['day'] ?? 1,
-    parts['hour'] ?? 0,
-    parts['minute'] ?? 0,
-    parts['second'] ?? 0,
+    part('year'),
+    part('month') - 1,
+    part('day'),
+    part('hour'),
+    part('minute'),
+    part('second'),
   )
 
   return shown - (moment - (moment % 1000))
@@ -92,13 +91,14 @@ export const momentOf = (
   if (parts === null) {
     return undefined
   }
-  const [, year, month, day, hour, minute] = parts.map(Number)
+  // The pattern has the five groups
+  const [, year, month, day, hour, minute] = parts
   const asUtc = Date.UTC(
-    year ?? 0,
-    (month ?? 1) - 1,
-    day ?? 1,
-    hour ?? 0,
-    minute ?? 0,
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
   )
   // The offset at the moment is that of the moment itself, which is not
   // known yet: the offset at the same reading in UTC comes close, and the
