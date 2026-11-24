@@ -23,15 +23,16 @@ import {
   aboutTheAttempt,
   type ChoiceOption,
   errorAt,
+  type FormErrors,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
+  type NamedChoice,
   same,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import { numberOf } from '../../treatments/utils/treatment-form'
@@ -54,40 +55,18 @@ const LONGEST_CITY = 100
 const LONGEST_ADDRESS = 255
 const LONGEST_TAX_RATE = 100
 
-const NAME_ERROR = neededWithin(writtenInJapanese('サロンの名前'), LONGEST_NAME)
-const KANA_ERROR = tooLongOf(writtenInJapanese('カナ'), LONGEST_NAME)
-const POSTAL_CODE_ERROR = tooLongOf(
-  writtenInJapanese('郵便番号'),
-  LONGEST_POSTAL_CODE,
-)
-const PREFECTURE_ERROR = neededWithin(
-  writtenInJapanese('都道府県'),
-  LONGEST_PREFECTURE,
-)
-const CITY_ERROR = neededWithin(writtenInJapanese('市区町村'), LONGEST_CITY)
-const ADDRESS_ERROR = neededWithin(
-  writtenInJapanese('町名・番地'),
-  LONGEST_ADDRESS,
-)
-const BUILDING_ERROR = tooLongOf(writtenInJapanese('建物'), LONGEST_ADDRESS)
-const LATITUDE_ERROR =
-  '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。'
-const LONGITUDE_ERROR =
-  '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。'
-const TAX_RATE_ERROR =
-  '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
-const EMAIL_TAKEN =
-  'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。'
-const FORBIDDEN_MESSAGE =
-  'このサロンの設定は、変えられません。設定を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
-const FAILED =
-  'サロンの情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。'
-const TIME_ZONE_ERROR = 'タイムゾーンを選んでください。'
-const CURRENCY_ERROR = '通貨を選んでください。'
-const ADD_FORBIDDEN =
-  'このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。'
-const NOT_ADDED =
-  'サロンを登録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const { change, entry, form, words } = adminSettingsMessages
+const { errors: ERRORS } = form
+
+type Errors = FormErrors<LocalizedText>
+
+const NAME_ERROR = neededWithin(form.salonName, LONGEST_NAME)
+const KANA_ERROR = tooLongOf(words.nameKana, LONGEST_NAME)
+const POSTAL_CODE_ERROR = tooLongOf(words.postalCode, LONGEST_POSTAL_CODE)
+const PREFECTURE_ERROR = neededWithin(words.prefecture, LONGEST_PREFECTURE)
+const CITY_ERROR = neededWithin(words.city, LONGEST_CITY)
+const ADDRESS_ERROR = neededWithin(words.address, LONGEST_ADDRESS)
+const BUILDING_ERROR = tooLongOf(words.building, LONGEST_ADDRESS)
 
 /** What the form shows of a salon: the values it opens with. */
 export type SalonShown = Omit<
@@ -134,10 +113,10 @@ export const TIME_ZONE_CHOICES: readonly ChoiceOption[] = TIME_ZONES.map(
 )
 
 /** The currencies a salon may be given: those the browser knows, by their codes and names (「JPY（日本円）」). */
-export const CURRENCY_CHOICES: readonly ChoiceOption[] = CURRENCIES.map(
+export const CURRENCY_CHOICES: readonly NamedChoice[] = CURRENCIES.map(
   (code) => ({
     value: code,
-    label: `${code}（${inJapanese(formats.currencyNameOf(code))}）`,
+    label: form.currencyChoice(code, formats.currencyNameOf(code)),
   }),
 )
 
@@ -174,7 +153,7 @@ type SalonValues = Required<
 /** What the form holds, or what is wrong with it */
 type Whole =
   | { type: 'valid'; values: SalonValues }
-  | { type: 'invalid'; errors: Record<string, string> }
+  | { type: 'invalid'; errors: Errors }
 
 const readWhole = (values: FormData): Whole => {
   const optional = (name: string): string | null =>
@@ -196,61 +175,42 @@ const readWhole = (values: FormData): Whole => {
   const logoUrl = optional('logoUrl')
   const photos = textOf(values, 'imageUrls')
   const taxRate = numberOf(textOf(values, 'taxRate'), 2)
-  const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt(
-      'name',
-      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
-    ),
-    ...errorAt(
-      'nameKana',
-      inJapaneseIfAny(tooLongError(nameKana, LONGEST_NAME, KANA_ERROR)),
-    ),
+  const errors: Errors = Object.fromEntries([
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ...errorAt('nameKana', tooLongError(nameKana, LONGEST_NAME, KANA_ERROR)),
     ...errorAt(
       'postalCode',
-      inJapaneseIfAny(
-        tooLongError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
-      ),
+      tooLongError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
     ),
     ...errorAt(
       'prefecture',
-      inJapaneseIfAny(
-        neededError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
-      ),
+      neededError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
     ),
-    ...errorAt(
-      'city',
-      inJapaneseIfAny(neededError(city, LONGEST_CITY, CITY_ERROR)),
-    ),
-    ...errorAt(
-      'address',
-      inJapaneseIfAny(neededError(address, LONGEST_ADDRESS, ADDRESS_ERROR)),
-    ),
+    ...errorAt('city', neededError(city, LONGEST_CITY, CITY_ERROR)),
+    ...errorAt('address', neededError(address, LONGEST_ADDRESS, ADDRESS_ERROR)),
     ...errorAt(
       'building',
-      inJapaneseIfAny(tooLongError(building, LONGEST_ADDRESS, BUILDING_ERROR)),
+      tooLongError(building, LONGEST_ADDRESS, BUILDING_ERROR),
     ),
-    ...errorAt('latitude', latitude === undefined ? LATITUDE_ERROR : undefined),
+    ...errorAt(
+      'latitude',
+      latitude === undefined ? ERRORS.latitude : undefined,
+    ),
     ...errorAt(
       'longitude',
-      longitude === undefined ? LONGITUDE_ERROR : undefined,
+      longitude === undefined ? ERRORS.longitude : undefined,
     ),
-    ...errorAt('phoneNumber', inJapaneseIfAny(phoneError(phoneNumber))),
-    ...errorAt(
-      'alternativePhone',
-      inJapaneseIfAny(alternativePhoneError(alternativePhone)),
-    ),
-    ...errorAt('email', inJapaneseIfAny(emailError(email))),
-    ...errorAt('websiteUrl', inJapaneseIfAny(webAddressError(websiteUrl))),
-    ...errorAt('logoUrl', inJapaneseIfAny(webAddressError(logoUrl))),
+    ...errorAt('phoneNumber', phoneError(phoneNumber)),
+    ...errorAt('alternativePhone', alternativePhoneError(alternativePhone)),
+    ...errorAt('email', emailError(email)),
+    ...errorAt('websiteUrl', webAddressError(websiteUrl)),
+    ...errorAt('logoUrl', webAddressError(logoUrl)),
     // The API takes a photo at an address of any length
-    ...errorAt(
-      'imageUrls',
-      inJapaneseIfAny(webAddressLinesError(photos, null)),
-    ),
+    ...errorAt('imageUrls', webAddressLinesError(photos, null)),
     ...errorAt(
       'taxRate',
       taxRate === undefined || taxRate === null || taxRate > LONGEST_TAX_RATE
-        ? TAX_RATE_ERROR
+        ? ERRORS.taxRate
         : undefined,
     ),
   ])
@@ -308,8 +268,8 @@ const shownOf = (salon: ModelsSalonResponse): SalonValues => ({
   websiteUrl: textOrNull(salon.websiteUrl),
   logoUrl: textOrNull(salon.logoUrl),
   imageUrls: linesOf(salon.imageUrls.join('\n')),
-  features: tagsIn(salon.features.join('、')),
-  amenities: tagsIn(salon.amenities.join('、')),
+  features: tagsIn(salon.features.join(',')),
+  amenities: tagsIn(salon.amenities.join(',')),
   taxRate: salon.taxRate,
   isActive: salon.isActive,
 })
@@ -317,7 +277,7 @@ const shownOf = (salon: ModelsSalonResponse): SalonValues => ({
 export type SalonChangeRead =
   | { type: 'valid'; value: ModelsSalonUpdateRequest }
   | { type: 'unchanged' }
-  | { type: 'invalid'; errors: Record<string, string> }
+  | { type: 'invalid'; errors: Errors }
 
 /**
  * What was changed in the form: the values that are others than those of
@@ -392,7 +352,7 @@ export const readSalonChange = (
 /** What a salon to be added asks for, or what is wrong with the form. */
 export type SalonEntryRead =
   | { type: 'valid'; value: ModelsSalonCreateRequest }
-  | { type: 'invalid'; errors: Record<string, string> }
+  | { type: 'invalid'; errors: Errors }
 
 /**
  * The salon the form adds, with the time zone and the currency chosen. It
@@ -402,16 +362,16 @@ export const readSalonEntry = (values: FormData): SalonEntryRead => {
   const read = readWhole(values)
   const timezone = textOf(values, 'timezone')
   const currency = textOf(values, 'currency')
-  const errors: Record<string, string> = {
+  const errors: Errors = {
     ...(read.type === 'invalid' ? read.errors : {}),
     ...Object.fromEntries([
       ...errorAt(
         'timezone',
-        TIME_ZONES.includes(timezone) ? undefined : TIME_ZONE_ERROR,
+        TIME_ZONES.includes(timezone) ? undefined : ERRORS.timezone,
       ),
       ...errorAt(
         'currency',
-        CURRENCIES.includes(currency) ? undefined : CURRENCY_ERROR,
+        CURRENCIES.includes(currency) ? undefined : ERRORS.currency,
       ),
     ]),
   }
@@ -439,26 +399,26 @@ type SalonRefused =
 
 /** What the form says after the API refused a salon, with the words of the attempt for what went wrong and for a role that may not. */
 const saysAfter =
-  (failed: string, forbidden: string) =>
-  (outcome: SalonRefused): FormSays =>
+  (failed: LocalizedText, forbidden: LocalizedText) =>
+  (outcome: SalonRefused): FormSays<LocalizedText> =>
     match(outcome)
-      .returnType<FormSays>()
+      .returnType<FormSays<LocalizedText>>()
       .with({ type: 'emailTaken' }, () => ({
         message: undefined,
-        errors: { email: EMAIL_TAKEN },
+        errors: { email: ERRORS.emailTaken },
       }))
       .with({ type: 'invalid' }, () =>
-        aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
+        aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
       )
       .with({ type: 'forbidden' }, () => aboutTheAttempt(forbidden))
       .with({ type: 'tooManyRequests' }, () =>
-        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+        aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
       )
       .with({ type: 'failed' }, () => aboutTheAttempt(failed))
       .exhaustive()
 
 /** What the form says after the API did not change the salon. */
-export const afterSalonChange = saysAfter(FAILED, FORBIDDEN_MESSAGE)
+export const afterSalonChange = saysAfter(change.failed, change.forbidden)
 
 /** What the form says after the API did not add the salon. */
-export const afterSalonEntry = saysAfter(NOT_ADDED, ADD_FORBIDDEN)
+export const afterSalonEntry = saysAfter(entry.failed, entry.forbidden)

@@ -10,7 +10,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -21,7 +24,7 @@ import { SalonForm } from '../components/salon-form/salon-form'
 import { afterSalonEntry, readSalonEntry } from '../utils/salon-form'
 import { useAddsSalon } from './keeps-salon'
 
-const TITLE = 'サロンを登録する'
+const { entry, titles, words } = adminSettingsMessages
 
 /**
  * The form of a salon to be added. The salon added is shown in its
@@ -29,10 +32,11 @@ const TITLE = 'サロンを登録する'
  * until it is told to.
  */
 const SalonEntry = () => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const addition = useMutation({
     mutationFn: (request: ModelsSalonCreateRequest) => addSalon(request),
     onSuccess: (outcome) =>
@@ -41,10 +45,7 @@ const SalonEntry = () => {
           const read: SalonRead = { type: 'found', salon }
           queryClient.setQueryData(salonKeyOf(salon.id), read)
           queryClient.removeQueries({ queryKey: SALON_CHOICES })
-          notify({
-            tone: 'success',
-            message: `サロン「${salon.name}」を登録しました。営業時間とメニューを入れてから、オンライン予約を受け付けてください。`,
-          })
+          notify({ tone: 'success', message: entry.added(salon.name) })
           void navigate(settingsHrefOf(salon.id))
         })
         .with(
@@ -76,14 +77,14 @@ const SalonEntry = () => {
   return (
     <SalonForm
       subject={{ type: 'new' }}
-      submitLabel='サロンを登録する'
+      submitLabel={say(entry.submit)}
       message={said.message}
       errors={said.errors}
       pending={addition.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href='/' variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -93,21 +94,20 @@ const SalonEntry = () => {
 /** Adds a salon, for an administrator. */
 export const SalonEntryScreen = () => {
   const adds = useAddsSalon()
+  const say = useSay()
 
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='営業時間は、登録したあと、サロンの設定から入れます。'
+        title={say(titles.entry)}
+        description={say(entry.description)}
       />
       {adds ? (
         <SalonEntry />
       ) : (
         <>
-          <p>
-            このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。
-          </p>
-          <ButtonLink href='/'>トップへ戻る</ButtonLink>
+          <p>{say(entry.forbidden)}</p>
+          <ButtonLink href='/'>{say(entry.toStart)}</ButtonLink>
         </>
       )}
     </>

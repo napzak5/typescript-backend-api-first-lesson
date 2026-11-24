@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as salonRemovalStories from './salon-removal.stories'
 
 const stories = composeStories(salonRemovalStories)
@@ -57,4 +58,57 @@ describe('SalonRemoval', () => {
   })
 
   itShouldBeAccessibleInEveryStory(stories)
+})
+
+describe('SalonRemoval on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say in English what the removal does, and the button that asks', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Offered.run()
+
+    // Assert
+    expect(
+      screen.getByRole('region', { name: 'Remove the salon' }),
+    ).toHaveTextContent(
+      'When the salon “Salon Hikari 表参道店” is removed, it is taken off the list of salons and the screens of the customers, and the staff can no longer use its screens.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Remove the salon' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should say in English why bookings that are not finished keep the salon, with the way to them', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.BookingsUnfinished.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'has bookings that are not finished (draft, awaiting confirmation, confirmed, in progress), so it cannot be removed.',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Open the booking ledger' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should say in English who removes a salon', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Forbidden.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This account cannot remove this salon.',
+    )
+  })
 })

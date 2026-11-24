@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as recordStories from './product-record.stories'
 
 const stories = composeStories(recordStories)
@@ -94,5 +95,85 @@ describe('ProductRecord', () => {
       ['商品画像の URL', '記録なし'],
       ['安全データシートの URL', '記録なし'],
     ])
+  })
+})
+
+describe('ProductRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say everything the ledger keeps of a product, card by card, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Noted.run()
+
+    // Assert
+    expect(terms('Product').map(([term]) => term)).toEqual([
+      'Product code',
+      'Product name',
+      'Description',
+      'Category',
+      'Brand',
+      'Unit',
+      'Use',
+      'Status',
+    ])
+    expect(terms('Product').slice(6)).toEqual([
+      ['Use', 'In-store sale, Treatment'],
+      ['Status', 'Active'],
+    ])
+    expect(terms('Prices')).toEqual([
+      ['Purchase price', '¥1,500'],
+      ['List price', '¥3,500'],
+      ['Sale price', '¥3,000'],
+    ])
+    expect(terms('Stock levels')).toEqual([
+      ['Minimum stock', '5 本'],
+      ['Reorder point', '10 本'],
+      ['Maximum stock', '50 本'],
+    ])
+    expect(terms('Purchasing')).toEqual([
+      ['Supplier', '東京ビューティーサプライ'],
+      ['Supplier product code', 'TBS-SH-500'],
+      ['Lead time in days', '3 days'],
+    ])
+    expect(terms('Management')).toEqual([
+      ['Barcode', '4901234567894'],
+      ['Lot numbers', 'Not by lot'],
+      ['Expiry guide', '36 months'],
+      ['Storage conditions', '直射日光を避けて保管'],
+      ['Product image URL', 'https://images.example.com/products/shmp001.jpg'],
+      ['Safety data sheet URL', 'https://docs.example.com/sds/shmp001.pdf'],
+    ])
+  })
+
+  it('should say what is not noted, and the levels that were not decided, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.LittleNoted.run()
+
+    // Assert
+    expect(terms('Prices')).toEqual([
+      ['Purchase price', 'Not recorded'],
+      ['List price', 'Not recorded'],
+      ['Sale price', 'Not recorded'],
+    ])
+    expect(terms('Stock levels')).toEqual([
+      ['Minimum stock', '0 箱'],
+      ['Reorder point', 'Not set'],
+      ['Maximum stock', 'Not set'],
+    ])
+    expect(terms('Purchasing').at(-1)).toEqual([
+      'Lead time in days',
+      'Not recorded',
+    ])
+    expect(terms('Product')).toEqual(
+      expect.arrayContaining([['Use', 'Neither']]),
+    )
   })
 })

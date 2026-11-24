@@ -1,21 +1,24 @@
 import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { SalonRemoval } from '../api/settings-api'
+
+const { removal } = adminSettingsMessages
 
 /** Why a salon was not removed, of what another attempt does not change. */
 export type SalonRemovalRefusal =
   /** A booking of the salon is not finished: said with the way to the bookings */
-  | { type: 'bookingsUnfinished'; message: string }
+  | { type: 'bookingsUnfinished'; message: LocalizedText }
   /** The account does not remove the salon */
-  | { type: 'forbidden'; message: string }
+  | { type: 'forbidden'; message: LocalizedText }
 
 /** What a removal of a salon comes to on the screen. */
 export type SalonRemovalSays =
   /** The salon was removed: said in a notification at the start */
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: LocalizedText }
   /** Nothing was removed, and another attempt may: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** What another attempt does not change: said at the removal */
   | { type: 'refused'; refusal: SalonRemovalRefusal }
   /** The salon was removed meanwhile: the screen says it is not found */
@@ -34,13 +37,13 @@ export const afterSalonRemoval = (
     .returnType<SalonRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `サロン「${name}」を削除しました。`,
+      message: removal.done(name),
     }))
     .with({ type: 'bookingsUnfinished' }, () => ({
       type: 'refused',
       refusal: {
         type: 'bookingsUnfinished',
-        message: `サロン「${name}」には、終わっていない予約（下書き、確定待ち、確定、施術中）があるため、削除できません。予約台帳で、予約を完了するか、キャンセルするか、無断キャンセルにしてから、もう一度お試しください。`,
+        message: removal.bookingsUnfinished(name),
       },
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
@@ -49,17 +52,15 @@ export const afterSalonRemoval = (
       type: 'refused',
       refusal: {
         type: 'forbidden',
-        message:
-          'このアカウントでは、このサロンを削除できません。サロンを削除できるのは、そのサロンのオーナーと、管理者です。',
+        message: removal.forbidden,
       },
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'サロンを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()

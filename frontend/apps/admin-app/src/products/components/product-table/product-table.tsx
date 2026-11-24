@@ -4,18 +4,21 @@ import {
   Badge,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   carriedNameOf,
   priceNameOf,
   usesNameOf,
 } from '../../utils/product-format'
 
+const { ledger, words } = adminProductMessages
+
 export type ProductTableProps = {
-  /** What the table lists: 「商品台帳」, or 「条件に合う商品」 */
+  /** What the table lists, in the language of the page: 「商品台帳」, or 「条件に合う商品」 */
   caption: string
   /** The products that were read so far, in the order of their codes; at least one */
   rows: readonly ModelsProductResponse[]
@@ -42,57 +45,65 @@ export const ProductTable = ({
   more,
   onMore,
   productHref,
-}: ProductTableProps) => (
-  <PagedTable
-    caption={caption}
-    rowHeader='name'
-    columns={[
-      {
-        key: 'productCode',
-        header: '商品コード',
-        cell: ({ productCode }) => productCode,
-      },
-      {
-        key: 'name',
-        header: '商品名',
-        cell: ({ id, name }) => <Link href={productHref(id)}>{name}</Link>,
-      },
-      {
-        key: 'category',
-        header: 'カテゴリー',
-        cell: ({ category }) => category,
-      },
-      {
-        key: 'brand',
-        header: 'ブランド',
-        cell: ({ brand }) => brand,
-      },
-      {
-        key: 'salonPrice',
-        header: '販売価格',
-        align: 'end',
-        cell: ({ salonPrice }) => priceNameOf(salonPrice, currency),
-      },
-      {
-        key: 'uses',
-        header: '用途',
-        cell: (product) => usesNameOf(product),
-      },
-      {
-        key: 'isActive',
-        header: '状態',
-        cell: ({ isActive }) => (
-          <Badge tone={isActive ? 'success' : 'neutral'}>
-            {carriedNameOf(isActive)}
-          </Badge>
-        ),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ id }) => id}
-    emptyMessage='商品はありません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: ProductTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={caption}
+      rowHeader='name'
+      columns={[
+        {
+          key: 'productCode',
+          header: say(words.productCode),
+          cell: ({ productCode }) => productCode,
+        },
+        {
+          key: 'name',
+          header: say(words.name),
+          cell: ({ id, name }) => <Link href={productHref(id)}>{name}</Link>,
+        },
+        {
+          key: 'category',
+          header: say(words.category),
+          cell: ({ category }) => category,
+        },
+        {
+          key: 'brand',
+          header: say(words.brand),
+          cell: ({ brand }) => brand,
+        },
+        {
+          key: 'salonPrice',
+          header: say(words.salonPrice),
+          align: 'end',
+          cell: ({ salonPrice }) => {
+            const price = priceNameOf(salonPrice, currency)
+
+            return price === null ? null : say(price)
+          },
+        },
+        {
+          key: 'uses',
+          header: say(words.uses),
+          cell: (product) => say(usesNameOf(product)),
+        },
+        {
+          key: 'isActive',
+          header: say(words.status),
+          cell: ({ isActive }) => (
+            <Badge tone={isActive ? 'success' : 'neutral'}>
+              {say(carriedNameOf(isActive))}
+            </Badge>
+          ),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ id }) => id}
+      emptyMessage={say(ledger.none)}
+      count={say(countOf(total, rows.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

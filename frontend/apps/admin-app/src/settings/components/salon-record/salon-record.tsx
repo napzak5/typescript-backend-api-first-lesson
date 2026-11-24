@@ -2,14 +2,15 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   DescriptionList,
-  inJapanese,
   Link,
   NONE,
   Table,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { weekdayNameOf } from '../../../shifts/utils/shift-week'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   calendarFrom,
   coordinatesNameOf,
@@ -18,6 +19,8 @@ import {
   weekHoursOf,
 } from '../../utils/settings-format'
 import styles from './salon-record.module.css'
+
+const { hoursRecord, record, words } = adminSettingsMessages
 
 export type SalonRecordProps = {
   salon: ModelsSalonResponse
@@ -37,137 +40,166 @@ export const SalonRecord = ({
   salon,
   today,
   paymentMethodsHref,
-}: SalonRecordProps) => (
-  <div className={styles['record']}>
-    <Card title='サロン'>
-      <DescriptionList
-        items={[
-          { term: '名前', description: salon.name },
-          { term: 'カナ', description: salon.nameKana },
-          {
-            term: '紹介',
-            description: <WrittenText>{salon.description}</WrittenText>,
-          },
-          {
-            term: 'オンライン予約',
-            description: salon.isActive ? '受け付ける' : '止めている',
-          },
-          {
-            term: '評価',
-            description: ratingNameOf(salon.rating, salon.reviewCount),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='所在地'>
-      <DescriptionList
-        items={[
-          { term: '郵便番号', description: salon.postalCode },
-          { term: '都道府県', description: salon.prefecture },
-          { term: '市区町村', description: salon.city },
-          { term: '町名・番地', description: salon.address },
-          { term: '建物', description: salon.building },
-          {
-            term: '地図の位置',
-            description: coordinatesNameOf(salon.latitude, salon.longitude),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='連絡先'>
-      <DescriptionList
-        items={[
-          { term: '電話番号', description: salon.phoneNumber },
-          {
-            term: '予備の電話番号',
-            description: salon.alternativePhone,
-          },
-          { term: 'メールアドレス', description: salon.email },
-          {
-            term: '公式サイト',
-            description: salon.websiteUrl,
-          },
-        ]}
-      />
-    </Card>
-    <Card title='写真'>
-      <DescriptionList
-        items={[
-          { term: 'ロゴの URL', description: salon.logoUrl },
-          {
-            term: '写真の URL',
-            description:
-              salon.imageUrls.length === 0 ? (
-                inJapanese(NONE)
-              ) : (
-                <ul className={styles['addresses']}>
-                  {salon.imageUrls.map((address) => (
-                    <li key={address}>{address}</li>
-                  ))}
-                </ul>
+}: SalonRecordProps) => {
+  const say = useSay()
+  const place = coordinatesNameOf(salon.latitude, salon.longitude)
+
+  return (
+    <div className={styles['record']}>
+      <Card title={say(words.salon)}>
+        <DescriptionList
+          items={[
+            { term: say(words.name), description: salon.name },
+            { term: say(words.nameKana), description: salon.nameKana },
+            {
+              term: say(words.description),
+              description: <WrittenText>{salon.description}</WrittenText>,
+            },
+            {
+              term: say(record.onlineBooking),
+              description: say(
+                salon.isActive ? record.accepting : record.paused,
               ),
+            },
+            {
+              term: say(record.rating),
+              description: say(ratingNameOf(salon.rating, salon.reviewCount)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.location)}>
+        <DescriptionList
+          items={[
+            { term: say(words.postalCode), description: salon.postalCode },
+            { term: say(words.prefecture), description: salon.prefecture },
+            { term: say(words.city), description: salon.city },
+            { term: say(words.address), description: salon.address },
+            { term: say(words.building), description: salon.building },
+            {
+              term: say(record.place),
+              description: place === null ? null : say(place),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.contact)}>
+        <DescriptionList
+          items={[
+            { term: say(words.phoneNumber), description: salon.phoneNumber },
+            {
+              term: say(words.alternativePhone),
+              description: salon.alternativePhone,
+            },
+            { term: say(words.email), description: salon.email },
+            { term: say(words.websiteUrl), description: salon.websiteUrl },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.photos)}>
+        <DescriptionList
+          items={[
+            { term: say(words.logoUrl), description: salon.logoUrl },
+            {
+              term: say(words.imageUrls),
+              description:
+                salon.imageUrls.length === 0 ? (
+                  say(NONE)
+                ) : (
+                  <ul className={styles['addresses']}>
+                    {salon.imageUrls.map((address) => (
+                      <li key={address}>{address}</li>
+                    ))}
+                  </ul>
+                ),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.featuresAndAmenities)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.features),
+              description: (
+                <TagList label={say(words.features)} items={salon.features} />
+              ),
+            },
+            {
+              term: say(words.amenities),
+              description: (
+                <TagList label={say(words.amenities)} items={salon.amenities} />
+              ),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.accounting)}>
+        <DescriptionList
+          items={[
+            { term: say(words.timezone), description: salon.timezone },
+            { term: say(words.currency), description: salon.currency },
+            {
+              term: say(words.taxRate),
+              description: say(taxRateNameOf(salon.taxRate)),
+            },
+            {
+              term: say(record.paymentMethods),
+              description: (
+                <Link href={paymentMethodsHref}>
+                  {say(record.toPaymentMethods)}
+                </Link>
+              ),
+            },
+          ]}
+        />
+      </Card>
+      <Table
+        caption={say(hoursRecord.week)}
+        columns={[
+          {
+            key: 'weekday',
+            header: say(hoursRecord.weekday),
+            cell: ({ weekday }) => say(termMessages.dayOfWeek[weekday]),
+          },
+          {
+            key: 'hours',
+            header: say(hoursRecord.hours),
+            cell: ({ hours }) => say(hours),
           },
         ]}
+        rows={weekHoursOf(salon.businessHours, salon.timezone)}
+        rowKey={({ weekday }) => weekday}
+        emptyMessage={say(hoursRecord.noWeek)}
       />
-    </Card>
-    <Card title='特徴と設備'>
-      <DescriptionList
-        items={[
+      <Table
+        caption={say(hoursRecord.calendar)}
+        columns={[
           {
-            term: '特徴',
-            description: <TagList label={'特徴'} items={salon.features} />,
+            key: 'day',
+            header: say(hoursRecord.date),
+            cell: ({ day }) => say(day),
           },
           {
-            term: '設備',
-            description: <TagList label={'設備'} items={salon.amenities} />,
+            key: 'hours',
+            header: say(hoursRecord.hours),
+            cell: ({ hours }) => say(hours),
+          },
+          {
+            key: 'holiday',
+            header: say(hoursRecord.holiday),
+            cell: ({ holiday }) => say(holiday),
+          },
+          {
+            key: 'notes',
+            header: say(hoursRecord.notes),
+            cell: ({ notes }) => notes,
           },
         ]}
+        rows={calendarFrom(salon.openingHours, today)}
+        rowKey={({ date }) => date}
+        emptyMessage={say(hoursRecord.noCalendar)}
       />
-    </Card>
-    <Card title='会計'>
-      <DescriptionList
-        items={[
-          { term: 'タイムゾーン', description: salon.timezone },
-          { term: '通貨', description: salon.currency },
-          { term: '税率', description: taxRateNameOf(salon.taxRate) },
-          {
-            term: '支払い方法',
-            description: (
-              <Link href={paymentMethodsHref}>支払い方法を見る</Link>
-            ),
-          },
-        ]}
-      />
-    </Card>
-    <Table
-      caption='営業時間'
-      columns={[
-        {
-          key: 'weekday',
-          header: '曜日',
-          cell: ({ weekday }) => weekdayNameOf(weekday),
-        },
-        { key: 'hours', header: '営業時間', cell: ({ hours }) => hours },
-      ]}
-      rows={weekHoursOf(salon.businessHours, salon.timezone)}
-      rowKey={({ weekday }) => weekday}
-      emptyMessage='営業時間はありません'
-    />
-    <Table
-      caption='営業日カレンダー'
-      columns={[
-        { key: 'day', header: '日付', cell: ({ day }) => day },
-        { key: 'hours', header: '営業時間', cell: ({ hours }) => hours },
-        {
-          key: 'holiday',
-          header: '祝日・休業日',
-          cell: ({ holiday }) => holiday,
-        },
-        { key: 'notes', header: '備考', cell: ({ notes }) => notes },
-      ]}
-      rows={calendarFrom(salon.openingHours, today)}
-      rowKey={({ date }) => date}
-      emptyMessage='今日からの日付はありません。曜日ごとの営業時間で営業します。'
-    />
-  </div>
-)
+    </div>
+  )
+}

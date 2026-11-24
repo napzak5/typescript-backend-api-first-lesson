@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as hoursFormStories from './hours-form.stories'
 
 const stories = composeStories(hoursFormStories)
@@ -264,6 +265,104 @@ describe('HoursForm', () => {
       within(group('1 行目')).getByLabelText('祝日・休業日の名前'),
     ).toHaveAccessibleDescription(
       '100 文字まで。「元日」「年末年始」「設備の点検」など。',
+    )
+  })
+})
+
+describe('HoursForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the days of the week, the rows of the dates and their controls in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Whole.run()
+
+    // Assert
+    const monday = within(group('Monday'))
+    expect(monday.getByRole('radio', { name: 'Open' })).toBeChecked()
+    expect(monday.getByLabelText('Opens')).toHaveValue('10:00')
+    expect(monday.getByLabelText('Closes')).toHaveValue('20:00')
+    expect(monday.getByLabelText('Break starts')).toHaveAccessibleDescription(
+      'Leave both empty when there is no break.',
+    )
+    expect(monday.getByLabelText('Break ends')).toHaveValue('14:00')
+    expect(
+      within(group('Sunday')).getByRole('radio', { name: 'Closed' }),
+    ).toBeChecked()
+    const first = within(group('Row 1'))
+    expect(first.getByLabelText('Date')).toHaveValue('2026-11-23')
+    expect(
+      first.getByRole('checkbox', { name: 'Open on a holiday' }),
+    ).toBeChecked()
+    expect(
+      first.getByLabelText('Name of the holiday or day off'),
+    ).toHaveAccessibleDescription(
+      'Up to 100 characters. Such as “New Year’s Day”, “Year-end holidays” or “Equipment check”.',
+    )
+    expect(first.getByLabelText('Notes')).toHaveValue('短縮営業')
+    expect(
+      within(group('Row 2')).getByRole('radio', { name: 'Closed all day' }),
+    ).toBeChecked()
+    expect(
+      screen.getByRole('button', { name: 'Remove row 1' }),
+    ).toHaveTextContent('Remove')
+    expect(screen.getByRole('button', { name: 'Add a date' })).toBeVisible()
+  })
+
+  it('should say in English that a day has more hours than the form holds, and the days its hours are kept in', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.MoreThanTheFormHolds.run()
+
+    // Assert
+    expect(
+      within(group('Monday')).getByText(
+        /keeps only the first hours and the first break\.$/,
+      ),
+    ).toBeVisible()
+    expect(
+      within(group('Saturday')).getByText(
+        /^These hours are kept from .*April 1, 2026.* to .*March 31, 2027.*\. The period is not changed on this screen\.$/,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English what is wrong under the control it belongs to', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      within(group('Monday')).getByLabelText('Closes'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('later than the opening time'),
+    )
+    expect(
+      within(group('Row 2')).getByLabelText('Date'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('the same as that of row 1'),
+    )
+  })
+
+  it('should say in English that another account changed the hours meanwhile', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ChangedMeanwhile.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Meanwhile, another account changed the hours of this salon.',
     )
   })
 })

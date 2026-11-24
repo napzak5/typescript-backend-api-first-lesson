@@ -430,9 +430,13 @@ In an area of an application that is done, the same rules hold, and:
   (`adminStaffMessages`), the treatment records
   (`adminTreatmentMessages`, its form, its photos and its statistics in
   files of their own), the purchase orders (`adminPurchaseOrderMessages`,
-  its forms and the receipt of its goods in files of their own) and the
+  its forms and the receipt of its goods in files of their own), the
   payment methods (`adminPaymentMethodMessages`, which says what a method
-  takes at once as the payments of a sale do, with `limitsIn`).
+  takes at once as the payments of a sale do, with `limitsIn`), the
+  settings of a salon (`adminSettingsMessages`, the form of its
+  information and its hours in files of their own, the days of the week
+  as `termMessages.dayOfWeek`) and the products (`adminProductMessages`,
+  its form in a file of its own).
   How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
@@ -469,18 +473,21 @@ In an area of an application that is done, the same rules hold, and:
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
   area is and its name takes their place (`'bookings'`, `'customers'`,
-  `'inventory'`, `'menu'`, `'payment-methods'`, `'purchase-orders'`,
-  `'sales'` and `'treatments'` of the admin application).
+  `'inventory'`, `'menu'`, `'payment-methods'`, `'products'`,
+  `'purchase-orders'`, `'sales'`, `'settings'` and `'treatments'` of the
+  admin application).
 - An area that is still written in Japanese says what it takes of an area
-  that is done with `inJapanese` (the settings of a salon, the charts and
-  the staff say `tagsTextOf` of the customers so). An area that is done
+  that is done with `inJapanese` (the charts and the staff say
+  `tagsTextOf` of the customers so, and the shifts the errors of a break
+  of the settings and the names of the days of the week of the terms). An area that is done
   hands on the strings of one that is not as they are. A type of an area
   that is done that one that is not uses takes the type of its texts as a
   parameter, with strings for the default
   (`TreatmentRemovalSays<Text = string>` of the treatments, which the
-  removal of a stock row, of a category or a service of the menu and of a
-  payment method use as `TreatmentRemovalSays<LocalizedText>`, and the
-  removal of a product and of a member of the staff with strings). Once
+  removal of a stock row, of a category or a service of the menu, of a
+  payment method and of a product use as
+  `TreatmentRemovalSays<LocalizedText>`, and the removal of a member of
+  the staff with strings). Once
   every area that uses such a type is done, the parameter goes
   (`ChangeSays` of the operations of the state of a booking, which the
   operations of a purchase order use too). The portal and the dashboard

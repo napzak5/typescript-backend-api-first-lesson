@@ -17,7 +17,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -28,7 +31,7 @@ import { SalonForm } from '../components/salon-form/salon-form'
 import { afterSalonChange, readSalonChange } from '../utils/salon-form'
 import { SettingsForbidden, useKeepsSalon } from './keeps-salon'
 
-const TITLE = 'サロンの情報を直す'
+const { change: CHANGE, loading, titles, words } = adminSettingsMessages
 
 type SalonChangeProps = { salon: ModelsSalonResponse }
 
@@ -39,10 +42,11 @@ type SalonChangeProps = { salon: ModelsSalonResponse }
  * opened asks the API for nothing.
  */
 const SalonChange = ({ salon }: SalonChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = salonKeyOf(salon.id)
   const settings = settingsHrefOf(salon.id)
   const change = useMutation({
@@ -53,7 +57,7 @@ const SalonChange = ({ salon }: SalonChangeProps) => {
         .with({ type: 'written' }, ({ salon: changed }) => {
           const read: SalonRead = { type: 'found', salon: changed }
           queryClient.setQueryData(key, read)
-          notify({ tone: 'success', message: 'サロンの情報を直しました。' })
+          notify({ tone: 'success', message: CHANGE.changed })
           void navigate(settings)
         })
         .with({ type: 'notFound' }, () => {
@@ -92,14 +96,14 @@ const SalonChange = ({ salon }: SalonChangeProps) => {
   return (
     <SalonForm
       subject={{ type: 'existing', salon }}
-      submitLabel='変更を保存する'
+      submitLabel={say(CHANGE.submit)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={settings} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -110,6 +114,7 @@ type ChangePartProps = { salon: ModelsSalonResponse }
 
 /** The salon read anew, and the form once it was. */
 const ChangePart = ({ salon }: ChangePartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: salonKeyOf(salon.id),
     queryFn: () => readSalon(salon.id),
@@ -118,11 +123,11 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.change)} description={salon.name} />
       {read.isFetchedAfterMount ? (
         <SalonChange salon={salon} />
       ) : (
-        <LoadingIndicator label='サロンを読み込んでいます' />
+        <LoadingIndicator label={say(loading.salon)} />
       )}
     </>
   )
@@ -132,14 +137,15 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 export const SalonChangeScreen = () => {
   const { salonId = '' } = useParams()
   const keeps = useKeepsSalon()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={salon.id} salon={salon} />
         ) : (
-          <SettingsForbidden salon={salon} title={TITLE} />
+          <SettingsForbidden salon={salon} title={titles.change} />
         )
       }
     </WithSalon>

@@ -1,3 +1,6 @@
+import { tooLongOf } from '@beauty-salon-frontend/fields'
+import { LONGEST_KEYWORD } from '@beauty-salon-frontend/salon-screens'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ProductFilter } from './product-filter'
@@ -37,7 +40,7 @@ export const Narrowed: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      keyword: 'キーワードは、100 文字以内で入力してください。',
+      keyword: tooLongOf(adminProductMessages.filter.keyword, LONGEST_KEYWORD),
     },
   },
 }

@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as salonFormStories from './salon-form.stories'
 
 const stories = composeStories(salonFormStories)
@@ -266,5 +267,97 @@ describe('SalonForm', () => {
 
     // Assert
     expect(text(label)).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('SalonForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts and controls in English, and the tags in the way English writes them', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.firstChild?.textContent),
+    ).toEqual([
+      'Salon',
+      'Location',
+      'Contact',
+      'Photos',
+      'Features and amenities',
+      'Accounting',
+    ])
+    expect(text('Name')).toHaveAccessibleDescription(
+      'Up to 255 characters. Shown when customers look for a salon.',
+    )
+    expect(text('Website')).toHaveAccessibleDescription(
+      'A URL that begins with http:// or https://. Up to 500 characters.',
+    )
+    expect(valueIn(text('Features'))).toBe('カット, カラー, ヘッドスパ')
+    expect(text('Tax rate (%)')).toHaveValue('10')
+    expect(
+      screen.getByRole('checkbox', { name: 'Accept online bookings' }),
+    ).toBeChecked()
+    expect(
+      screen.getByText(
+        'The time zone (Asia/Tokyo) and the currency (JPY) cannot be changed. The times of the bookings and the prices are read in them.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('should say in English what is wrong at the controls', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('Name')).toHaveAccessibleDescription(
+      /Salon name: enter 1 to 255 characters\./,
+    )
+    expect(text('Latitude')).toHaveAccessibleDescription(
+      /Enter the latitude as a number from -90 to 90, with up to 8 decimal places\./,
+    )
+    expect(text('Email address')).toHaveAccessibleDescription(
+      /Another salon uses this email address\./,
+    )
+  })
+
+  it('should offer the currencies of a salon to be added by their codes and English names', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NewWithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('option', { name: 'JPY (Japanese Yen)' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Time zone' }),
+    ).toHaveAccessibleDescription(/Choose a time zone\./)
+  })
+
+  it('should say in English what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotChanged.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not save the salon information.',
+    )
   })
 })

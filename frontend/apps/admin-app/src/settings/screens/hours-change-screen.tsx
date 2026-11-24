@@ -18,7 +18,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -29,7 +32,7 @@ import { HoursForm } from '../components/hours-form/hours-form'
 import { afterHoursChange, readHoursChange } from '../utils/hours-form'
 import { SettingsForbidden, useKeepsSalon } from './keeps-salon'
 
-const TITLE = '営業時間を直す'
+const { hoursForm, loading, titles } = adminSettingsMessages
 
 type HoursChangeProps = { salon: ModelsSalonResponse }
 
@@ -42,10 +45,11 @@ type HoursChangeProps = { salon: ModelsSalonResponse }
  * form says so. Sent again, it replaces the hours as they are then.
  */
 const HoursChange = ({ salon }: HoursChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   /** The hours the form is sent against: those it opened with, or those another account wrote meanwhile */
   const [opened, setOpened] = useState<Hours>(() => hoursOf(salon))
   const today = dayAt(new Date(), salon.timezone)
@@ -59,7 +63,7 @@ const HoursChange = ({ salon }: HoursChangeProps) => {
         .with({ type: 'written' }, ({ salon: changed }) => {
           const read: SalonRead = { type: 'found', salon: changed }
           queryClient.setQueryData(key, read)
-          notify({ tone: 'success', message: '営業時間を直しました。' })
+          notify({ tone: 'success', message: hoursForm.changed })
           void navigate(settings)
         })
         .with({ type: 'notFound' }, () => {
@@ -104,14 +108,14 @@ const HoursChange = ({ salon }: HoursChangeProps) => {
       hours={opened}
       today={today}
       timezone={salon.timezone}
-      submitLabel='保存する'
+      submitLabel={say(hoursForm.submit)}
       message={said.message}
       errors={said.errors}
       pending={save.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={settings} variant='quiet'>
-          やめる
+          {say(hoursForm.cancel)}
         </ButtonLink>
       }
     />
@@ -122,6 +126,7 @@ type ChangePartProps = { salon: ModelsSalonResponse }
 
 /** The salon read anew, and the form once it was. */
 const ChangePart = ({ salon }: ChangePartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: salonKeyOf(salon.id),
     queryFn: () => readSalon(salon.id),
@@ -130,11 +135,11 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.hours)} description={salon.name} />
       {read.isFetchedAfterMount ? (
         <HoursChange salon={salon} />
       ) : (
-        <LoadingIndicator label='営業時間を読み込んでいます' />
+        <LoadingIndicator label={say(loading.hours)} />
       )}
     </>
   )
@@ -144,14 +149,15 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 export const HoursChangeScreen = () => {
   const { salonId = '' } = useParams()
   const keeps = useKeepsSalon()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.hours)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={salon.id} salon={salon} />
         ) : (
-          <SettingsForbidden salon={salon} title={TITLE} />
+          <SettingsForbidden salon={salon} title={titles.hours} />
         )
       }
     </WithSalon>

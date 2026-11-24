@@ -11,11 +11,14 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
   NO_ERRORS,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   LONGEST_CODE,
   LONGEST_LABEL,
@@ -24,10 +27,14 @@ import {
   LONGEST_UNIT,
 } from '../../utils/product-form'
 
+const { form: WORDS, words } = adminProductMessages
+
 export type ProductFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /**
    * The product the form opens with. `null` for a new one: the form then
    * opens as a new row of the table is stored, with a product the salon
@@ -35,7 +42,7 @@ export type ProductFormProps = Pick<
    */
   product: ModelsProductResponse | null
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 /** A text as the form opens with it: nothing for none. */
@@ -55,238 +62,248 @@ const numberText = (value: number | null | undefined): string | undefined =>
  */
 export const ProductForm = ({
   product,
+  message,
   errors = NO_ERRORS,
   ...form
-}: ProductFormProps) => (
-  <Form {...form} errors={errors}>
-    <FormPart label='商品'>
-      <FieldRow>
+}: ProductFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(words.product)}>
+        <FieldRow>
+          <TextField
+            label={say(words.productCode)}
+            name='productCode'
+            autoComplete='off'
+            required
+            description={say(WORDS.productCodeDescription(LONGEST_CODE))}
+            defaultValue={product?.productCode}
+            error={said.errors['productCode']}
+          />
+          <TextField
+            label={say(words.unit)}
+            name='unit'
+            autoComplete='off'
+            required
+            description={say(WORDS.unitDescription(LONGEST_UNIT))}
+            defaultValue={product?.unit}
+            error={said.errors['unit']}
+          />
+        </FieldRow>
         <TextField
-          label='商品コード'
-          name='productCode'
+          label={say(words.name)}
+          name='name'
           autoComplete='off'
           required
-          description={`${inJapanese(upTo(LONGEST_CODE))}このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。`}
-          defaultValue={product?.productCode}
-          error={errors['productCode']}
+          description={say(upTo(LONGEST_NAME))}
+          defaultValue={product?.name}
+          error={said.errors['name']}
         />
-        <TextField
-          label='単位'
-          name='unit'
-          autoComplete='off'
-          required
-          description={`本、個、ml など。${inJapanese(upTo(LONGEST_UNIT))}在庫の数を数える単位です。`}
-          defaultValue={product?.unit}
-          error={errors['unit']}
+        <TextArea
+          label={say(words.description)}
+          name='description'
+          defaultValue={textOrNothing(product?.description)}
+          error={said.errors['description']}
         />
-      </FieldRow>
-      <TextField
-        label='商品名'
-        name='name'
-        autoComplete='off'
-        required
-        description={inJapanese(upTo(LONGEST_NAME))}
-        defaultValue={product?.name}
-        error={errors['name']}
-      />
-      <TextArea
-        label='説明'
-        name='description'
-        defaultValue={textOrNothing(product?.description)}
-        error={errors['description']}
-      />
-      <FieldRow>
-        <TextField
-          label='カテゴリー'
-          name='category'
-          autoComplete='off'
-          description={`${inJapanese(upTo(LONGEST_LABEL))}商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。`}
-          defaultValue={textOrNothing(product?.category)}
-          error={errors['category']}
+        <FieldRow>
+          <TextField
+            label={say(words.category)}
+            name='category'
+            autoComplete='off'
+            description={say(WORDS.categoryDescription(LONGEST_LABEL))}
+            defaultValue={textOrNothing(product?.category)}
+            error={said.errors['category']}
+          />
+          <TextField
+            label={say(words.brand)}
+            name='brand'
+            autoComplete='off'
+            description={say(upTo(LONGEST_LABEL))}
+            defaultValue={textOrNothing(product?.brand)}
+            error={said.errors['brand']}
+          />
+        </FieldRow>
+        <Checkbox
+          label={say(WORDS.forSale)}
+          name='isForSale'
+          defaultChecked={product?.isForSale ?? false}
+          error={said.errors['isForSale']}
         />
-        <TextField
-          label='ブランド'
-          name='brand'
-          autoComplete='off'
-          description={inJapanese(upTo(LONGEST_LABEL))}
-          defaultValue={textOrNothing(product?.brand)}
-          error={errors['brand']}
+        <Checkbox
+          label={say(WORDS.forTreatment)}
+          name='isForTreatment'
+          description={say(WORDS.forTreatmentDescription)}
+          defaultChecked={product?.isForTreatment ?? true}
+          error={said.errors['isForTreatment']}
         />
-      </FieldRow>
-      <Checkbox
-        label='店頭で販売する'
-        name='isForSale'
-        defaultChecked={product?.isForSale ?? false}
-        error={errors['isForSale']}
-      />
-      <Checkbox
-        label='施術で使う'
-        name='isForTreatment'
-        description='施術記録の材料に出ます。どちらにも使わない備品は、両方の印を外します。'
-        defaultChecked={product?.isForTreatment ?? true}
-        error={errors['isForTreatment']}
-      />
-      <Checkbox
-        label='取り扱い中'
-        name='isActive'
-        description='外すと、取り扱いをやめた商品になり、施術記録の材料に出なくなります。在庫の記録と施術記録は、そのまま残ります。'
-        defaultChecked={product?.isActive ?? true}
-        error={errors['isActive']}
-      />
-    </FormPart>
-    <FormPart
-      label='価格'
-      description='円の整数で入力します。空にすると、記録しません（0 は 0 円です）。'
-    >
-      <FieldRow columns={3}>
+        <Checkbox
+          label={say(WORDS.carried)}
+          name='isActive'
+          description={say(WORDS.carriedDescription)}
+          defaultChecked={product?.isActive ?? true}
+          error={said.errors['isActive']}
+        />
+      </FormPart>
+      <FormPart
+        label={say(words.prices)}
+        description={say(WORDS.pricesDescription)}
+      >
+        <FieldRow columns={3}>
+          <TextField
+            label={say(words.purchasePrice)}
+            name='purchasePrice'
+            inputMode='numeric'
+            autoComplete='off'
+            defaultValue={numberText(product?.purchasePrice)}
+            error={said.errors['purchasePrice']}
+          />
+          <TextField
+            label={say(words.retailPrice)}
+            name='retailPrice'
+            inputMode='numeric'
+            autoComplete='off'
+            description={say(WORDS.retailPriceDescription)}
+            defaultValue={numberText(product?.retailPrice)}
+            error={said.errors['retailPrice']}
+          />
+          <TextField
+            label={say(words.salonPrice)}
+            name='salonPrice'
+            inputMode='numeric'
+            autoComplete='off'
+            description={say(WORDS.salonPriceDescription)}
+            defaultValue={numberText(product?.salonPrice)}
+            error={said.errors['salonPrice']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart
+        label={say(words.levels)}
+        description={say(WORDS.levelsDescription)}
+      >
+        <FieldRow columns={3}>
+          <TextField
+            label={say(words.minimumStock)}
+            name='minimumStock'
+            inputMode='decimal'
+            autoComplete='off'
+            required
+            description={say(WORDS.minimumStockDescription)}
+            defaultValue={numberText(product?.minimumStock ?? 0)}
+            error={said.errors['minimumStock']}
+          />
+          <TextField
+            label={say(words.reorderPoint)}
+            name='reorderPoint'
+            inputMode='decimal'
+            autoComplete='off'
+            description={say(WORDS.reorderPointDescription)}
+            defaultValue={numberText(product?.reorderPoint)}
+            error={said.errors['reorderPoint']}
+          />
+          <TextField
+            label={say(words.maximumStock)}
+            name='maximumStock'
+            inputMode='decimal'
+            autoComplete='off'
+            description={say(WORDS.maximumStockDescription)}
+            defaultValue={numberText(product?.maximumStock)}
+            error={said.errors['maximumStock']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart label={say(words.purchasing)}>
+        <FieldRow>
+          <TextField
+            label={say(words.supplier)}
+            name='supplier'
+            autoComplete='off'
+            description={say(upTo(LONGEST_SUPPLIER))}
+            defaultValue={textOrNothing(product?.supplier)}
+            error={said.errors['supplier']}
+          />
+          <TextField
+            label={say(words.supplierProductCode)}
+            name='supplierProductCode'
+            autoComplete='off'
+            description={say(
+              WORDS.supplierProductCodeDescription(LONGEST_LABEL),
+            )}
+            defaultValue={textOrNothing(product?.supplierProductCode)}
+            error={said.errors['supplierProductCode']}
+          />
+        </FieldRow>
         <TextField
-          label='仕入価格'
-          name='purchasePrice'
+          label={say(words.leadTimeDays)}
+          name='leadTimeDays'
           inputMode='numeric'
           autoComplete='off'
-          defaultValue={numberText(product?.purchasePrice)}
-          error={errors['purchasePrice']}
+          width='short'
+          description={say(WORDS.leadTimeDaysDescription)}
+          defaultValue={numberText(product?.leadTimeDays)}
+          error={said.errors['leadTimeDays']}
+        />
+      </FormPart>
+      <FormPart label={say(words.management)}>
+        <FieldRow>
+          <TextField
+            label={say(words.barcode)}
+            name='barcode'
+            inputMode='numeric'
+            autoComplete='off'
+            description={say(WORDS.barcodeDescription(LONGEST_LABEL))}
+            defaultValue={textOrNothing(product?.barcode)}
+            error={said.errors['barcode']}
+          />
+          <TextField
+            label={say(WORDS.expiryMonths)}
+            name='expiryMonths'
+            inputMode='numeric'
+            autoComplete='off'
+            description={say(WORDS.expiryMonthsDescription)}
+            defaultValue={numberText(product?.expiryMonths)}
+            error={said.errors['expiryMonths']}
+          />
+        </FieldRow>
+        <Checkbox
+          label={say(WORDS.lots)}
+          name='requiresLotTracking'
+          description={say(WORDS.lotsDescription)}
+          defaultChecked={product?.requiresLotTracking ?? false}
+          error={said.errors['requiresLotTracking']}
+        />
+        <TextArea
+          label={say(words.storageConditions)}
+          name='storageConditions'
+          rows={2}
+          defaultValue={textOrNothing(product?.storageConditions)}
+          error={said.errors['storageConditions']}
         />
         <TextField
-          label='定価'
-          name='retailPrice'
-          inputMode='numeric'
+          label={say(words.imageUrl)}
+          name='imageUrl'
+          type='url'
+          inputMode='url'
           autoComplete='off'
-          description='メーカーの希望小売価格。'
-          defaultValue={numberText(product?.retailPrice)}
-          error={errors['retailPrice']}
+          description={say(WEB_ADDRESS_DESCRIPTION)}
+          defaultValue={textOrNothing(product?.imageUrl)}
+          error={said.errors['imageUrl']}
         />
         <TextField
-          label='販売価格'
-          name='salonPrice'
-          inputMode='numeric'
+          label={say(words.safetyDataSheet)}
+          name='safetyDataSheet'
+          type='url'
+          inputMode='url'
           autoComplete='off'
-          description='このサロンの店頭で売る価格。'
-          defaultValue={numberText(product?.salonPrice)}
-          error={errors['salonPrice']}
+          description={say(
+            WORDS.safetyDataSheetDescription(LONGEST_WEB_ADDRESS),
+          )}
+          defaultValue={textOrNothing(product?.safetyDataSheet)}
+          error={said.errors['safetyDataSheet']}
         />
-      </FieldRow>
-    </FormPart>
-    <FormPart
-      label='在庫の水準'
-      description='単位の数で、小数は 2 桁まで。最低在庫数、発注点、最大在庫数の順に、同じか大きくします。発注点と最大在庫数は、空にすると決めません。'
-    >
-      <FieldRow columns={3}>
-        <TextField
-          label='最低在庫数'
-          name='minimumStock'
-          inputMode='decimal'
-          autoComplete='off'
-          required
-          description='在庫がこれを下回らないように発注します。'
-          defaultValue={numberText(product?.minimumStock ?? 0)}
-          error={errors['minimumStock']}
-        />
-        <TextField
-          label='発注点'
-          name='reorderPoint'
-          inputMode='decimal'
-          autoComplete='off'
-          description='在庫がこれ以下になったら発注します。'
-          defaultValue={numberText(product?.reorderPoint)}
-          error={errors['reorderPoint']}
-        />
-        <TextField
-          label='最大在庫数'
-          name='maximumStock'
-          inputMode='decimal'
-          autoComplete='off'
-          description='これより多くは置きません。'
-          defaultValue={numberText(product?.maximumStock)}
-          error={errors['maximumStock']}
-        />
-      </FieldRow>
-    </FormPart>
-    <FormPart label='仕入れ'>
-      <FieldRow>
-        <TextField
-          label='仕入先'
-          name='supplier'
-          autoComplete='off'
-          description={inJapanese(upTo(LONGEST_SUPPLIER))}
-          defaultValue={textOrNothing(product?.supplier)}
-          error={errors['supplier']}
-        />
-        <TextField
-          label='仕入先の商品コード'
-          name='supplierProductCode'
-          autoComplete='off'
-          description={`${inJapanese(upTo(LONGEST_LABEL))}発注するときに使います。`}
-          defaultValue={textOrNothing(product?.supplierProductCode)}
-          error={errors['supplierProductCode']}
-        />
-      </FieldRow>
-      <TextField
-        label='納品までの日数'
-        name='leadTimeDays'
-        inputMode='numeric'
-        autoComplete='off'
-        width='short'
-        description='0 以上の整数。発注してから届くまでの日数です。'
-        defaultValue={numberText(product?.leadTimeDays)}
-        error={errors['leadTimeDays']}
-      />
-    </FormPart>
-    <FormPart label='管理'>
-      <FieldRow>
-        <TextField
-          label='バーコード'
-          name='barcode'
-          inputMode='numeric'
-          autoComplete='off'
-          description={`${inJapanese(upTo(LONGEST_LABEL))}商品台帳で、バーコードで探せます。`}
-          defaultValue={textOrNothing(product?.barcode)}
-          error={errors['barcode']}
-        />
-        <TextField
-          label='使用期限までの月数'
-          name='expiryMonths'
-          inputMode='numeric'
-          autoComplete='off'
-          description='1 以上の整数。開封前の使用期限の目安です。'
-          defaultValue={numberText(product?.expiryMonths)}
-          error={errors['expiryMonths']}
-        />
-      </FieldRow>
-      <Checkbox
-        label='在庫をロット番号で分ける'
-        name='requiresLotTracking'
-        description='カラー剤など、ロットごとに使用期限があるもの。変えても、在庫の記録のロット番号はそのままです。'
-        defaultChecked={product?.requiresLotTracking ?? false}
-        error={errors['requiresLotTracking']}
-      />
-      <TextArea
-        label='保管条件'
-        name='storageConditions'
-        rows={2}
-        defaultValue={textOrNothing(product?.storageConditions)}
-        error={errors['storageConditions']}
-      />
-      <TextField
-        label='商品画像の URL'
-        name='imageUrl'
-        type='url'
-        inputMode='url'
-        autoComplete='off'
-        description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
-        defaultValue={textOrNothing(product?.imageUrl)}
-        error={errors['imageUrl']}
-      />
-      <TextField
-        label='安全データシートの URL'
-        name='safetyDataSheet'
-        type='url'
-        inputMode='url'
-        autoComplete='off'
-        description={`メーカーの安全データシート（SDS）の URL。${inJapanese(upTo(LONGEST_WEB_ADDRESS))}`}
-        defaultValue={textOrNothing(product?.safetyDataSheet)}
-        error={errors['safetyDataSheet']}
-      />
-    </FormPart>
-  </Form>
-)
+      </FormPart>
+    </Form>
+  )
+}

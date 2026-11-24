@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../examples'
 import * as productTableStories from './product-table.stories'
@@ -89,5 +90,42 @@ describe('ProductTable', () => {
     expect(screen.getByRole('status').textContent).toBe(
       '64 件（4 件を表示しています）',
     )
+  })
+})
+
+describe('ProductTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its columns and write its rows, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Ledger.run()
+
+    // Assert
+    const ledger = screen.getByRole('table')
+    expect(
+      within(ledger)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Product code',
+      'Product name',
+      'Category',
+      'Brand',
+      'Sale price',
+      'Use',
+      'Status',
+    ])
+    expect(rowsOf(ledger).map((row) => row.slice(4))).toEqual([
+      ['¥1,800', 'Treatment', 'Active'],
+      ['¥3,000', 'In-store sale, Treatment', 'Active'],
+      ['Not recorded', 'Neither', 'Active'],
+      ['¥1,800', 'In-store sale', 'Discontinued'],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('4 items')
   })
 })

@@ -16,7 +16,10 @@ import {
   LoadingIndicator,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -37,7 +40,7 @@ import {
 import { useKeepsSalon, useRemovesSalon } from './keeps-salon'
 import styles from './settings-screen.module.css'
 
-const TITLE = 'サロンの設定'
+const { loading, removal: REMOVAL, titles } = adminSettingsMessages
 
 type RemovalPartProps = { salon: ModelsSalonResponse }
 
@@ -47,12 +50,13 @@ type RemovalPartProps = { salon: ModelsSalonResponse }
  * the start of the application is shown with what was done.
  */
 const RemovalPart = ({ salon }: RemovalPartProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const [removing, setRemoving] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What another attempt does not change: said at the removal */
   const [refusal, setRefusal] = useState<SalonRemovalRefusal>()
   const key = salonKeyOf(salon.id)
@@ -103,11 +107,11 @@ const RemovalPart = ({ salon }: RemovalPartProps) => {
       <Dialog
         open={removing}
         onClose={close}
-        title={`サロン「${salon.name}」を削除しますか？`}
-        description='削除したサロンは、元に戻せません。サロンの一覧とお客様の画面から消え、スタッフはこのサロンの画面を使えなくなります。'
+        title={say(REMOVAL.question(salon.name))}
+        description={say(REMOVAL.questionDescription)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(REMOVAL.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -116,12 +120,12 @@ const RemovalPart = ({ salon }: RemovalPartProps) => {
                 removal.mutate()
               }}
             >
-              削除する
+              {say(REMOVAL.submit)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -136,6 +140,7 @@ type SettingsPartProps = { salon: ModelsSalonResponse }
  * and its hours, and the owner and an administrator to remove it.
  */
 const SettingsPart = ({ salon }: SettingsPartProps) => {
+  const say = useSay()
   const keeps = useKeepsSalon()
   const removes = useRemovesSalon()
   const read = useQuery({
@@ -147,16 +152,16 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.settings)}
         description={salon.name}
         actions={
           keeps ? (
             <>
               <ButtonLink href={salonChangeHrefOf(salon.id)} variant='primary'>
-                サロンの情報を直す
+                {say(titles.change)}
               </ButtonLink>
               <ButtonLink href={hoursChangeHrefOf(salon.id)}>
-                営業時間を直す
+                {say(titles.hours)}
               </ButtonLink>
             </>
           ) : undefined
@@ -172,7 +177,7 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
           {removes && <RemovalPart salon={salon} />}
         </div>
       ) : (
-        <LoadingIndicator label='サロンの設定を読み込んでいます' />
+        <LoadingIndicator label={say(loading.settings)} />
       )}
     </>
   )
@@ -181,9 +186,10 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
 /** The settings of the salon of the address, for everybody who works at it. */
 export const SettingsScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.settings)}>
       {(salon) => <SettingsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

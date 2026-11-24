@@ -1,7 +1,10 @@
-import { Alert, Button, Card, Link } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, Link, useSay } from '@beauty-salon-frontend/ui'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { SalonRemovalRefusal } from '../../utils/salon-removal'
 import styles from './salon-removal.module.css'
+
+const { removal } = adminSettingsMessages
 
 export type SalonRemovalProps = {
   /** The name of the salon */
@@ -25,26 +28,29 @@ export const SalonRemoval = ({
   refusal,
   bookingsHref,
   onRemove,
-}: SalonRemovalProps) => (
-  <Card title='サロンの削除'>
-    <div className={styles['removal']}>
-      <p>
-        {`サロン「${name}」を削除すると、サロンの一覧とお客様の画面から消え、スタッフはこのサロンの画面を使えなくなります。削除したサロンは、元に戻せません。終わっていない予約があるあいだは、削除できません。`}
-      </p>
-      {match(refusal)
-        .with(undefined, () => null)
-        .with({ type: 'bookingsUnfinished' }, ({ message }) => (
-          <Alert tone='danger'>
-            {message} <Link href={bookingsHref}>予約台帳を開く</Link>
-          </Alert>
-        ))
-        .with({ type: 'forbidden' }, ({ message }) => (
-          <Alert tone='danger'>{message}</Alert>
-        ))
-        .exhaustive()}
-      <Button variant='danger' onClick={onRemove}>
-        サロンを削除する
-      </Button>
-    </div>
-  </Card>
-)
+}: SalonRemovalProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(removal.title)}>
+      <div className={styles['removal']}>
+        <p>{say(removal.description(name))}</p>
+        {match(refusal)
+          .with(undefined, () => null)
+          .with({ type: 'bookingsUnfinished' }, ({ message }) => (
+            <Alert tone='danger'>
+              {say(message)}{' '}
+              <Link href={bookingsHref}>{say(removal.toBookings)}</Link>
+            </Alert>
+          ))
+          .with({ type: 'forbidden' }, ({ message }) => (
+            <Alert tone='danger'>{say(message)}</Alert>
+          ))
+          .exhaustive()}
+        <Button variant='danger' onClick={onRemove}>
+          {say(removal.ask)}
+        </Button>
+      </div>
+    </Card>
+  )
+}

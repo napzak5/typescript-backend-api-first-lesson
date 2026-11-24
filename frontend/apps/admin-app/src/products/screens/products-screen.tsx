@@ -14,13 +14,14 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -42,7 +43,7 @@ import {
 } from '../utils/product-ledger'
 import { useKeepsProducts } from './keeps-products'
 
-const TITLE = '商品台帳'
+const { ledger, loading, names, titles } = adminProductMessages
 
 type ProductLedgerProps = {
   salon: ModelsSalonResponse
@@ -59,8 +60,11 @@ type ProductLedgerProps = {
  */
 const ProductLedger = ({ salon }: ProductLedgerProps) => {
   const keeps = useKeepsProducts()
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = productConditionsIn(query)
   const asked = productQueryOf(conditions).toString()
   const narrowed = isNarrowed(conditions)
@@ -100,22 +104,26 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
 
   const entry = keeps ? (
     <ButtonLink href={productEntryHrefOf(salon.id)} variant='primary'>
-      商品を足す
+      {say(ledger.entry)}
     </ButtonLink>
   ) : undefined
 
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('商品')} />
+        <PageHeader title={say(titles.ledger)} description={salon.name} />
+        <OtherSalonNotice what={names.productsOfTheSalon} />
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} actions={entry} />
+      <PageHeader
+        title={say(titles.ledger)}
+        description={salon.name}
+        actions={entry}
+      />
       <ProductFilter
         conditions={conditions}
         categories={categoriesOf(
@@ -136,13 +144,11 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
             ),
       )
         .with(undefined, () => (
-          <LoadingIndicator label='商品を読み込んでいます' />
+          <LoadingIndicator label={say(loading.products)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('商品台帳'), reason),
-            )}
+            message={say(unreadMessageOf(names.ledger, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -150,18 +156,16 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合う商品はありません'
-              description='条件を変えて探してください。'
+              title={say(ledger.noneMatching)}
+              description={say(ledger.noneMatchingDescription)}
               actions={entry}
             />
           ) : (
             <EmptyState
-              title='台帳に商品はありません'
-              description={
-                keeps
-                  ? '店頭で売るものと、施術で使うものを足してください。'
-                  : '商品を足せるのは、サロンのオーナーとマネージャーと、管理者です。'
-              }
+              title={say(ledger.empty)}
+              description={say(
+                keeps ? ledger.keeperDescription : ledger.otherDescription,
+              )}
               actions={entry}
             />
           ),
@@ -170,7 +174,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
           <ProductTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合う商品' : TITLE}
+            caption={say(narrowed ? ledger.narrowedCaption : titles.ledger)}
             rows={items}
             total={total}
             currency={salon.currency}
@@ -192,9 +196,10 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
 /** The product ledger of the salon of the address, for everybody who works there and an administrator. */
 export const ProductsScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.ledger)}>
       {(salon) => <ProductLedger key={salon.id} salon={salon} />}
     </WithSalon>
   )

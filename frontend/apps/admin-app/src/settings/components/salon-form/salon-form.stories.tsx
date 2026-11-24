@@ -1,9 +1,14 @@
+import { neededWithin } from '@beauty-salon-frontend/fields'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
+import { LONGEST_NAME } from '../../utils/salon-form'
 import { aDescribedSalon } from '../examples'
 import { SalonForm } from './salon-form'
+
+const { change, form } = adminSettingsMessages
 
 const meta: Meta<typeof SalonForm> = {
   title: 'Admin/Settings/SalonForm',
@@ -43,8 +48,8 @@ export const NewWithErrors: Story = {
     subject: { type: 'new' },
     submitLabel: 'サロンを登録する',
     errors: {
-      timezone: 'タイムゾーンを選んでください。',
-      currency: '通貨を選んでください。',
+      timezone: form.errors.timezone,
+      currency: form.errors.currency,
     },
   },
 }
@@ -53,13 +58,10 @@ export const NewWithErrors: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      name: 'サロンの名前を、255 文字以内で入力してください。',
-      latitude:
-        '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
-      email:
-        'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
-      taxRate:
-        '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      name: neededWithin(form.salonName, LONGEST_NAME),
+      latitude: form.errors.latitude,
+      email: form.errors.emailTaken,
+      taxRate: form.errors.taxRate,
     },
   },
 }
@@ -67,7 +69,6 @@ export const WithErrors: Story = {
 /** What went wrong with the attempt as a whole */
 export const NotChanged: Story = {
   args: {
-    message:
-      'サロンの情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: change.failed,
   },
 }

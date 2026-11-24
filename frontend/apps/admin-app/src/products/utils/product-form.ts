@@ -19,19 +19,24 @@ import {
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { numberOf } from '../../treatments/utils/treatment-form'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { ProductRemoval, ProductWrite } from '../api/products-api'
+
+const { form, removal, words } = adminProductMessages
+const { errors: ERRORS } = form
+
+type Errors = FormErrors<LocalizedText>
 
 /*
  * The form of a product: what it sends, and what it says about the
@@ -50,39 +55,14 @@ export const LONGEST_UNIT = 20
 /** The longest name of a supplier */
 export const LONGEST_SUPPLIER = 255
 
-const CODE_ERROR = neededWithin(writtenInJapanese('商品コード'), LONGEST_CODE)
-const NAME_ERROR = neededWithin(writtenInJapanese('商品名'), LONGEST_NAME)
-const CATEGORY_ERROR = tooLongOf(writtenInJapanese('カテゴリー'), LONGEST_LABEL)
-const BRAND_ERROR = tooLongOf(writtenInJapanese('ブランド'), LONGEST_LABEL)
-const UNIT_ERROR = neededWithin(writtenInJapanese('単位'), LONGEST_UNIT)
-const SUPPLIER_ERROR = tooLongOf(writtenInJapanese('仕入先'), LONGEST_SUPPLIER)
-const SUPPLIER_CODE_ERROR = tooLongOf(
-  writtenInJapanese('仕入先の商品コード'),
-  LONGEST_LABEL,
-)
-const BARCODE_ERROR = tooLongOf(writtenInJapanese('バーコード'), LONGEST_LABEL)
-const LEAD_TIME_ERROR = '納品までの日数は、0 以上の整数で入力してください。'
-const EXPIRY_ERROR = '使用期限までの月数は、1 以上の整数で入力してください。'
-
-const priceError = (name: string): string =>
-  `${name}は、0 以上の円の整数で入力してください。`
-
-const levelError = (name: string): string =>
-  `${name}は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。`
-
-const REORDER_BELOW_MINIMUM =
-  '発注点は、最低在庫数と同じか、それより大きい数にしてください。'
-const MAXIMUM_BELOW_REORDER =
-  '最大在庫数は、発注点と同じか、それより大きい数にしてください。'
-const MAXIMUM_BELOW_MINIMUM =
-  '最大在庫数は、最低在庫数と同じか、それより大きい数にしてください。'
-
-const CODE_TAKEN =
-  'この商品コードは、このサロンのほかの商品が使っています。取り扱いをやめた商品のコードも使えません。ほかのコードを入力してください。'
-
-/** What is said when the account may not keep the products of the salon */
-const FORBIDDEN_MESSAGE =
-  'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
+const CODE_ERROR = neededWithin(words.productCode, LONGEST_CODE)
+const NAME_ERROR = neededWithin(words.name, LONGEST_NAME)
+const CATEGORY_ERROR = tooLongOf(words.category, LONGEST_LABEL)
+const BRAND_ERROR = tooLongOf(words.brand, LONGEST_LABEL)
+const UNIT_ERROR = neededWithin(words.unit, LONGEST_UNIT)
+const SUPPLIER_ERROR = tooLongOf(words.supplier, LONGEST_SUPPLIER)
+const SUPPLIER_CODE_ERROR = tooLongOf(words.supplierProductCode, LONGEST_LABEL)
+const BARCODE_ERROR = tooLongOf(words.barcode, LONGEST_LABEL)
 
 /** The controls of the form, by the names of the request */
 const CONTROLS: readonly string[] = [
@@ -143,25 +123,29 @@ const orderErrors = (
   minimum: number,
   reorder: number | null,
   maximum: number | null,
-): [string, string][] => [
+): [string, LocalizedText][] => [
   ...errorAt(
     'reorderPoint',
-    reorder !== null && reorder < minimum ? REORDER_BELOW_MINIMUM : undefined,
+    reorder !== null && reorder < minimum
+      ? ERRORS.reorderBelowMinimum
+      : undefined,
   ),
   ...errorAt(
     'maximumStock',
     maximum === null
       ? undefined
       : reorder !== null && maximum < reorder
-        ? MAXIMUM_BELOW_REORDER
+        ? ERRORS.maximumBelowReorder
         : maximum < minimum
-          ? MAXIMUM_BELOW_MINIMUM
+          ? ERRORS.maximumBelowMinimum
           : undefined,
   ),
 ]
 
 /** The whole product the form holds, or what is wrong with it. */
-const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
+const readWhole = (
+  values: FormData,
+): FormRead<ModelsProductCreateRequest, Errors> => {
   const productCode = textOf(values, 'productCode').trim()
   const name = textOf(values, 'name').trim()
   const category = textOrNull(textOf(values, 'category'))
@@ -182,52 +166,43 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
   const safetyDataSheet = optionalWebAddressOf(
     textOf(values, 'safetyDataSheet'),
   )
-  const errors = Object.fromEntries([
+  const errors: Errors = Object.fromEntries([
     ...errorAt(
       'productCode',
-      inJapaneseIfAny(neededError(productCode, LONGEST_CODE, CODE_ERROR)),
+      neededError(productCode, LONGEST_CODE, CODE_ERROR),
     ),
-    ...errorAt(
-      'name',
-      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
-    ),
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ...errorAt(
       'category',
-      inJapaneseIfAny(tooLongError(category, LONGEST_LABEL, CATEGORY_ERROR)),
+      tooLongError(category, LONGEST_LABEL, CATEGORY_ERROR),
     ),
-    ...errorAt(
-      'brand',
-      inJapaneseIfAny(tooLongError(brand, LONGEST_LABEL, BRAND_ERROR)),
-    ),
-    ...errorAt(
-      'unit',
-      inJapaneseIfAny(neededError(unit, LONGEST_UNIT, UNIT_ERROR)),
-    ),
+    ...errorAt('brand', tooLongError(brand, LONGEST_LABEL, BRAND_ERROR)),
+    ...errorAt('unit', neededError(unit, LONGEST_UNIT, UNIT_ERROR)),
     ...errorAt(
       'purchasePrice',
-      purchasePrice === undefined ? priceError('仕入価格') : undefined,
+      purchasePrice === undefined ? ERRORS.purchasePrice : undefined,
     ),
     ...errorAt(
       'retailPrice',
-      retailPrice === undefined ? priceError('定価') : undefined,
+      retailPrice === undefined ? ERRORS.retailPrice : undefined,
     ),
     ...errorAt(
       'salonPrice',
-      salonPrice === undefined ? priceError('販売価格') : undefined,
+      salonPrice === undefined ? ERRORS.salonPrice : undefined,
     ),
     ...errorAt(
       'minimumStock',
       minimumStock === null || minimumStock === undefined
-        ? levelError('最低在庫数')
+        ? ERRORS.minimumStock
         : undefined,
     ),
     ...errorAt(
       'reorderPoint',
-      reorderPoint === undefined ? levelError('発注点') : undefined,
+      reorderPoint === undefined ? ERRORS.reorderPoint : undefined,
     ),
     ...errorAt(
       'maximumStock',
-      maximumStock === undefined ? levelError('最大在庫数') : undefined,
+      maximumStock === undefined ? ERRORS.maximumStock : undefined,
     ),
     // The levels are compared when each of them is one
     ...(minimumStock === null ||
@@ -238,37 +213,30 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
       : orderErrors(minimumStock, reorderPoint, maximumStock)),
     ...errorAt(
       'supplier',
-      inJapaneseIfAny(tooLongError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR)),
+      tooLongError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR),
     ),
     ...errorAt(
       'supplierProductCode',
-      inJapaneseIfAny(
-        tooLongError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
-      ),
+      tooLongError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
     ),
     ...errorAt(
       'leadTimeDays',
-      leadTimeDays === undefined ? LEAD_TIME_ERROR : undefined,
+      leadTimeDays === undefined ? ERRORS.leadTimeDays : undefined,
     ),
-    ...errorAt(
-      'barcode',
-      inJapaneseIfAny(tooLongError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
-    ),
+    ...errorAt('barcode', tooLongError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
     ...errorAt(
       'expiryMonths',
       expiryMonths === undefined || expiryMonths === 0
-        ? EXPIRY_ERROR
+        ? ERRORS.expiryMonths
         : undefined,
     ),
     ...errorAt(
       'imageUrl',
-      inJapaneseIfAny(imageUrl === undefined ? WEB_ADDRESS_ERROR : undefined),
+      imageUrl === undefined ? WEB_ADDRESS_ERROR : undefined,
     ),
     ...errorAt(
       'safetyDataSheet',
-      inJapaneseIfAny(
-        safetyDataSheet === undefined ? WEB_ADDRESS_ERROR : undefined,
-      ),
+      safetyDataSheet === undefined ? WEB_ADDRESS_ERROR : undefined,
     ),
   ])
   if (
@@ -322,11 +290,11 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
 /** A new product, as the form holds it. */
 export const readProductEntry = (
   values: FormData,
-): FormRead<ModelsProductCreateRequest> => readWhole(values)
+): FormRead<ModelsProductCreateRequest, Errors> => readWhole(values)
 
 /** What a change of a product asks for: nothing, when nothing was changed. */
 type ProductChange =
-  | FormRead<ModelsProductUpdateRequest>
+  | FormRead<ModelsProductUpdateRequest, Errors>
   | { type: 'unchanged' }
 /** What the form reads back of each property of a product it was opened with */
 const shownOf = (
@@ -437,39 +405,33 @@ export const readProductChange = (
 }
 
 /** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)
-    .with('productCode', () => inJapanese(CODE_ERROR))
-    .with('name', () => inJapanese(NAME_ERROR))
-    .with('category', () => inJapanese(CATEGORY_ERROR))
-    .with('brand', () => inJapanese(BRAND_ERROR))
-    .with('unit', () => inJapanese(UNIT_ERROR))
-    .with('purchasePrice', () => priceError('仕入価格'))
-    .with('retailPrice', () => priceError('定価'))
-    .with('salonPrice', () => priceError('販売価格'))
+    .with('productCode', () => CODE_ERROR)
+    .with('name', () => NAME_ERROR)
+    .with('category', () => CATEGORY_ERROR)
+    .with('brand', () => BRAND_ERROR)
+    .with('unit', () => UNIT_ERROR)
+    .with('purchasePrice', () => ERRORS.purchasePrice)
+    .with('retailPrice', () => ERRORS.retailPrice)
+    .with('salonPrice', () => ERRORS.salonPrice)
     // A level the API compared with the levels it keeps: another was changed meanwhile
     .with('minimumStock', () =>
-      rule === 'custom'
-        ? '最低在庫数は、発注点と最大在庫数と同じか、それより小さい数にしてください。'
-        : levelError('最低在庫数'),
+      rule === 'custom' ? ERRORS.minimumAgainstKept : ERRORS.minimumStock,
     )
     .with('reorderPoint', () =>
-      rule === 'custom'
-        ? '発注点は、最低在庫数から最大在庫数までの数にしてください。'
-        : levelError('発注点'),
+      rule === 'custom' ? ERRORS.reorderAgainstKept : ERRORS.reorderPoint,
     )
     .with('maximumStock', () =>
-      rule === 'custom'
-        ? '最大在庫数は、最低在庫数と発注点と同じか、それより大きい数にしてください。'
-        : levelError('最大在庫数'),
+      rule === 'custom' ? ERRORS.maximumAgainstKept : ERRORS.maximumStock,
     )
-    .with('supplier', () => inJapanese(SUPPLIER_ERROR))
-    .with('supplierProductCode', () => inJapanese(SUPPLIER_CODE_ERROR))
-    .with('leadTimeDays', () => LEAD_TIME_ERROR)
-    .with('barcode', () => inJapanese(BARCODE_ERROR))
-    .with('expiryMonths', () => EXPIRY_ERROR)
-    .with('imageUrl', 'safetyDataSheet', () => inJapanese(WEB_ADDRESS_ERROR))
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with('supplier', () => SUPPLIER_ERROR)
+    .with('supplierProductCode', () => SUPPLIER_CODE_ERROR)
+    .with('leadTimeDays', () => ERRORS.leadTimeDays)
+    .with('barcode', () => BARCODE_ERROR)
+    .with('expiryMonths', () => ERRORS.expiryMonths)
+    .with('imageUrl', 'safetyDataSheet', () => WEB_ADDRESS_ERROR)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What the form says after the API did not take it. */
 export const afterProductWrite = (
@@ -477,16 +439,14 @@ export const afterProductWrite = (
     | Extract<ProductWrite, { type: 'invalid' | 'codeTaken' | 'forbidden' }>
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -494,17 +454,13 @@ export const afterProductWrite = (
     })
     .with({ type: 'codeTaken' }, () => ({
       message: undefined,
-      errors: { productCode: CODE_TAKEN },
+      errors: { productCode: ERRORS.codeTaken },
     }))
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(form.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '商品を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(form.failed))
     .exhaustive()
 
 /**
@@ -514,29 +470,28 @@ export const afterProductWrite = (
 export const afterProductRemoval = (
   outcome: ProductRemoval,
   name: string,
-): TreatmentRemovalSays =>
+): TreatmentRemovalSays<LocalizedText> =>
   match(outcome)
-    .returnType<TreatmentRemovalSays>()
+    .returnType<TreatmentRemovalSays<LocalizedText>>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `商品「${name}」を削除しました。`,
+      message: removal.done(name),
     }))
     .with({ type: 'inStock' }, () => ({
       type: 'refused',
-      message: `商品「${name}」には在庫の記録があるので、削除できません。取り扱いをやめるときは、「取り扱い中」の印を外して保存してください。`,
+      message: removal.inStock(name),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: FORBIDDEN_MESSAGE,
+      message: form.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '商品を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -774,4 +775,160 @@ describe('the product ledger of a salon, against the API', () => {
       expect(await findAccessibilityViolations(container)).toEqual([])
     },
   )
+})
+
+describe('the product ledger of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the products of the salon and show one, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(productsHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+    await heading('Product ledger')
+    const ledger = await screen.findByRole('table', { name: 'Product ledger' })
+
+    // Act
+    await user.click(
+      screen.getByRole('link', { name: 'Professional Shampoo 500ml' }),
+    )
+
+    // Assert
+    await heading('Product details')
+    expect(
+      within(ledger)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Product code',
+      'Product name',
+      'Category',
+      'Brand',
+      'Sale price',
+      'Use',
+      'Status',
+    ])
+    expect(
+      await screen.findByRole('region', { name: 'Prices' }),
+    ).toBeInTheDocument()
+    expect(terms('Product').slice(5)).toEqual([
+      ['Unit', 'bottle'],
+      ['Use', 'In-store sale, Treatment'],
+      ['Status', 'Active'],
+    ])
+    expect(terms('Prices')).toEqual([
+      ['Purchase price', '¥1,500'],
+      ['List price', '¥3,500'],
+      ['Sale price', '¥3,000'],
+    ])
+    expect(terms('Stock levels')).toEqual([
+      ['Minimum stock', '5 bottle'],
+      ['Reorder point', '10 bottle'],
+      ['Maximum stock', '50 bottle'],
+    ])
+  })
+
+  it('should say what is wrong before sending a new product, then add it, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    await openAs(productEntryHrefOf(salonId), MANAGER, 'en')
+    await heading('Add a product')
+    await screen.findByRole('textbox', { name: /^Product code/ })
+    await user.type(text('Purchase price'), '-100')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+    expect(text(/^Product code/)).toHaveAccessibleDescription(
+      expect.stringContaining('Product code: enter 1 to 100 characters.'),
+    )
+    expect(text('Purchase price')).toHaveAccessibleDescription(
+      'Enter the purchase price as a whole number of yen from 0.',
+    )
+
+    // Act
+    await user.type(text(/^Product code/), 'OIL001')
+    await user.type(text(/^Unit/), 'bottle')
+    await user.type(text(/^Product name/), 'Hair Oil 100ml')
+    await user.clear(text('Purchase price'))
+    await user.type(text('Purchase price'), '1200')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Added the product “Hair Oil 100ml”.'),
+    ).toBeInTheDocument()
+    await heading('Product details')
+    expect(firstSight()[0]).toBe(
+      productHrefOf(salonId, await productIdOf(TOKYO, 'OIL001')),
+    )
+  })
+
+  it('should save a product that is discontinued on its form, which its record then says, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      productChangeHrefOf(
+        await salonIdOf(TOKYO),
+        await productIdOf(TOKYO, 'COND001'),
+      ),
+      OWNER,
+      'en',
+    )
+    await heading('Edit the product')
+    await screen.findByRole('textbox', { name: /^Product code/ })
+
+    // Act
+    await user.click(checkbox('Active'))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Saved the product “Professional Conditioner 500ml”.',
+      ),
+    ).toBeInTheDocument()
+    await heading('Product details')
+    expect(
+      await screen.findByRole('region', { name: 'Prices' }),
+    ).toBeInTheDocument()
+    expect(terms('Product')).toEqual(
+      expect.arrayContaining([['Status', 'Discontinued']]),
+    )
+  })
+
+  it('should keep a product the salon keeps stock of, and say to discontinue it instead, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const before = await storedProductsOf(TOKYO)
+    await openAs(
+      productChangeHrefOf(
+        await salonIdOf(TOKYO),
+        await productIdOf(TOKYO, 'SHMP001'),
+      ),
+      OWNER,
+      'en',
+    )
+    await heading('Edit the product')
+    await screen.findByRole('textbox', { name: /^Product code/ })
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    const dialog = screen.getByRole('dialog', {
+      name: 'Remove the product “Professional Shampoo 500ml”?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The product “Professional Shampoo 500ml” has stock records, so it cannot be removed. To discontinue it, clear “Active” and save.',
+    )
+    expect(await storedProductsOf(TOKYO)).toEqual(before)
+  })
 })

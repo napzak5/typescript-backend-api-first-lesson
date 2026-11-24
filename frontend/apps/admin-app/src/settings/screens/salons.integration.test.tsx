@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { countOf, salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
@@ -447,5 +448,93 @@ describe('removing a salon, against the API', () => {
       screen.getByRole('region', { name: 'サロンの削除' }),
     ).findByRole('alert')
     expect(await findAccessibilityViolations(container)).toEqual([])
+  })
+})
+
+describe('adding and removing a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should say in English what is wrong, then add the salon and say so in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(SALON_ENTRY_PATH, OPERATOR, 'en')
+    expect(await heading('Register a salon')).toHaveFocus()
+    expect(
+      screen.getByText(
+        'The hours are entered in the settings of the salon once it is registered.',
+      ),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Register the salon' }))
+    expect(text('Name')).toHaveAccessibleDescription(
+      expect.stringContaining('Salon name: enter 1 to 255 characters.'),
+    )
+    await user.type(text('Name'), NEW_NAME)
+    await user.type(text('Prefecture'), '東京都')
+    await user.type(text('City'), '新宿区')
+    await user.type(text('Street address'), '西新宿 1-1-1')
+    await user.type(text('Phone number'), '03-1111-2222')
+    await user.type(text('Email address'), 'shinjuku@example.com')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Register the salon' }))
+
+    // Assert
+    expect(await heading('Salon settings')).toHaveFocus()
+    expect(notifications()).toContain(
+      `Registered the salon “${NEW_NAME}”. Enter its hours and its menu, then accept online bookings.`,
+    )
+    await screen.findByRole('region', { name: 'Salon' })
+    expect(termsOf('Salon')).toContainEqual(['Online booking', 'Paused'])
+  })
+
+  it('should tell the owner of a salon in English that the account does not add salons', async () => {
+    // Act
+    await openAs(SALON_ENTRY_PATH, OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot register salons. Only administrators can register a salon.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the start' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should ask in English, and say in English why bookings that are not finished keep the salon', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(settingsHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+    await user.click(
+      await screen.findByRole('button', { name: 'Remove the salon' }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: `Remove the salon “${TOKYO}”?`,
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'A removed salon cannot be restored: it is taken off the list of salons and the screens of the customers, and the staff can no longer use its screens.',
+    )
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    const removal = screen.getByRole('region', { name: 'Remove the salon' })
+    expect(await within(removal).findByRole('alert')).toHaveTextContent(
+      `The salon “${TOKYO}” has bookings that are not finished (draft, awaiting confirmation, confirmed, in progress), so it cannot be removed.`,
+    )
+    expect(
+      within(removal).getByRole('link', { name: 'Open the booking ledger' }),
+    ).toBeInTheDocument()
+    expect(await isRemoved(TOKYO)).toBe(false)
   })
 })

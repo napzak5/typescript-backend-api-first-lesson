@@ -8,6 +8,7 @@ describe('hundredthsOf', () => {
     [1.15, 115],
     [99_999_999.99, 9_999_999_999],
   ])('should give %d in hundredths as %d', (quantity, hundredths) => {
+    // Assert
     expect(hundredthsOf(quantity)).toBe(hundredths)
   })
 })
