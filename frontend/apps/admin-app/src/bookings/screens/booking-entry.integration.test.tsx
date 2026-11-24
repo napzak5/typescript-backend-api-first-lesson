@@ -4,10 +4,13 @@ import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
   countOf,
   dayFromToday,
+  giveBack,
   refuse,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -18,6 +21,8 @@ import {
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
+  OPERATOR,
+  OSAKA,
   OWNER,
   STYLIST,
   TOKYO,
@@ -36,7 +41,12 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange } from '../__tests__/arrangements'
+import {
+  arrangeCrowd,
+  customerIdOf,
+  staffRemovedMeanwhile,
+} from '../../customers/__tests__/arrangements'
+import { arrange, bookingRemovedMeanwhile } from '../__tests__/arrangements'
 
 const TAKEN =
   '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'
@@ -166,6 +176,25 @@ const fillLine = async (
   await user.type(field(`明細 ${number} の開始`), at)
 }
 
+/** What an account that belongs to no salon is told of the bookings of a salon. */
+const NOT_THEIRS =
+  'このサロンの予約は、見られません。予約を見られるのは、そのサロンのスタッフと、管理者です。'
+
+/** The member of the staff the stylist of the seed data is */
+const STYLIST_NAME = 'Hiroshi Tanaka'
+
+/** Opens the second step of the entry, for a customer, at its address. */
+const toTheStepOf = async (customerId: string) => {
+  const tokyo = await salonIdOf(TOKYO)
+  const date = await dayFromToday(DAY)
+  renderAt(
+    `/salons/${tokyo}/bookings/new?date=${date}&customerId=${customerId}`,
+  )
+  await signInAs(OWNER)
+
+  return { tokyo, date }
+}
+
 /** The ID of the booking whose page the application shows. */
 const shownBookingId = (): string => address().split('/').at(-1) ?? ''
 
@@ -235,6 +264,92 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       expect(
         screen.getByRole('link', { name: 'お客様を登録する' }),
       ).toHaveAttribute('href', `/salons/${tokyo}/customers/new`)
+    })
+
+    it('should say that the customers could not be searched, and find them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await takeAway('customers')
+      await toTheCustomers(user, 'yamamoto')
+      expect(
+        await screen.findByText(
+          'お客様を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('customers')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('link', { name: KENJI.name }),
+      ).toBeVisible()
+    })
+
+    it('should keep the customers it found when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeCrowd(21, 'crowd')
+      await toTheCustomers(user, 'crowd')
+      const crowd = (): HTMLElement[] =>
+        screen.queryAllByRole('link', { name: /^Crowd / })
+      await waitFor(() => expect(crowd()).toHaveLength(20))
+      await takeAway('customers')
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(crowd()).toHaveLength(20)
+      await giveBack('customers')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await waitFor(() => expect(crowd()).toHaveLength(21))
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should search the customers again when the same keyword is sent again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await toTheCustomers(user, 'yamamoto')
+      await screen.findByRole('link', { name: KENJI.name })
+      // Registered at the counter meanwhile
+      await testApi().query(
+        `insert into customers ("lastName", "firstName", email, "phoneNumber", tags)
+         values ('Yamamoto', 'Taro', 'yamamoto-taro@example.com', '+81-90-1111-2222', '{}')`,
+      )
+
+      // Act
+      await user.type(
+        screen.getByRole('searchbox', { name: 'キーワード' }),
+        '{Enter}',
+      )
+
+      // Assert
+      expect(
+        await screen.findByRole('link', { name: 'Yamamoto Taro' }),
+      ).toBeVisible()
+      expect(screen.getByRole('link', { name: KENJI.name })).toBeVisible()
+    })
+
+    it('should say that the customer of an address is not found, and lead to choosing again', async () => {
+      // Act
+      const { tokyo, date } = await toTheStepOf(
+        '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01',
+      )
+
+      // Assert
+      expect(
+        await screen.findByText(
+          'お客様が見つかりません。台帳から削除されたか、アドレスが正しくありません。',
+        ),
+      ).toBeVisible()
+      expect(
+        screen.getByRole('link', { name: 'お客様を選び直す' }),
+      ).toHaveAttribute('href', `/salons/${tokyo}/bookings/new?date=${date}`)
     })
 
     it('should show the customer that was chosen above the form, and lead back to the customers that were found', async () => {
@@ -531,6 +646,91 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
     })
   })
 
+  describe('putting a booking in when something comes to nothing', () => {
+    it('should say at the controls what the lines lack when they are checked, and check nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await toTheForm(user)
+      const fetched: MockInstance<typeof fetch> = vi.spyOn(globalThis, 'fetch')
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '担当の空きを確かめる' }),
+      )
+
+      // Assert
+      expect(combobox('担当スタッフ')).toHaveFocus()
+      expect(combobox('担当スタッフ')).toHaveAccessibleDescription(
+        expect.stringContaining('担当スタッフを選んでください。'),
+      )
+      expect(await sent(fetched)).toEqual([])
+    })
+
+    it('should say that no booking can be put in at a salon that has no menu', async () => {
+      // Arrange
+      await testApi().query(
+        `update services set "deletedAt" = now()
+         where "salonId" = (select id from salons where name = $1)`,
+        [TOKYO],
+      )
+
+      // Act
+      await toTheStepOf(await customerIdOf(KENJI.email))
+
+      // Assert
+      expect(await screen.findByText('予約を入れられません')).toBeVisible()
+      expect(
+        screen.queryByRole('combobox', { name: '担当スタッフ' }),
+      ).toBeNull()
+    })
+
+    it('should say that the customer or the menu could not be read, and open the form when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await takeAway('services')
+      await toTheStepOf(await customerIdOf(KENJI.email))
+      expect(
+        await screen.findByText(
+          'お客様とメニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('services')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('combobox', { name: '担当スタッフ' }),
+      ).toBeVisible()
+    })
+
+    it('should say that an account that left its salon meanwhile cannot put the booking in', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await toTheForm(user, STYLIST)
+      await user.selectOptions(combobox('担当スタッフ'), 'Mika Suzuki')
+      await fillLine(user, 1, {
+        service: 'Ladies Cut（60 分）',
+        member: '予約の担当と同じ',
+        at: '10:00',
+      })
+      const before = await bookingCount()
+      whenAskedFor('POST /bookings', () => staffRemovedMeanwhile(STYLIST_NAME))
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '予約を入れる' }))
+
+      // Assert
+      expect(
+        await screen.findByText(
+          'このアカウントでは、このサロンの予約を入れられません。',
+        ),
+      ).toBeVisible()
+      expect(await bookingCount()).toBe(before)
+    })
+  })
+
   describe('changing what the salon wrote down', () => {
     const arrangeWithNotes = async (): Promise<string> => {
       const id = await arrange({
@@ -550,10 +750,11 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
     const toTheNotes = async (
       user: ReturnType<typeof userEvent.setup>,
       id: string,
+      email = OWNER,
     ) => {
       const tokyo = await salonIdOf(TOKYO)
       renderAt(`/salons/${tokyo}/bookings/${id}`)
-      await signInAs(OWNER)
+      await signInAs(email)
       await user.click(
         await screen.findByRole('link', { name: '要望とメモを変える' }),
       )
@@ -667,6 +868,107 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
         ),
       ).toBeVisible()
       expect(await heading('要望とメモを変える')).toBeVisible()
+      expect(field('サロン内のメモ')).toHaveValue('次回はカラーも')
+      expect((await storedBooking(id)).internalNotes).toBe(
+        '前回より 1 トーン上',
+      )
+    })
+
+    it('should say that the booking could not be read, and open the form when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrangeWithNotes()
+      await takeAway('bookings')
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}/edit`)
+      await signInAs(OWNER)
+      expect(
+        await screen.findByText(
+          '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('bookings')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('combobox', { name: '受付の経路' }),
+      ).toHaveDisplayValue('オンライン')
+    })
+
+    it('should say that a booking of another salon is not found at the address of this one', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: DAY,
+        at: '10:00',
+        salon: OSAKA,
+        staffCode: 'STF003',
+        service: 'Signature Cut',
+        minutes: 75,
+      })
+
+      // Act
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}/edit`)
+      await signInAs(OPERATOR)
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+      expect(screen.queryByRole('combobox', { name: '受付の経路' })).toBeNull()
+    })
+
+    it('should tell an account that belongs to no salon any more that the bookings are not theirs to see', async () => {
+      // Arrange
+      const id = await arrangeWithNotes()
+      whenAskedFor(`GET /bookings/${id}`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}/edit`)
+      await signInAs(STYLIST)
+
+      // Assert
+      expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
+    })
+
+    it('should say that the booking is not found when it was removed while the change was sent', async () => {
+      // Arrange
+      const id = await arrangeWithNotes()
+      const user = userEvent.setup()
+      await toTheNotes(user, id)
+      await user.clear(field('サロン内のメモ'))
+      await user.type(field('サロン内のメモ'), '次回はカラーも')
+      whenAskedFor(`PATCH /bookings/${id}`, () => bookingRemovedMeanwhile(id))
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should say that an account that left its salon meanwhile cannot change the booking', async () => {
+      // Arrange
+      const id = await arrangeWithNotes()
+      const user = userEvent.setup()
+      await toTheNotes(user, id, STYLIST)
+      await user.clear(field('サロン内のメモ'))
+      await user.type(field('サロン内のメモ'), '次回はカラーも')
+      whenAskedFor(`PATCH /bookings/${id}`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      expect(
+        await screen.findByText(
+          'このアカウントでは、この予約を変えられません。',
+        ),
+      ).toBeVisible()
       expect(field('サロン内のメモ')).toHaveValue('次回はカラーも')
       expect((await storedBooking(id)).internalNotes).toBe(
         '前回より 1 トーン上',
@@ -854,6 +1156,39 @@ describe('the bookings a salon puts in, changes and removes, on a page in Englis
 
     return { tokyo, date }
   }
+
+  it('should say in English that an account that left its salon meanwhile cannot put the booking in', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    const date = await dayFromToday(DAY)
+    await openAs(
+      `/salons/${tokyo}/bookings/new?date=${date}&customerId=${await customerIdOf(KENJI.email)}`,
+      STYLIST,
+      'en',
+    )
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Staff member' }),
+      'Mika Suzuki',
+    )
+    await user.selectOptions(
+      combobox('Service of line 1'),
+      'Ladies Cut (60 min)',
+    )
+    await user.selectOptions(combobox('Staff of line 1'), 'Same as the booking')
+    await user.type(field('Start of line 1'), '10:00')
+    whenAskedFor('POST /bookings', () => staffRemovedMeanwhile(STYLIST_NAME))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Make a booking' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot make bookings for this salon.',
+      ),
+    ).toBeVisible()
+  })
 
   it('should put a booking in as the form has it, and show it on its page, in English', async () => {
     // Arrange

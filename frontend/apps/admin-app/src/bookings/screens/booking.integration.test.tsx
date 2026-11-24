@@ -3,10 +3,13 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   refuse,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -29,7 +32,19 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, clockOf, storedBooking } from '../__tests__/arrangements'
+import { staffRemovedMeanwhile } from '../../customers/__tests__/arrangements'
+import { arrangeSale } from '../../sales/__tests__/arrangements'
+import {
+  treatedBookingOf,
+  treatmentIdOf,
+} from '../../treatments/__tests__/arrangements'
+import {
+  arrange,
+  bookingRemovedMeanwhile,
+  clockOf,
+  salonRemovedMeanwhile,
+  storedBooking,
+} from '../__tests__/arrangements'
 
 const CHANGED_ELSEWHERE =
   '予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
@@ -60,6 +75,13 @@ const recordTerms = (): [string, string][] =>
       term.nextElementSibling?.textContent ?? '',
     ])
 
+/** What an account that belongs to no salon is told of the bookings of a salon. */
+const NOT_THEIRS =
+  'このサロンの予約は、見られません。予約を見られるのは、そのサロンのスタッフと、管理者です。'
+
+/** The member of the staff the stylist of the seed data is */
+const STYLIST_NAME = 'Hiroshi Tanaka'
+
 /** Opens a booking of the Tokyo salon, signed in as `email`. */
 const openBooking = async (id: string, email = OWNER): Promise<void> => {
   const tokyo = await salonIdOf(TOKYO)
@@ -75,6 +97,7 @@ describe('a booking of a salon, against the API', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.restoreAllMocks()
   })
 
   it('should show who comes when, for what, with whom, and what it comes to', async () => {
@@ -533,6 +556,226 @@ describe('a booking of a salon, against the API', () => {
     )
   })
 
+  describe('when a read or a change of the booking comes to nothing', () => {
+    it('should say that the booking could not be read, and show it when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      await takeAway('bookings')
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}`)
+      await signInAs(OWNER)
+      expect(
+        await screen.findByText(
+          '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('bookings')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(await shownStatus()).toBe('確定待ち')
+    })
+
+    it('should say that the details could not be read, and show them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      await takeAway('services')
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}`)
+      await signInAs(OWNER)
+      expect(
+        await screen.findByText(
+          '予約の内容を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('services')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(await shownStatus()).toBe('確定待ち')
+      expect(rowsOf('施術明細')[0]?.[0]).toBe('Ladies Cut')
+    })
+
+    it('should say that the details could not be read when the salon was removed while its menu was asked for', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      const tokyo = await salonIdOf(TOKYO)
+      whenAskedFor(`GET /salons/${tokyo}/services`, () =>
+        salonRemovedMeanwhile(TOKYO),
+      )
+
+      // Act
+      renderAt(`/salons/${tokyo}/bookings/${id}`)
+      await signInAs(OWNER)
+
+      // Assert
+      expect(
+        await screen.findByText(
+          '予約の内容を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      expect(screen.queryByRole('region', { name: '状態' })).toBeNull()
+    })
+
+    it('should tell an account that belongs to no salon any more that the bookings are not theirs to see', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      whenAskedFor(`GET /bookings/${id}`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}`)
+      await signInAs(STYLIST)
+
+      // Assert
+      expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
+      expect(screen.queryByRole('region', { name: '状態' })).toBeNull()
+    })
+
+    it('should say that the booking is not found when it was removed while it was confirmed', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      await openBooking(id)
+      whenAskedFor(`POST /bookings/${id}/confirm`, () =>
+        bookingRemovedMeanwhile(id),
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '予約を確定する' }))
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should tell an account that left its salon while it confirmed a booking that the bookings are not theirs to see', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      await openBooking(id, STYLIST)
+      whenAskedFor(`POST /bookings/${id}/confirm`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '予約を確定する' }))
+
+      // Assert
+      expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
+      expect((await storedBooking(id)).status).toBe('pending')
+    })
+
+    it('should close the dialog and say that the booking is not found when it was removed while its removal was asked', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 2,
+        at: '10:00',
+      })
+      await openBooking(id)
+      await user.click(screen.getByRole('button', { name: '予約を削除する' }))
+      whenAskedFor(`DELETE /bookings/${id}`, () => bookingRemovedMeanwhile(id))
+
+      // Act
+      await user.click(
+        within(
+          screen.getByRole('dialog', { name: '予約を削除しますか？' }),
+        ).getByRole('button', { name: '削除する' }),
+      )
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    it('should lead to the sale of a booking, read again when it could not be read', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: -1,
+        at: '10:00',
+        status: 'completed',
+      })
+      const saleId = await arrangeSale({
+        saleNumber: 'SL-TEST-0001',
+        bookingId: id,
+        at: '11:30',
+      })
+      await takeAway('sales')
+      await openBooking(id)
+      const checkout = screen.getByRole('region', { name: '会計' })
+      await within(checkout).findByRole('button', { name: 'もう一度読み込む' })
+      await giveBack('sales')
+
+      // Act
+      await user.click(
+        within(checkout).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(
+        await within(checkout).findByRole('link', { name: 'SL-TEST-0001' }),
+      ).toHaveAttribute(
+        'href',
+        `/salons/${await salonIdOf(TOKYO)}/sales/${saleId}`,
+      )
+    })
+
+    it('should lead to the treatment record of a booking, read again when it could not be read', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const id = await treatedBookingOf(YUKI.email)
+      const recordId = await treatmentIdOf(YUKI.email)
+      await takeAway('treatment_records')
+      await openBooking(id)
+      const record = screen.getByRole('region', { name: '施術記録' })
+      await within(record).findByRole('button', { name: 'もう一度読み込む' })
+      await giveBack('treatment_records')
+
+      // Act
+      await user.click(
+        within(record).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(await within(record).findByRole('link')).toHaveAttribute(
+        'href',
+        `/salons/${await salonIdOf(TOKYO)}/treatments/${recordId}`,
+      )
+    })
+  })
+
   it('should say that a booking that is not there is not found', async () => {
     // Arrange
     const tokyo = await salonIdOf(TOKYO)
@@ -571,6 +814,7 @@ describe('a booking of a salon on a page in English', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.restoreAllMocks()
     localStorage.clear()
   })
 
@@ -680,6 +924,32 @@ describe('a booking of a salon on a page in English', () => {
     expect((await storedBooking(id)).cancellationReason).toBe(
       'Called to cancel',
     )
+  })
+
+  it('should tell an account that belongs to no salon any more, in English, that the bookings are not theirs to see', async () => {
+    // Arrange
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0001',
+      day: 2,
+      at: '10:00',
+    })
+    whenAskedFor(`GET /bookings/${id}`, () =>
+      staffRemovedMeanwhile(STYLIST_NAME),
+    )
+
+    // Act
+    await openAs(
+      `/salons/${await salonIdOf(TOKYO)}/bookings/${id}`,
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You cannot see the bookings of this salon. Only the staff of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
   })
 
   it('should say in English that a booking that is not there is not found', async () => {

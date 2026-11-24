@@ -115,6 +115,16 @@ export const arrangeMany = (day: number, count: number): Promise<unknown> =>
     [day, count, TOKYO, KENJI.email],
   )
 
+/** Lets a booking be removed meanwhile, as an owner would have done it: its lines go with it. */
+export const bookingRemovedMeanwhile = (bookingId: string): Promise<unknown> =>
+  testApi().query('delete from bookings where id = $1', [bookingId])
+
+/** Lets the platform remove a salon meanwhile, by its name: what is kept of it is no longer served. */
+export const salonRemovedMeanwhile = (salon: string): Promise<unknown> =>
+  testApi().query('update salons set "deletedAt" = now() where name = $1', [
+    salon,
+  ])
+
 const storedSchema = z.tuple([
   z.object({
     status: z.string(),

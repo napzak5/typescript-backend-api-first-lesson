@@ -149,10 +149,6 @@ export const bookingCancelledMeanwhile = (
     [bookingId],
   )
 
-/** Lets a booking be removed meanwhile, as an owner would have done it. */
-export const bookingRemovedMeanwhile = (bookingId: string): Promise<unknown> =>
-  testApi().query('delete from bookings where id = $1', [bookingId])
-
 /** Lets the salon in Tokyo remove a product meanwhile, by its code. */
 export const productRemovedMeanwhile = (
   productCode: string,
