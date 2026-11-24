@@ -1,4 +1,5 @@
 import { languageStore } from '@beauty-salon-frontend/io'
+import { setBrowserLanguages } from '@beauty-salon-frontend/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const API_ORIGIN = 'http://localhost:3000'
@@ -102,14 +103,26 @@ describe('customInstance', () => {
       ])
     })
 
-    it.each<[string, Language | null, string]>([
-      ['Japanese while no language is chosen', null, 'ja'],
-      ['the language that was chosen', 'en', 'en'],
-      ['Japanese when that was chosen', 'ja', 'ja'],
+    it.each<[string, readonly string[], Language | null, string]>([
+      [
+        'Japanese while no language is chosen, in a browser set to Japanese',
+        ['ja-JP'],
+        null,
+        'ja',
+      ],
+      [
+        'English while no language is chosen, in a browser set to English',
+        ['en-US'],
+        null,
+        'en',
+      ],
+      ['the language that was chosen', ['ja-JP'], 'en', 'en'],
+      ['Japanese when that was chosen', ['en-US'], 'ja', 'ja'],
     ])(
       'should say the language of the page in Accept-Language: %s',
-      async (_case, chosen, expected) => {
+      async (_case, browser, chosen, expected) => {
         // Arrange
+        setBrowserLanguages(browser)
         const fetchMock = stubFetch(respondWithJson(200, { data: [] }))
         const customInstance = await loadCustomInstance()
         if (chosen !== null) {

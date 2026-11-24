@@ -15,8 +15,10 @@ export default defineConfig({
   },
   test: {
     // The client runs in a browser: the function it calls reads the session
-    // from `localStorage`
+    // from `localStorage`, and the language of the page from there and from
+    // the languages of the browser, which the setup sets to Japanese
     environment: 'jsdom',
+    setupFiles: ['@beauty-salon-frontend/testing/setup'],
     // The origin that the generated client sends its requests to.
     env: {
       VITE_BACKEND_BASE_URL: 'http://localhost:3000',

@@ -7,6 +7,7 @@ export {
   findAccessibilityViolations,
 } from './accessibility/accessibility'
 export { PDF_BYTES, PDF_TEXT, PNG_BYTES } from './fixtures/file-bytes'
+export { setBrowserLanguages } from './setup/browser-languages'
 export { type SavedFile, savedFiles } from './setup/saved-files'
 export { setWindowWidth } from './setup/window-width'
 export { changeInAnotherTab, refuseStorage } from './storage/browser-storage'

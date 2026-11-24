@@ -1,5 +1,8 @@
 import { languageStore } from '@beauty-salon-frontend/io'
-import { changeInAnotherTab } from '@beauty-salon-frontend/testing'
+import {
+  changeInAnotherTab,
+  setBrowserLanguages,
+} from '@beauty-salon-frontend/testing'
 import { afterEach, describe, expect, it } from 'vitest'
 import { keepLanguageOfTheDocument } from './page-language'
 
@@ -22,11 +25,25 @@ describe('keepLanguageOfTheDocument', () => {
     document.documentElement.removeAttribute('lang')
   })
 
-  it('should say Japanese for a page whose visitor chose no language', () => {
+  it('should say Japanese for a page whose visitor chose no language, in a browser set to Japanese', () => {
     // Act
     keep()
 
     // Assert
+    expect(document.documentElement).toHaveAttribute('lang', 'ja')
+  })
+
+  it('should say the language of the browser for a page whose visitor chose none, and the new one when the browser changes', () => {
+    // Arrange
+    setBrowserLanguages(['en-US'])
+    keep()
+    const first = document.documentElement.lang
+
+    // Act
+    setBrowserLanguages(['ja', 'en'])
+
+    // Assert
+    expect(first).toBe('en')
     expect(document.documentElement).toHaveAttribute('lang', 'ja')
   })
 

@@ -1,6 +1,7 @@
 import {
   changeInAnotherTab,
   refuseStorage,
+  setBrowserLanguages,
 } from '@beauty-salon-frontend/testing'
 import type { Locale } from '@beauty-salon-shared/i18n'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -9,18 +10,64 @@ import { languageStore } from './stored-language'
 
 const STORAGE_KEY = 'beauty-salon:language'
 
+/**
+ * The store as the page loads it: a choice that the browser would not keep
+ * stays with the module, until the page is loaded again
+ */
+const loadedAnew = async (): Promise<typeof languageStore> => {
+  vi.resetModules()
+  const loaded = await import('./stored-language')
+
+  return loaded.languageStore
+}
+
 describe('languageStore', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
   })
 
-  it('should say Japanese before a language is chosen', () => {
+  it('should say Japanese before a language is chosen, in a browser that is set to Japanese', () => {
     // Act
     const language = languageStore.read()
 
     // Assert
     expect(language).toBe('ja')
+  })
+
+  it.each<[string, readonly string[], Locale]>([
+    ['English', ['en-US'], 'en'],
+    [
+      'English after a language the product is not written in',
+      ['fr-FR', 'en-GB'],
+      'en',
+    ],
+    ['Japanese before English', ['ja', 'en-US'], 'ja'],
+    ['a language the product is not written in', ['fr-FR'], 'ja'],
+    ['no language', [], 'ja'],
+  ])(
+    'should say the language of a browser that is set to %s before a language is chosen (%j)',
+    (_case, languages, expected) => {
+      // Arrange
+      setBrowserLanguages(languages)
+
+      // Act
+      const language = languageStore.read()
+
+      // Assert
+      expect(language).toBe(expected)
+    },
+  )
+
+  it('should say the language that was chosen, whatever the browser is set to', () => {
+    // Arrange
+    setBrowserLanguages(['en-US'])
+
+    // Act
+    languageStore.choose('ja')
+
+    // Assert
+    expect(languageStore.read()).toBe('ja')
   })
 
   it.each<Locale>(['en', 'ja'])(
@@ -54,9 +101,25 @@ describe('languageStore', () => {
     ['a tag with a region', 'en-US'],
     ['a tag in capital letters', 'EN'],
     ['a name of a property of every object', 'toString'],
-  ])('should say Japanese when what is kept is %s', (_case, stored) => {
+  ])(
+    'should take what is kept for no choice when it is %s, and say the language of the browser',
+    (_case, stored) => {
+      // Arrange
+      localStorage.setItem(STORAGE_KEY, stored)
+      setBrowserLanguages(['en-US'])
+
+      // Act
+      const language = languageStore.read()
+
+      // Assert
+      expect(language).toBe('en')
+    },
+  )
+
+  it('should say the language of the browser in a browser that refuses access to its storage', () => {
     // Arrange
-    localStorage.setItem(STORAGE_KEY, stored)
+    languageStore.choose('en')
+    refuseStorage()
 
     // Act
     const language = languageStore.read()
@@ -65,18 +128,36 @@ describe('languageStore', () => {
     expect(language).toBe('ja')
   })
 
-  it('should say Japanese in a browser that refuses access to its storage, and that a choice is not kept', () => {
+  it('should say that a choice is not kept in a browser that refuses to store it, and still say that language, and tell its listeners', async () => {
     // Arrange
-    languageStore.choose('en')
+    const store = await loadedAnew()
+    const listener = vi.fn()
+    const unsubscribe = store.subscribe(listener)
     refuseStorage()
 
     // Act
-    const language = languageStore.read()
-    const kept = languageStore.choose('en')
+    const kept = store.choose('en')
 
     // Assert
-    expect(language).toBe('ja')
     expect(kept).toBe(false)
+    expect(store.read()).toBe('en')
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
+  it('should say the language of a choice that is kept after one the browser refused, once the browser keeps choices again', async () => {
+    // Arrange
+    const store = await loadedAnew()
+    refuseStorage()
+    store.choose('en')
+    vi.restoreAllMocks()
+
+    // Act
+    const kept = store.choose('ja')
+
+    // Assert
+    expect(kept).toBe(true)
+    expect(store.read()).toBe('ja')
   })
 
   it('should tell its listeners when a language is chosen', () => {
@@ -106,6 +187,20 @@ describe('languageStore', () => {
     unsubscribe()
   })
 
+  it('should tell its listeners when the languages of the browser change, and say the new one while none is chosen', () => {
+    // Arrange
+    const listener = vi.fn()
+    const unsubscribe = languageStore.subscribe(listener)
+
+    // Act
+    setBrowserLanguages(['en-US'])
+
+    // Assert
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(languageStore.read()).toBe('en')
+    unsubscribe()
+  })
+
   it('should not tell its listeners when somebody signs in or out', () => {
     // Arrange
     const listener = vi.fn()
@@ -128,6 +223,22 @@ describe('languageStore', () => {
     // Act
     unsubscribe()
     languageStore.choose('en')
+    setBrowserLanguages(['en-US'])
+
+    // Assert
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('should tell a listener nothing after it has unsubscribed, of a choice the browser refused', async () => {
+    // Arrange
+    const store = await loadedAnew()
+    const listener = vi.fn()
+    const unsubscribe = store.subscribe(listener)
+    refuseStorage()
+
+    // Act
+    unsubscribe()
+    store.choose('en')
 
     // Assert
     expect(listener).not.toHaveBeenCalled()

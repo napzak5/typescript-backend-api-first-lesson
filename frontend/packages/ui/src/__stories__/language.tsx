@@ -1,13 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
-import { LOCALES, type Locale } from '@beauty-salon-shared/i18n'
+import { LANGUAGE_NAMES, LOCALES, type Locale } from '@beauty-salon-shared/i18n'
 import type { Preview } from '@storybook/react-vite'
 import { type ReactNode, useEffect } from 'react'
-
-/** The name of each language in that language, as the toolbar of the catalogue offers it */
-const LANGUAGE_NAMES: Record<Locale, string> = {
-  en: 'English',
-  ja: '日本語',
-}
 
 type InLanguageProps = {
   /** The language the toolbar names, and none before anybody chose one */
