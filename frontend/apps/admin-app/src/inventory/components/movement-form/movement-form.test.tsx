@@ -80,6 +80,19 @@ describe('MovementForm', () => {
     expect(text('理由')).not.toBeRequired()
   })
 
+  it('should name a row of a product the salon removed by its lot, and count its quantity in no unit', async () => {
+    // Act
+    await stories.OfARemovedProduct.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        '削除した商品（ロット LOT-2026-041）。いまの在庫数は 12、そのうち使える数は 12 です。',
+      ),
+    ).toBeVisible()
+    expect(text(/^数量/)).toHaveAccessibleDescription('小数は 2 桁まで。')
+  })
+
   it('should offer a stylist the kinds of every day, and say who records the others', async () => {
     // Act
     await stories.ForAStylist.run()

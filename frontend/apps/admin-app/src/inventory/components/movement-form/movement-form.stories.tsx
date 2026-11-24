@@ -46,6 +46,11 @@ export const ForAStylist: Story = {
   },
 }
 
+/** A lot of a product the salon removed: the row is named by its lot, and the quantity by no unit */
+export const OfARemovedProduct: Story = {
+  args: { product: undefined },
+}
+
 /** What the form checked before sending: no kind, no quantity, a cost that is no amount */
 export const WithErrors: Story = {
   args: {
