@@ -174,12 +174,14 @@ export const readOwnPreferencesToChange =
     }
     const lists = await Promise.all(booked.salonIds.map(readStaff))
 
-    return lists.some(isUnread)
-      ? whyUnread(lists)
-      : withStaff(
+    return match(lists)
+      .with(P.array({ type: 'found' }), (found) =>
+        withStaff(
           stored.preferences,
-          lists.flatMap((list) => (list.type === 'found' ? list.staff : [])),
-        )
+          found.flatMap(({ staff }) => staff),
+        ),
+      )
+      .otherwise(() => whyUnread(lists))
   }
 
 /**

@@ -155,7 +155,8 @@ export const ReviewForm = ({
               name={name}
               placeholder={say(words.notRated)}
               options={ratings}
-              defaultValue={entered[name] ?? ''}
+              // A rating of the staff is entered whenever the form rates them
+              defaultValue={entered[name]}
               error={said.errors[name]}
             />
           ))}

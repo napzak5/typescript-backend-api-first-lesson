@@ -167,12 +167,15 @@ type Rows = {
   rest: { type: 'none' } | Unnamed
 }
 
+/** A booking whose salon and service are read */
+type NamedRow = { type: 'named'; row: Row }
+
 const UNNAMED: NotFound = { type: 'notFound' }
 
 const rowOf = (
   booking: ModelsCustomerBookingResponse,
   named: Named,
-): { type: 'named'; row: Row } | Unnamed => {
+): NamedRow | Unnamed => {
   const serviceId = serviceIdOf(booking)
   const salon = named.salon(booking.salonId)
   const service = serviceId === undefined ? UNNAMED : named.service(serviceId)
@@ -205,18 +208,18 @@ const rowOf = (
 export const rowsOf = (
   bookings: readonly ModelsCustomerBookingResponse[],
   named: Named,
-): Rows => {
-  const read = bookings.map((booking) => rowOf(booking, named))
-  const end = read.findIndex(({ type }) => type !== 'named')
-  const unnamed = read.at(end)
+): Rows => rowsUntilUnnamed(bookings.map((booking) => rowOf(booking, named)))
 
-  return {
-    rows: read
-      .slice(0, end === -1 ? read.length : end)
-      .flatMap((one) => (one.type === 'named' ? [one.row] : [])),
-    rest:
-      end === -1 || unnamed === undefined || unnamed.type === 'named'
-        ? { type: 'none' }
-        : unnamed,
+/** The rows of the bookings before the first that has no names yet, and why they end there */
+const rowsUntilUnnamed = (read: readonly (NamedRow | Unnamed)[]): Rows => {
+  const [first, ...after] = read
+  if (first === undefined) {
+    return { rows: [], rest: { type: 'none' } }
   }
+  if (first.type !== 'named') {
+    return { rows: [], rest: first }
+  }
+  const next = rowsUntilUnnamed(after)
+
+  return { rows: [first.row, ...next.rows], rest: next.rest }
 }

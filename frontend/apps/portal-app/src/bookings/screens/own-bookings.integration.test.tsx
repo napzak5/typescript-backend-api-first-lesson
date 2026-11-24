@@ -1,7 +1,12 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  refuse,
+  takeAway,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -269,6 +274,10 @@ const offeredTimes = async (): Promise<(string | null | undefined)[]> =>
 const time = (label: string) => screen.getByRole('radio', { name: label })
 const moveButton = () =>
   screen.getByRole('button', { name: 'この日時に変更する' })
+
+/** What the move screen says in place of its form, of a booking the customer cannot move */
+const ASK_THE_SALON =
+  'この予約は、この画面から日時を変更できません。日時の変更は、サロンにお問い合わせください。'
 
 /**
  * A booking that the customer of the tests made, on a day the tests know:
@@ -1393,6 +1402,131 @@ describe('the bookings of a customer, against the API', () => {
         startTime: momentAt(date, '11:30'),
         staff: MIKA,
       })
+    })
+
+    it('should say that the booking was not moved when the API could not write it, and keep the times and the choice', async () => {
+      // Arrange
+      await signedInAs(CUSTOMER)
+      const { id, date } = await book()
+      renderAt(
+        `/bookings/${id}/reschedule?staffId=${await staffId(MIKA)}&date=${date}`,
+      )
+      await offeredTimes()
+      await userEvent.click(time('10:00'))
+      await refuse('update', 'bookings')
+
+      // Act
+      await userEvent.click(moveButton())
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(await offeredTimes()).toEqual(['10:00'])
+      expect(time('10:00')).toBeChecked()
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(await rowOf(id)).toMatchObject({
+        startTime: momentAt(date, '11:30'),
+        staff: MIKA,
+      })
+    })
+
+    it('should say that the free times could not be read, and read them when asked again', async () => {
+      // Arrange
+      await signedInAs(CUSTOMER)
+      const { id, date } = await book()
+      await takeAway('staff_schedules')
+      renderAt(
+        `/bookings/${id}/reschedule?staffId=${await staffId(MIKA)}&date=${date}`,
+      )
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '空いている時刻を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(screen.queryByRole('radiogroup', { name: '開始時刻' })).toBeNull()
+
+      // Act
+      await giveBack('staff_schedules')
+      await userEvent.click(
+        screen.getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(await offeredTimes()).toEqual(['10:00'])
+      expect(moveButton()).toBeVisible()
+    })
+
+    it('should say that the booking could not be read, and show it with the form when asked again', async () => {
+      // Arrange
+      await signedInAs(CUSTOMER)
+      const { id, bookingNumber, date } = await book()
+      await takeAway('booking_services')
+      renderAt(
+        `/bookings/${id}/reschedule?staffId=${await staffId(MIKA)}&date=${date}`,
+      )
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(await heading('日時の変更')).toBeVisible()
+
+      // Act
+      await giveBack('booking_services')
+      await userEvent.click(
+        screen.getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(
+        await screen.findByRole('region', {
+          name: `予約番号 ${bookingNumber}`,
+        }),
+      ).toBeVisible()
+      expect(await offeredTimes()).toEqual(['10:00'])
+    })
+
+    it('should say that the salon no longer shows the member of the staff of the booking, and offer the others', async () => {
+      // Arrange
+      await signedInAs(CUSTOMER)
+      const { id, bookingNumber, date } = await book()
+      await testApi().query(
+        'update staff set "deletedAt" = now() where id = $1::uuid',
+        [await staffId(MIKA)],
+      )
+
+      // Act
+      renderAt(`/bookings/${id}/reschedule?date=${date}`)
+
+      // Assert
+      expect(
+        detailsIn(
+          await screen.findByRole('region', {
+            name: `予約番号 ${bookingNumber}`,
+          }),
+        ),
+      ).toMatchObject({ 担当: '（掲載を終えています）' })
+      expect(optionsOf(await staffControl())).toEqual(['指名しない', HIROSHI])
+    })
+
+    it('should say whom to ask of a booking whose service the salon no longer shows, and show no form', async () => {
+      // Arrange
+      await signedInAs(CUSTOMER)
+      const { id } = await book()
+      await testApi().query(
+        `update services set "deletedAt" = now()
+         where id in (select "serviceId" from booking_services where "bookingId" = $1::uuid)`,
+        [id],
+      )
+
+      // Act
+      renderAt(`/bookings/${id}/reschedule`)
+
+      // Assert
+      expect(await screen.findByText(ASK_THE_SALON)).toBeVisible()
+      expect(screen.queryByRole('region', { name: /^予約番号 / })).toBeNull()
+      expect(screen.queryByRole('combobox', { name: 'スタッフ' })).toBeNull()
     })
 
     it('should say that a booking with two services is the salon to move, and show no form', async () => {

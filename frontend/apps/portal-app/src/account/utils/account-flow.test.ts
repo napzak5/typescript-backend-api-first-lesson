@@ -266,4 +266,30 @@ describe('messageAfter', () => {
       }),
     ).toEqual(EMAIL_MALFORMED)
   })
+
+  it('should be what is said of the first value the API named that something is said of', () => {
+    expect(
+      messageAfter({
+        type: 'invalid',
+        values: [
+          { field: 'token', rule: 'invalid_format' },
+          { field: 'password', rule: 'too_small' },
+          { field: 'email', rule: 'invalid_format' },
+        ],
+      }),
+    ).toEqual(TOO_SHORT)
+  })
+
+  it('should ask for the values to be checked when the API named none that something is said of', () => {
+    expect(
+      messageAfter({
+        type: 'invalid',
+        values: [{ field: 'token', rule: 'invalid_format' }],
+      }),
+    ).toEqual(CHECK_THE_VALUES)
+  })
+
+  it('should be the sentence of the sign-in when there were too many attempts', () => {
+    expect(messageAfter({ type: 'tooManyAttempts' })).toEqual(TOO_MANY_ATTEMPTS)
+  })
 })

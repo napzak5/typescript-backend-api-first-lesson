@@ -3,7 +3,12 @@ import { languageStore } from '@beauty-salon-frontend/io'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  refuse,
+  takeAway,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER, OWNER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, within } from '@testing-library/react'
@@ -57,6 +62,13 @@ const statuses = (): string[] =>
 const RESENT =
   '確認メールの再送を受け付けました。届くまで、しばらくお待ちください。'
 
+/** What a screen says when the API answered a request with an error of the server */
+const NOT_SENT =
+  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** What the screen of a mailed link says of an invitation that is used, ran out or was withdrawn */
+const INVITATION_UNUSABLE = /取り消されています/
+
 const emailField = () => screen.getByRole('textbox', { name: 'メールアドレス' })
 
 const button = (name: string) => screen.getByRole('button', { name })
@@ -102,6 +114,19 @@ const staffPath = async (email: string): Promise<string> => {
 
   return `/salons/${salonId}/staff/${id}`
 }
+
+/** Lets the invitation of an address run out, as seven days do. */
+const letTheInvitationRunOut = (email: string) =>
+  testApi().query(
+    `update staff_invitations set "expiresAt" = now() - interval '1 minute' where email = $1`,
+    [email],
+  )
+
+/** Whether the invitation of an address can still be taken */
+const invitationsTo = async (email: string): Promise<unknown[]> =>
+  testApi().query('select 1 as open from staff_invitations where email = $1', [
+    email,
+  ])
 
 /** Invites a member of the staff, as the owner of the salon does. */
 const invite = async (email: string, owner: string): Promise<void> => {
@@ -308,6 +333,24 @@ describe('the screens of an account, against the API', () => {
       expect(await testApi().mailedLink(VISITOR)).not.toBe(first)
     })
 
+    it('should say that the mail was not asked for again when the API could not keep the new link', async () => {
+      // Arrange
+      renderAt('/register')
+      await register(VISITOR, PASSWORD)
+      await heading('確認メールを送りました')
+      await letTheMinutePass('emailVerificationExpiry', VISITOR)
+      await refuse('update', 'users')
+
+      // Act
+      await userEvent.click(button('確認メールをもう一度送る'))
+
+      // Assert
+      expect(await main().findByRole('alert')).toHaveTextContent(NOT_SENT)
+      expect(statuses()).toEqual([])
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(await subjectsTo(VISITOR)).toEqual(['メールアドレスの確認'])
+    })
+
     it('should say that the mail was asked for also within the minute, when the API sends none', async () => {
       // Arrange
       renderAt('/register')
@@ -369,6 +412,34 @@ describe('the screens of an account, against the API', () => {
       expect(await signInWith(VISITOR, PASSWORD)).toEqual({ type: 'signedIn' })
     })
 
+    it('should say that the address was not confirmed when the API could not write it, and confirm it when asked again', async () => {
+      // Arrange
+      await registerThroughApi(VISITOR)
+      await openMailedLink(VISITOR)
+      const confirm = await screen.findByRole('button', {
+        name: 'メールアドレスを確認する',
+      })
+      await refuse('update', 'users')
+
+      // Act
+      await userEvent.click(confirm)
+
+      // Assert
+      expect(await main().findByRole('alert')).toHaveTextContent(NOT_SENT)
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(await accountOf(VISITOR)).toEqual([
+        { status: 'unverified', emailVerified: false },
+      ])
+
+      // Act
+      await testApi().query('drop trigger refuse on users')
+      await userEvent.click(button('メールアドレスを確認する'))
+
+      // Assert
+      expect(await heading('メールアドレスを確認しました')).toHaveFocus()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
     it('should say that a link that was used works no more, and offer the ways on', async () => {
       // Arrange
       await registerThroughApi(VISITOR)
@@ -418,6 +489,28 @@ describe('the screens of an account, against the API', () => {
           })
         ).status,
       ).toBe(204)
+    })
+
+    it('should say at the form that no mail was sent when the API could not keep the new link', async () => {
+      // Arrange
+      await registerThroughApi(VISITOR)
+      await letTheMinutePass('emailVerificationExpiry', VISITOR)
+      await refuse('update', 'users')
+      renderAt('/verify-email')
+      await heading('メールアドレスの確認')
+      const user = userEvent.setup()
+
+      // Act
+      await user.type(emailField(), `${VISITOR}{Enter}`)
+
+      // Assert
+      expect(await main().findByText(NOT_SENT)).toBeVisible()
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'メールアドレスの確認',
+      )
+      expect(await findAccessibilityViolations()).toEqual([])
+      // The mail of the registration, and no other
+      expect(await subjectsTo(VISITOR)).toHaveLength(1)
     })
 
     it('should ask for the address of somebody who opens the page without a link, and say what is wrong with it', async () => {
@@ -491,6 +584,24 @@ describe('the screens of an account, against the API', () => {
       // Assert
       expect(await heading('再設定のメールを送りました')).toBeVisible()
       expect(main().getByText(new RegExp(`^${VISITOR}`))).toBeVisible()
+      expect(await testApi().mails()).toEqual([])
+    })
+
+    it('should say at the form that no mail was sent when the API could not keep the link', async () => {
+      // Arrange
+      await refuse('update', 'users')
+      renderAt('/forgot-password')
+
+      // Act
+      await askFor(CUSTOMER)
+
+      // Assert
+      expect(await main().findByText(NOT_SENT)).toBeVisible()
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+        'パスワードの再設定',
+      )
+      expect(emailField()).toHaveValue(CUSTOMER)
+      expect(await findAccessibilityViolations()).toEqual([])
       expect(await testApi().mails()).toEqual([])
     })
 
@@ -686,6 +797,32 @@ describe('the screens of an account, against the API', () => {
       })
     })
 
+    it('should say that the link was not checked when the API could not read it, and check it again when asked', async () => {
+      // Arrange
+      await askForResetThroughApi(CUSTOMER)
+      await takeAway('users', 'passwordResetTokenHash')
+      await openMailedLink(CUSTOMER)
+      expect(await main().findByRole('alert')).toHaveTextContent(NOT_SENT)
+      const notChecked = {
+        heading: screen.getByRole('heading', { level: 1 }).textContent,
+        password: screen.queryByLabelText('新しいパスワード'),
+        violations: await findAccessibilityViolations(),
+      }
+      await giveBack('users', 'passwordResetTokenHash')
+
+      // Act
+      await userEvent.click(button('もう一度確かめる'))
+
+      // Assert
+      expect(await screen.findByLabelText('新しいパスワード')).toBeRequired()
+      expect(notChecked).toEqual({
+        heading: 'パスワードの再設定',
+        password: null,
+        violations: [],
+      })
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
     it('should lead somebody who opens the page without a link to a new one, and ask the API nothing', async () => {
       // Arrange
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -770,6 +907,94 @@ describe('the screens of an account, against the API', () => {
       ).toEqual([{ open: 1 }])
     })
 
+    it('should not send a password that is too short', async () => {
+      // Arrange
+      await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+      await openMailedLink(STAFF_WITHOUT_ACCOUNT)
+      const password = await screen.findByLabelText('パスワード')
+      const fetched = vi.spyOn(globalThis, 'fetch')
+
+      // Act
+      await userEvent.type(password, 'kirei na kami{Enter}')
+
+      // Assert
+      expect(password).toHaveFocus()
+      expect(password).toHaveAccessibleDescription(
+        expect.stringContaining(TOO_SHORT),
+      )
+      expect(fetched).not.toHaveBeenCalled()
+    })
+
+    it('should say that the invitation works no more when it ran out while the password was chosen', async () => {
+      // Arrange
+      await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+      await openMailedLink(STAFF_WITHOUT_ACCOUNT)
+      const password = await screen.findByLabelText('パスワード')
+      await letTheInvitationRunOut(STAFF_WITHOUT_ACCOUNT)
+
+      // Act
+      await userEvent.type(password, `${PASSWORD}{Enter}`)
+
+      // Assert
+      expect(await heading('このリンクは使えません')).toHaveFocus()
+      expect(main().getByText(INVITATION_UNUSABLE)).toBeVisible()
+      expect(screen.queryByLabelText('パスワード')).not.toBeInTheDocument()
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(await accountOf(STAFF_WITHOUT_ACCOUNT)).toEqual([])
+    })
+
+    it('should say that the invitation cannot be used when its address got an account while the password was chosen', async () => {
+      // Arrange
+      await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+      await openMailedLink(STAFF_WITHOUT_ACCOUNT)
+      const password = await screen.findByLabelText('パスワード')
+      // Registered and confirmed: an account that never confirmed its address gives way to the invitation
+      await registerThroughApi(STAFF_WITHOUT_ACCOUNT)
+      await ask('/auth/verify-email/confirm', {
+        token: await tokenOf(STAFF_WITHOUT_ACCOUNT),
+      })
+
+      // Act
+      await userEvent.type(password, `${PASSWORD}{Enter}`)
+
+      // Assert
+      expect(await heading('このリンクは使えません')).toHaveFocus()
+      expect(
+        main().getByText(/すでにアカウントがあり、この招待は使えません/),
+      ).toBeVisible()
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(await accountOf(STAFF_WITHOUT_ACCOUNT)).toEqual([
+        { status: 'active', emailVerified: true },
+      ])
+      expect(await invitationsTo(STAFF_WITHOUT_ACCOUNT)).toEqual([{ open: 1 }])
+    })
+
+    it('should say that the invitation was not checked when the API could not read it, and check it again when asked', async () => {
+      // Arrange
+      await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+      await takeAway('staff_invitations')
+      await openMailedLink(STAFF_WITHOUT_ACCOUNT)
+      expect(await main().findByRole('alert')).toHaveTextContent(NOT_SENT)
+      const notChecked = {
+        heading: screen.getByRole('heading', { level: 1 }).textContent,
+        password: screen.queryByLabelText('パスワード'),
+        violations: await findAccessibilityViolations(),
+      }
+      await giveBack('staff_invitations')
+
+      // Act
+      await userEvent.click(button('もう一度確かめる'))
+
+      // Assert
+      expect(await screen.findByLabelText('パスワード')).toBeRequired()
+      expect(notChecked).toEqual({
+        heading: 'スタッフアカウントへの招待',
+        password: null,
+        violations: [],
+      })
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+
     it('should ask somebody who has an account of the staff to sign in with it, and tie that account to the salon', async () => {
       // Arrange: the account of a stylist is taken from the salon, and the stylist is invited again
       const owner = await accessTokenOf(OWNER)
@@ -849,6 +1074,74 @@ describe('the screens of an account, against the API', () => {
       expect(
         await testApi().query('select 1 as open from staff_invitations'),
       ).toEqual([{ open: 1 }])
+    })
+
+    describe('with the account of the staff signed in', () => {
+      /** Opens the invitation of the stylist, whose account was taken from the salon, with that account signed in */
+      const openAsTheStylist = async (): Promise<HTMLElement> => {
+        const owner = await accessTokenOf(OWNER)
+        await ask(
+          `${await staffPath(STAFF_WITH_ACCOUNT)}/account`,
+          {},
+          { method: 'DELETE', accessToken: owner },
+        )
+        await invite(STAFF_WITH_ACCOUNT, owner)
+        await signInWith(STAFF_WITH_ACCOUNT, testApi().seedPassword)
+        await openMailedLink(STAFF_WITH_ACCOUNT)
+
+        return screen.findByRole('button', { name: '招待を受ける' })
+      }
+
+      it('should say that the invitation works no more when it ran out before it was taken', async () => {
+        // Arrange
+        const join = await openAsTheStylist()
+        await letTheInvitationRunOut(STAFF_WITH_ACCOUNT)
+
+        // Act
+        await userEvent.click(join)
+
+        // Assert
+        expect(await heading('このリンクは使えません')).toHaveFocus()
+        expect(main().getByText(INVITATION_UNUSABLE)).toBeVisible()
+        expect(await findAccessibilityViolations()).toEqual([])
+      })
+
+      it('should ask for the sign-in again when the session ended before the invitation was taken', async () => {
+        // Arrange
+        const join = await openAsTheStylist()
+        await testApi().query('delete from sessions')
+
+        // Act
+        await userEvent.click(join)
+
+        // Assert
+        expect(await heading('サインイン')).toBeVisible()
+        expect(statuses()).toEqual([
+          `この招待は、${STAFF_WITH_ACCOUNT} のスタッフのアカウントで受けられます。そのアカウントでサインインしてください。`,
+        ])
+        expect(await invitationsTo(STAFF_WITH_ACCOUNT)).toEqual([{ open: 1 }])
+      })
+
+      it('should say that the invitation was not taken when the API could not write it, and leave it open', async () => {
+        // Arrange
+        const join = await openAsTheStylist()
+        await refuse('delete', 'staff_invitations')
+
+        // Act
+        await userEvent.click(join)
+
+        // Assert
+        expect(await main().findByRole('alert')).toHaveTextContent(NOT_SENT)
+        expect(join).toBeEnabled()
+        expect(await findAccessibilityViolations()).toEqual([])
+        expect(await invitationsTo(STAFF_WITH_ACCOUNT)).toEqual([{ open: 1 }])
+        expect(
+          await testApi().query(
+            'select count(*)::int as linked from staff where email = $1 and "userId" is not null',
+            [STAFF_WITH_ACCOUNT],
+          ),
+        ).toEqual([{ linked: 0 }])
+      })
     })
 
     it('should say that the invitation cannot be used when its address has an account of another kind', async () => {

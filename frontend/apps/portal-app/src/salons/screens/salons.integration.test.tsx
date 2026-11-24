@@ -101,6 +101,30 @@ const reviewTitles = (reviews: HTMLElement): (string | null | undefined)[] =>
       (review) => within(review).getAllByRole('paragraph').at(1)?.textContent,
     )
 
+/**
+ * Twelve earlier visits of the first visit that was completed at the salon in
+ * Tokyo, each with a review: a visit has one review.
+ */
+const reviewEarlierVisits = async (): Promise<void> => {
+  await testApi().query(
+    `with visits as (
+       insert into bookings ("bookingNumber", "salonId", "customerId", "staffId", "bookingDate", "startTime", "endTime",
+                             duration, status, subtotal, "discountAmount", "taxAmount", "totalAmount", "completedAt")
+       select 'EARLIER-' || n, visit."salonId", visit."customerId", visit."staffId", visit."bookingDate" - 7 * n,
+              visit."startTime" - n * interval '7 days', visit."endTime" - n * interval '7 days',
+              visit.duration, 'completed', visit.subtotal, visit."discountAmount", visit."taxAmount", visit."totalAmount",
+              visit."endTime" - n * interval '7 days'
+       from (select * from bookings where "salonId" = $1 and status = 'completed' order by "startTime" limit 1) visit
+       cross join generate_series(1, 12) n
+       returning id, "salonId", "customerId", "completedAt"
+     )
+     insert into reviews ("salonId", "customerId", "bookingId", "overallRating", title, comment, "isVerified", "createdAt")
+     select "salonId", "customerId", id, 4, 'An earlier visit', 'As good as ever', true, "completedAt" + interval '1 day'
+     from visits`,
+    [await salonIdOf(TOKYO)],
+  )
+}
+
 describe('the screens of the salons, against the API', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_MODE', 'production')
@@ -837,24 +861,8 @@ describe('the screens of the salons, against the API', () => {
     })
 
     it('should show the first reviews, add the next ones below when asked, and move the focus to the first that was added', async () => {
-      // Arrange: a visit has one review, so twelve earlier visits with a review each
-      await testApi().query(
-        `with visits as (
-           insert into bookings ("bookingNumber", "salonId", "customerId", "staffId", "bookingDate", "startTime", "endTime",
-                                 duration, status, subtotal, "discountAmount", "taxAmount", "totalAmount", "completedAt")
-           select 'EARLIER-' || n, visit."salonId", visit."customerId", visit."staffId", visit."bookingDate" - 7 * n,
-                  visit."startTime" - n * interval '7 days', visit."endTime" - n * interval '7 days',
-                  visit.duration, 'completed', visit.subtotal, visit."discountAmount", visit."taxAmount", visit."totalAmount",
-                  visit."endTime" - n * interval '7 days'
-           from (select * from bookings where "salonId" = $1 and status = 'completed' order by "startTime" limit 1) visit
-           cross join generate_series(1, 12) n
-           returning id, "salonId", "customerId", "completedAt"
-         )
-         insert into reviews ("salonId", "customerId", "bookingId", "overallRating", title, comment, "isVerified", "createdAt")
-         select "salonId", "customerId", id, 4, 'An earlier visit', 'As good as ever', true, "completedAt" + interval '1 day'
-         from visits`,
-        [await salonIdOf(TOKYO)],
-      )
+      // Arrange
+      await reviewEarlierVisits()
       renderAt(await salonPathOf(TOKYO))
       const reviews = await part('レビュー')
       const list = await within(reviews).findByRole('list', {
@@ -873,6 +881,37 @@ describe('the screens of the salons, against the API', () => {
       })
       expect(within(list).getAllByRole('listitem').at(10)).toHaveFocus()
       expect(within(reviews).queryByRole('button')).toBeNull()
+    })
+
+    it('should keep the reviews it has when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      await reviewEarlierVisits()
+      renderAt(await salonPathOf(TOKYO))
+      const reviews = await part('レビュー')
+      const list = await within(reviews).findByRole('list', {
+        name: 'レビュー',
+      })
+      const user = userEvent.setup()
+      await takeAway('reviews')
+      await user.click(
+        within(reviews).getByRole('button', { name: 'さらに表示' }),
+      )
+      expect(await within(reviews).findByRole('alert')).toHaveTextContent(
+        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(within(list).getAllByRole('listitem')).toHaveLength(10)
+      await giveBack('reviews')
+
+      // Act
+      await user.click(
+        within(reviews).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      await waitFor(() => {
+        expect(within(list).getAllByRole('listitem')).toHaveLength(15)
+      })
+      expect(within(reviews).queryByRole('alert')).toBeNull()
     })
 
     it('should say so of every part when the salon has nothing to show there', async () => {
@@ -1056,23 +1095,63 @@ describe('the screens of the salons, against the API', () => {
       expect(within(reviews).queryByRole('alert')).toBeNull()
     })
 
-    it('should say that the menu could not be read, and leave the rest of the page as it is', async () => {
+    it('should say that the menu could not be read, leave the rest of the page as it is, and read the menu when asked again', async () => {
       // Arrange
       const path = await salonPathOf(TOKYO)
       await takeAway('services')
-
-      // Act
       renderAt(path)
-
-      // Assert
-      expect(
-        await within(await part('メニュー')).findByRole('alert'),
-      ).toHaveTextContent(`メニュー${UNREAD}`)
+      const menu = await part('メニュー')
+      expect(await within(menu).findByRole('alert')).toHaveTextContent(
+        `メニュー${UNREAD}`,
+      )
       expect(
         await within(await part('レビュー')).findByRole('list', {
           name: 'レビュー',
         }),
       ).toBeVisible()
+      await giveBack('services')
+
+      // Act
+      await userEvent.click(
+        within(menu).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(
+        await within(menu).findByRole('list', { name: 'Hair Cut' }),
+      ).toBeVisible()
+      expect(within(menu).queryByRole('alert')).toBeNull()
+    })
+
+    it('should say that the people of the salon could not be read, and read them when asked again', async () => {
+      // Arrange: the profiles of the staff alone read it: the reviews read other columns of the table
+      const path = await salonPathOf(TOKYO)
+      await takeAway('staff', 'bio')
+      renderAt(path)
+      const staff = await part('スタッフ')
+      expect(await within(staff).findByRole('alert')).toHaveTextContent(
+        `スタッフ${UNREAD}`,
+      )
+      expect(
+        await within(await part('メニュー')).findByRole('list', {
+          name: 'Hair Cut',
+        }),
+      ).toBeVisible()
+      await giveBack('staff', 'bio')
+
+      // Act
+      await userEvent.click(
+        within(staff).getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(
+        await within(staff).findByRole('heading', {
+          level: 3,
+          name: 'Mika Suzuki',
+        }),
+      ).toBeVisible()
+      expect(within(staff).queryByRole('alert')).toBeNull()
     })
 
     it('should have no accessibility violations', async () => {

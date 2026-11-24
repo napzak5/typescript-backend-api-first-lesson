@@ -82,7 +82,7 @@ type Api = {
   /** The page of the bookings that begins after `cursor` */
   bookings: (cursor: string | null) => Response
   staffOf: (salonId: string) => Response
-  member: (id: string) => Response
+  member: (id: string) => Response | Promise<Response>
   salon: (id: string) => Response
 }
 
@@ -167,6 +167,15 @@ const HALVES: [string, Partial<Api>][] = [
   [
     'a member',
     { member: (id) => (id === YUI.id ? problem(500) : API.member(id)) },
+  ],
+  [
+    'a member, with no answer at all',
+    {
+      member: (id) =>
+        id === YUI.id
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : API.member(id),
+    },
   ],
   [
     'a salon',

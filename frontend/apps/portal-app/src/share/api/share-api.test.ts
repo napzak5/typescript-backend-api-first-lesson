@@ -26,6 +26,16 @@ const DOWNLOAD_URL = `${STORAGE}/attachments-of-a-salon/attachments/1?X-Amz-Sign
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
+/**
+ * An answer whose body breaks off while it is read, as when the connection
+ * ends half way. jsdom has no `ReadableStream` to make one of.
+ */
+class CutShort extends Response {
+  override arrayBuffer(): Promise<ArrayBuffer> {
+    return Promise.reject(new TypeError('network error'))
+  }
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -189,15 +199,7 @@ describe('loadSharedFile', () => {
     ['no answer', () => Promise.reject(new TypeError('Failed to fetch'))],
     [
       'a file it could not send to its end',
-      () =>
-        new Response(
-          new ReadableStream({
-            start(controller) {
-              controller.error(new TypeError('network error'))
-            },
-          }),
-          { status: 200 },
-        ),
+      () => new CutShort(PNG, { status: 200 }),
     ],
   ])(
     'should say that the file was not fetched after the storage answered %s',

@@ -1,7 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked, sent } from '@beauty-salon-frontend/testing/answers'
-import { giveBack, takeAway } from '@beauty-salon-frontend/testing/api'
+import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -110,6 +110,29 @@ const confirmButton = () =>
   within(dialog()).getByRole('button', { name: '削除する' })
 
 const saveButton = () => button('変更を保存する')
+
+/**
+ * Removes a salon the moment the screen asks for it, and lets the API
+ * answer then. The API answers a review while its salon is there: the
+ * salon goes between the review and its name.
+ */
+const removeTheSalonWhenAskedFor = (salonId: string): void => {
+  const answer = globalThis.fetch
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const request = new Request(input, init)
+    if (
+      request.method === 'GET' &&
+      new URL(request.url).pathname.endsWith(`/salons/${salonId}`)
+    ) {
+      await testApi().query(
+        'update salons set "deletedAt" = now() where id = $1::uuid',
+        [salonId],
+      )
+    }
+
+    return answer(input, init)
+  })
+}
 
 /** A line of what was asked that is about the reviews: the screen asks for more than them. */
 const ofTheReviews = (line: string): boolean => line.includes(' /reviews')
@@ -312,6 +335,25 @@ describe('what a customer wrote, against the API', () => {
 
       // Act
       await giveBack('reviews')
+      await userEvent.click(button('もう一度読み込む'))
+
+      // Assert
+      expect(await listed()).toHaveLength(1)
+    })
+
+    it('should say that the reviews could not be read when who the customer is could not, and list them when asked again', async () => {
+      // Arrange: the reviews are listed by the customer the profile of the account names
+      await takeAway('customers')
+
+      // Act
+      renderAt(LIST)
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(NOT_READ)
+      expect(screen.queryByRole('list', { name: LIST_TITLE })).toBeNull()
+
+      // Act
+      await giveBack('customers')
       await userEvent.click(button('もう一度読み込む'))
 
       // Assert
@@ -701,6 +743,24 @@ describe('what a customer wrote, against the API', () => {
       // Assert
       await screen.findByText(CHANGED)
       expect(await storedReviewOf(visit.id)).toMatchObject({ staffRating: 4 })
+    })
+
+    it('should say that the salon of the review is no longer listed when it went while the review was read', async () => {
+      // Arrange
+      const visit = await visitReviewed()
+      removeTheSalonWhenAskedFor(visit.salonId)
+
+      // Act
+      renderAt(changePathOf(visit.reviewId))
+
+      // Assert
+      await overall()
+      const about = screen.getByRole('region', { name: '変更するレビュー' })
+      expect(detailsIn(about)).toMatchObject({
+        サロン: 'サロン（掲載を終えています）',
+      })
+      expect(within(about).queryByRole('link')).toBeNull()
+      expect(await findAccessibilityViolations()).toEqual([])
     })
 
     it('should not send a title that is too long: it says so at the title, where the focus goes', async () => {

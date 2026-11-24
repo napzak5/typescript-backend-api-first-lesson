@@ -62,6 +62,13 @@ const offeredTimes = async (): Promise<(string | null | undefined)[]> =>
 const time = (label: string) => screen.getByRole('radio', { name: label })
 
 /** The names and the values of a record, as a description list shows them. */
+/** How a page in Japanese writes a day of the calendar in full: 「2026年12月9日水曜日」. */
+const fullDay = (date: string): string =>
+  new Intl.DateTimeFormat('ja-JP', {
+    dateStyle: 'full',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`))
+
 const detailsIn = (region: HTMLElement): Record<string, string | null> =>
   Object.fromEntries(
     within(region)
@@ -905,6 +912,109 @@ describe('the screens of a booking, against the API', () => {
       expect(sendButton()).toBeVisible()
     })
 
+    it.each([
+      {
+        what: 'the staff',
+        // The profiles of the staff alone read it: the sign-in reads other columns of the table
+        table: 'staff',
+        column: 'bio',
+        said: 'スタッフを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
+      {
+        what: 'the profile of the customer',
+        table: 'customers',
+        column: undefined,
+        said: 'お客様の情報を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
+    ])(
+      'should say that $what could not be read below what is booked, and go on to the times when asked again',
+      async ({ table, column, said }) => {
+        // Arrange
+        await signedInAs(CUSTOMER)
+        const path = await bookingPathOf()
+        await takeAway(table, column)
+        renderAt(path)
+
+        // Assert
+        expect(await screen.findByRole('alert')).toHaveTextContent(said)
+        expect(
+          screen.getByRole('region', { name: 'ご予約の内容' }),
+        ).toBeVisible()
+        expect(screen.queryByRole('combobox', { name: 'スタッフ' })).toBeNull()
+        expect(await findAccessibilityViolations()).toEqual([])
+
+        // Act
+        await giveBack(table, column)
+        await userEvent.click(
+          screen.getByRole('button', { name: 'もう一度読み込む' }),
+        )
+
+        // Assert
+        expect(await staffControl()).toBeVisible()
+        expect(screen.queryByRole('alert')).toBeNull()
+      },
+    )
+
+    it('should say that the salon could not be read, and read it when asked again', async () => {
+      // Arrange: the salon is read with its opening hours, the service without them
+      await signedInAs(CUSTOMER)
+      const path = await bookingPathOf()
+      await takeAway('opening_hours')
+      renderAt(path)
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'サロンを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(await heading('予約する')).toBeVisible()
+
+      // Act
+      await giveBack('opening_hours')
+      await userEvent.click(
+        screen.getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(
+        await screen.findByRole('region', { name: 'ご予約の内容' }),
+      ).toBeVisible()
+    })
+
+    it('should ask who the customer is when their profile went while the time was chosen, and book nothing', async () => {
+      // Arrange: the salon removes the record of the customer behind the
+      // screen, as the ledger does: the account names it no more
+      await signedInAs(CUSTOMER)
+      const date = await openDay({ [HIROSHI]: '10:00' })
+      renderAt(`${await bookingPathOf()}?date=${date}`)
+      await offeredTimes()
+      await userEvent.click(time('10:00'))
+      await testApi().query(
+        'update customers set "deletedAt" = now() where email = $1',
+        [CUSTOMER],
+      )
+      await testApi().query(
+        'update users set "customerId" = null where email = $1',
+        [CUSTOMER],
+      )
+
+      // Act
+      await userEvent.click(sendButton())
+
+      // Assert
+      expect(
+        await screen.findByRole('region', { name: 'お客様の情報' }),
+      ).toBeVisible()
+      expect(screen.queryByRole('combobox', { name: 'スタッフ' })).toBeNull()
+      expect(await findAccessibilityViolations()).toEqual([])
+      expect(
+        await testApi().query(
+          `select bookings.id from bookings join customers on customers.id = bookings."customerId"
+           where customers.email = $1 and bookings."bookingDate" = $2::date`,
+          [CUSTOMER, date],
+        ),
+      ).toEqual([])
+    })
+
     it('should have no accessibility violations, with times, without, and while it asks who the customer is', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
@@ -1219,6 +1329,30 @@ describe('the screens of a booking, against the API', () => {
           name: `予約番号 ${bookingNumber}`,
         }),
       ).toBeVisible()
+    })
+
+    it('should name the day alone of a booking at a salon that is no longer there when it asks before the cancellation', async () => {
+      // Arrange: the time of a booking is told on the clock of its salon
+      await signedInAs(CUSTOMER)
+      const { id, date } = await book()
+      await testApi().query(
+        'update salons set "deletedAt" = now() where name = $1',
+        [TOKYO],
+      )
+      renderAt(`/bookings/${id}`)
+
+      // Act
+      await userEvent.click(
+        await screen.findByRole('button', { name: '予約をキャンセルする' }),
+      )
+
+      // Assert
+      expect(
+        screen.getByRole('dialog', { name: '予約をキャンセルしますか？' }),
+      ).toHaveAccessibleDescription(
+        `${fullDay(date)}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`,
+      )
+      expect(screen.queryByRole('link', { name: '日時を変更する' })).toBeNull()
     })
 
     it('should have no accessibility violations', async () => {
