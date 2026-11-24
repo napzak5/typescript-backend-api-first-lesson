@@ -1,27 +1,3 @@
-import { defaultClientConditions, defaultServerConditions } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { frontendTests } from '@beauty-salon-shared/config/vitest'
 
-// Workspace packages are tested from source, not from their last build
-const SOURCE = '@beauty-salon-frontend/source'
-
-export default defineConfig({
-  resolve: {
-    conditions: [SOURCE, ...defaultClientConditions],
-  },
-  ssr: {
-    resolve: {
-      conditions: [SOURCE, ...defaultServerConditions],
-    },
-  },
-  test: {
-    environment: 'jsdom',
-    setupFiles: [
-      '@beauty-salon-frontend/testing/setup',
-      '@beauty-salon-frontend/testing/stories',
-    ],
-    css: {
-      // The class names of the CSS Modules, as they are written
-      modules: { classNameStrategy: 'non-scoped' },
-    },
-  },
-})
+export default frontendTests({ unit: { environment: 'jsdom', stories: true } })

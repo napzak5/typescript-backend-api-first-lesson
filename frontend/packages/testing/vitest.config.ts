@@ -1,9 +1,6 @@
-import { configDefaults, defineConfig } from 'vitest/config'
+import { frontendTests } from '@beauty-salon-shared/config/vitest'
 
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/setup/setup.ts'],
-    exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
-  },
+export default frontendTests({
+  unit: { environment: 'jsdom' },
+  integration: {},
 })

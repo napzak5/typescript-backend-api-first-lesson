@@ -62,8 +62,9 @@
     "build:prod": "vite build --mode production",
     "build:watch": "vite build --watch --mode development",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",

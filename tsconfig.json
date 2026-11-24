@@ -5,12 +5,16 @@
     "incremental": false,
     "allowJs": false,
     "erasableSyntaxOnly": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true
   },
   "include": [
     "scripts/**/*.ts",
     "backend/packages/*/vite.config.ts",
     "frontend/packages/*/vite.config.ts",
-    "shared-i18n/vite.config.ts"
+    "shared-i18n/vite.config.ts",
+    "backend/*/*/vitest.config.ts",
+    "frontend/*/*/vitest.config.ts",
+    "shared-i18n/vitest.config.ts"
   ]
 }

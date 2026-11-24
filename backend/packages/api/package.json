@@ -23,10 +23,11 @@
     "build:stg": "vite build --mode staging",
     "build:prod": "vite build --mode production",
     "build:watch": "vite build --watch --mode development",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
     "test:server": "NODE_ENV=test TESTCONTAINERS_RYUK_DISABLED=true DOCKER_CONFIG=/dev/null TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock tsx --conditions=@beauty-salon-backend/source src/__tests__/test-server/main.ts",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
