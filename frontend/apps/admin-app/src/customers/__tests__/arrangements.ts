@@ -122,6 +122,15 @@ export const requestMeanwhile = (
     [email, specialRequests],
   )
 
+/**
+ * Lets the account of the address have become a member of the staff
+ * meanwhile, as an owner or a manager who is one no more: the API takes
+ * the role of the account at every request, and refuses what only those
+ * who keep the ledger do.
+ */
+export const madeStaffMeanwhile = (email: string): Promise<unknown> =>
+  testApi().query(`update users set role = 'staff' where email = $1`, [email])
+
 /** Lets a salon remove a member of its staff meanwhile. */
 export const staffRemovedMeanwhile = (displayName: string): Promise<unknown> =>
   testApi().query(
@@ -428,7 +437,8 @@ export const isInLedger = async (customerId: string): Promise<boolean> =>
 
 /** A transaction of the points of a customer, as a test arranges it. */
 export type ArrangedTransaction = {
-  type: 'earned' | 'used' | 'adjusted'
+  /** What it was: `transferred` is what a merge moved from the customer it names */
+  type: 'earned' | 'used' | 'adjusted' | 'transferred'
   /** How the balance moves: negative when it falls */
   points: number
   /** How many days before now it was recorded */
@@ -437,7 +447,7 @@ export type ArrangedTransaction = {
   /** The day the points given expire on, in days from today in Tokyo */
   expiresIn?: number | null
   /** The record it was made for */
-  reference?: { type: 'sale' | 'booking'; id: string } | null
+  reference?: { type: 'sale' | 'booking' | 'customer'; id: string } | null
 }
 
 /**

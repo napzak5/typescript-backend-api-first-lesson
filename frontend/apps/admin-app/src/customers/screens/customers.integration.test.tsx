@@ -3,9 +3,15 @@ import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
+  idOf,
   refuse,
   salonIdOf,
   signInAs,
+  takeAway,
+  testApi,
+  unreadable,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -16,6 +22,7 @@ import {
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
+  OPERATOR,
   OSAKA,
   OWNER,
   SAKURA,
@@ -37,6 +44,7 @@ import {
   giveReferralCode,
   referredMeanwhile,
   registeredDaysAgo,
+  registeredMeanwhile,
   removeMeanwhile,
   storedCustomerCount,
   storedCustomerOf,
@@ -117,6 +125,18 @@ const chooseReferrer = async (
     await within(referrerDialog()).findByRole('button', { name }),
   )
 }
+
+/** What is said of what could not be read, by what it is */
+const unread = (what: string): string =>
+  `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
+
+/** What is said when the next page of a list could not be read */
+const NEXT_UNREAD =
+  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** Lets a row of the customers be one the API cannot answer with; what it returns gives the row back. */
+const unreadableCustomer = async (email: string) =>
+  unreadable('customers', 'createdAt', await customerIdOf(email))
 
 /** The customers of the seed data, in alphabetical order */
 const EVERYONE = [YUKI.name, KENJI.name, SAKURA.name, VIP.name].toSorted()
@@ -319,6 +339,85 @@ describe('the ledger of the customers, against the API', () => {
       expect(screen.getByText('21 人')).toBeVisible()
       expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
     })
+
+    it('should read the ledger anew when the same conditions are sent again, and show who was registered meanwhile', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await openAt((salon) => `/salons/${salon}/customers?search=Hanako`)
+      expect(
+        await screen.findByText('条件に合うお客様はいません'),
+      ).toBeVisible()
+      await registeredMeanwhile(
+        { lastName: 'Yamada', firstName: 'Hanako', email: NEW_EMAIL },
+        OWNER,
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '探す' }))
+
+      // Assert
+      await theLedger('条件に合うお客様')
+      expect(namesIn('条件に合うお客様')).toEqual(['Yamada Hanako'])
+    })
+
+    it('should say that the ledger has nobody yet, and offer to register the first customer', async () => {
+      // Arrange
+      await testApi().query('update customers set "deletedAt" = now()')
+
+      // Act
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+
+      // Assert
+      expect(await screen.findByText('台帳にお客様はいません')).toBeVisible()
+      expect(screen.getByText('最初のお客様を登録してください。')).toBeVisible()
+      expect(
+        screen
+          .getAllByRole('link', { name: 'お客様を登録する' })
+          .map((link) => link.getAttribute('href')),
+      ).toEqual([
+        `/salons/${tokyo}/customers/new`,
+        `/salons/${tokyo}/customers/new`,
+      ])
+    })
+
+    it('should say that the ledger could not be read, and show it when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const giveTheRowBack = await unreadableCustomer(YUKI.email)
+      await openAt((salon) => `/salons/${salon}/customers`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('顧客台帳'),
+      )
+      await giveTheRowBack()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await theLedger()
+      expect(namesIn('顧客台帳')).toEqual(EVERYONE)
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should keep the customers it has when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeCustomers(21, 'walk-in')
+      await openAt((salon) => `/salons/${salon}/customers?tags=walk-in`)
+      await theLedger('条件に合うお客様')
+      await takeAway('customers')
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(rowsOf('条件に合うお客様')).toHaveLength(20)
+      await giveBack('customers')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await waitFor(() => expect(rowsOf('条件に合うお客様')).toHaveLength(21))
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
   })
 
   describe('registering a customer', () => {
@@ -461,6 +560,80 @@ describe('the ledger of the customers, against the API', () => {
       // Assert
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       expect(text('紹介元')).toHaveValue('なし')
+    })
+
+    it('should say in the dialog that the customers could not be searched, and find them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+      await takeAway('customers')
+      await user.type(
+        within(referrerDialog()).getByRole('searchbox', {
+          name: 'キーワード',
+        }),
+        'ヤマモト{Enter}',
+      )
+      expect(
+        await within(referrerDialog()).findByRole('alert'),
+      ).toHaveTextContent(unread('お客様'))
+      await giveBack('customers')
+
+      // Act
+      await user.click(
+        within(referrerDialog()).getByRole('button', {
+          name: 'もう一度読み込む',
+        }),
+      )
+
+      // Assert
+      expect(
+        await within(referrerDialog()).findByRole('button', {
+          name: KENJI.name,
+        }),
+      ).toBeVisible()
+      expect(within(referrerDialog()).queryByRole('alert')).toBeNull()
+    })
+
+    it('should keep the customers found in the dialog when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const found = (): HTMLElement[] =>
+        within(referrerDialog()).getAllByRole('button', { name: /^Walk In / })
+      await arrangeCustomers(21, 'walk-in')
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+      await user.type(
+        within(referrerDialog()).getByRole('searchbox', {
+          name: 'キーワード',
+        }),
+        'walk-in{Enter}',
+      )
+      await within(referrerDialog()).findByRole('button', {
+        name: 'Walk In 01',
+      })
+      await takeAway('customers')
+      await user.click(
+        within(referrerDialog()).getByRole('button', { name: 'さらに表示' }),
+      )
+      expect(
+        await within(referrerDialog()).findByRole('alert'),
+      ).toHaveTextContent(NEXT_UNREAD)
+      expect(found()).toHaveLength(20)
+      await giveBack('customers')
+
+      // Act
+      await user.click(
+        within(referrerDialog()).getByRole('button', {
+          name: 'もう一度読み込む',
+        }),
+      )
+
+      // Assert
+      await waitFor(() => expect(found()).toHaveLength(21))
+      expect(within(referrerDialog()).queryByRole('alert')).toBeNull()
     })
 
     it('should say what is missing at each control, and send nothing', async () => {
@@ -650,6 +823,177 @@ describe('the ledger of the customers, against the API', () => {
       expect(address()).toBe(
         `/salons/${tokyo}/customers/${sakura}?from=${from}&to=${to}`,
       )
+    })
+
+    it('should say that the customer could not be read, and show them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const sakura = await customerIdOf(SAKURA.email)
+      const giveTheRowBack = await unreadableCustomer(SAKURA.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('お客様'),
+      )
+      await giveTheRowBack()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await theCustomer()
+      expect(describedIn('台帳')).toMatchObject({
+        電話番号: '+81-70-1111-2222',
+      })
+    })
+
+    it('should say in their parts that the preferences and the use of the salon could not be read, and show them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangePreferences(SAKURA.email)
+      await takeAway('customer_preferences')
+      await takeAway('payment_transactions')
+      const sakura = await customerIdOf(SAKURA.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`)
+      expect(
+        await within(
+          await screen.findByRole('region', { name: '好み設定' }),
+        ).findByRole('alert'),
+      ).toHaveTextContent(unread('好み設定'))
+      expect(
+        await within(part('このサロンでの利用')).findByRole('alert'),
+      ).toHaveTextContent(unread('利用の集計'))
+      await giveBack('customer_preferences')
+      await giveBack('payment_transactions')
+
+      // Act
+      await user.click(
+        within(part('好み設定')).getByRole('button', {
+          name: 'もう一度読み込む',
+        }),
+      )
+      await user.click(
+        within(part('このサロンでの利用')).getByRole('button', {
+          name: 'もう一度読み込む',
+        }),
+      )
+
+      // Assert
+      await within(part('好み設定')).findAllByRole('term')
+      expect(describedIn('好み設定')).toMatchObject({
+        指名したいスタッフ: 'Hiroshi Tanaka',
+      })
+      await within(part('このサロンでの利用')).findAllByRole('term')
+      expect(describedIn('このサロンでの利用')).toMatchObject({
+        予約: '2 件',
+      })
+    })
+
+    it.each<[string, string, string]>([
+      ['the preferences', 'preferences', '好み設定'],
+      ['the use of the salon', 'statistics', 'このサロンでの利用'],
+    ])(
+      'should say in its part that the customer was removed when it happened as %s were read',
+      async (_case, read, name) => {
+        // Arrange
+        const sakura = await customerIdOf(SAKURA.email)
+        whenAskedFor(`GET /customers/${sakura}/${read}`, () =>
+          removeMeanwhile(SAKURA.email),
+        )
+
+        // Act
+        await openAt((salon) => `/salons/${salon}/customers/${sakura}`)
+
+        // Assert
+        expect(
+          await within(await screen.findByRole('region', { name })).findByText(
+            'このお客様は、台帳から削除されました。',
+          ),
+        ).toBeVisible()
+      },
+    )
+
+    it('should count the same period again when it is asked for, with what happened meanwhile', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const sakura = await customerIdOf(SAKURA.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`)
+      await theCustomer()
+      expect(describedIn('このサロンでの利用')).toMatchObject({ 予約: '2 件' })
+      await arrange({
+        bookingNumber: 'BK-TEST-0901',
+        day: -3,
+        at: '10:00',
+        status: 'completed',
+        customer: SAKURA.email,
+      })
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '集計する' }))
+
+      // Assert
+      await waitFor(() =>
+        expect(describedIn('このサロンでの利用')).toMatchObject({
+          予約: '3 件',
+        }),
+      )
+    })
+
+    it('should lead an administrator to the account a customer signs in with', async () => {
+      // Arrange
+      const sakura = await customerIdOf(SAKURA.email)
+      const account = await idOf(
+        'select "userId"::text as id from customers where id = $1',
+        [sakura],
+      )
+
+      // Act
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`, OPERATOR)
+
+      // Assert
+      const signIn = await screen.findByRole('region', {
+        name: 'ログインアカウント',
+      })
+      expect(signIn).toHaveTextContent(
+        'このお客様は、ポータルにログインするアカウントを持っています。',
+      )
+      expect(
+        within(signIn).getByRole('link', { name: 'アカウントの状態を見る' }),
+      ).toHaveAttribute('href', `/users/${account}`)
+    })
+
+    it('should tell an administrator that a customer registered at a salon has no account to sign in with', async () => {
+      // Arrange
+      await registeredMeanwhile(
+        { lastName: 'Yamada', firstName: 'Hanako', email: NEW_EMAIL },
+        OWNER,
+      )
+      const hanako = await customerIdOf(NEW_EMAIL)
+
+      // Act
+      await openAt((salon) => `/salons/${salon}/customers/${hanako}`, OPERATOR)
+
+      // Assert
+      const signIn = await screen.findByRole('region', {
+        name: 'ログインアカウント',
+      })
+      expect(signIn).toHaveTextContent(
+        'このお客様は、ポータルのアカウントを持っていません。',
+      )
+      expect(within(signIn).queryByRole('link')).toBeNull()
+    })
+
+    it('should not show a member of a salon the account a customer signs in with', async () => {
+      // Arrange
+      const sakura = await customerIdOf(SAKURA.email)
+
+      // Act
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`, OWNER)
+
+      // Assert
+      await theCustomer()
+      expect(
+        screen.queryByRole('region', { name: 'ログインアカウント' }),
+      ).toBeNull()
     })
 
     it('should lead from a booking to its customer, and from the customer to a new booking of theirs', async () => {
@@ -1028,6 +1372,47 @@ describe('the ledger of the customers, against the API', () => {
       // Assert
       await heading('お客様が見つかりません')
       expect(screen.getByRole('link', { name: '顧客台帳へ' })).toBeVisible()
+    })
+
+    it('should say at its control what is wrong with a value, and change nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      const { updatedAt } = await storedCustomerOf(KENJI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+
+      // Act
+      await user.clear(text('姓'))
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      expect(text('姓')).toHaveAttribute('aria-invalid', 'true')
+      expect(text('姓')).toHaveFocus()
+      expect((await storedCustomerOf(KENJI.email)).updatedAt).toBe(updatedAt)
+    })
+
+    it('should say that the referrer could not be read, and open the form with them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await referredMeanwhile(SAKURA.email, YUKI.email)
+      const sakura = await customerIdOf(SAKURA.email)
+      const giveTheRowBack = await unreadableCustomer(YUKI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}/edit`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('紹介元'),
+      )
+      expect(screen.queryByRole('textbox', { name: '姓' })).toBeNull()
+      await giveTheRowBack()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('textbox', { name: '紹介元' }),
+      ).toHaveValue(`${YUKI.name} 様`)
     })
 
     it('should say that the ledger was not changed when the database fails, and keep what was filled in', async () => {

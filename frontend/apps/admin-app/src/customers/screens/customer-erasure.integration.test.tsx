@@ -1,6 +1,13 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  refuse,
+  salonIdOf,
+  signInAs,
+  takeAway,
+  whenAskedFor,
+} from '@beauty-salon-frontend/testing/api'
 import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
@@ -21,6 +28,7 @@ import {
   cancelledMeanwhile,
   customerIdOf,
   erasedMeanwhile,
+  madeStaffMeanwhile,
   removedMeanwhile,
   storedErasureRequestsOf,
 } from '../__tests__/arrangements'
@@ -202,6 +210,83 @@ describe('the requests of a customer to have their data erased, against the API'
       expect(await storedErasureRequestsOf(yuki)).toEqual([])
     },
   )
+
+  it('should say in the dialog that the request was not taken when the database fails, and keep the reason', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const yuki = await openYuki()
+    await theRequest()
+    await refuse('insert', 'customer_deletion_requests')
+    await user.click(
+      within(erasure()).getByRole('button', {
+        name: '消去の依頼を受け付ける',
+      }),
+    )
+    await user.type(
+      within(dialog(ASK)).getByRole('textbox', { name: '依頼の理由' }),
+      REASON,
+    )
+
+    // Act
+    await user.click(
+      within(dialog(ASK)).getByRole('button', { name: '受け付ける' }),
+    )
+
+    // Assert
+    expect(await within(dialog(ASK)).findByRole('alert')).toHaveTextContent(
+      '消去の依頼を受け付けられませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    expect(
+      within(dialog(ASK)).getByRole('textbox', { name: '依頼の理由' }),
+    ).toHaveValue(REASON)
+    expect(await storedErasureRequestsOf(yuki)).toEqual([])
+  })
+
+  it('should say that the account may not read the request when its role changed as it was asked for', async () => {
+    // Arrange
+    const yuki = await customerIdOf(YUKI.email)
+    whenAskedFor(`GET /customers/${yuki}/deletion-request`, () =>
+      madeStaffMeanwhile(OWNER),
+    )
+
+    // Act
+    await openYuki(OWNER, yuki)
+
+    // Assert
+    expect(
+      await within(
+        await screen.findByRole('region', { name: 'データの消去' }),
+      ).findByRole('alert'),
+    ).toHaveTextContent('このアカウントでは、消去の依頼を読み込めません。')
+  })
+
+  it('should say that the request could not be read, and show it when asked again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await takeAway('customer_deletion_requests')
+    await openYuki()
+    expect(
+      await within(
+        await screen.findByRole('region', { name: 'データの消去' }),
+      ).findByRole('alert'),
+    ).toHaveTextContent(
+      '消去の依頼を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    await giveBack('customer_deletion_requests')
+
+    // Act
+    await user.click(
+      within(erasure()).getByRole('button', { name: 'もう一度読み込む' }),
+    )
+
+    // Assert
+    expect(
+      await within(erasure()).findByRole('button', {
+        name: '消去の依頼を受け付ける',
+      }),
+    ).toBeVisible()
+    expect(within(erasure()).queryByRole('alert')).toBeNull()
+  })
 
   it('should close the dialog and say so when another account took a request meanwhile', async () => {
     // Arrange

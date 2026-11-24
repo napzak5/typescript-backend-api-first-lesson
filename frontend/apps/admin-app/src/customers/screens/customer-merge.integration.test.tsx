@@ -1,6 +1,11 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { refuse, salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  refuse,
+  salonIdOf,
+  signInAs,
+  unreadable,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   columnsOf,
@@ -24,6 +29,7 @@ import {
   askedForErasure,
   customerIdOf,
   keepBalance,
+  referredMeanwhile,
   registeredMeanwhile,
   removeMeanwhile,
   storedBalanceOf,
@@ -277,6 +283,54 @@ describe('merging two records of one customer, against the API', () => {
     })
     expect(await storedBookingCountOf(again)).toBe(bookings)
     expect(await storedBookingCountOf(kenji)).toBe(0)
+  })
+
+  it('should lead from the items the two differ in to the customer who referred one of them', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await referredMeanwhile(AGAIN.email, YUKI.email)
+    const { tokyo } = await openMergeOf(KENJI.email)
+    const yuki = await customerIdOf(YUKI.email)
+
+    // Act
+    await choose(user, 'Yamamoto', KENJI.name)
+
+    // Assert
+    const links = within(
+      screen.getByRole('table', { name: '2 人で違う項目' }),
+    ).getAllByRole('link', { name: '紹介したお客様' })
+    expect(links.length).toBeGreaterThan(0)
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(
+      links.map(() => `/salons/${tokyo}/customers/${yuki}`),
+    )
+  })
+
+  it('should say that the other record could not be read, and show the two when asked again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const [kenji, again, tokyo] = await Promise.all([
+      customerIdOf(KENJI.email),
+      customerIdOf(AGAIN.email),
+      salonIdOf(TOKYO),
+    ])
+    const giveTheRowBack = await unreadable('customers', 'createdAt', again)
+    renderAt(`/salons/${tokyo}/customers/${kenji}/merge?with=${again}`)
+    await signInAs(OWNER)
+    await heading('ほかのお客様とまとめる')
+    expect(
+      await screen.findByText(
+        'まとめる相手を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      ),
+    ).toBeVisible()
+    await giveTheRowBack()
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('radio', { name: /^このお客様: / }),
+    ).toBeVisible()
   })
 
   it('should say that two customers with accounts of their own cannot be merged, and offer no merge', async () => {

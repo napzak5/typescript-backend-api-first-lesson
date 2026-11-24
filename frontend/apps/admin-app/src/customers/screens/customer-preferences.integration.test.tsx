@@ -1,6 +1,13 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { refuse, salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  refuse,
+  salonIdOf,
+  signInAs,
+  takeAway,
+  whenAskedFor,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
@@ -18,7 +25,7 @@ import {
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
 import type { Locale } from '@beauty-salon-shared/i18n'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
@@ -352,6 +359,90 @@ describe('the preferences of a customer, changed by a salon against the API', ()
     expect((await storedPreferencesOf(YUKI.email))?.communicationStyle).toBe(
       '静かに過ごしたい',
     )
+  })
+
+  it('should say that the account may not handle the ledger when it no longer belongs to a salon, and keep what was typed', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openForm()
+    await staffRemovedMeanwhile('Hiroshi Tanaka')
+    await user.type(text('特別な要望'), 'シャンプーはぬるめで')
+
+    // Act
+    await user.click(saveButton())
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'このアカウントでは、顧客台帳を扱えません。',
+    )
+    expect(text('特別な要望')).toHaveValue('シャンプーはぬるめで')
+    expect(await storedPreferencesOf(YUKI.email)).toBeNull()
+  })
+
+  it('should say at its control what is wrong with a value, and send nothing', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openForm()
+
+    // Act: 101 characters are not typed one by one
+    fireEvent.change(text('接客の好み'), {
+      target: { value: 'あ'.repeat(101) },
+    })
+    await user.click(saveButton())
+
+    // Assert
+    expect(text('接客の好み')).toHaveAccessibleDescription(
+      expect.stringContaining('100 文字以内で入力してください。'),
+    )
+    expect(text('接客の好み')).toHaveFocus()
+    expect(await storedPreferencesOf(YUKI.email)).toBeNull()
+  })
+
+  it('should say that the customer was removed when it happened as the preferences were read, and lead to the ledger', async () => {
+    // Arrange
+    const [tokyo, customer] = await Promise.all([
+      salonIdOf(TOKYO),
+      customerIdOf(YUKI.email),
+    ])
+    whenAskedFor(`GET /customers/${customer}/preferences`, () =>
+      removeMeanwhile(YUKI.email),
+    )
+
+    // Act
+    await openAs(`/salons/${tokyo}/customers/${customer}/preferences`, STYLIST)
+
+    // Assert
+    expect(
+      await screen.findByText('このお客様は、台帳から削除されました。'),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: '顧客台帳へ' })).toHaveAttribute(
+      'href',
+      `/salons/${tokyo}/customers`,
+    )
+  })
+
+  it('should say that the preferences could not be read, and open the form when asked again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const [tokyo, customer] = await Promise.all([
+      salonIdOf(TOKYO),
+      customerIdOf(YUKI.email),
+    ])
+    await takeAway('customer_preferences')
+    await openAs(`/salons/${tokyo}/customers/${customer}/preferences`, STYLIST)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '好み設定を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    await giveBack('customer_preferences')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('button', { name: '変更を保存する' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should lead back to the page of the customer without sending what was typed', async () => {
