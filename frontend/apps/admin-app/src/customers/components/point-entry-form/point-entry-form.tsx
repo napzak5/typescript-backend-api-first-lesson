@@ -88,8 +88,10 @@ export const PointEntryForm = ({
           }))}
           value={kind}
           onChange={(event) => {
-            const chosen = kinds.find((one) => one === event.target.value)
-            if (chosen !== undefined) {
+            // The radio buttons are the kinds: the one chosen is one of them
+            for (const chosen of kinds.filter(
+              (one) => one === event.target.value,
+            )) {
               setKind(chosen)
             }
           }}

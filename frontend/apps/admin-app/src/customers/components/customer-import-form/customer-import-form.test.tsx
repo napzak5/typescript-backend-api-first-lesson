@@ -42,12 +42,75 @@ describe('CustomerImportForm', () => {
     expect(onChoose).toHaveBeenCalledExactlyOnceWith(chosen)
   })
 
-  it('should say that the file is being read', async () => {
+  it('should tell that no file is chosen when the one chosen is taken away', async () => {
+    // Arrange
+    const onChoose = vi.fn()
+    await stories.Empty.run({ args: { ...stories.Empty.args, onChoose } })
+    await userEvent.upload(
+      file(),
+      new File(['lastName\r\n'], 'customers.csv', { type: 'text/csv' }),
+    )
+
     // Act
+    await userEvent.upload(file(), [])
+
+    // Assert
+    expect(onChoose).toHaveBeenLastCalledWith(undefined)
+  })
+
+  it('should not register the customers again while the registration is on its way', async () => {
+    // Arrange
+    await stories.Pending.run()
+    const button = screen.getByRole('button', { name: '3 人を登録する' })
+
+    // Act: a press, and a script that sends the form itself
+    await userEvent.click(button)
+    file().closest('form')?.requestSubmit()
+
+    // Assert
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    expect(stories.Pending.args.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('should say that the file is being read, and send nothing until it is', async () => {
+    // Arrange
     await stories.Reading.run()
+    const button = screen.getByRole('button', { name: '登録する' })
+
+    // Act: a press, and a script that sends the form itself
+    await userEvent.click(button)
+    file().closest('form')?.requestSubmit()
 
     // Assert
     expect(screen.getByText('ファイルを読んでいます')).toBeVisible()
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    expect(stories.Reading.args.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('should send the form with no file when none is chosen', async () => {
+    // Arrange
+    const onSubmit = vi.fn()
+    await stories.Empty.run({ args: { ...stories.Empty.args, onSubmit } })
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '登録する' }))
+
+    // Assert
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith(undefined)
+  })
+
+  it('should send the form with what is wrong in the file', async () => {
+    // Arrange
+    const onSubmit = vi.fn()
+    await stories.Invalid.run({ args: { ...stories.Invalid.args, onSubmit } })
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '登録する' }))
+
+    // Assert
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ type: 'invalid' }),
+    )
   })
 
   it('should show the customers of the file with their rows, and offer to register them all', async () => {
@@ -81,7 +144,10 @@ describe('CustomerImportForm', () => {
         'レギュラー',
       ],
     ])
-    expect(onSubmit).toHaveBeenCalledOnce()
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({
+      type: 'read',
+      customers: expect.arrayContaining([expect.objectContaining({ row: 2 })]),
+    })
     expect(screen.queryByRole('alert')).toBeNull()
   })
 

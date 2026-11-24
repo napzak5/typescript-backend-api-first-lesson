@@ -74,6 +74,15 @@ export const CallingOff: Story = {
   },
 }
 
+/** The calling off could not be sent: said in the dialog, which may send it again */
+export const NotCalledOff: Story = {
+  args: {
+    shown: { type: 'read', request: aDeletionRequest() },
+    dialog: 'cancel',
+    message: words.cancelFailed,
+  },
+}
+
 /** A request that was called off: a new one is taken */
 export const Cancelled: Story = {
   args: {

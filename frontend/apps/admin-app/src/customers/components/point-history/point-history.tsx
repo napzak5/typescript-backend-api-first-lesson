@@ -21,7 +21,7 @@ export type PointHistoryProps = {
   more: More
   /** Asks for the transactions that come next */
   onMore: () => void
-  /** The record a transaction was made for, as the screen names it */
+  /** The record a transaction was made for, as the screen names it; nothing for one made for none */
   referenceOf: (transaction: ModelsPointTransactionResponse) => ReactNode
   /** The time zone of the salon: the times are those of its clock */
   timezone: string
@@ -79,8 +79,7 @@ export const PointHistory = ({
         {
           key: 'reference',
           header: say(words.reference),
-          cell: (transaction) =>
-            transaction.referenceId === null ? '' : referenceOf(transaction),
+          cell: referenceOf,
         },
         {
           key: 'description',

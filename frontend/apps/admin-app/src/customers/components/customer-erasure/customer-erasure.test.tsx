@@ -152,6 +152,16 @@ describe('CustomerErasure', () => {
     expect(stories.Cancelling.args.onCancel).toHaveBeenCalledTimes(1)
   })
 
+  it('should say in the dialog of the calling off what may be tried again', async () => {
+    // Act
+    await stories.NotCalledOff.run()
+
+    // Assert
+    expect(within(dialog(CANCEL)).getByRole('alert')).toHaveTextContent(
+      '消去の依頼を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+  })
+
   it('should not call the request off again while the calling off is on its way', async () => {
     // Arrange
     await stories.CallingOff.run()

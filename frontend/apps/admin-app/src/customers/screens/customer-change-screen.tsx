@@ -21,7 +21,12 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -161,8 +166,7 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
   const { referredBy } = customer
   const read = useQuery({
     queryKey: customerKeyOf(referredBy ?? ''),
-    queryFn: () => readCustomer(referredBy ?? ''),
-    enabled: referredBy !== null,
+    queryFn: referredBy === null ? skipToken : () => readCustomer(referredBy),
     staleTime: 0,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

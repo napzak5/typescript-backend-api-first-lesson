@@ -15,7 +15,6 @@ import {
   type MergeWay,
   mergedLedgerOf,
   mergeObstaclesOf,
-  mergeWayIn,
   mergeWayNameOf,
   obstacleTextOf,
 } from './customer-merge'
@@ -92,22 +91,6 @@ describe('mergeWayNameOf', () => {
 
     // Assert
     expect(offered).toEqual(name)
-  })
-})
-
-describe('mergeWayIn', () => {
-  it.each<[string | null, MergeWay | undefined]>([
-    ['keep_primary', 'keep_primary'],
-    ['keep_secondary', 'keep_secondary'],
-    ['keep_newest', 'keep_newest'],
-    ['keep_oldest', undefined],
-    [null, undefined],
-  ])('should read %s as %s', (value, way) => {
-    // Act
-    const read = mergeWayIn(value)
-
-    // Assert
-    expect(read).toBe(way)
   })
 })
 

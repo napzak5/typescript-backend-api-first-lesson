@@ -132,12 +132,13 @@ export type BulkSays =
   /** Some chosen customers left the ledger: they leave the choice, and the ledger is read again */
   | { type: 'gone'; message: LocalizedText; ids: string[] }
 
-/** The names of the chosen customers of the IDs: 「山田 花子」. */
+/**
+ * The names of the chosen customers of the IDs, in the order they were
+ * chosen: 「山田 花子」. The IDs are some of those that were sent, which are
+ * those of the chosen customers.
+ */
 const namesOf = (chosen: Chosen, ids: readonly string[]): string[] =>
-  ids.flatMap((id) => {
-    const customer = chosen.get(id)
-    return customer === undefined ? [] : [customerNameOf(customer)]
-  })
+  [...chosen.values()].filter(({ id }) => ids.includes(id)).map(customerNameOf)
 
 /** What the ledger says after the tag of the chosen customers was changed, or not. */
 export const afterRetagging = (

@@ -39,10 +39,6 @@ const WAY_NAMES: Record<MergeWay, LocalizedText> = words.ways
 /** How a way is offered. */
 export const mergeWayNameOf = (way: MergeWay): LocalizedText => WAY_NAMES[way]
 
-/** The value of a radio button that is a way; `undefined` for any other */
-export const mergeWayIn = (value: string | null): MergeWay | undefined =>
-  MERGE_WAYS.find((way) => way === value)
-
 /**
  * Who a customer of a merge is: their name, and their address of mail,
  * which tells two records of one person apart: 「山田 花子 様（hanako@example.com）」.

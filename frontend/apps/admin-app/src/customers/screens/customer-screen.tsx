@@ -21,7 +21,7 @@ import {
   StatisticsPeriod,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Card,
@@ -36,6 +36,7 @@ import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   type QueryClient,
+  skipToken,
   useMutation,
   useQuery,
   useQueryClient,
@@ -128,17 +129,20 @@ const RecordPart = ({
   const { referredBy } = customer
   const read = useQuery({
     queryKey: customerKeyOf(referredBy ?? ''),
-    queryFn: () => readCustomer(referredBy ?? ''),
-    enabled: referredBy !== null,
+    queryFn: referredBy === null ? skipToken : () => readCustomer(referredBy),
     staleTime: 0,
   })
-  const referrer = match(read.data)
+  // Only a customer who has a referrer reads one
+  const referrer = match([referredBy, read.data])
     .returnType<Referrer | undefined>()
-    .with({ type: 'found' }, ({ customer: found }) => referrerOf(found))
-    .with({ type: 'notFound' }, () =>
-      referredBy === null ? undefined : { type: 'gone', id: referredBy },
+    .with([P._, { type: 'found' }], ([, { customer: found }]) =>
+      referrerOf(found),
     )
-    .with(undefined, { type: P.union(...UNREAD_TYPES) }, () => undefined)
+    .with([P.string, { type: 'notFound' }], ([id]) => ({ type: 'gone', id }))
+    .with(
+      [P._, P.union(undefined, { type: P.union('notFound', ...UNREAD_TYPES) })],
+      () => undefined,
+    )
     .exhaustive()
 
   return <CustomerRecord {...record} customer={customer} referrer={referrer} />
@@ -351,7 +355,7 @@ type KeepingPartProps = PartProps & HeadingAfterMoveProps
  * ledger kept them, and can be brought back from there.
  */
 const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
-  const session = useSession()
+  const user = useSignedInUser()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [open, setOpen] = useState(false)
@@ -383,9 +387,7 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
 
   return (
     <CustomerKeeping
-      keepable={
-        session.type === 'signedIn' && mayKeepCustomers(session.user.role)
-      }
+      keepable={user !== undefined && mayKeepCustomers(user.role)}
       name={name}
       historyHref={customerHistoryHrefOf(salon.id, customer.id)}
       mergeHref={customerMergeHrefOf(salon.id, customer.id)}
@@ -417,7 +419,7 @@ type RemovedPartProps = HeadingAfterMoveProps & {
  * leads to them.
  */
 const RemovedPart = ({ salon, version, removal, moved }: RemovedPartProps) => {
-  const session = useSession()
+  const user = useSignedInUser()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [refusal, setRefusal] = useState<RemovedRecordProps['refusal']>()
@@ -467,7 +469,7 @@ const RemovedPart = ({ salon, version, removal, moved }: RemovedPartProps) => {
       version={version}
       removal={removal}
       changer={changerNameOf(version.changedBy, {
-        me: session.type === 'signedIn' ? session.user.id : '',
+        me: user?.id,
         customer: null,
       })}
       timezone={salon.timezone}

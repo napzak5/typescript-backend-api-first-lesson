@@ -19,7 +19,6 @@ import {
   type MergeObstacle,
   type MergeWay,
   mergedLedgerOf,
-  mergeWayIn,
   mergeWayNameOf,
   obstacleTextOf,
   whoIs,
@@ -132,8 +131,10 @@ export const CustomerMerge = ({
           }))}
           value={way}
           onChange={(event) => {
-            const chosen = mergeWayIn(event.currentTarget.value)
-            if (chosen !== undefined) {
+            // The radio buttons are the ways: the one chosen is one of them
+            for (const chosen of MERGE_WAYS.filter(
+              (one) => one === event.currentTarget.value,
+            )) {
               onWay(chosen)
             }
           }}

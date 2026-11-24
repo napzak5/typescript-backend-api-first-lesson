@@ -42,8 +42,8 @@ export const operationNameOf = (
 
 /** Whose accounts a screen can name. */
 export type KnownAccounts = {
-  /** The account that is signed in */
-  me: string
+  /** The account that is signed in: `undefined` while nobody is known to be */
+  me: string | undefined
   /** The account of the customer, when they have one */
   customer: string | null
 }
@@ -60,7 +60,10 @@ export const changerNameOf = (
   match(changedBy)
     .returnType<LocalizedText | null>()
     .with(null, () => null)
-    .with(me, () => history.changers.you)
+    .when(
+      (id) => id === me,
+      () => history.changers.you,
+    )
     .when(
       (id) => id === customer,
       () => history.changers.customer,

@@ -6,6 +6,7 @@ import {
   type Unread,
 } from '@beauty-salon-frontend/answers'
 import type {
+  ModelsCustomerResponse,
   ModelsPointAdjustRequest,
   ModelsPointEarnRequest,
   ModelsPointTransactionResponse,
@@ -54,9 +55,15 @@ const ADJUSTERS: readonly string[] = ['owner', 'manager', 'admin']
 export const mayAdjustPoints = (role: string): boolean =>
   ADJUSTERS.includes(role)
 
-/** What an account of the role may record: the counter's kinds, and the adjustments of an owner or a manager. */
-export const pointKindsFor = (role: string): readonly PointKind[] =>
-  mayAdjustPoints(role)
+/**
+ * What the account of the role that is signed in may record: the counter's
+ * kinds, and the adjustments of an owner or a manager. While nobody is known
+ * to be signed in (`undefined`), the counter's kinds.
+ */
+export const pointKindsFor = (
+  role: string | undefined,
+): readonly PointKind[] =>
+  role !== undefined && mayAdjustPoints(role)
     ? ['earned', 'used', 'added', 'taken']
     : ['earned', 'used']
 
@@ -429,14 +436,14 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
     .exhaustive()
 
 /**
- * The record of a customer that was read, with the balance points left
- * them: a screen that shows it before it is read anew shows the balance
- * after the points.
+ * The record of the customer that was read, with the balance the points
+ * left them: a screen that shows it before it is read anew shows the
+ * balance after the points.
  */
 export const withBalance = (
-  read: CustomerRead,
+  customer: ModelsCustomerResponse,
   balance: number,
-): CustomerRead =>
-  read.type === 'found'
-    ? { ...read, customer: { ...read.customer, loyaltyPoints: balance } }
-    : read
+): CustomerRead => ({
+  type: 'found',
+  customer: { ...customer, loyaltyPoints: balance },
+})

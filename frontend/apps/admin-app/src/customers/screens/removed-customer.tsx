@@ -3,7 +3,7 @@ import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
   PageHeader,
@@ -50,9 +50,8 @@ export const RemovedCustomer = ({
   children,
 }: RemovedCustomerProps) => {
   const say = useSay()
-  const session = useSession()
-  const keeper =
-    session.type === 'signedIn' && mayKeepCustomers(session.user.role)
+  const user = useSignedInUser()
+  const keeper = user !== undefined && mayKeepCustomers(user.role)
   const queryClient = useQueryClient()
   const read = useQuery({
     queryKey: removedKeyOf(customerId),

@@ -13,7 +13,7 @@ import {
   keywordOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   ButtonLink,
@@ -274,10 +274,9 @@ const MergePart = ({ salon, customer }: MergePartProps) => {
 /** Merges a customer with another record of the same person, below the salon of the address. */
 export const CustomerMergeScreen = () => {
   const { salonId = '' } = useParams()
-  const session = useSession()
+  const user = useSignedInUser()
   const say = useSay()
-  const keeper =
-    session.type === 'signedIn' && mayKeepCustomers(session.user.role)
+  const keeper = user !== undefined && mayKeepCustomers(user.role)
 
   return (
     <WithSalon salonId={salonId} title={say(TITLE)}>

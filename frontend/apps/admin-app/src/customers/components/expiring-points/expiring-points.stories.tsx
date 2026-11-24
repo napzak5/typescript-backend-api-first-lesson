@@ -33,6 +33,23 @@ export const Soon: Story = {
   },
 }
 
+/**
+ * A point without an expiry date, which the model of a transaction allows:
+ * its day is left empty, and it is not past
+ */
+export const Undated: Story = {
+  args: {
+    expiring: {
+      ...expiring,
+      expiringPoints: 500,
+      expirationDate: '2026-12-10',
+      transactions: expiring.transactions
+        .slice(1)
+        .map((transaction) => ({ ...transaction, expiryDate: null })),
+    },
+  },
+}
+
 /** No point expires within the days */
 export const None: Story = {
   args: {

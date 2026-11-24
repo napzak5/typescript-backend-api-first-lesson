@@ -9,6 +9,7 @@ import { aDeletionRequest, ME } from '../components/examples'
 import {
   afterErasureAsk,
   afterErasureCancel,
+  type EndedRequest,
   erasureStateOf,
   readErasureAsk,
 } from './customer-erasure'
@@ -89,22 +90,16 @@ describe('readErasureAsk', () => {
 })
 
 describe('erasureStateOf', () => {
-  it('should say nothing of a pending request, which is shown with its moments', () => {
-    // Act
-    const said = erasureStateOf(aDeletionRequest(), 'Asia/Tokyo')
-
-    // Assert
-    expect(said).toBeUndefined()
-  })
-
   it('should say when a request was taken and called off, at the salon', () => {
     // Act
     const said = erasureStateOf(
-      aDeletionRequest({
+      {
+        ...aDeletionRequest({
+          cancelledBy: ME,
+          cancelledAt: '2026-11-21T06:00:00.000Z',
+        }),
         status: 'cancelled',
-        cancelledBy: ME,
-        cancelledAt: '2026-11-21T06:00:00.000Z',
-      }),
+      },
       'America/New_York',
     )
 
@@ -118,11 +113,13 @@ describe('erasureStateOf', () => {
   it('should say when the data was erased, and that the customer is to be told', () => {
     // Act
     const said = erasureStateOf(
-      aDeletionRequest({
+      {
+        ...aDeletionRequest({
+          completedBy: ME,
+          completedAt: '2026-12-05T00:00:00.000Z',
+        }),
         status: 'completed',
-        completedBy: ME,
-        completedAt: '2026-12-05T00:00:00.000Z',
-      }),
+      },
       'Asia/Tokyo',
     )
 
@@ -133,10 +130,10 @@ describe('erasureStateOf', () => {
     })
   })
 
-  it.each<[string, Parameters<typeof aDeletionRequest>[0], LocalizedText]>([
+  it.each<[string, EndedRequest['status'], LocalizedText]>([
     [
       'called off',
-      { status: 'cancelled' },
+      'cancelled',
       {
         en: 'The request taken on Fri, November 20, 2026 at 10:30 was cancelled.',
         ja: '2026年11月20日（金） 10:30 に受け付けた依頼は、取り消しました。',
@@ -144,7 +141,7 @@ describe('erasureStateOf', () => {
     ],
     [
       'erased',
-      { status: 'completed' },
+      'completed',
       {
         en: 'The data was erased on the request taken on Fri, November 20, 2026 at 10:30. Let the customer know that the data was erased.',
         ja: '2026年11月20日（金） 10:30 に受け付けた依頼により、データを消去しました。消去したことを、ご本人にお知らせください。',
@@ -152,9 +149,12 @@ describe('erasureStateOf', () => {
     ],
   ])(
     'should say a request was %s without a moment it lacks',
-    (_, changes, sentence) => {
+    (_, status, sentence) => {
       // Act
-      const said = erasureStateOf(aDeletionRequest(changes), 'Asia/Tokyo')
+      const said = erasureStateOf(
+        { ...aDeletionRequest(), status },
+        'Asia/Tokyo',
+      )
 
       // Assert
       expect(said).toEqual(sentence)
