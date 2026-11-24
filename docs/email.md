@@ -9,37 +9,44 @@ API サーバーがメールを送る仕組みを説明します。いつ・誰�
 2. [送るメール](#送るメール)
 3. [構成](#構成)
 4. [送信の流れ](#送信の流れ)
-5. [SMTP の設定](#smtp-の設定)
-6. [ローカル開発（Mailpit）](#ローカル開発mailpit)
-7. [ログ](#ログ)
-8. [テスト](#テスト)
-9. [メールを追加する](#メールを追加する)
-10. [していないこと](#していないこと)
+5. [メールの言語](#メールの言語)
+6. [SMTP の設定](#smtp-の設定)
+7. [ローカル開発（Mailpit）](#ローカル開発mailpit)
+8. [ログ](#ログ)
+9. [テスト](#テスト)
+10. [メールを追加する](#メールを追加する)
+11. [していないこと](#していないこと)
 
 ## 概要
 
 - メールは SMTP で送ります。どのプロバイダーを使うかは、SMTP の接続先（環境変数）で決まります。
   プロバイダーごとのコードはありません。
 - 本文はテキストだけです（HTML、添付ファイル、テンプレートエンジンは使いません）。
+- メールは、送るきっかけになったリクエストの言語（`Accept-Language`）で書きます。言語を言わない
+  リクエストには、英語です。ほかの人に届くメール（スタッフの招待、管理者による 2 要素認証の
+  リセットの通知）も、操作した人のリクエストの言語です（[メールの言語](#メールの言語)）。
 - 送信はリクエストの応答を待たせません。ユースケースはメールを**渡すだけ**で、配送は応答のあとに
   進みます。メールを送ったかどうかで応答時間が変わらないので、応答からアカウントの有無は分かりません。
 - 配送に失敗したメールは、ログに記録して破棄します。再送はしません。利用者がもう一度要求します。
 
 ## 送るメール
 
-| メール | 件名 | 送るとき | 本文のリンク |
-|---|---|---|---|
-| メールアドレスの確認 | `メールアドレスの確認` | ユーザー登録、確認メールの再送 | `<PUBLIC_APP_URL>/verify-email#token=<トークン>` |
-| パスワードの再設定 | `パスワードの再設定` | パスワードの再設定の要求 | `<PUBLIC_APP_URL>/reset-password#token=<トークン>` |
-| スタッフアカウントへの招待 | `スタッフアカウントへの招待` | スタッフの招待の作成（招待し直しを含む）。宛先は台帳のメールアドレス | `<PUBLIC_APP_URL>/accept-staff-invitation#token=<トークン>` |
-| パスワードの変更の通知 | `パスワードが変更されました` | パスワードの再設定、パスワードの変更 | なし |
-| 2 要素認証の有効化の通知 | `2 要素認証が有効になりました` | 2 要素認証の設定をコードで確認したとき | なし |
-| 2 要素認証の無効化の通知 | `2 要素認証が無効になりました` | 2 要素認証を無効にしたとき | なし |
-| バックアップコードの再発行の通知 | `バックアップコードが再発行されました` | バックアップコードを発行し直したとき | なし |
-| バックアップコードの使用の通知 | `バックアップコードでログインしました` | バックアップコードでログインしたとき（本文に残りの個数） | なし |
-| 管理者による 2 要素認証のリセットの通知 | `2 要素認証が管理者によって無効にされました` | 管理者が利用者の 2 要素認証をリセットしたとき | なし |
+| メール | 件名（英語） | 件名（日本語） | 送るとき | 本文のリンク |
+|---|---|---|---|---|
+| メールアドレスの確認 | `Confirm your email address` | `メールアドレスの確認` | ユーザー登録、確認メールの再送 | `<PUBLIC_APP_URL>/verify-email#token=<トークン>` |
+| パスワードの再設定 | `Reset your password` | `パスワードの再設定` | パスワードの再設定の要求 | `<PUBLIC_APP_URL>/reset-password#token=<トークン>` |
+| スタッフアカウントへの招待 | `Invitation to a staff account` | `スタッフアカウントへの招待` | スタッフの招待の作成（招待し直しを含む）。宛先は台帳のメールアドレス | `<PUBLIC_APP_URL>/accept-staff-invitation#token=<トークン>` |
+| パスワードの変更の通知 | `Your password was changed` | `パスワードが変更されました` | パスワードの再設定、パスワードの変更 | なし |
+| 2 要素認証の有効化の通知 | `Two-factor authentication was turned on` | `2 要素認証が有効になりました` | 2 要素認証の設定をコードで確認したとき | なし |
+| 2 要素認証の無効化の通知 | `Two-factor authentication was turned off` | `2 要素認証が無効になりました` | 2 要素認証を無効にしたとき | なし |
+| バックアップコードの再発行の通知 | `Your backup codes were issued again` | `バックアップコードが再発行されました` | バックアップコードを発行し直したとき | なし |
+| バックアップコードの使用の通知 | `You signed in with a backup code` | `バックアップコードでサインインしました` | バックアップコードでログインしたとき（本文に残りの個数） | なし |
+| 管理者による 2 要素認証のリセットの通知 | `Two-factor authentication was turned off by an administrator` | `2 要素認証が管理者によって無効にされました` | 管理者が利用者の 2 要素認証をリセットしたとき | なし |
 
-本文は `backend/packages/domain/src/business-logic/auth/_shared/mails.ts` にあります。
+件名と本文は、すべての言語で、`shared-i18n/src/messages/api/mails.ts` の `mailMessages` にあります。
+本文の言葉は画面にそろえて、「サインイン」「サインアウト」「サインインの画面」と言います。
+リンクと数を入れて、宛先と言語を添えるのは、
+`backend/packages/domain/src/business-logic/auth/_shared/mails.ts` です。
 
 通知（リンクのない 6 つ）は、本人の操作や依頼でなかったときに気づけるようにするためのもので、
 パスワードの再設定を案内します。シークレット、コード、バックアップコードは本文に含めません。
@@ -56,9 +63,11 @@ API サーバーがメールを送る仕組みを説明します。いつ・誰�
 
 | 層 | ファイル | 役割 |
 |---|---|---|
-| ドメイン | `backend/packages/domain/src/services/mailer.ts` | `Mail`（宛先・件名・本文）と `IMailer`。ユースケースはこのインターフェースだけを知る |
-| ドメイン | `backend/packages/domain/src/business-logic/auth/_shared/mails.ts` | メールの文面を作る関数 |
-| インフラ | `backend/packages/infrastructure/src/mail/smtp-mailer.ts` | `SmtpMailer`: SMTP で送る `IMailer` の実装（nodemailer） |
+| 言語のパッケージ | `shared-i18n/src/messages/api/mails.ts` | `mailMessages`: メールごとの件名と本文。すべての言語で書く |
+| ドメイン | `backend/packages/domain/src/services/mailer.ts` | `Mail`（宛先、言語、すべての言語の件名と本文）、`WrittenMail`（その言語で書いたメール）、`writtenMail`（書く関数）と `IMailer`。ユースケースはこのインターフェースだけを知る |
+| ドメイン | `backend/packages/domain/src/business-logic/auth/_shared/mails.ts` | 文面にリンクと数を入れて、宛先と言語を添える関数 |
+| API | `backend/packages/api/src/routes/auth/*.handler.ts` ほか、メールを送る 11 のオペレーションのハンドラー | リクエストの言語（`languageAsked(req)`）を、ユースケースの `execute` の最後の引数に渡す |
+| インフラ | `backend/packages/infrastructure/src/mail/smtp-mailer.ts` | `SmtpMailer`: メールをその言語で書き、`Content-Language` を付けて SMTP で送る `IMailer` の実装（nodemailer） |
 | 設定 | `backend/packages/config/src/app-config.ts` | `AppConfig.mail`、`AppConfig.publicAppUrl` |
 | サーバー | `backend/apps/server/src/server.ts` | `SmtpMailer` を作って `createApp` に渡し、停止時に閉じる |
 
@@ -66,23 +75,39 @@ API サーバーがメールを送る仕組みを説明します。いつ・誰�
 // backend/packages/domain/src/services/mailer.ts
 export type Mail = {
   to: string
-  subject: string
-  text: string
+  language: Locale
+  subject: LocalizedText
+  text: LocalizedText
 }
+
+/** A mail as its recipient reads it: the subject and the body in its language. */
+export type WrittenMail = { to: string; language: Locale; subject: string; text: string }
+
+export const writtenMail = ({ to, language, subject, text }: Mail): WrittenMail => ({
+  to,
+  language,
+  subject: textIn(subject, language),
+  text: textIn(text, language),
+})
 
 export interface IMailer {
   deliver(mail: Mail): void
 }
 ```
 
+メールは、すべての言語の文を持ったまま、メーラーに渡ります。その言語で書くのは、送る側
+（`SmtpMailer`、テストで記録する実装）です。エラーを、応答を送る所でその言語にするのと同じです。
+
 `deliver` は `Promise` も `Result` も返しません。呼び出した側は配送の結果を知りません。失敗の報告は
 実装（`SmtpMailer`）の仕事です。
 
 ## 送信の流れ
 
-1. ユースケースが、DB の更新に成功したあとで `mailer.deliver(mail)` を呼ぶ。`deliver` はすぐに戻る
-2. ハンドラーが応答を返す
-3. `SmtpMailer` が SMTP サーバーに接続して送る。結果をログに 1 行出力する（[ログ](#ログ)）
+1. ハンドラーが、リクエストの言語（`languageAsked(req)`）をユースケースに渡す
+2. ユースケースが、DB の更新に成功したあとで `mailer.deliver(mail)` を呼ぶ。`deliver` はすぐに戻る
+3. ハンドラーが応答を返す
+4. `SmtpMailer` が、メールをその言語で書き、SMTP サーバーに接続して送る。結果をログに 1 行出力する
+   （[ログ](#ログ)）
 
 サーバーの起動時には SMTP サーバーに接続しません。最初のメールを送るときに接続するので、SMTP サーバーが
 止まっていても API は起動し、メールを送らないオペレーションは動きます。`/api/system/ready` も SMTP
@@ -97,6 +122,23 @@ SMTP サーバーが応答しなくても停止は終わります。
 | 接続の確立 | 10 秒 |
 | 接続後のあいさつ（greeting） | 10 秒 |
 | 通信が止まってから切断するまで | 30 秒 |
+
+## メールの言語
+
+メールの言語は、送るきっかけになったリクエストの `Accept-Language` で決まります。エラーの言語を
+決めるのと同じ `languageAsked(req)`（`backend/packages/api/src/shared/language.ts`）で、製品の
+言語（英語、日本語）を 1 つも言わないリクエストには、英語です（[多言語](./i18n.md#メールの言語)）。
+
+| メール | 言語 |
+|---|---|
+| 本人の操作で届くもの（確認、再設定、パスワードと 2 要素認証の通知、バックアップコードの使用） | 本人のリクエストの言語 |
+| スタッフの招待 | 招待した人（管理者、オーナー、マネージャー）のリクエストの言語 |
+| 管理者による 2 要素認証のリセットの通知 | 管理者のリクエストの言語 |
+
+- 画面は、どのリクエストにも、ページの言語を `Accept-Language` で付けます。英語のページで登録すれば、
+  確認のメールは英語です。
+- メールには、書いた言語を `Content-Language` のヘッダーで付けます。
+- リンクとサロンの名前は、どの言語でも、そのままです。リンクは、本文の 1 行に、それだけで置きます。
 
 ## SMTP の設定
 
@@ -163,10 +205,11 @@ curl -i -X POST http://localhost:3000/api/v1/auth/verify-email/confirm \
 
 | レベル | メッセージ | フィールド |
 |---|---|---|
-| `info` | `Mail delivered` | `subject` |
-| `error` | `Failed to deliver mail` | `subject`、`failure`（`message`、`code`、`command`、`responseCode`） |
+| `info` | `Mail delivered` | `subject`、`language` |
+| `error` | `Failed to deliver mail` | `subject`、`language`、`failure`（`message`、`code`、`command`、`responseCode`） |
 
-- `subject` でメールの種類が分かります。宛先と本文（トークンを含む）は、どちらの行にも出力しません。
+- `subject` は英語の件名で、メールの種類が分かります。ログは、送った言語によらず英語です。
+  `language` は、メールを書いた言語です。宛先と本文（トークンを含む）は、どちらの行にも出力しません。
 - `failure.code` と `failure.command` は nodemailer のエラーの値で、SMTP のどの段階で失敗したかを表します。
   SMTP サーバーに接続できないときは `code` が `ESOCKET`、`command` が `CONN` になります。
   `responseCode` は SMTP サーバーが返した応答コードで、応答がなければ `null` です。
@@ -176,29 +219,45 @@ curl -i -X POST http://localhost:3000/api/v1/auth/verify-email/confirm \
 
 ## テスト
 
-- ユースケースの単体テストと API の統合テストは SMTP を使いません。`IMailer` を、渡されたメールを記録する
-  実装に置き換えます。API の統合テストでは `createTestApp({ mails })` に配列を渡すと、アプリケーションが
-  渡したメールがそこに入ります（`backend/packages/api/src/__tests__/_shared/test-helpers.ts`）。
-- `SmtpMailer` は、testcontainers で起動した Mailpit のコンテナに実際に送る統合テストで確認します
+- ユースケースの単体テストと API の統合テストは SMTP を使いません。`IMailer` を、渡されたメールを
+  その言語で書いて（`writtenMail`）記録する実装に置き換えます。API の統合テストでは
+  `createTestApp({ mails })` に配列を渡すと、アプリケーションが渡したメールが、受け取る人が読む形
+  （`WrittenMail`）でそこに入ります（`backend/packages/api/src/__tests__/_shared/test-helpers.ts`）。
+  フロントエンドのテストのテストサーバー（`GET /apis/{id}/mails`）も、同じ形で返します。
+- 文面は、言語のパッケージのテスト（`shared-i18n/src/messages/api/mails.test.ts`）が、値で変わる
+  本文の全文を、両方の言語で確かめます。
+- メールを送るユースケースのどれもが、英語のリクエストに英語のメールを渡すことを、単体テストで
+  確かめます。API の統合テストは、`Accept-Language` のないリクエストに英語のメールを、オペレーション
+  ごとに `Accept-Language: ja` のリクエストに日本語のメールを確かめます。
+- `SmtpMailer` は、testcontainers で起動した Mailpit のコンテナに実際に送る統合テストで確認します。
+  英語と日本語のメールが、その言語の件名と本文と `Content-Language` で届くことも確かめます
   （`backend/packages/infrastructure/src/mail/__tests__/smtp-mailer.integration.test.ts`、
   `pnpm --filter @beauty-salon-backend/infrastructure test:integration`）。
 
 ## メールを追加する
 
-1. 文面を作る関数を、そのドメインの `_shared/mails.ts` に追加する。戻り値は `Mail`。リンクを入れるなら
-   `publicAppUrl` を引数で受け取り、秘密の値はフラグメントに置く
-2. ユースケースの依存に `mailer: IMailer`（リンクを作るなら `publicAppUrl` も）を加え、DB の更新に
-   成功したあとで `mailer.deliver(...)` を呼ぶ。`deliver` の前後で処理を分けない（メールを送る場合と
-   送らない場合で、応答が同じになるようにする）
-3. `backend/packages/api/src/index.ts` の `createApp` で、そのユースケースの依存に `mailer` を渡す
-4. テスト: ユースケースの単体テストで、渡されるメール（宛先、件名、リンク）と、渡されない条件を確認する
+1. 件名と本文を、`shared-i18n/src/messages/api/mails.ts` の `mailMessages` に、すべての言語で足す。
+   値で変わる本文は関数にして、`mails.test.ts` の表 `MADE` に、値と全文を足す（足すまで失敗する）
+2. 文面にリンクや数を入れて、宛先と言語を添える関数を、そのドメインの `_shared/mails.ts` に追加する。
+   戻り値は `Mail`。リンクを入れるなら `publicAppUrl` を引数で受け取り、秘密の値はフラグメントに置く
+3. ユースケースの依存に `mailer: IMailer`（リンクを作るなら `publicAppUrl` も）を加え、`execute` の
+   最後の引数で言語（`language: Locale`）を受け取る。DB の更新に成功したあとで `mailer.deliver(...)` を
+   呼ぶ。`deliver` の前後で処理を分けない（メールを送る場合と送らない場合で、応答が同じになるようにする）
+4. ハンドラーが `languageAsked(req)` を渡す。`backend/packages/api/src/index.ts` の `createApp` で、
+   そのユースケースの依存に `mailer` を渡す
+5. テスト: ユースケースの単体テストで、渡されるメール（宛先、言語、件名、リンク）と、渡されない条件を
+   確認する。英語のリクエストに英語のメールを渡すことも確かめる。API の統合テストで、
+   `Accept-Language: ja` のリクエストに日本語のメールが届くことを確かめる
 
 ## していないこと
 
 - **再送とキュー**: 配送に失敗したメールは破棄します。サーバーのプロセスが強制終了されたとき、配送中の
   メールは失われます。
 - **バウンスと苦情の処理**: プロバイダーからの通知（Webhook）は受け取りません。
-- **HTML メール、添付ファイル、多言語**: 文面は日本語のテキストだけです。
+- **HTML メール、添付ファイル**: 文面はテキストだけです。
+- **受け取る人の言語**: アカウントに言語を保存しません。メールの言語は、送るきっかけになった
+  リクエストの言語です。ほかの人の操作で届くメール（招待、管理者によるリセット）は、受け取る人が
+  画面で選んだ言語ではなく、操作した人の言語です。
 - **送信数の制限**: アカウントごと・種類ごとに 60 秒に 1 通の間隔（[認証と認可](./authentication.md#メールで送るトークン)）
   のほかに、メールに固有の制限はありません。API 全体のレート制限は別にあります。スタッフの招待の間隔は、
   スタッフが持っている招待についてのもので、招待を取り消してから招待し直す場合や、スタッフを台帳に

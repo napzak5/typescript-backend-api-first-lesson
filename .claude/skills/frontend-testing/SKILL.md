@@ -516,8 +516,10 @@ describe('the session against the API', () => {
 - A request may be watched (`vi.spyOn(globalThis, 'fetch')` without an
   implementation) to count what was sent. It is never answered by the test.
 - **Mail** is delivered nowhere: the API of a test keeps what it would
-  send. `testApi().mails()` are the mails of this test (`to`, `subject`,
-  `text`), oldest first. `testApi().mailedLink(to)` is the link in the last
+  send. `testApi().mails()` are the mails of this test (`to`, `language`,
+  `subject`, `text`), oldest first, each written in the language the page
+  asked the API in: Japanese in jsdom and in the browser tests, unless the
+  test chooses English. `testApi().mailedLink(to)` is the link in the last
   mail to an address, and fails the test when there is none.
 - **Files** go to an object storage: the test server starts a SeaweedFS
   container, which its APIs share, and an API signs URLs to it. A screen

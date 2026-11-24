@@ -261,8 +261,10 @@ operation is a message of the file of its domain
 (`DomainErrors.conflict(saleMessages.alreadyVoid)`), told as it is: a value
 in it (a status, an ID) stands in every language as it is, and a string
 does not compile. Read [docs/i18n.md](docs/i18n.md) before
-adding one: it also says what is told in one language alone (the mails and
-the log).
+adding one: it also says what is told in one language alone (the log). A
+mail is written in the language of the request that caused it: the handler
+passes `languageAsked(req)` to the use case, and the subject and the body are
+messages of `messages/api/mails.ts`.
 
 A page has one language: the one its visitor chose with the choice in the
 header of every application, else the one the browser is set to, else
