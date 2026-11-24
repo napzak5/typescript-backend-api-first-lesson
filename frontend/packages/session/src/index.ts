@@ -8,7 +8,11 @@ export {
   useOwnSalon,
   worksAtSalon,
 } from './hooks/own-salon'
-export { type Session, useSession } from './hooks/use-session'
+export {
+  type Session,
+  useSession,
+  useSignedInUser,
+} from './hooks/use-session'
 export {
   RequireSession,
   type RequireSessionProps,

@@ -558,6 +558,27 @@ describe('readCustomerChange', () => {
 
   it.each<[string, Record<string, string>, Record<string, unknown>]>([
     ['a name', { firstName: '華子' }, { firstName: '華子' }],
+    ['a last name', { lastName: '佐藤' }, { lastName: '佐藤' }],
+    [
+      'a first name in kana',
+      { firstNameKana: 'ハナ' },
+      { firstNameKana: 'ハナ' },
+    ],
+    [
+      'another phone number',
+      { alternativePhone: '03-1234-5678' },
+      { alternativePhone: '03-1234-5678' },
+    ],
+    ['a postal code', { postalCode: '150-0001' }, { postalCode: '150-0001' }],
+    ['a prefecture', { prefecture: '東京都' }, { prefecture: '東京都' }],
+    ['a city', { city: '渋谷区' }, { city: '渋谷区' }],
+    ['an address', { address: '神宮前 1-2-3' }, { address: '神宮前 1-2-3' }],
+    ['an occupation', { occupation: '会社員' }, { occupation: '会社員' }],
+    [
+      'the thickness of the hair',
+      { hairThickness: 'thin' },
+      { hairThickness: 'thin' },
+    ],
     [
       'an address of mail',
       { email: 'new@example.com' },
@@ -591,11 +612,12 @@ describe('readCustomerChange', () => {
     const form = formOfCustomer(customer)
     form.delete('allowEmail')
     form.append('allowMarketing', 'on')
+    form.append('allowSms', 'on')
 
     // Act, Assert
     expect(readCustomerChange(form, customer, TODAY)).toEqual({
       type: 'valid',
-      value: { allowEmail: false, allowMarketing: true },
+      value: { allowEmail: false, allowMarketing: true, allowSms: true },
     })
   })
 

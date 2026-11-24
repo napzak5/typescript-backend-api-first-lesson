@@ -5,7 +5,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import { type FormErrors, useNotifications } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
@@ -196,7 +196,7 @@ export const RequestsPart = ({
   customer,
   onLeft,
 }: RequestsPartProps) => {
-  const session = useSession()
+  const user = useSignedInUser()
   const { notify } = useNotifications()
   /** Why no file was saved: said above the button */
   const [message, setMessage] = useState<LocalizedText>()
@@ -218,9 +218,7 @@ export const RequestsPart = ({
 
   return (
     <CustomerRequests
-      answerable={
-        session.type === 'signedIn' && mayKeepCustomers(session.user.role)
-      }
+      answerable={user !== undefined && mayKeepCustomers(user.role)}
       dataExport={{
         exporting: exporting.isPending,
         message,

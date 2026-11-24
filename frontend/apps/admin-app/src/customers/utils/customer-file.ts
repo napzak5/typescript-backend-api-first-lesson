@@ -375,13 +375,6 @@ const PREFERENCES_MALFORMED = wrong.preferences(SERVICE_CATEGORIES)
 
 const TAGS_MALFORMED = wrong.tags
 
-/** The column a control of the form of a registration belongs to */
-const columnOfControl = (control: string): Column | undefined =>
-  match(control)
-    .returnType<Column | undefined>()
-    .with(PREFERRED_SERVICES, PREFERENCE_NOTES, () => 'preferences')
-    .otherwise((name) => guideOf(name)?.column)
-
 /** What is said of a value the form of a registration does not take, in a file */
 const fileMessageOf = (
   column: Column,
@@ -458,8 +451,10 @@ const valuesOf = async (
       values.set(column, fallback)
     }
   }
-  for (const [index, column] of columns.entries()) {
-    const value = cellValueOf(cells[index] ?? '')
+  // A row has as many cells as the file has columns
+  for (const [index, cell] of cells.entries()) {
+    const column = columns[index]
+    const value = cellValueOf(cell)
     const text = value.trim()
     if (column === undefined) {
       continue
@@ -570,14 +565,16 @@ export const readCustomerFile = async (
     problems.push(...unread)
     const entry = readCustomerEntry(values, today)
     if (entry.type === 'invalid') {
-      for (const [control, message] of Object.entries(entry.errors)) {
-        const column = columnOfControl(control)
-        problems.push({
-          row,
-          column: column === undefined ? null : labelOf(column),
-          message:
-            column === undefined ? message : fileMessageOf(column, message),
-        })
+      // The form says what is wrong under the names of the columns
+      for (const { column } of COLUMN_GUIDES) {
+        const message = entry.errors[column]
+        if (message !== undefined) {
+          problems.push({
+            row,
+            column: labelOf(column),
+            message: fileMessageOf(column, message),
+          })
+        }
       }
       continue
     }

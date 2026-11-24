@@ -81,6 +81,11 @@ describe('pointKindsFor', () => {
       expect(pointKindsFor(role)).toEqual(kinds)
     },
   )
+
+  it('should offer the kinds of the counter while nobody is known to be signed in', () => {
+    // Act, Assert
+    expect(pointKindsFor(undefined)).toEqual(['earned', 'used'])
+  })
 })
 
 describe('pointKindIn', () => {
@@ -556,6 +561,23 @@ describe('afterRecording', () => {
       },
     ],
     [
+      'a day of expiry that is too far',
+      {
+        type: 'invalid',
+        values: [{ field: 'expiryDate', rule: 'too_big' }],
+      },
+      {
+        type: 'again',
+        message: undefined,
+        errors: {
+          expiryDate: {
+            en: 'Enter an expiry date from today to December 31, 2999.',
+            ja: '有効期限は、今日から2999年12月31日までの日付で入力してください。',
+          },
+        },
+      },
+    ],
+    [
       'a count refused',
       { type: 'invalid', values: [{ field: 'points', rule: 'too_big' }] },
       { type: 'again', message: undefined, errors: { points: POINTS_ERROR } },
@@ -671,21 +693,9 @@ describe('afterRecording', () => {
 
 describe('withBalance', () => {
   it('should give the record of a customer the balance the points left, and keep the rest', () => {
-    expect(
-      withBalance(
-        { type: 'found', customer: aCustomer({ loyaltyPoints: 2500 }) },
-        3000,
-      ),
-    ).toEqual({
+    expect(withBalance(aCustomer({ loyaltyPoints: 2500 }), 3000)).toEqual({
       type: 'found',
       customer: aCustomer({ loyaltyPoints: 3000 }),
     })
-  })
-
-  it.each<[string, Parameters<typeof withBalance>[0]]>([
-    ['a customer who was not found', { type: 'notFound' }],
-    ['a customer who was not read', { type: 'failed' }],
-  ])('should leave as it is %s', (_, read) => {
-    expect(withBalance(read, 3000)).toEqual(read)
   })
 })

@@ -52,21 +52,25 @@ export const readErasureAsk = (
   return { type: 'valid', value: { reason } }
 }
 
+/** A request that was called off, or on which the data was erased */
+export type EndedRequest = ErasureRequest & {
+  status: Exclude<ErasureRequest['status'], 'pending'>
+}
+
 /**
- * What became of the latest request, in a sentence; `undefined` for a
- * pending one, which is shown with its moments and its reason.
+ * What became of the latest request, in a sentence. A pending one is
+ * shown with its moments and its reason instead.
  */
 export const erasureStateOf = (
-  request: ErasureRequest,
+  request: EndedRequest,
   timezone: string,
-): LocalizedText | undefined => {
+): LocalizedText => {
   const asked = momentNameAt(request.requestedAt, timezone)
   const at = (moment: string | null): LocalizedText | null =>
     moment === null ? null : momentNameAt(moment, timezone)
 
   return match(request)
-    .returnType<LocalizedText | undefined>()
-    .with({ status: 'pending' }, () => undefined)
+    .returnType<LocalizedText>()
     .with({ status: 'cancelled' }, ({ cancelledAt }) =>
       words.cancelled(asked, at(cancelledAt)),
     )

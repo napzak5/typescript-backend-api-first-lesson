@@ -57,3 +57,15 @@ export const useSession = (): Session => {
 
   return { type: 'unavailable', retry: () => void currentUser.refetch() }
 }
+
+/**
+ * The user who is signed in, or `undefined` while nobody is known to be:
+ * signed out, or the API asked or not answering. A screen behind the
+ * session gate (`RequireSession`, `StaffApplication` of `app-frame`) is
+ * drawn for a signed-in user alone, and reads who it is here.
+ */
+export const useSignedInUser = (): ModelsUserResponse | undefined => {
+  const session = useSession()
+
+  return session.type === 'signedIn' ? session.user : undefined
+}

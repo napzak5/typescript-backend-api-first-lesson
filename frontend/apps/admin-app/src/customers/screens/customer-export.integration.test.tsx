@@ -4,7 +4,11 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
-import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  salonIdOf,
+  signInAs,
+  takeAway,
+} from '@beauty-salon-frontend/testing/api'
 import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
@@ -275,6 +279,30 @@ describe('exporting customers, against the API', () => {
         await screen.findByRole('region', { name: '削除されたときの台帳' }),
       ).toBeVisible()
       expect(await heading('お客様の台帳')).toHaveFocus()
+      expect(await savedFiles()).toEqual([])
+    })
+
+    it('should save no file of the customer when the database fails, and say so above the button', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const yuki = await customerIdOf(YUKI.email)
+      await openAt((tokyo) => customerHrefOf(tokyo, yuki))
+      await theCustomer()
+      await takeAway('review_helpful_votes')
+
+      // Act
+      await user.click(
+        within(part('ご本人からの請求')).getByRole('button', {
+          name: 'データを出力する',
+        }),
+      )
+
+      // Assert
+      expect(
+        await within(part('ご本人からの請求')).findByText(
+          'お客様のデータを出力できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
       expect(await savedFiles()).toEqual([])
     })
 

@@ -1,7 +1,15 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { refuse, salonIdOf } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  idOf,
+  refuse,
+  salonIdOf,
+  takeAway,
+  unreadable,
+  whenAskedFor,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
@@ -35,7 +43,9 @@ import {
   customerIdOf,
   finishBookingsOf,
   isInLedger,
+  madeStaffMeanwhile,
   notesChangedMeanwhile,
+  referredMeanwhile,
   registeredMeanwhile,
   removedMeanwhile,
   restoredMeanwhile,
@@ -100,6 +110,17 @@ const theRemoved = async (): Promise<void> => {
   await heading('お客様の台帳')
   await screen.findByRole('region', { name: '削除されたときの台帳' })
 }
+
+/** What is said of what could not be read, by what it is */
+const unread = (what: string): string =>
+  `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
+
+/** The ID of a version of a customer, by its number. */
+const versionIdOf = (customerId: string, version: number): Promise<string> =>
+  idOf(
+    'select id::text from customer_versions where "customerId" = $1 and version = $2',
+    [customerId, version],
+  )
 
 /** Opens the dialog of the page of a customer that asks before they are removed. */
 const askToRemove = async (
@@ -337,6 +358,113 @@ describe('removing customers, bringing them back, and their history, against the
       expect(screen.queryByRole('button', { name: '台帳に戻す' })).toBeNull()
     })
 
+    it('should say beside the button that the customer was not brought back when the database fails, and keep them removed', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await removedMeanwhile(kenji, OWNER)
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`)
+      await theRemoved()
+      await refuse('update', 'customers')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '台帳に戻す' }))
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'お客様を台帳に戻せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(screen.getByRole('button', { name: '台帳に戻す' })).toBeVisible()
+      expect(await isInLedger(kenji)).toBe(false)
+    })
+
+    it('should lead from a customer who left the ledger to the customer who referred them', async () => {
+      // Arrange
+      await referredMeanwhile(KENJI.email, YUKI.email)
+      const [kenji, yuki] = await Promise.all([
+        customerIdOf(KENJI.email),
+        customerIdOf(YUKI.email),
+      ])
+      await removedMeanwhile(kenji, OWNER)
+
+      // Act
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${kenji}`,
+      )
+
+      // Assert
+      await theRemoved()
+      expect(
+        within(part('削除されたときの台帳')).getByRole('link', {
+          name: '紹介したお客様',
+        }),
+      ).toHaveAttribute('href', `/salons/${tokyo}/customers/${yuki}`)
+    })
+
+    it('should say that no customer has the ID when the account may no longer read histories, as the history is asked for', async () => {
+      // Arrange
+      const kenji = await customerIdOf(KENJI.email)
+      await removedMeanwhile(kenji, OWNER)
+      whenAskedFor(`GET /customers/${kenji}/history`, () =>
+        madeStaffMeanwhile(OWNER),
+      )
+
+      // Act
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`)
+
+      // Assert
+      await heading('お客様が見つかりません')
+      expect(
+        screen.getByText(
+          'アドレスが正しいか、お確かめください。台帳から削除されたお客様は、表示できません。',
+        ),
+      ).toBeVisible()
+      expect(
+        screen.queryByRole('region', { name: '削除されたときの台帳' }),
+      ).toBeNull()
+    })
+
+    it('should say that a customer was brought back while the history was read, and show them when asked', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await removedMeanwhile(kenji, OWNER)
+      whenAskedFor(`GET /customers/${kenji}/history`, () =>
+        restoredMeanwhile(kenji, MANAGER),
+      )
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'このお客様は、その間に台帳に戻されました。読み込み直してください。',
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await theCustomer()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should say that a customer who left the ledger could not be read, and show them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await removedMeanwhile(kenji, OWNER)
+      await takeAway('customer_versions')
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('お客様'),
+      )
+      await giveBack('customer_versions')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await theRemoved()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
     it('should say to an owner that no customer has an ID nobody has', async () => {
       // Act
       await openAt(
@@ -439,6 +567,181 @@ describe('removing customers, bringing them back, and their history, against the
       expect(versionsShown().at(-1)).toEqual(['版 1', '記録の開始', '', ''])
     })
 
+    it('should say that the history could not be read, and show it when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await takeAway('customer_versions')
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('変更履歴'),
+      )
+      await giveBack('customer_versions')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await screen.findByRole('table', { name: '版の一覧' })
+      expect(versionsShown()).toEqual([['版 1', '記録の開始', '', '']])
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should keep the versions it has when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await notesChangedMeanwhile(kenji, MANAGER, 21)
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history`)
+      await screen.findByRole('table', { name: '版の一覧' })
+      await takeAway('customer_versions')
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(versionsShown()).toHaveLength(20)
+      await giveBack('customer_versions')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await waitFor(() => expect(versionsShown()).toHaveLength(22))
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should lead to the customer who referred them from a version that changed values and from one that removed them', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await referredMeanwhile(KENJI.email, YUKI.email)
+      const [kenji, yuki] = await Promise.all([
+        customerIdOf(KENJI.email),
+        customerIdOf(YUKI.email),
+      ])
+      await changedMeanwhile(kenji, MANAGER, {
+        phoneNumber: '080-3333-4444',
+        city: '渋谷区',
+      })
+      await removedMeanwhile(kenji, OWNER)
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${kenji}/history/2`,
+      )
+      await screen.findByRole('table', { name: '前の版から変えた項目' })
+      const referrer = `/salons/${tokyo}/customers/${yuki}`
+      expect(
+        within(part('この版の台帳')).getByRole('link', {
+          name: '紹介したお客様',
+        }),
+      ).toHaveAttribute('href', referrer)
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '変更履歴へ' }))
+      await user.click(
+        within(
+          await screen.findByRole('table', { name: '版の一覧' }),
+        ).getByRole('link', { name: '版 3' }),
+      )
+
+      // Assert
+      expect(await screen.findByText(/^版 3・削除・.+・あなた$/)).toBeVisible()
+      expect(
+        within(part('この版の台帳')).getByRole('link', {
+          name: '紹介したお客様',
+        }),
+      ).toHaveAttribute('href', referrer)
+    })
+
+    it('should show a version alone when the account may no longer read the one before, as it is asked for', async () => {
+      // Arrange
+      const kenji = await customerIdOf(KENJI.email)
+      await changedMeanwhile(kenji, MANAGER, {
+        phoneNumber: '080-3333-4444',
+        city: '渋谷区',
+      })
+      whenAskedFor(`GET /customers/${kenji}/versions/1`, () =>
+        madeStaffMeanwhile(OWNER),
+      )
+
+      // Act
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history/2`)
+
+      // Assert
+      await screen.findByRole('region', { name: 'この版の台帳' })
+      expect(describedIn('この版の台帳')).toMatchObject({
+        電話番号: '080-3333-4444',
+      })
+      expect(
+        screen.queryByRole('table', { name: '前の版から変えた項目' }),
+      ).toBeNull()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should show a version alone when the one before could not be read, say so, and what it changed when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await changedMeanwhile(kenji, MANAGER, {
+        phoneNumber: '080-3333-4444',
+        city: '渋谷区',
+      })
+      const giveTheMomentBack = await unreadable(
+        'customer_versions',
+        'changedAt',
+        await versionIdOf(kenji, 1),
+      )
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history/2`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        unread('前の版'),
+      )
+      expect(describedIn('この版の台帳')).toMatchObject({
+        電話番号: '080-3333-4444',
+      })
+      await giveTheMomentBack()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await screen.findByRole('table', { name: '前の版から変えた項目' })
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should say who reads the versions when the account may no longer, as the version is asked for', async () => {
+      // Arrange
+      const kenji = await customerIdOf(KENJI.email)
+      await changedMeanwhile(kenji, MANAGER, {
+        phoneNumber: '080-3333-4444',
+        city: '渋谷区',
+      })
+      whenAskedFor(`GET /customers/${kenji}/versions/2`, () =>
+        madeStaffMeanwhile(OWNER),
+      )
+
+      // Act
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history/2`)
+
+      // Assert
+      expect(await screen.findByText(KEPT)).toBeVisible()
+      expect(screen.queryByRole('region', { name: 'この版の台帳' })).toBeNull()
+    })
+
+    it('should say that the version could not be read, and show it when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await takeAway('customer_versions')
+      await openAt((tokyo) => `/salons/${tokyo}/customers/${kenji}/history/1`)
+      expect(await screen.findByRole('alert')).toHaveTextContent(unread('版'))
+      await giveBack('customer_versions')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(await screen.findByText(/^版 1・記録の開始・/)).toBeVisible()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
     it('should show the history and the versions of a customer who left the ledger, from the page that keeps them', async () => {
       // Arrange
       const user = userEvent.setup()
@@ -510,6 +813,26 @@ describe('removing customers, bringing them back, and their history, against the
       await heading('変更履歴')
       expect(await screen.findByText(KEPT)).toBeVisible()
       expect(screen.queryByRole('table')).toBeNull()
+    })
+
+    it('should be told at the address of a version who reads it, and not ask for it', async () => {
+      // Arrange
+      const yuki = await customerIdOf(YUKI.email)
+      const fetched: MockInstance<typeof fetch> = vi.spyOn(globalThis, 'fetch')
+
+      // Act
+      await openAt(
+        (tokyo) => `/salons/${tokyo}/customers/${yuki}/history/1`,
+        STYLIST,
+      )
+
+      // Assert
+      await heading('台帳の版')
+      expect(await screen.findByText(KEPT)).toBeVisible()
+      expect(screen.getByRole('link', { name: '変更履歴へ' })).toBeVisible()
+      expect(
+        asked(fetched).filter((line) => line.includes('/versions/')),
+      ).toEqual([])
     })
 
     it('should not be shown a customer who left the ledger, and not ask for a history the API refuses them', async () => {

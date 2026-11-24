@@ -1363,6 +1363,7 @@ also says that a review of somebody else was helpful, and reports one.
 | `RequireSession` | Screens for signed-in users of the `roles` it is given. Everybody else is told what stands in the way |
 | `SessionAccount` | The `account` of `AppShell`: who is signed in, and the way out. With `signInHref`, the way in for a visitor; with `securityHref`, the way to the security of the account, in an application that has no page of its own for the account |
 | `useSession` | Who is signed in, for a screen that shows different things to different people |
+| `useSignedInUser` | Who is signed in, for a screen behind the gate: the user, or `undefined` while nobody is known to be, which grants nothing |
 | `AccountSecurityScreen`, `PasswordChangeScreen`, `TwoFactorSetupScreen` | The security of the account of the session, the change of its password and the set-up of its second factor: screens that every application puts behind the guard, at an address of its own |
 | `PASSWORD_RULE`, `newPasswordError`, `refusedPasswordMessage` | The rule of the API for a password that is chosen, as a person is told it: for every form that chooses one |
 | `useOwnSalon`, `NoSalonNotice` | The salon of who is signed in: `platform` for `admin`, the salon of a member of the staff, or none. And what an account of a salon role that belongs to no salon is told |
@@ -1405,8 +1406,12 @@ over the values.
   `manager` and `admin`. An account of another role is told so and offered
   the way out. This decides what is shown. What is allowed is decided by the
   API, on every request.
-- A screen inside `RequireSession` reads the user with `useSession()` and
-  matches all four states; it is rendered for `signedIn` only.
+- A screen inside `RequireSession` is rendered for `signedIn` only, and
+  reads who it is with `useSignedInUser()`: the user, or `undefined` while
+  nobody is known to be, which grants nothing
+  (`user !== undefined && mayKeepCustomers(user.role)`). A screen that
+  shows something else to each state of the session reads `useSession()`
+  and matches all four.
 - Signing out is `SessionAccount`'s business. The screens disappear with the
   session, in every tab.
 - **The links of the header depend on who is signed in.** A pure function

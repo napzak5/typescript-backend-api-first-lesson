@@ -7,7 +7,7 @@ import {
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   Button,
@@ -110,7 +110,7 @@ type CustomerLedgerProps = {
  */
 const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
   const say = useSay()
-  const session = useSession()
+  const user = useSignedInUser()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [query, setQuery] = useSearchParams()
@@ -133,8 +133,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
   const [dialog, setDialog] = useState<ChosenDialog>('none')
   const [said, setSaid] = useState<DialogSays>(NOTHING_TO_SAY)
   const [exportSaid, setExportSaid] = useState<ExportSaid>()
-  const mayKeep =
-    session.type === 'signedIn' && mayKeepCustomers(session.user.role)
+  const mayKeep = user !== undefined && mayKeepCustomers(user.role)
   const read = useInfiniteQuery({
     queryKey: [...CUSTOMER_LISTS, 'ledger', salon.timezone, asked],
     queryFn: ({ pageParam }) =>

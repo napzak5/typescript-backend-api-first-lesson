@@ -36,10 +36,9 @@ export type ChosenFile =
 /** The control of the file */
 export const FILE = 'file'
 
-export type CustomerImportFormProps = Pick<
-  FormProps,
-  'pending' | 'actions' | 'onSubmit'
-> & {
+export type CustomerImportFormProps = Pick<FormProps, 'actions'> & {
+  /** The registration is on its way */
+  pending?: boolean | undefined
   /** What is said about the whole attempt, in the language of the page */
   message?: LocalizedText | undefined
   /**
@@ -53,6 +52,12 @@ export type CustomerImportFormProps = Pick<
   refused: readonly FileProblem[]
   /** A file was chosen, or the choice was taken back */
   onChoose: (file: File | undefined) => void
+  /**
+   * The form was sent: with the file as it was read, or `undefined` when
+   * none is chosen. It is not sent while the file is read, nor while the
+   * registration is on its way
+   */
+  onSubmit: (read: CustomerFileRead | undefined) => void
 }
 
 /**
@@ -85,11 +90,13 @@ export const CustomerImportForm = ({
   const problems = read?.type === 'invalid' ? read.problems : refused
   const customers = read?.type === 'read' ? read.customers : []
 
+  // As the form of the package does, one attempt at a time; and none before the file is read
+  const busy = pending || chosen?.type === 'reading'
+
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
-    // As the form of the package does: one attempt at a time
-    if (!pending) {
-      onSubmit(new FormData(event.currentTarget))
+    if (!busy) {
+      onSubmit(read)
     }
   }
 
@@ -176,7 +183,7 @@ export const CustomerImportForm = ({
         />
       )}
       <Actions layout='row'>
-        <Button type='submit' form={formId} variant='primary' pending={pending}>
+        <Button type='submit' form={formId} variant='primary' pending={busy}>
           {say(words.register(customers.length))}
         </Button>
         {actions}

@@ -521,6 +521,54 @@ describe('readCustomerFile', () => {
     ])
   })
 
+  it('should say that preferences or tags that are no JSON are not written as the ledger exports them', async () => {
+    // Act
+    const read = await readCustomerFile(
+      lines(
+        `${NEEDED},preferences,tags`,
+        '山田,花子,hanako@example.com,090-1234-5678,{cut},[VIP',
+      ),
+      TODAY,
+    )
+
+    // Assert
+    expect(problemsOf(read).map(problemTextOf)).toEqual<LocalizedText[]>([
+      {
+        en: 'Row 2, Preferences: Write the preferences as JSON, as the ledger exports them ({"preferredServices":["cut"],"notes":null}), or leave them empty. preferredServices are each one of cut, color, perm, treatment, spa, styling, extension, other.',
+        ja: '2 行目 好み: 好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、cut、color、perm、treatment、spa、styling、extension、other のどれかです。',
+      },
+      {
+        en: 'Row 2, Tags: Separate the tags with commas, or write them as a JSON array of strings, as the ledger exports them.',
+        ja: '2 行目 タグ: タグは、「、」かカンマで区切るか、台帳の出力と同じ JSON の文字列の配列で書いてください。',
+      },
+    ])
+  })
+
+  it('should read preferences without notes as the ledger exports them', async () => {
+    // Act
+    const read = await readCustomerFile(
+      lines(
+        `${NEEDED},preferences`,
+        '山田,花子,hanako@example.com,090-1234-5678,"{""preferredServices"":[""cut""],""notes"":null}"',
+      ),
+      TODAY,
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'read',
+      customers: [
+        {
+          row: 2,
+          request: {
+            ...BARE,
+            preferences: { preferredServices: ['cut'], notes: null },
+          },
+        },
+      ],
+    })
+  })
+
   it('should say that an address of mail or a referral code is that of an earlier row, at the later row', async () => {
     // Act
     const read = await readCustomerFile(
@@ -598,6 +646,38 @@ describe('afterRegistration', () => {
           {
             row: 2,
             column: { en: 'Tags', ja: 'タグ' },
+            message: {
+              en: 'This value was not accepted. Check how it is written.',
+              ja: 'この値は受け付けられませんでした。書き方を確かめてください。',
+            },
+          },
+        ],
+      },
+    ],
+    [
+      'a customer refused as a whole, or by a property that is no column',
+      {
+        type: 'invalid',
+        values: [
+          { field: 'items.0', rule: 'invalid_type' },
+          { field: 'items.1.salonId', rule: 'unrecognized_keys' },
+        ],
+      },
+      {
+        type: 'again',
+        message: undefined,
+        problems: [
+          {
+            row: 2,
+            column: null,
+            message: {
+              en: 'This value was not accepted. Check how it is written.',
+              ja: 'この値は受け付けられませんでした。書き方を確かめてください。',
+            },
+          },
+          {
+            row: 4,
+            column: null,
             message: {
               en: 'This value was not accepted. Check how it is written.',
               ja: 'この値は受け付けられませんでした。書き方を確かめてください。',

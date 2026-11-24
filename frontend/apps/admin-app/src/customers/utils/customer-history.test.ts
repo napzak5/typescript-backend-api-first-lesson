@@ -96,6 +96,14 @@ describe('changerNameOf', () => {
     // Act, Assert
     expect(changerNameOf(changedBy, { me: ME, customer })).toEqual(name)
   })
+
+  it('should call nobody "you" while nobody is known to be signed in', () => {
+    // Act, Assert
+    expect(changerNameOf(ME, { me: undefined, customer: CUSTOMER })).toEqual({
+      en: 'Another account',
+      ja: 'ほかのアカウント',
+    })
+  })
 })
 
 describe('whyUnrestorable', () => {

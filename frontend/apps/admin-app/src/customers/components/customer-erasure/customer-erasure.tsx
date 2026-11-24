@@ -111,11 +111,6 @@ export const CustomerErasure = ({
     </>
   )
 
-  const saidState = (request: ErasureRequest): string | undefined => {
-    const state = erasureStateOf(request, timezone)
-    return state === undefined ? undefined : say(state)
-  }
-
   const shownRequest = (request: ErasureRequest | null) =>
     match(request)
       .with(null, () =>
@@ -153,12 +148,12 @@ export const CustomerErasure = ({
       ))
       .with({ status: 'cancelled' }, (cancelled) => (
         <>
-          <p>{saidState(cancelled)}</p>
+          <p>{say(erasureStateOf(cancelled, timezone))}</p>
           {requestable && asking}
         </>
       ))
       .with({ status: 'completed' }, (completed) => (
-        <p>{saidState(completed)}</p>
+        <p>{say(erasureStateOf(completed, timezone))}</p>
       ))
       .exhaustive()
 

@@ -4,7 +4,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -98,10 +98,9 @@ const VersionPart = ({
 }: VersionPartProps) => {
   const say = useSay()
   const { version: number = '' } = useParams()
-  const session = useSession()
-  const keeper =
-    session.type === 'signedIn' && mayKeepCustomers(session.user.role)
-  const me = session.type === 'signedIn' ? session.user.id : ''
+  const user = useSignedInUser()
+  const keeper = user !== undefined && mayKeepCustomers(user.role)
+  const me = user?.id
   const read = useQuery({
     queryKey: versionKeyOf(customerId, number),
     queryFn: () => readVersion(customerId, number),

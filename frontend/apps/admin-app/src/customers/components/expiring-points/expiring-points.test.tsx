@@ -60,6 +60,27 @@ describe('ExpiringPoints', () => {
     expect(within(part()).queryByText(/期限切れ/)).toBeNull()
   })
 
+  it('should leave the day of a point without an expiry date empty, and not take it for past', async () => {
+    // Act
+    await stories.Undated.run()
+
+    // Assert
+    expect(rowsOf(part())).toEqual([
+      [
+        '',
+        '付与',
+        '500 ポイント',
+        '2026年11月10日（火） 12:00',
+        'カットのお会計',
+      ],
+    ])
+    expect(
+      within(part()).queryByText(
+        '期限を過ぎたポイントも、失効させるまでは使えます。',
+      ),
+    ).toBeNull()
+  })
+
   it('should say that no point expires within the days', async () => {
     // Act
     await stories.None.run()

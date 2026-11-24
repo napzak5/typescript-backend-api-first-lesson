@@ -4,7 +4,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
@@ -15,7 +15,12 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -67,16 +72,14 @@ type PointEntryProps = {
  * they have read the customer anew.
  */
 const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
-  const session = useSession()
+  const user = useSignedInUser()
   const [search] = useSearchParams()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const say = useSay()
   const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
-  const kinds = pointKindsFor(
-    session.type === 'signedIn' ? session.user.role : '',
-  )
+  const kinds = pointKindsFor(user?.role)
   const back = customerPointsHrefOf(salon.id, customer.id)
   const record = useMutation({
     mutationFn: (recording: PointRecording) => recordPoints(recording),
@@ -85,7 +88,7 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
         .with({ type: 'done' }, ({ message, balance }) => {
           queryClient.setQueryData<CustomerRead>(
             customerKeyOf(customer.id),
-            (read) => (read === undefined ? read : withBalance(read, balance)),
+            withBalance(customer, balance),
           )
           queryClient.removeQueries({ queryKey: pointsKeyOf(customer.id) })
           notify({ tone: 'success', message })
@@ -159,8 +162,7 @@ const PointsToRecord = ({ salon, customer }: PointsToRecordProps) => {
   })
   const sale = useQuery({
     queryKey: saleKeyOf(saleId ?? ''),
-    queryFn: () => readSale(saleId ?? ''),
-    enabled: saleId !== null,
+    queryFn: saleId === null ? skipToken : () => readSale(saleId),
     staleTime: 0,
   })
 

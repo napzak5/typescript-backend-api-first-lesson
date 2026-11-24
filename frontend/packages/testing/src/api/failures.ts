@@ -1,11 +1,13 @@
+import { vi } from 'vitest'
 import * as z from 'zod'
 import { testApi } from './test-api'
 
 /*
  * How a test makes the API fail, without a stub: the database refuses a
  * write, a table or a column of one is not there, a stored value cannot be
- * answered with. What a test changes goes with the copy of the database
- * that the test had.
+ * answered with, or the database changes between two reads of a screen.
+ * What a test changes goes with the copy of the database that the test
+ * had.
  */
 
 /**
@@ -86,4 +88,30 @@ export const unreadable = async (
       [id, moment],
     )
   }
+}
+
+/**
+ * Makes a change in the database the moment the screen sends the request
+ * of `line` (its method and its path below the API, without the query:
+ * `GET /salons/<id>`), the first time it does, and sends the request to
+ * the real API then: a change that falls between two reads of a screen.
+ * The answers are those of the API; the test fixes only when the database
+ * changes. `vi.restoreAllMocks()` after the test takes it away.
+ */
+export const whenAskedFor = (
+  line: string,
+  change: () => Promise<unknown>,
+): void => {
+  const answer = globalThis.fetch
+  let changed = false
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const request = new Request(input, init)
+    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, '')
+    if (!changed && `${request.method} ${path}` === line) {
+      changed = true
+      await change()
+    }
+
+    return answer(input, init)
+  })
 }

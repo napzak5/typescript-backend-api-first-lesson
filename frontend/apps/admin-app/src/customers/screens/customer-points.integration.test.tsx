@@ -4,9 +4,12 @@ import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
+  giveBack,
   refuse,
   salonIdOf,
   signInAs,
+  takeAway,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -25,7 +28,7 @@ import {
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
 import type { Locale } from '@beauty-salon-shared/i18n'
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../../__tests__/screens'
@@ -78,6 +81,16 @@ const holdReadingsOf = (customerId: string): (() => void) => {
 
   return () => held.resolve()
 }
+
+/** What is said of what could not be read, by what it is */
+const unread = (what: string): string =>
+  `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
+
+/** Takes the balance of the customers away the moment the screen asks for that of the customer. */
+const takeTheBalanceAwayWhenAskedFor = (customerId: string): void =>
+  whenAskedFor(`GET /points/customer/${customerId}/balance`, () =>
+    takeAway('customers', 'loyaltyPoints'),
+  )
 
 /** The rows of the history without the times, which are those of the test. */
 const historyShown = (): string[][] =>
@@ -336,9 +349,138 @@ describe('the points of customers, against the API', () => {
       ).toHaveFocus()
       expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
     })
+
+    it('should name a booking of another salon, and lead to the customer a merge moved points from', async () => {
+      // Arrange
+      const ofOsaka = await arrange({
+        bookingNumber: 'BK-TEST-0311',
+        day: -5,
+        at: '10:00',
+        status: 'completed',
+        salon: OSAKA,
+        staffCode: 'STF003',
+        service: 'Signature Cut',
+        minutes: 75,
+      })
+      const [yuki, kenji] = await Promise.all([
+        customerIdOf(YUKI.email),
+        customerIdOf(KENJI.email),
+      ])
+      await arrangePoints(YUKI.email, [
+        {
+          type: 'used',
+          points: -100,
+          daysAgo: 3,
+          reference: { type: 'booking', id: ofOsaka },
+        },
+        {
+          type: 'transferred',
+          points: 800,
+          daysAgo: 1,
+          reference: { type: 'customer', id: kenji },
+        },
+      ])
+
+      // Act
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${yuki}/points`,
+      )
+
+      // Assert
+      await screen.findByText('ほかのサロンの予約')
+      expect(
+        screen.getByRole('link', { name: '統合したお客様' }),
+      ).toHaveAttribute('href', `/salons/${tokyo}/customers/${kenji}`)
+      expect(historyShown().map(([, , , , reference]) => reference)).toEqual([
+        '統合したお客様',
+        'ほかのサロンの予約',
+        '',
+      ])
+    })
+
+    it('should say in each part what could not be read, and show each when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const yuki = await customerIdOf(YUKI.email)
+      await takeAway('customer_points')
+      takeTheBalanceAwayWhenAskedFor(yuki)
+      await openAt((salon) => `/salons/${salon}/customers/${yuki}/points`)
+      await waitFor(() =>
+        expect(
+          screen.getAllByRole('alert').map((alert) => alert.textContent),
+        ).toHaveLength(3),
+      )
+      expect(
+        screen.getAllByRole('alert').map((alert) => alert.textContent),
+      ).toEqual(
+        expect.arrayContaining(
+          [
+            unread('残高'),
+            unread('期限が近いポイント'),
+            unread('ポイントの履歴'),
+          ].map((said) => expect.stringContaining(said)),
+        ),
+      )
+      await giveBack('customer_points')
+      await giveBack('customers', 'loyaltyPoints')
+
+      // Act
+      for (const button of screen.getAllByRole('button', {
+        name: 'もう一度読み込む',
+      })) {
+        await user.click(button)
+      }
+
+      // Assert
+      expect(
+        await screen.findByRole('region', { name: '残高' }),
+      ).toHaveTextContent('2,500 ポイント')
+      await screen.findByRole('table', { name: 'ポイントの履歴' })
+      expect(historyShown()).toEqual([
+        ['調整', '+2,500', '2,500 ポイント', '', '', 'ポイント台帳の開始残高'],
+      ])
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    })
+
+    it('should keep the transactions it has when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeVisitPoints(YUKI.email, 20)
+      const yuki = await customerIdOf(YUKI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${yuki}/points`)
+      await screen.findByRole('table', { name: 'ポイントの履歴' })
+      await takeAway('customer_points')
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(historyShown()).toHaveLength(20)
+      await giveBack('customer_points')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await screen.findByText('ポイント台帳の開始残高')
+      expect(historyShown()).toHaveLength(21)
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
   })
 
   describe('recording points', () => {
+    it('should open the form without the balance when it could not be read', async () => {
+      // Arrange
+      takeTheBalanceAwayWhenAskedFor(await customerIdOf(YUKI.email))
+
+      // Act
+      await openForm(YUKI.email)
+
+      // Assert
+      expect(text('ポイント数')).toHaveAccessibleDescription(
+        '1 以上の整数で入れます。減らすときも、減らす数を入れます。',
+      )
+    })
+
     it('should give points that expire on a day, say so with the balance, and show them first in the history and on the page of the customer', async () => {
       // Arrange
       const user = userEvent.setup()

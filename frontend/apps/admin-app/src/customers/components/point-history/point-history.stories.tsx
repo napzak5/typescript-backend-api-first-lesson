@@ -16,6 +16,9 @@ const Reference = ({
 }: ModelsPointTransactionResponse) => {
   const say = useSay()
 
+  if (referenceId === null) {
+    return ''
+  }
   if (referenceType === 'customer') {
     return (
       <Link href={`/salons/${salon.id}/customers/${MERGED_CUSTOMER}`}>

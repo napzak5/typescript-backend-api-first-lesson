@@ -16,7 +16,7 @@ import {
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
 import type { Locale } from '@beauty-salon-shared/i18n'
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../../__tests__/screens'
@@ -83,6 +83,23 @@ const fileOf = (rows: string[]): File =>
   })
 
 const NEEDED = 'lastName,firstName,email,phoneNumber'
+
+/** The rows of a file of one customer, and of another */
+const HANAKO = [NEEDED, '山田,花子,hanako.yamada@example.com,090-1234-5678']
+const ICHIRO = [NEEDED, '鈴木,一郎,ichiro.suzuki@example.com,03-1234-5678']
+
+/** A file whose bytes the browser gives once the test lets it, as a slow disk gives them. */
+const heldFileOf = (rows: string[], held: Promise<unknown>): File => {
+  const bytes = fileOf(rows).arrayBuffer()
+
+  return Object.assign(fileOf(rows), {
+    arrayBuffer: () => held.then(() => bytes),
+  })
+}
+
+/** Lets what was started finish: every promise the screen chained, before the test goes on. */
+const settled = (): Promise<void> =>
+  act(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
 
 /** What the screen of the import says, as a page in Japanese and in English names it */
 const IMPORT_SAYS = {
@@ -256,6 +273,98 @@ describe('writing customers at once, against the API', () => {
         expect.stringContaining('ファイルを選んでください。'),
       )
       expect(fileInput()).toHaveFocus()
+    })
+
+    it('should ask for a file again when the one chosen is taken away', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const before = await storedCustomerCount()
+      await openAt(customerImportHrefOf, STYLIST)
+      await heading('CSV から登録する')
+      await chooseFile(user, HANAKO)
+
+      // Act
+      await user.upload(fileInput(), [])
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      expect(screen.queryByRole('table', { name: '登録するお客様' })).toBeNull()
+      expect(fileInput()).toHaveAccessibleDescription(
+        expect.stringContaining('ファイルを選んでください。'),
+      )
+      expect(await storedCustomerCount()).toBe(before)
+    })
+
+    it('should say that a file the browser could not read was not read, and send nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const before = await storedCustomerCount()
+      await openAt(customerImportHrefOf, STYLIST)
+      await heading('CSV から登録する')
+      const moved = Object.assign(fileOf(HANAKO), {
+        arrayBuffer: () => Promise.reject(new Error('moved away')),
+      })
+
+      // Act
+      await user.upload(fileInput(), moved)
+
+      // Assert
+      await waitFor(() =>
+        expect(problemsShown()).toEqual([
+          'ファイルを読み込めませんでした。もう一度、ファイルを選んでください。',
+        ]),
+      )
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+      expect(fileInput()).toBeInvalid()
+      expect(await storedCustomerCount()).toBe(before)
+    })
+
+    it('should show the file chosen last, not one chosen before it that is read after it', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const held = Promise.withResolvers<void>()
+      await openAt(customerImportHrefOf, STYLIST)
+      await heading('CSV から登録する')
+      await user.upload(fileInput(), heldFileOf(HANAKO, held.promise))
+      await chooseFile(user, ICHIRO)
+
+      // Act: the first file is read only now
+      held.resolve()
+      await settled()
+
+      // Assert
+      expect(rowsOf('登録するお客様')).toEqual([
+        [
+          '2',
+          '鈴木 一郎',
+          '',
+          'ichiro.suzuki@example.com',
+          '03-1234-5678',
+          'レギュラー',
+        ],
+      ])
+    })
+
+    it('should send nothing while the file is read, and show what it holds once it is', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const before = await storedCustomerCount()
+      const held = Promise.withResolvers<void>()
+      await openAt(customerImportHrefOf, STYLIST)
+      await heading('CSV から登録する')
+      await user.upload(fileInput(), heldFileOf(HANAKO, held.promise))
+      expect(screen.getByText('ファイルを読んでいます')).toBeVisible()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+      held.resolve()
+
+      // Assert
+      expect(
+        await screen.findByRole('button', { name: '1 人を登録する' }),
+      ).toBeVisible()
+      expect(fileInput()).not.toHaveAttribute('aria-invalid', 'true')
+      expect(await storedCustomerCount()).toBe(before)
     })
 
     it('should say at its row that a customer of the file is in the ledger already, and register nobody', async () => {

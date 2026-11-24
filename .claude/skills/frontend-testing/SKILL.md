@@ -56,8 +56,9 @@ the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
 `testApi`, `idOf`, `idsOf`, `countOf`, `dayFromToday`, `salonIdOf`,
-`signInAs`, and the failures a test arranges in the database: `refuse`,
-`takeAway`, `giveBack`, `unreadable`), what another tab wrote into
+`signInAs`, the failures a test arranges in the database: `refuse`,
+`takeAway`, `giveBack`, `unreadable`, and the change it makes there the
+moment a request is sent: `whenAskedFor`), what another tab wrote into
 `localStorage` and a browser that refuses access to it (`changeInAnotherTab`, `refuseStorage`), and the check
 that a package writes its texts as messages
 (`@beauty-salon-frontend/testing/language`:
@@ -887,9 +888,29 @@ is tested for what it must leave alone as well:
   screen that changes a review meets a removed salon only when the salon
   goes after the review was read. The test makes the change in the
   database the moment the screen asks for the salon, and sends the
-  request to the real API then (`removeTheSalonWhenAskedFor` in
-  `own-reviews.integration.test.tsx`). The answers are those of the API;
-  the test fixes only when the database changes.
+  request to the real API then:
+  `whenAskedFor('GET /salons/<id>', () => …)` of
+  `@beauty-salon-frontend/testing/api` (`removeTheSalonWhenAskedFor` in
+  `own-reviews.integration.test.tsx`). The line is the method and the
+  path below `/api/v1`, without the query; the change is made the first
+  time the line is asked for, and `vi.restoreAllMocks()` after the test
+  takes it away. The answers are those of the API; the test fixes only
+  when the database changes.
+- **A role is changed between two requests the same way.** The API reads
+  the role of the account at every request, and the session of the
+  screen keeps the one it signed in with: an owner who is made a member
+  of the staff as a part of the page is asked for
+  (`whenAskedFor('GET /customers/<id>/deletion-request', () => madeStaffMeanwhile(OWNER))`
+  in `customer-erasure.integration.test.tsx`) meets the refusal the
+  screen says then.
+- **A file the browser reads late, or cannot read**, is a `File` with an
+  `arrayBuffer` of its own:
+  `Object.assign(fileOf(rows), { arrayBuffer: () => held.then(() => bytes) })`,
+  where `held` is a promise of `Promise.withResolvers()` that the test
+  resolves when it means to, or one that rejects
+  (`customer-bulk.integration.test.tsx`). What must not happen after it
+  is read is asserted once every promise the screen chained has settled:
+  `act` around a timer of no delay.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from
   the ledger has `deletedAt`, and the account no longer names it:

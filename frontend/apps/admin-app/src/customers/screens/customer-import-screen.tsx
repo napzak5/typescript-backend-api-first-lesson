@@ -108,20 +108,19 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
       })
   }
 
-  const submit = (): void =>
-    match(chosen)
-      .with({ type: 'read', read: { type: 'read' } }, ({ read }) => {
+  const submit = (read: CustomerFileRead | undefined): void =>
+    match(read)
+      .with({ type: 'read' }, ({ customers }) => {
         setSaid(NOTHING_SAID)
-        registration.mutate(read.customers)
+        registration.mutate(customers)
       })
-      .with({ type: 'read', read: { type: 'invalid' } }, () =>
+      .with({ type: 'invalid' }, () =>
         setSaid({
           message: undefined,
           errors: { [FILE]: words.form.fileWrong },
           refused: [],
         }),
       )
-      .with({ type: 'reading' }, () => undefined)
       .with(undefined, () =>
         setSaid({
           message: undefined,
@@ -139,7 +138,7 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
         onChoose={choose}
         message={said.message}
         errors={said.errors}
-        pending={registration.isPending || chosen?.type === 'reading'}
+        pending={registration.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={customersHrefOf(salon.id)} variant='quiet'>
