@@ -1,4 +1,8 @@
-import type { IFileStorage, Mail } from '@beauty-salon-backend/domain'
+import {
+  type IFileStorage,
+  type WrittenMail,
+  writtenMail,
+} from '@beauty-salon-backend/domain'
 import {
   connectDatabase,
   createLogger,
@@ -70,8 +74,11 @@ export type TestAppOptions = {
   rateLimit?: AppSettings['rateLimit']
   /** Receives every line the application logs, parsed. Not logged if absent. */
   logs?: unknown[]
-  /** Receives every mail the application hands over. Dropped if absent. */
-  mails?: Mail[]
+  /**
+   * Receives every mail the application hands over, as its recipient reads
+   * it: in its language. Dropped if absent.
+   */
+  mails?: WrittenMail[]
   /** Holds the files of the attachments; a storage of its own if absent. */
   fileStorage?: IFileStorage
 }
@@ -89,7 +96,7 @@ export function createTestApp({
   return createApp({
     database,
     settings: { ...settings, rateLimit },
-    mailer: { deliver: (mail) => mails?.push(mail) },
+    mailer: { deliver: (mail) => mails?.push(writtenMail(mail)) },
     fileStorage,
     twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger(

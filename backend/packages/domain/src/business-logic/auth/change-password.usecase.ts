@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
@@ -25,6 +26,7 @@ export class ChangePasswordUseCase {
   async execute(
     actor: Actor,
     input: unknown,
+    language: Locale,
   ): Promise<Result<null, DomainError>> {
     const request = parseWith(authPasswordChangeRequestSchema, input, MESSAGE)
     if (request.type === 'error') {
@@ -97,7 +99,7 @@ export class ChangePasswordUseCase {
     if (!changed.data) {
       return sessionGone
     }
-    mailer.deliver(passwordChangedMail(user.email))
+    mailer.deliver(passwordChangedMail(user.email, language))
 
     return Result.success(null)
   }

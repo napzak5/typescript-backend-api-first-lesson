@@ -1,4 +1,5 @@
-import type { Mail } from '@beauty-salon-backend/domain'
+import { type Mail, writtenMail } from '@beauty-salon-backend/domain'
+import { mailMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   GenericContainer,
   type StartedTestContainer,
@@ -100,14 +101,34 @@ const storedMessages = async (): Promise<StoredMessage[]> => {
     .otherwise(unexpected)
 }
 
-/** The plain text of a message, with the line ends of the mail turned into \n. */
+/** The languages a message says it is written in (`Content-Language`). */
+const languagesOf = async (id: string): Promise<string[]> => {
+  const body: unknown = await (
+    await fetch(`${mailpit}/api/v1/message/${id}/headers`)
+  ).json()
+
+  return match(body)
+    .with(
+      { 'Content-Language': P.array(P.string) },
+      (headers) => headers['Content-Language'],
+    )
+    .otherwise(unexpected)
+}
+
+/**
+ * The plain text of a message, with the line ends of the mail turned into
+ * \n. A text of ASCII alone travels as it is (7bit), and the body of an SMTP
+ * message ends with a line end: that one is the transport's, not the text's.
+ */
 const textOf = async (id: string): Promise<string> => {
   const body: unknown = await (
     await fetch(`${mailpit}/api/v1/message/${id}`)
   ).json()
 
   return match(body)
-    .with({ Text: P.string }, ({ Text }) => Text.replaceAll('\r\n', '\n'))
+    .with({ Text: P.string }, ({ Text }) =>
+      Text.replaceAll('\r\n', '\n').replace(/\n$/, ''),
+    )
     .otherwise(unexpected)
 }
 
@@ -134,50 +155,37 @@ const mailerFor = (settings: Partial<SmtpSettings> = {}) => {
 
 const TOKEN = 'Xq3vT0kEnFr0mTh3Ma1lXq3vT0kEnFr0mTh3Ma1lAb'
 
-/** The three mails of the authentication flows, as the application writes them. */
+/** Three mails of the authentication flows, as the application hands them over: in Japanese and in English. */
 const mails: Mail[] = [
   {
     to: 'hanako@salon.example',
-    subject: 'メールアドレスの確認',
-    text: [
-      'メールアドレスを確認するため、次のリンクを開いてください。',
-      '',
+    language: 'ja',
+    subject: mailMessages.emailVerification.subject,
+    text: mailMessages.emailVerification.text(
       `https://app.salon.example/verify-email#token=${TOKEN}`,
-      '',
-      'このリンクは 24 時間有効です。新しい確認メールを受け取った場合は、新しいメールのリンクを使ってください。',
-      '',
-      'このメールに心当たりがない場合は、何もせずに破棄してください。リンクを開かなければ、アカウントは有効になりません。',
-    ].join('\n'),
+      24,
+    ),
   },
   {
     to: 'taro.yamada@salon.example',
-    subject: 'パスワードの再設定',
-    text: [
-      'パスワードを再設定するには、次のリンクを開いてください。',
-      '',
+    language: 'en',
+    subject: mailMessages.passwordReset.subject,
+    text: mailMessages.passwordReset.text(
       `https://app.salon.example/reset-password#token=${TOKEN}`,
-      '',
-      'このリンクは 30 分間有効で、1 回だけ使えます。',
-      '',
-      '再設定を依頼していない場合は、このメールを破棄してください。パスワードは変更されません。',
-    ].join('\n'),
+      30,
+    ),
   },
-  {
-    to: 'jiro@salon.example',
-    subject: 'パスワードが変更されました',
-    text: [
-      'アカウントのパスワードが変更されました。',
-      '',
-      '変更した覚えがない場合は、ログイン画面からすぐにパスワードを再設定してください。再設定すると、すべての端末からログアウトされます。',
-    ].join('\n'),
-  },
+  { to: 'jiro@salon.example', language: 'ja', ...mailMessages.passwordChanged },
 ]
 
 describe('SmtpMailer with a real SMTP server', () => {
-  it.each(mails)(
-    'delivers the mail "$subject" with its recipient, subject and text intact',
-    async (sent) => {
+  it.each(
+    mails.map((mail): [string, Mail] => [writtenMail(mail).subject, mail]),
+  )(
+    'delivers the mail "%s" in its language, with its recipient, subject and text intact',
+    async (_subject, sent) => {
       const { mailer, lines } = mailerFor()
+      const written = writtenMail(sent)
 
       mailer.deliver(sent)
       await mailer.close()
@@ -188,15 +196,17 @@ describe('SmtpMailer with a real SMTP server', () => {
           id: expect.any(String),
           from: { name: 'Beauty Salon', address: 'no-reply@salon.example' },
           to: [{ name: '', address: sent.to }],
-          subject: sent.subject,
+          subject: written.subject,
         },
       ])
-      expect(await textOf(stored[0]?.id ?? '')).toBe(sent.text)
+      expect(await textOf(stored[0]?.id ?? '')).toBe(written.text)
+      expect(await languagesOf(stored[0]?.id ?? '')).toEqual([sent.language])
       expect(lines).toEqual([
         expect.objectContaining({
           level: 'info',
           msg: 'Mail delivered',
-          subject: sent.subject,
+          subject: sent.subject.en,
+          language: sent.language,
         }),
       ])
     },
@@ -233,7 +243,10 @@ describe('SmtpMailer with a real SMTP server', () => {
     const { mailer, lines } = mailerFor()
     const sent = [...mails, ...mails].map((mail, index) => ({
       ...mail,
-      subject: `${mail.subject} ${index + 1}`,
+      subject: {
+        en: `${mail.subject.en} ${index + 1}`,
+        ja: `${mail.subject.ja} ${index + 1}`,
+      },
     }))
 
     for (const mail of sent) {
@@ -243,12 +256,12 @@ describe('SmtpMailer with a real SMTP server', () => {
 
     const stored = await storedMessages()
     expect(stored.map(({ subject }) => subject).sort()).toEqual(
-      sent.map(({ subject }) => subject).sort(),
+      sent.map((mail) => writtenMail(mail).subject).sort(),
     )
     expect(lines).toHaveLength(sent.length)
   })
 
-  it('logs a delivered mail with its subject only', async () => {
+  it('logs a delivered mail with its English subject and its language only', async () => {
     const { mailer, lines } = mailerFor()
 
     mailer.deliver(mails[1] ?? unexpected(mails))
@@ -276,7 +289,7 @@ describe('SmtpMailer with a real SMTP server', () => {
       expect.objectContaining({
         level: 'error',
         msg: 'Failed to deliver mail',
-        subject: 'メールアドレスの確認',
+        subject: 'Confirm your email address',
         // Observed with nodemailer 10.5.0: the server answers STARTTLS with
         // 502, and nodemailer stops there.
         failure: {
@@ -300,7 +313,7 @@ describe('SmtpMailer with a real SMTP server', () => {
       expect.objectContaining({
         level: 'error',
         msg: 'Failed to deliver mail',
-        subject: 'メールアドレスの確認',
+        subject: 'Confirm your email address',
         failure: expect.objectContaining({ code: expect.any(String) }),
       }),
     ])
@@ -321,7 +334,7 @@ describe('SmtpMailer with a real SMTP server', () => {
       expect.objectContaining({
         level: 'error',
         msg: 'Failed to deliver mail',
-        subject: 'メールアドレスの確認',
+        subject: 'Confirm your email address',
         failure: expect.objectContaining({
           responseCode: expect.any(Number),
         }),

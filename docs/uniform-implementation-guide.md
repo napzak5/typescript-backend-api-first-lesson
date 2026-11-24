@@ -572,8 +572,9 @@ Logging is structured, with pino. Application code never writes to `console`.
 - The mailer logs by itself, with the injected `Logger`: a delivery goes on
   after the use case has returned, so its outcome cannot be a returned value.
   `SmtpMailer` (`backend/packages/infrastructure/src/mail/smtp-mailer.ts`)
-  writes `Mail delivered` or `Failed to deliver mail` with the subject of the
-  message, never its recipient or text.
+  writes `Mail delivered` or `Failed to deliver mail` with the English subject
+  of the message and the language it was written in, never its recipient or
+  text.
 - Never logged: request headers and bodies, and the values bound to a failed
   SQL statement. `describeDatabaseError` in
   `backend/packages/infrastructure/src/database/failure.ts` keeps the statement

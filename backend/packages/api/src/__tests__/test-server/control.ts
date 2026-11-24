@@ -44,8 +44,8 @@ const digest = (text: string): Buffer =>
  * - `POST /apis/{id}/reset` gives it a fresh database and forgets its mails
  *   (204)
  * - `GET /apis/{id}/mails` answers with `{ mails }`: what the API handed to
- *   its mailer since the last reset (`to`, `subject`, `text`), oldest
- *   first. Nothing is sent anywhere: a test reads here the link that a
+ *   its mailer since the last reset, as their recipients read them (`to`,
+ *   `language`, and `subject` and `text` in that language), oldest first. Nothing is sent anywhere: a test reads here the link that a
  *   person would find in their mailbox
  * - `POST /apis/{id}/query` runs `{ text, values }` on its database and
  *   answers with `{ rows }`: for what a test cannot bring about through the

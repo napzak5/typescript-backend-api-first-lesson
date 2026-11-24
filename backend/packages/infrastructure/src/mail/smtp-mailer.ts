@@ -1,4 +1,8 @@
-import type { IMailer, Mail } from '@beauty-salon-backend/domain'
+import {
+  type IMailer,
+  type Mail,
+  writtenMail,
+} from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import { createTransport } from 'nodemailer'
 import { match, P } from 'ts-pattern'
@@ -55,9 +59,11 @@ const describeFailure = (error: unknown) => ({
 
 /**
  * Sends mail through an SMTP server. `deliver` returns at once and the
- * delivery goes on in the background, as `IMailer` asks; a failure is
- * logged with the subject of the message, which tells its kind, and without
- * the recipient. Which provider carries the mail is a matter of where the
+ * delivery goes on in the background, as `IMailer` asks. A mail is written
+ * in its language, which its `Content-Language` header names. A delivery
+ * is logged with the English subject of the message, which tells its kind
+ * as the log is written, and the language it was written in, without the
+ * recipient. Which provider carries the mail is a matter of where the
  * settings point.
  */
 export class SmtpMailer implements IMailer {
@@ -97,23 +103,26 @@ export class SmtpMailer implements IMailer {
     this.transport.close()
   }
 
-  private async send({ to, subject, text }: Mail): Promise<void> {
+  private async send(mail: Mail): Promise<void> {
+    const { to, language, subject, text } = writtenMail(mail)
     const sent = await Result.fromPromise(
       this.transport.sendMail({
         from: this.settings.from,
         to,
         subject,
         text,
+        headers: { 'Content-Language': language },
       }),
     )
+    const logged = { subject: mail.subject.en, language }
 
     if (sent.type === 'error') {
       this.logger.error(
-        { subject, failure: describeFailure(sent.error) },
+        { ...logged, failure: describeFailure(sent.error) },
         'Failed to deliver mail',
       )
       return
     }
-    this.logger.info({ subject }, 'Mail delivered')
+    this.logger.info(logged, 'Mail delivered')
   }
 }

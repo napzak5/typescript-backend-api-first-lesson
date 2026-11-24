@@ -34,7 +34,7 @@ import type {
   IUserRepository,
   SuccessfulLogin,
 } from '../../../repositories/user.repository'
-import type { Mail } from '../../../services/mailer'
+import { type WrittenMail, writtenMail } from '../../../services/mailer'
 import type { PasswordVerification } from '../../../services/password-hasher'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
@@ -71,7 +71,7 @@ const LOCK_RULE = { threshold: 5, lockedUntil: secondsFromNow(15 * MINUTE) }
 const ENABLED_SUBJECT = '2 要素認証が有効になりました'
 const DISABLED_SUBJECT = '2 要素認証が無効になりました'
 const REGENERATED_SUBJECT = 'バックアップコードが再発行されました'
-const BACKUP_CODE_USED_SUBJECT = 'バックアップコードでログインしました'
+const BACKUP_CODE_USED_SUBJECT = 'バックアップコードでサインインしました'
 
 /** The ten backup codes `fakeTwoFactorAuthenticator` issues, and what `fakePasswordHasher` stores of them. */
 const ISSUED_BACKUP_CODES = [
@@ -160,7 +160,7 @@ const withUser = (
   repository: Partial<IUserRepository> = {},
   overrides: Partial<AuthUseCaseDependencies> = {},
 ) => {
-  const mails: Mail[] = []
+  const mails: WrittenMail[] = []
   const dependencies = authDependencies({
     userRepository: userRepositoryWith({
       findByEmail: vi.fn(async () => Result.success(userAccount(user))),
@@ -182,7 +182,7 @@ const withUser = (
     }),
     mailer: {
       deliver: (mail) => {
-        mails.push(mail)
+        mails.push(writtenMail(mail))
       },
     },
     ...overrides,
@@ -258,6 +258,7 @@ describe('LoginUseCase for an account with two-factor authentication', () => {
         ...overrides,
       },
       client,
+      'ja',
     )
 
   /** No login was noted and no session was started. */
@@ -435,12 +436,42 @@ describe('LoginUseCase for an account with two-factor authentication', () => {
       expect(mails).toEqual([
         {
           to: EMAIL,
+          language: 'ja',
           subject: BACKUP_CODE_USED_SUBJECT,
           text: expect.stringContaining('残りのバックアップコードは 2 個です'),
         },
       ])
     },
   )
+
+  it('should write the mail of a backup code in English for a sign-in in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withUser(twoFactorUser('enabled'), {
+      useBackupCode: vi.fn(async () => Result.success(2)),
+    })
+
+    // Act
+    await new LoginUseCase(dependencies).execute(
+      {
+        email: EMAIL,
+        password: PASSWORD,
+        rememberMe: false,
+        twoFactorCode: BACKUP_CODE,
+      },
+      client,
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'You signed in with a backup code',
+        text: expect.stringContaining('You have 2 backup codes left.'),
+      },
+    ])
+  })
 
   it.each([9, 1, 0])(
     'says in the mail that %i backup codes are left when the repository says so',
@@ -1035,7 +1066,12 @@ describe('VerifyTwoFactorUseCase', () => {
   const verify = (
     dependencies: AuthUseCaseDependencies,
     input: unknown = { code: APP_CODE },
-  ) => new VerifyTwoFactorUseCase(dependencies).execute(actors.customer, input)
+  ) =>
+    new VerifyTwoFactorUseCase(dependencies).execute(
+      actors.customer,
+      input,
+      'ja',
+    )
 
   const expectNotEnabled = (dependencies: AuthUseCaseDependencies): void => {
     expect(dependencies.userRepository.enableTwoFactor).not.toHaveBeenCalled()
@@ -1066,7 +1102,34 @@ describe('VerifyTwoFactorUseCase', () => {
     )
     expectNothingCounted(dependencies)
     expect(mails).toEqual([
-      { to: EMAIL, subject: ENABLED_SUBJECT, text: expect.any(String) },
+      {
+        to: EMAIL,
+        language: 'ja',
+        subject: ENABLED_SUBJECT,
+        text: expect.any(String),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withUser(twoFactorUser('pending'))
+
+    // Act
+    await new VerifyTwoFactorUseCase(dependencies).execute(
+      actors.customer,
+      { code: APP_CODE },
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Two-factor authentication was turned on',
+        text: expect.stringContaining('From your next sign-in'),
+      },
     ])
   })
 
@@ -1319,11 +1382,15 @@ describe('DisableTwoFactorUseCase', () => {
     dependencies: AuthUseCaseDependencies,
     overrides: Record<string, unknown> = {},
   ) =>
-    new DisableTwoFactorUseCase(dependencies).execute(actors.customer, {
-      password: PASSWORD,
-      code: APP_CODE,
-      ...overrides,
-    })
+    new DisableTwoFactorUseCase(dependencies).execute(
+      actors.customer,
+      {
+        password: PASSWORD,
+        code: APP_CODE,
+        ...overrides,
+      },
+      'ja',
+    )
 
   const expectNotDisabled = (dependencies: AuthUseCaseDependencies): void => {
     expect(dependencies.userRepository.disableTwoFactor).not.toHaveBeenCalled()
@@ -1357,7 +1424,34 @@ describe('DisableTwoFactorUseCase', () => {
     expectNothingCounted(dependencies)
     expectSessionsKept(dependencies)
     expect(mails).toEqual([
-      { to: EMAIL, subject: DISABLED_SUBJECT, text: expect.any(String) },
+      {
+        to: EMAIL,
+        language: 'ja',
+        subject: DISABLED_SUBJECT,
+        text: expect.any(String),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withUser(twoFactorUser('enabled'))
+
+    // Act
+    await new DisableTwoFactorUseCase(dependencies).execute(
+      actors.customer,
+      { password: PASSWORD, code: APP_CODE },
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Two-factor authentication was turned off',
+        text: expect.stringContaining('Signing in takes only your password.'),
+      },
     ])
   })
 
@@ -1571,6 +1665,7 @@ describe('DisableTwoFactorUseCase', () => {
     const result = await new DisableTwoFactorUseCase(dependencies).execute(
       actors.customer,
       input,
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual([':invalid_type'])
@@ -1695,7 +1790,11 @@ describe('GenerateBackupCodesUseCase', () => {
     dependencies: AuthUseCaseDependencies,
     input: unknown = { code: APP_CODE },
   ) =>
-    new GenerateBackupCodesUseCase(dependencies).execute(actors.customer, input)
+    new GenerateBackupCodesUseCase(dependencies).execute(
+      actors.customer,
+      input,
+      'ja',
+    )
 
   /** No backup codes were issued, hashed or stored. */
   const expectNothingReplaced = (
@@ -1737,7 +1836,34 @@ describe('GenerateBackupCodesUseCase', () => {
     )
     expectNothingCounted(dependencies)
     expect(mails).toEqual([
-      { to: EMAIL, subject: REGENERATED_SUBJECT, text: expect.any(String) },
+      {
+        to: EMAIL,
+        language: 'ja',
+        subject: REGENERATED_SUBJECT,
+        text: expect.any(String),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withUser(twoFactorUser('enabled'))
+
+    // Act
+    await new GenerateBackupCodesUseCase(dependencies).execute(
+      actors.customer,
+      { code: APP_CODE },
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Your backup codes were issued again',
+        text: expect.stringContaining('can no longer be used'),
+      },
     ])
   })
 
@@ -2084,7 +2210,7 @@ describe('the mails about two-factor authentication', () => {
   const mailsOf: [
     string,
     string,
-    (code: string) => Promise<{ mails: Mail[]; succeeded: boolean }>,
+    (code: string) => Promise<{ mails: WrittenMail[]; succeeded: boolean }>,
   ][] = [
     [
       'confirming a setup',
@@ -2096,6 +2222,7 @@ describe('the mails about two-factor authentication', () => {
         const result = await new VerifyTwoFactorUseCase(dependencies).execute(
           actors.customer,
           { code },
+          'ja',
         )
         return { mails, succeeded: result.type === 'success' }
       },
@@ -2110,6 +2237,7 @@ describe('the mails about two-factor authentication', () => {
         const result = await new DisableTwoFactorUseCase(dependencies).execute(
           actors.customer,
           { password: PASSWORD, code },
+          'ja',
         )
         return { mails, succeeded: result.type === 'success' }
       },
@@ -2123,7 +2251,7 @@ describe('the mails about two-factor authentication', () => {
         )
         const result = await new GenerateBackupCodesUseCase(
           dependencies,
-        ).execute(actors.customer, { code })
+        ).execute(actors.customer, { code }, 'ja')
         return { mails, succeeded: result.type === 'success' }
       },
     ],
@@ -2136,7 +2264,7 @@ describe('the mails about two-factor authentication', () => {
 
       expect(succeeded).toBe(true)
       expect(mails).toEqual([
-        { to: ADDRESS, subject, text: expect.any(String) },
+        { to: ADDRESS, language: 'ja', subject, text: expect.any(String) },
       ])
       const [mail] = mails
       expect(mail?.text.length).toBeGreaterThan(0)
@@ -2160,12 +2288,14 @@ describe('the mails about two-factor authentication', () => {
         twoFactorCode: BACKUP_CODE,
       },
       client,
+      'ja',
     )
 
     expect(result.type).toBe('success')
     expect(mails).toEqual([
       {
         to: ADDRESS,
+        language: 'ja',
         subject: BACKUP_CODE_USED_SUBJECT,
         text: expect.stringContaining('残りのバックアップコードは 9 個です'),
       },

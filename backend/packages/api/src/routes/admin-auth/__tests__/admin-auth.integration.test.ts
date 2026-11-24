@@ -1,8 +1,8 @@
 import { sessions, users } from '@beauty-salon-backend/database'
 import {
   type DomainError,
-  type Mail,
   userIdSchema,
+  type WrittenMail,
 } from '@beauty-salon-backend/domain'
 import { UserRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -56,7 +56,8 @@ const ENABLE = `${AUTH}/2fa/enable`
 /** A UUID that no user has. */
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 
-const RESET_SUBJECT = '2 要素認証が管理者によって無効にされました'
+const RESET_SUBJECT =
+  'Two-factor authentication was turned off by an administrator'
 
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
@@ -231,7 +232,7 @@ const lockedOrNot: [string, () => NewUser][] = [
 describe('Administrator operations on accounts', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
 
   beforeEach(() => {
     mails = []
@@ -725,7 +726,35 @@ describe('Administrator operations on accounts', () => {
         (await getUser(admin.authorization, user.id)).body.data,
       )
       expect(mails).toEqual([
-        { to: user.email, subject: RESET_SUBJECT, text: expect.any(String) },
+        {
+          to: user.email,
+          language: 'en',
+          subject: RESET_SUBJECT,
+          text: expect.any(String),
+        },
+      ])
+    })
+
+    it('should mail the user in the language of the request of the admin, which is the language the admin asked for', async () => {
+      // Arrange
+      const admin = await signInAsAdmin()
+      const user = await signedInWithTwoFactor()
+
+      // Act
+      const response = await resetTwoFactor(admin.authorization, user.id).set(
+        'Accept-Language',
+        'ja',
+      )
+
+      // Assert
+      expectUser(response, user.id)
+      expect(mails).toEqual([
+        {
+          to: user.email,
+          language: 'ja',
+          subject: '2 要素認証が管理者によって無効にされました',
+          text: expect.stringContaining('サインインの画面から'),
+        },
       ])
     })
 

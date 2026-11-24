@@ -26,7 +26,7 @@ const rulesBrokenBy = async (password: string): Promise<string[]> => {
         findByEmail: async () => Result.success(null),
       }),
     }),
-  ).execute({ email: EMAIL, password })
+  ).execute({ email: EMAIL, password }, 'ja')
 
   return result.type === 'error' ? brokenRules(result.error) : []
 }
@@ -111,7 +111,7 @@ describe('the passwords that are refused as too easy to guess', () => {
           findByEmail: async () => Result.success(null),
         }),
       }),
-    ).execute({ email: EMAIL, password: 'Taro Yamada Salon' })
+    ).execute({ email: EMAIL, password: 'Taro Yamada Salon' }, 'ja')
 
     expect(result).toMatchObject({
       type: 'error',
@@ -136,10 +136,13 @@ describe('the passwords that are refused as too easy to guess', () => {
       }),
     })
 
-    const result = await new RegisterUseCase(dependencies).execute({
-      email: 'hanako.suzuki@example.com',
-      password: 'Taro Yamada Salon',
-    })
+    const result = await new RegisterUseCase(dependencies).execute(
+      {
+        email: 'hanako.suzuki@example.com',
+        password: 'Taro Yamada Salon',
+      },
+      'ja',
+    )
 
     expect(dataOf(result)).toBeNull()
   })

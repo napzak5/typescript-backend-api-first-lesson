@@ -37,6 +37,7 @@ import type {
   RevokedStaffInvitation,
   UsableStaffInvitation,
 } from '../../../repositories/staff-invitation.repository'
+import { writtenMail } from '../../../services/mailer'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   AcceptStaffInvitationUseCase,
@@ -143,9 +144,9 @@ const calls = ({
     .sort((left, right) => left.order - right.order)
     .map(({ name }) => name)
 
-/** The mails that were handed to the mailer. */
+/** The mails that were handed to the mailer, as their recipients read them. */
 const mailsOf = ({ mailer }: StaffInvitationUseCaseDependencies) =>
-  vi.mocked(mailer.deliver).mock.calls.map(([mail]) => mail)
+  vi.mocked(mailer.deliver).mock.calls.map(([mail]) => writtenMail(mail))
 
 /** Dependencies in which there is no such salon. */
 const withoutSalon = (): StaffInvitationUseCaseDependencies =>
@@ -437,6 +438,7 @@ describe('CreateStaffInvitationUseCase', () => {
       salon,
       id,
       input,
+      'ja',
     )
 
   /** Dependencies in which issuing has the given outcome. */
@@ -500,12 +502,39 @@ describe('CreateStaffInvitationUseCase', () => {
     expect(mails).toHaveLength(1)
     expect(mails[0]).toMatchObject({
       to: INVITED_EMAIL,
+      language: 'ja',
       subject: 'スタッフアカウントへの招待',
     })
     expect(mails[0]?.text.split('\n')).toContain(
       `${PUBLIC_APP_URL}/accept-staff-invitation#token=token-1`,
     )
     expect(mails[0]?.text).toContain(SALON_NAME)
+  })
+
+  it('should write the mail in English for a request in English, whoever receives it', async () => {
+    // Arrange
+    const dependencies = staffInvitationDependencies()
+
+    // Act
+    await new CreateStaffInvitationUseCase(dependencies).execute(
+      actors.admin,
+      SALON_ID,
+      STAFF_MEMBER_ID,
+      { role: 'staff' },
+      'en',
+    )
+
+    // Assert
+    expect(mailsOf(dependencies)).toEqual([
+      {
+        to: INVITED_EMAIL,
+        language: 'en',
+        subject: 'Invitation to a staff account',
+        text: expect.stringContaining(
+          `${SALON_NAME} has invited you to a staff account.`,
+        ),
+      },
+    ])
   })
 
   it('mails to the address of the stored invitation, not to one of its own', async () => {
@@ -659,7 +688,7 @@ describe('CreateStaffInvitationUseCase', () => {
 
       const result = await new CreateStaffInvitationUseCase(
         dependencies,
-      ).execute(actors.admin, SALON_ID, STAFF_MEMBER_ID, input)
+      ).execute(actors.admin, SALON_ID, STAFF_MEMBER_ID, input, 'ja')
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({

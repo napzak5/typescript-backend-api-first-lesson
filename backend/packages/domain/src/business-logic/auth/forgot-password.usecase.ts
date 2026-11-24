@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordForgotRequestSchema } from '../../schemas/auth.schema'
@@ -22,7 +23,10 @@ export class ForgotPasswordUseCase {
    * when the last mail went out moments ago. Nothing about the account
    * changes until the link is used; in particular it is not locked.
    */
-  async execute(input: unknown): Promise<Result<null, DomainError>> {
+  async execute(
+    input: unknown,
+    language: Locale,
+  ): Promise<Result<null, DomainError>> {
     const request = parseWith(
       authPasswordForgotRequestSchema,
       input,
@@ -58,7 +62,9 @@ export class ForgotPasswordUseCase {
       return issued
     }
     if (issued.data) {
-      mailer.deliver(passwordResetMail(email, publicAppUrl, token.token))
+      mailer.deliver(
+        passwordResetMail(email, language, publicAppUrl, token.token),
+      )
     }
 
     return Result.success(null)

@@ -15,6 +15,7 @@ import {
 import type { Actor } from '../../../models/auth'
 import { parseSalonIdOfPath } from '../../../models/salon'
 import type { SalonRole } from '../../../models/staff-invitation'
+import { writtenMail } from '../../../services/mailer'
 import {
   EMAIL_VERIFICATION,
   latestEndToMailAgain,
@@ -162,37 +163,62 @@ describe('latestEndToMailAgain', () => {
 })
 
 describe('staffInvitationMail', () => {
-  const mail = staffInvitationMail(
-    INVITED_EMAIL,
-    SALON_NAME,
-    PUBLIC_APP_URL,
-    'mailed-token',
+  const mail = writtenMail(
+    staffInvitationMail(
+      INVITED_EMAIL,
+      'ja',
+      SALON_NAME,
+      PUBLIC_APP_URL,
+      'mailed-token',
+    ),
+  )
+  const inEnglish = writtenMail(
+    staffInvitationMail(
+      INVITED_EMAIL,
+      'en',
+      SALON_NAME,
+      PUBLIC_APP_URL,
+      'mailed-token',
+    ),
   )
 
   it('goes to the address it is given, under a subject that is the same for every salon', () => {
     expect(mail.to).toBe(INVITED_EMAIL)
     expect(mail.subject).toBe('スタッフアカウントへの招待')
+    expect(inEnglish.subject).toBe('Invitation to a staff account')
+  })
+
+  it('is written in the language it is given', () => {
+    expect(mail.language).toBe('ja')
+    expect(inEnglish.language).toBe('en')
   })
 
   it('names the salon in the first line of the text', () => {
     expect(mail.text.split('\n')[0]).toBe(
       `${SALON_NAME} から、スタッフアカウントへの招待が届いています。`,
     )
+    expect(inEnglish.text.split('\n')[0]).toBe(
+      `${SALON_NAME} has invited you to a staff account.`,
+    )
   })
 
   it('links to the page of the web application, with the token in the fragment, on a line of its own', () => {
-    expect(mail.text.split('\n')).toContain(
-      `${PUBLIC_APP_URL}/accept-staff-invitation#token=mailed-token`,
-    )
+    const link = `${PUBLIC_APP_URL}/accept-staff-invitation#token=mailed-token`
+
+    expect(mail.text.split('\n')).toContain(link)
+    expect(inEnglish.text.split('\n')).toContain(link)
   })
 
   it('tells that the link works for seven days and once', () => {
     expect(mail.text).toContain('このリンクは 7 日間有効で、1 回だけ使えます。')
+    expect(inEnglish.text).toContain(
+      'The link is valid for 7 days and can be used once.',
+    )
   })
 
   it('tells both ways of taking the invitation, whoever the address belongs to', () => {
     expect(mail.text.split('\n')).toContain(
-      '招待を受けるには、次のリンクを開いてください。パスワードを設定して、アカウントを作成します。このメールアドレスのスタッフアカウントをすでにお持ちの場合は、ログインして参加します。',
+      '招待を受けるには、次のリンクを開いてください。パスワードを設定して、アカウントを作成します。このメールアドレスのスタッフアカウントをすでにお持ちの場合は、サインインして参加します。',
     )
   })
 
@@ -203,11 +229,14 @@ describe('staffInvitationMail', () => {
   })
 
   it('keeps the name of a salon out of the subject, whatever the name is', () => {
-    const named = staffInvitationMail(
-      INVITED_EMAIL,
-      'Salon\r\nBcc: someone@example.com',
-      PUBLIC_APP_URL,
-      'mailed-token',
+    const named = writtenMail(
+      staffInvitationMail(
+        INVITED_EMAIL,
+        'ja',
+        'Salon\r\nBcc: someone@example.com',
+        PUBLIC_APP_URL,
+        'mailed-token',
+      ),
     )
 
     expect(named.subject).toBe('スタッフアカウントへの招待')

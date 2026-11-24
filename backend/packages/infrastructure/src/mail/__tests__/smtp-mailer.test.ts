@@ -15,10 +15,17 @@ const unreachable: SmtpSettings = {
 
 const TOKEN = 'Xq3vT0kEnFr0mTh3Ma1lXq3vT0kEnFr0mTh3Ma1lAb'
 
+const LINK = `https://app.salon.example/verify-email#token=${TOKEN}`
+
+/** A mail in Japanese, whose subject and text are written in every language */
 const mail = (overrides: Partial<Mail> = {}): Mail => ({
   to: 'hanako@example.com',
-  subject: 'メールアドレスの確認',
-  text: `次のリンクを開いてください。\n\nhttps://app.salon.example/verify-email#token=${TOKEN}\n`,
+  language: 'ja',
+  subject: { en: 'Confirm your email address', ja: 'メールアドレスの確認' },
+  text: {
+    en: `Open the following link.\n\n${LINK}\n`,
+    ja: `次のリンクを開いてください。\n\n${LINK}\n`,
+  },
   ...overrides,
 })
 
@@ -61,7 +68,7 @@ describe('SmtpMailer', () => {
     return mailer.close()
   })
 
-  it('logs a delivery the server refused, with the stage of the SMTP dialogue, once close resolves', async () => {
+  it('logs a delivery the server refused, with the English subject, the language of the mail and the stage of the SMTP dialogue, once close resolves', async () => {
     const { mailer, lines } = recordingMailer()
 
     mailer.deliver(mail())
@@ -71,7 +78,8 @@ describe('SmtpMailer', () => {
       expect.objectContaining({
         level: 'error',
         msg: 'Failed to deliver mail',
-        subject: 'メールアドレスの確認',
+        subject: 'Confirm your email address',
+        language: 'ja',
         failure: {
           message: expect.any(String),
           code: 'ESOCKET',
@@ -82,7 +90,7 @@ describe('SmtpMailer', () => {
     ])
   })
 
-  it('keeps the recipient, the text, the token and the credentials out of the log', async () => {
+  it('keeps the recipient, the text, the token, the credentials and what the mail says in its language out of the log', async () => {
     const { mailer, lines } = recordingMailer()
 
     mailer.deliver(mail())
@@ -95,6 +103,8 @@ describe('SmtpMailer', () => {
       'hanako',
       TOKEN,
       '次のリンクを開いてください',
+      'Open the following link',
+      'メールアドレスの確認',
       'verify-email',
       'smtp-password',
     ]) {
@@ -115,13 +125,13 @@ describe('SmtpMailer', () => {
   it('waits in close for every delivery under way', async () => {
     const { mailer, lines } = recordingMailer()
     const subjects = [
-      'メールアドレスの確認',
-      'パスワードの再設定',
-      'パスワードが変更されました',
+      'Confirm your email address',
+      'Reset your password',
+      'Your password was changed',
     ]
 
     for (const subject of subjects) {
-      mailer.deliver(mail({ subject }))
+      mailer.deliver(mail({ subject: { en: subject, ja: 'メール' } }))
     }
     await mailer.close()
 

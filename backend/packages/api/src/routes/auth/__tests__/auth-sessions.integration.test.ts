@@ -1,9 +1,9 @@
 import { sessions } from '@beauty-salon-backend/database'
 import {
   type DomainError,
-  type Mail,
   sessionIdSchema,
   userIdSchema,
+  type WrittenMail,
 } from '@beauty-salon-backend/domain'
 import { SessionRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -96,7 +96,7 @@ const idsOf = (response: Response): string[] =>
 describe('Sessions of the signed-in user', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
 
   beforeEach(() => {
     mails = []

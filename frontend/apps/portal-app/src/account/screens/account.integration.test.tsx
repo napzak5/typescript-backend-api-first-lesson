@@ -559,8 +559,10 @@ describe('the screens of an account, against the API', () => {
         screen.getByRole('link', { name: 'サインインする' }),
       ).toHaveAttribute('href', '/sign-in')
       expect(await findAccessibilityViolations()).toEqual([])
+      // Each mail is in the language of the request that caused it: the
+      // reset was asked of the API in none, the password set on a page in Japanese
       expect(await subjectsTo(CUSTOMER)).toEqual([
-        'パスワードの再設定',
+        'Reset your password',
         'パスワードが変更されました',
       ])
       expect(await signInWith(CUSTOMER, testApi().seedPassword)).toEqual({
@@ -946,6 +948,14 @@ describe('the screens of an account on a page in English, against the API', () =
       main().getByRole('button', { name: 'Send the confirmation mail again' }),
     ).toBeVisible()
     expect(await findAccessibilityViolations()).toEqual([])
+    // The page asked in English, and the mail is written in English
+    expect(
+      (await testApi().mails()).map(({ to, language, subject }) => [
+        to,
+        language,
+        subject,
+      ]),
+    ).toEqual([[VISITOR, 'en', 'Confirm your email address']])
   })
 
   it('should say in English at each control what is missing, and what the API says of a password that is easy to guess', async () => {

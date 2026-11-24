@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import {
   authMessages,
   entityMessages,
@@ -31,6 +32,7 @@ export class ResetTwoFactorUseCase {
   async execute(
     actor: Actor,
     id: unknown,
+    language: Locale,
   ): Promise<Result<ApiUserResponse, DomainError>> {
     if (!mayAdministerAccounts(actor)) {
       return Result.error(DomainErrors.forbidden())
@@ -63,7 +65,7 @@ export class ResetTwoFactorUseCase {
         DomainErrors.conflict(authMessages.twoFactorNotEnabled),
       )
     }
-    mailer.deliver(twoFactorResetMail(found.data.email))
+    mailer.deliver(twoFactorResetMail(found.data.email, language))
 
     const changed = await userRepository.findById(userId.data)
     if (changed.type === 'error') {

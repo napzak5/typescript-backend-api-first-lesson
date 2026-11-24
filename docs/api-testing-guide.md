@@ -87,7 +87,7 @@ TEST_SERVER_TOKEN=<any value> pnpm --filter @beauty-salon-backend/api run test:s
 |---------|--------------|--------|
 | `POST /apis` with `{ port, corsOrigins, publicAppUrl }` | Starts an API: `createApp` on a copy of the template. `port` is the port to listen on, or `null` for a free one; `corsOrigins` are the origins whose pages may call the API from a browser; `publicAppUrl` is the origin the links in its mails point at, or `null` | 201 `{ id, origin, seedPassword }`; 400 `{ issues }` when the body is not of that shape; 409 `{ message }` when the port is taken |
 | `POST /apis/{id}/reset` | Gives the API a new copy of the template, drops the previous one and forgets the mails | 204 |
-| `GET /apis/{id}/mails` | What the API handed to its mailer since the last reset, oldest first | 200 `{ mails }`, each with `to`, `subject` and `text` |
+| `GET /apis/{id}/mails` | What the API handed to its mailer since the last reset, oldest first, as their recipients read them | 200 `{ mails }`, each with `to`, `language`, and `subject` and `text` in that language |
 | `POST /apis/{id}/query` with `{ text, values }` | Runs the statement on the database of the API | 200 `{ rows }`; 400 `{ message }` when the body is not of that shape or the database refuses the statement |
 | `DELETE /apis/{id}` | Stops the API and drops its database | 204 |
 | `POST /authenticator-codes` with `{ secret, stepsAhead }` | Computes the code an authenticator app shows for the secret (Base32) now (`stepsAhead: 0`) or in the next 30 seconds (`1`): a test has no such app | 200 `{ code }`; 400 `{ issues }` when the body is not of that shape |
@@ -283,8 +283,11 @@ export type TestAppOptions = {
   rateLimit?: AppSettings['rateLimit']
   /** Receives every line the application logs, parsed. Not logged if absent. */
   logs?: unknown[]
-  /** Receives every mail the application hands over. Dropped if absent. */
-  mails?: Mail[]
+  /**
+   * Receives every mail the application hands over, as its recipient reads
+   * it: in its language. Dropped if absent.
+   */
+  mails?: WrittenMail[]
 }
 
 export function createTestApp({
@@ -314,7 +317,7 @@ export function createTestApp({
 |--------|-----|
 | `createTestApp()` | The application on the test's own database, with logging silent and mails dropped |
 | `createTestApp({ logs })` | The same, collecting every log line as a parsed object in `logs` |
-| `createTestApp({ mails })` | The same, collecting every mail the application hands to its mailer (`to`, `subject`, `text`) in `mails` |
+| `createTestApp({ mails })` | The same, collecting every mail the application hands to its mailer in `mails`, written in its language (`to`, `language`, `subject`, `text`). A request without `Accept-Language` gets a mail in English |
 | `createTestApp({ rateLimit })` | A lower rate limit, to test the limit itself |
 | `createTestApp({ database })` | Another database, for example an unreachable one |
 | `getTestDb()` | The Drizzle database of the test's own database, to arrange or inspect rows |

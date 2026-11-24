@@ -5,6 +5,7 @@ import {
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
 import type { Authenticated } from '../../shared/authentication'
+import { languageAsked } from '../../shared/language'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import {
@@ -34,6 +35,7 @@ export const createStaffInvitationHandler = (
       req.params.salonId,
       req.params.id,
       req.body,
+      languageAsked(req),
     )
 
     match(result)

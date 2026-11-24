@@ -335,6 +335,7 @@ const USE_CASES: Asked[] = [
       new ChangePasswordUseCase(authDependencies()).execute(
         actors.admin,
         NO_REQUEST,
+        'ja',
       ),
     authMessages.invalidPasswordChange,
     NO_OBJECT,
@@ -354,6 +355,7 @@ const USE_CASES: Asked[] = [
       new DisableTwoFactorUseCase(authDependencies()).execute(
         actors.admin,
         NO_REQUEST,
+        'ja',
       ),
     authMessages.invalidRequestToDisableTwoFactorAuthentication,
     NO_OBJECT,
@@ -370,7 +372,8 @@ const USE_CASES: Asked[] = [
   ],
   [
     'ForgotPasswordUseCase',
-    () => new ForgotPasswordUseCase(authDependencies()).execute(NO_REQUEST),
+    () =>
+      new ForgotPasswordUseCase(authDependencies()).execute(NO_REQUEST, 'ja'),
     authMessages.invalidPasswordResetRequest,
     NO_OBJECT,
   ],
@@ -380,6 +383,7 @@ const USE_CASES: Asked[] = [
       new GenerateBackupCodesUseCase(authDependencies()).execute(
         actors.admin,
         NO_REQUEST,
+        'ja',
       ),
     authMessages.invalidRequestForNewBackupCodes,
     NO_OBJECT,
@@ -397,10 +401,14 @@ const USE_CASES: Asked[] = [
   [
     'LoginUseCase',
     () =>
-      new LoginUseCase(authDependencies()).execute(NO_REQUEST, {
-        ipAddress: null,
-        userAgent: null,
-      }),
+      new LoginUseCase(authDependencies()).execute(
+        NO_REQUEST,
+        {
+          ipAddress: null,
+          userAgent: null,
+        },
+        'ja',
+      ),
     authMessages.invalidLogin,
     NO_OBJECT,
   ],
@@ -412,20 +420,24 @@ const USE_CASES: Asked[] = [
   ],
   [
     'RegisterUseCase',
-    () => new RegisterUseCase(authDependencies()).execute(NO_REQUEST),
+    () => new RegisterUseCase(authDependencies()).execute(NO_REQUEST, 'ja'),
     authMessages.invalidRegistration,
     NO_OBJECT,
   ],
   [
     'ResetPasswordUseCase',
-    () => new ResetPasswordUseCase(authDependencies()).execute(NO_REQUEST),
+    () =>
+      new ResetPasswordUseCase(authDependencies()).execute(NO_REQUEST, 'ja'),
     authMessages.invalidPasswordReset,
     NO_OBJECT,
   ],
   [
     'SendEmailVerificationUseCase',
     () =>
-      new SendEmailVerificationUseCase(authDependencies()).execute(NO_REQUEST),
+      new SendEmailVerificationUseCase(authDependencies()).execute(
+        NO_REQUEST,
+        'ja',
+      ),
     authMessages.invalidEmailVerificationRequest,
     NO_OBJECT,
   ],
@@ -441,6 +453,7 @@ const USE_CASES: Asked[] = [
       new VerifyTwoFactorUseCase(authDependencies()).execute(
         actors.admin,
         NO_REQUEST,
+        'ja',
       ),
     authMessages.invalidTwoFactorAuthenticationCode,
     NO_OBJECT,
@@ -1503,6 +1516,7 @@ const USE_CASES: Asked[] = [
         ID,
         ID,
         NO_REQUEST,
+        'ja',
       ),
     staffInvitationMessages.invalidStaffInvitation,
     NO_OBJECT,
@@ -1650,10 +1664,13 @@ const RULES_OF_USE_CASES: Asked[] = [
   [
     'a registration with a password that repeats the address of mail',
     () =>
-      new RegisterUseCase(withoutUsers()).execute({
-        email: 'taro.yamada.salon@example.com',
-        password: 'Taro Yamada Salon',
-      }),
+      new RegisterUseCase(withoutUsers()).execute(
+        {
+          email: 'taro.yamada.salon@example.com',
+          password: 'Taro Yamada Salon',
+        },
+        'ja',
+      ),
     authMessages.invalidRegistration,
     { field: 'password', rule: 'blocklisted' },
   ],
