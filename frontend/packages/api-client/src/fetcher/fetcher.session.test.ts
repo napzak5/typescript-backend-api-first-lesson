@@ -598,6 +598,29 @@ describe('customInstance with a session', () => {
       expect(sessionStore.read()).toEqual(SECOND)
     })
 
+    it('should leave the user signed out, without telling the listeners again, when another tab signed out while the request was on its way', async () => {
+      // Arrange
+      const sent = stubApi({
+        answer: () => {
+          localStorage.removeItem(STORAGE_KEY)
+          return problem(401, '1004')
+        },
+      })
+      const { call, sessionStore } = await loadFresh()
+      sessionStore.write(FIRST)
+      const listener = vi.fn()
+      sessionStore.subscribe(listener)
+
+      // Act
+      const response = await call(RESOURCE, { method: 'GET' })
+
+      // Assert
+      expect(sent).toHaveLength(1)
+      expect(response).toMatchObject({ status: 401, data: { code: '1004' } })
+      expect(sessionStore.read()).toBeNull()
+      expect(listener).not.toHaveBeenCalled()
+    })
+
     describe('while a renewal is under way', () => {
       /**
        * An API in the middle of a renewal. It replaces the tokens of the

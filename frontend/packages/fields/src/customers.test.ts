@@ -52,6 +52,15 @@ const formOf = (kinds: readonly string[], notes?: string): FormData => {
   return values
 }
 
+/** A form that holds files where a kind and the note would be, beside a kind */
+const formWithFiles = (): FormData => {
+  const values = formOf(['cut'])
+  values.append(PREFERRED_SERVICES, new File(['spa'], 'spa.txt'))
+  values.set(PREFERENCE_NOTES, new File(['首が弱いです'], 'notes.txt'))
+
+  return values
+}
+
 describe('the choices of a customer', () => {
   it('should hold the genders in the order of the contract', () => {
     expect(GENDERS).toEqual(['male', 'female', 'other', 'prefer_not_to_say'])
@@ -157,6 +166,11 @@ describe('basicPreferencesIn', () => {
       'no kind that is none of those of the contract',
       formOf(['massage', 'perm']),
       { preferredServices: ['perm'], notes: null },
+    ],
+    [
+      'no kind and no note from a file sent under their names',
+      formWithFiles(),
+      { preferredServices: ['cut'], notes: null },
     ],
   ])('should read %s', (_case, values, preferences) => {
     expect(basicPreferencesIn(values)).toEqual(preferences)
