@@ -55,8 +55,9 @@ the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
 `testApi`, `idOf`, `idsOf`, `countOf`, `dayFromToday`, `salonIdOf`,
-`signInAs`), what another tab wrote into `localStorage` and a browser that
-refuses access to it (`changeInAnotherTab`, `refuseStorage`), and the check
+`signInAs`, and the failures a test arranges in the database: `refuse`,
+`takeAway`, `giveBack`, `unreadable`), what another tab wrote into
+`localStorage` and a browser that refuses access to it (`changeInAnotherTab`, `refuseStorage`), and the check
 that a package writes its texts as messages
 (`@beauty-salon-frontend/testing/language`:
 `itShouldWriteItsTextsAsMessages`). The browser tests take from it what knows no test runner: the
@@ -705,17 +706,23 @@ address.
   `insert into salons (…) select … from generate_series(1, $1::int)`. A row
   that takes a whole flow (a review needs a visit that was completed) is
   inserted together with the rows it stands on, in one statement.
-- **A failure is arranged in the database, never in the answer.**
-  `alter table reviews rename to reviews_away` makes the API answer 500
-  where it reads the table, and the name given back lets the next request
-  through: the test presses 「もう一度読み込む」 and sees the content. A
-  stored value that is no value of its model (a `jsonb` column) does the
-  same for one record. A write is refused by a trigger that raises an
-  exception (`before delete on sessions`, `before update of "passwordHash"
-  on users`: `refuse` in
-  `frontend/packages/session/src/security/screens/security.integration.test.tsx`),
-  where taking the table away would also refuse the session of the
-  request. The fresh database after the test undoes all of them.
+- **A failure is arranged in the database, never in the answer**, with
+  the functions of `@beauty-salon-frontend/testing/api`.
+  `takeAway('reviews')` renames the table, and the API answers 500 where it
+  reads it; `giveBack('reviews')` lets the next request through: the test
+  presses 「もう一度読み込む」 and sees the content. A column
+  (`takeAway('staff', 'bio')`) leaves what reads the others as it was: the
+  sign-in reads a few columns of `staff`, the profile of a member all of
+  them. Where the sign-in reads the whole row (`users`, `sessions`), a
+  moment of one row that is no moment does the same for that row alone:
+  `const readable = await unreadable('sessions', 'lastActivityAt', id)`,
+  and `await readable()` gives it its moment back. A stored value that is
+  no value of its model (a `jsonb` column) does the same for one record. A
+  write is refused by a trigger that raises an exception
+  (`refuse('delete', 'sessions')`,
+  `refuse('update of "passwordHash"', 'users')`), where taking the table
+  away would also refuse the session of the request. The fresh database
+  after the test undoes all of them.
 - **A row with a date is written relative to today, in the database**
   (`(now() at time zone 'Asia/Tokyo')::date + 1`), so that the test holds
   on every day. Rows that the seed data wrote at one moment get moments of
@@ -1703,7 +1710,8 @@ default.
 
 A package with tests against the real API says `integration: {}`
 (`frontend/packages/session`, `frontend/packages/app-frame`,
-`frontend/packages/testing`, and each application), and has the script
+`frontend/packages/salon-screens`, `frontend/packages/testing`, and each
+application), and has the script
 `"test:integration": "vitest run --project integration"`. Its integration
 tests are `src/**/*.integration.test.{ts,tsx}`, in jsdom: the global setup
 `@beauty-salon-frontend/testing/api/global-setup` starts the test server of
@@ -1717,8 +1725,9 @@ every test a fresh database (`@beauty-salon-frontend/testing/setup`,
 so is `@testing-library/user-event` when its tests work a screen.
 
 `full: true` says that the tests of the package cover all of it; from then
-on `pnpm test:coverage` and the job Coverage of CI fail below 100%. What is
-measured and what is not is in
+on `pnpm test:coverage` and the job Coverage of CI fail below 100%. Every
+shared package says so; the applications do not yet. What is measured and
+what is not, and what is done about what no test reached, is in
 [Coverage](../../../docs/testing-requirements.md#coverage) of the testing
 requirements.
 
