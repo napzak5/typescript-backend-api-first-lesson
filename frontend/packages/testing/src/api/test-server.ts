@@ -11,4 +11,8 @@ export {
   type TestServer,
   testServerClient,
 } from './test-server-client'
-export { type RunningTestServer, startTestServer } from './test-server-process'
+export {
+  BACKEND_TEST_SERVER,
+  type RunningTestServer,
+  startTestServer,
+} from './test-server-process'
