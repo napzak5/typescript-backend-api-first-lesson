@@ -24,8 +24,9 @@
 }
 
 /*
- * One row: the name, and at its end the button of the menu, or the account.
- * It is as high as the button, whichever stands there.
+ * One row: the name, and at its end the button of the menu, or the choice
+ * of the language and the account. It is as high as the button, whichever
+ * stands there.
  */
 .headerContent {
   display: grid;
@@ -119,6 +120,13 @@
   display: grid;
   justify-items: start;
   gap: var(--space-1);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+/* The choice of the language, last and apart, as wide as the menu */
+.menuLanguage {
+  display: grid;
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--color-border);
 }

@@ -1,0 +1,24 @@
+/*
+ * The choice in the header: as high as the small buttons of the account
+ * beside it, and as wide as the longest name of a language. Its text keeps
+ * the size of the text of a control: the browser of a phone zooms into a
+ * control whose text is smaller as soon as it is pressed.
+ */
+.inHeader {
+  min-block-size: var(--size-control-small);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-medium);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-control);
+  line-height: var(--line-height-tight);
+  cursor: pointer;
+  transition: border-color var(--duration-short) ease;
+}
+
+@media (hover: hover) {
+  .inHeader:hover {
+    border-color: var(--color-text);
+  }
+}

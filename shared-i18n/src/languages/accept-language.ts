@@ -1,4 +1,4 @@
-import { LOCALES, type Locale } from './locale'
+import { LOCALES, type Locale, localeOfTag } from './locale'
 
 /** One language range of an `Accept-Language` header, with its weight. */
 type LanguageRange = { tag: string; weight: number }
@@ -19,19 +19,6 @@ const languageRangesOf = (element: string): LanguageRange[] => {
   const [, tag, weight = '1'] = LANGUAGE_RANGE.exec(element.trim()) ?? []
 
   return tag === undefined ? [] : [{ tag, weight: Number(weight) }]
-}
-
-/**
- * The language of the product that a language tag names, if it names one.
- * The languages of the product are written without a region or a script,
- * so the tag names the language of its first part: that is where the
- * Lookup of RFC 4647 (section 3.4) arrives when it shortens `ja-JP` to
- * `ja`. Tags are compared without regard to case (RFC 5646, section 2.1.1).
- */
-const localeOfTag = (tag: string): Locale | undefined => {
-  const [language] = tag.toLowerCase().split('-')
-
-  return LOCALES.find((locale) => locale === language)
 }
 
 /**

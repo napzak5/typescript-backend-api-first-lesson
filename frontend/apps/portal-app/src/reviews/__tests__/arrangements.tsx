@@ -430,6 +430,8 @@ export const select = (name: string) => screen.getByRole('combobox', { name })
 export const text = (name: string) => screen.getByRole('textbox', { name })
 export const button = (name: string) => screen.getByRole('button', { name })
 
-/** The names of the selects of the form, in the order of the page. */
+/** The names of the selects of the screen, in the order of the page: not the choice of the language in the header. */
 export const selects = (): (string | null)[] =>
-  screen.getAllByRole('combobox').map((control) => control.getAttribute('name'))
+  within(screen.getByRole('main'))
+    .getAllByRole('combobox')
+    .map((control) => control.getAttribute('name'))

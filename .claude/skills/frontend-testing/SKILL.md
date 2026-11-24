@@ -40,9 +40,10 @@ the tests of an area arrange together is in its `__tests__/`.
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, the
 methods of the `dialog` element and the width of the window that jsdom
-lacks, and the saving of a file a page made), what the catalogue gives
-every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
-`setWindowWidth`, `findAccessibilityViolations`,
+lacks, the languages of the browser, and the saving of a file a page made),
+what the catalogue gives every story
+(`@beauty-salon-frontend/testing/stories`), `savedFiles`,
+`setWindowWidth`, `setBrowserLanguages`, `findAccessibilityViolations`,
 `itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, what
 the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
 "A screen"), the values a form was sent with
@@ -108,7 +109,8 @@ export const Primary: Story = {
   (`frontend/apps/portal-app/src/salons/components/examples.ts`): typed as
   the generated models, and written as a salon in Japan would write them.
 - The toolbar of the catalogue chooses the language of the page
-  (`frontend/packages/ui/src/__stories__/language.tsx`). The texts of a
+  (`frontend/packages/ui/src/__stories__/language.tsx`); without a choice it
+  is the language of the browser that opened the catalogue. The texts of a
   story stay as they are written; what the components say themselves
   changes. A play function that presses what a component of `ui` says
   itself finds it by the name it has in the language of the page

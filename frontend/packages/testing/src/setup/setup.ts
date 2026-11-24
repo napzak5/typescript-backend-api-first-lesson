@@ -3,12 +3,18 @@
  * (`toBeVisible`, `toHaveAccessibleName` and the others of jest-dom), the
  * methods of the `dialog` element and the `ResizeObserver` that jsdom lacks,
  * the width of the window (`setWindowWidth()`, back to that of a desktop
- * after every test), and the saving of a file a page made (`savedFiles()`).
+ * after every test), the languages of the browser (`setBrowserLanguages()`,
+ * back to Japanese after every test), and the saving of a file a page made
+ * (`savedFiles()`).
  *
  * Name it in `setupFiles`, before the setup of the package itself.
  */
 import '@testing-library/jest-dom/vitest'
 import { afterEach } from 'vitest'
+import {
+  installBrowserLanguages,
+  resetBrowserLanguages,
+} from './browser-languages'
 import { installDialogMethods } from './dialog'
 import { installResizeObserver } from './resize-observer'
 import { installFileSaving } from './saved-files'
@@ -18,5 +24,9 @@ installDialogMethods()
 installResizeObserver()
 installFileSaving()
 installWindowWidth()
+installBrowserLanguages()
 
-afterEach(resetWindowWidth)
+afterEach(() => {
+  resetWindowWidth()
+  resetBrowserLanguages()
+})

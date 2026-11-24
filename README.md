@@ -330,8 +330,9 @@ and those that only a use case can check (a reference that names nothing, a
 value that the stored row does not allow). An error that says that
 something is not there, or is there already, or that the state of what a
 request acts on does not allow the operation, is told in the language asked
-for too. The screens ask in the language of the page, which is Japanese
-until a visitor chooses another. See [docs/i18n.md](docs/i18n.md).
+for too. The screens ask in the language of the page: the one a visitor
+chose in the header, else the one the browser is set to, else Japanese.
+See [docs/i18n.md](docs/i18n.md).
 
 ### Probes and Shutdown
 

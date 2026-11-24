@@ -498,7 +498,9 @@ describe('the share links of a file', () => {
 
       // Assert
       expect(await heading('ファイルが見つかりません')).toBeVisible()
-      expect(screen.queryByRole('combobox')).toBeNull()
+      expect(
+        within(screen.getByRole('main')).queryByRole('combobox'),
+      ).toBeNull()
     })
 
     it('should let an administrator issue a link of a file of a salon', async () => {
@@ -532,7 +534,9 @@ describe('the share links of a file', () => {
       expect(
         screen.getByText(/このアカウントでは、ファイルを共有できません/),
       ).toBeVisible()
-      expect(screen.queryByRole('combobox')).toBeNull()
+      expect(
+        within(screen.getByRole('main')).queryByRole('combobox'),
+      ).toBeNull()
       expect(
         screen.getByRole('link', { name: 'ファイルへ戻る' }),
       ).toHaveAttribute(
@@ -574,7 +578,9 @@ describe('the share links of a file', () => {
 
         // Assert
         expect(await heading('ファイルが見つかりません')).toBeVisible()
-        expect(screen.queryByRole('combobox')).toBeNull()
+        expect(
+          within(screen.getByRole('main')).queryByRole('combobox'),
+        ).toBeNull()
       },
     )
 
@@ -590,7 +596,9 @@ describe('the share links of a file', () => {
       expect(
         await screen.findByText(/アップロードが済んでいないファイル/),
       ).toBeVisible()
-      expect(screen.queryByRole('combobox')).toBeNull()
+      expect(
+        within(screen.getByRole('main')).queryByRole('combobox'),
+      ).toBeNull()
     })
   })
 

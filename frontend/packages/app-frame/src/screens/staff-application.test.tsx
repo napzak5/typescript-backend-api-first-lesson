@@ -2,7 +2,7 @@ import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
 import { PageHeader } from '@beauty-salon-frontend/ui'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { Route } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { NavigationOf } from './app-frame'
@@ -65,12 +65,17 @@ describe('StaffApplication', () => {
     },
   )
 
-  it('should show nothing of an account and no link to a screen in the header to somebody who is not signed in', () => {
+  it('should show nothing of an account and no link to a screen in the header to somebody who is not signed in: the name and the choice of the language', () => {
     // Act
     renderAt('/')
 
     // Assert
-    expect(screen.getByRole('banner').textContent).toBe(TITLE)
+    const banner = within(screen.getByRole('banner'))
+    expect(banner.getAllByRole('link').map((link) => link.textContent)).toEqual(
+      [TITLE],
+    )
+    expect(banner.queryByRole('button')).not.toBeInTheDocument()
+    expect(banner.getByRole('combobox', { name: '言語' })).toBeVisible()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
   })
 

@@ -42,14 +42,17 @@ describe('App', () => {
     },
   )
 
-  it('should show nothing of an account in the header to somebody who is not signed in', () => {
+  it('should show nothing of an account in the header to somebody who is not signed in: the name and the choice of the language', () => {
     // Act
     renderAt('/')
 
     // Assert
-    expect(screen.getByRole('banner').textContent).toBe(
-      applications.dashboard.name,
+    const banner = within(screen.getByRole('banner'))
+    expect(banner.getAllByRole('link').map((link) => link.textContent)).toEqual(
+      [applications.dashboard.name],
     )
+    expect(banner.queryByRole('button')).toBeNull()
+    expect(banner.getByRole('combobox', { name: '言語' })).toBeVisible()
   })
 
   it('should lead somebody who forgot the password to the portal, where a password is set anew', () => {

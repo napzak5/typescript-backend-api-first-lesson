@@ -1110,7 +1110,9 @@ describe('the preferences of a customer, against the API', () => {
       const user = userEvent.setup()
 
       // Assert
-      expect(screen.queryByRole('combobox')).toBeNull()
+      expect(
+        within(screen.getByRole('main')).queryByRole('combobox'),
+      ).toBeNull()
       expect(screen.queryByRole('checkbox')).toBeNull()
       expect(
         screen.getByText(

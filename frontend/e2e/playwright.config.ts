@@ -41,6 +41,10 @@ export default defineConfig({
   use: {
     // What the browser did in a test that failed, to open with `playwright show-trace`
     trace: 'retain-on-failure',
+    // The browser is set to the Japanese of Japan: a page whose visitor chose
+    // no language is in the language of the browser, and the tests are
+    // written in Japanese. A test of the language of the browser sets another
+    locale: 'ja-JP',
   },
 
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

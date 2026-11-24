@@ -1,12 +1,14 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
+  setBrowserLanguages,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { act, useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useSay } from '../../hooks/language'
 import { Button } from '../button/button'
 import { PageHeader } from '../page-header/page-header'
 import * as appShellStories from './app-shell.stories'
@@ -77,6 +79,13 @@ const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
       </p>
     </>
   )
+}
+
+/** A screen whose title is a message: it is said anew when the language changes */
+const SaidScreen = () => {
+  const say = useSay()
+
+  return <PageHeader title={say({ en: 'Bookings', ja: '予約台帳' })} />
 }
 
 describe('AppShell', () => {
@@ -460,6 +469,175 @@ describe('AppShell', () => {
       'tabindex',
       '-1',
     )
+  })
+
+  it('should offer the choice of the language at the end of the banner, before the account, with the language of the page chosen', async () => {
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    const banner = within(screen.getByRole('banner'))
+    const choice = banner.getByRole('combobox', { name: '言語' })
+    expect(choice).toHaveValue('ja')
+    expect(
+      choice.compareDocumentPosition(
+        banner.getByRole('button', { name: 'サインアウト' }),
+      ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('should say the texts of the frame in the language that is chosen in the banner, and keep the choice', async () => {
+    // Arrange
+    await stories.NavigationInHeader.run()
+
+    // Act
+    await userEvent.selectOptions(
+      within(screen.getByRole('banner')).getByRole('combobox', {
+        name: '言語',
+      }),
+      'English',
+    )
+
+    // Assert
+    expect(
+      within(screen.getByRole('banner')).getByRole('combobox', {
+        name: 'Language',
+      }),
+    ).toHaveValue('en')
+    expect(screen.getByRole('navigation', { name: 'Main menu' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toBeVisible()
+    expect(languageStore.read()).toBe('en')
+  })
+
+  it('should offer the choice of the language in the menu of a narrow screen, after the account, and not in the banner', async () => {
+    // Act
+    await stories.MenuOnNarrowScreen.run()
+
+    // Assert
+    const menu = within(screen.getByRole('dialog', { name: 'メインメニュー' }))
+    const choice = menu.getByRole('combobox', { name: '言語' })
+    expect(choice).toHaveValue('ja')
+    // Its name stands above it, as that of a control of a form does
+    expect(menu.getByText('言語')).toBeVisible()
+    expect(
+      menu
+        .getByRole('button', { name: 'サインアウト' })
+        .compareDocumentPosition(choice),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    // The sheet of the menu is drawn in the banner: there is no other choice
+    expect(screen.getAllByRole('combobox')).toEqual([choice])
+  })
+
+  it('should keep the choice of the language out of the header of a narrow screen with links', async () => {
+    // Act
+    await stories.NarrowScreen.run()
+
+    // Assert: it is in the menu, which is closed
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  it('should leave the menu open when a language is chosen in it, and say its texts in that language', async () => {
+    // Arrange
+    await stories.MenuOnNarrowScreen.run()
+
+    // Act
+    await userEvent.selectOptions(
+      within(screen.getByRole('dialog')).getByRole('combobox', {
+        name: '言語',
+      }),
+      'English',
+    )
+
+    // Assert
+    const menu = within(screen.getByRole('dialog', { name: 'Main menu' }))
+    expect(menu.getByRole('combobox', { name: 'Language' })).toHaveValue('en')
+    expect(menu.getByRole('button', { name: 'Close' })).toBeVisible()
+  })
+
+  it('should keep the choice of the language beside the account on a narrow screen without links', async () => {
+    // Act
+    await stories.SignedOutOnNarrowScreen.run()
+
+    // Assert
+    const banner = within(screen.getByRole('banner'))
+    expect(banner.getByRole('combobox', { name: '言語' })).toBeVisible()
+    expect(banner.getByRole('link', { name: 'サインイン' })).toBeVisible()
+  })
+
+  it('should leave the focus on the choice when a screen is said anew in the language that is chosen, and name the document in it', async () => {
+    // Arrange
+    await stories.NavigationInHeader.run({
+      args: { ...stories.NavigationInHeader.args, children: <SaidScreen /> },
+    })
+    const choice = within(screen.getByRole('banner')).getByRole('combobox', {
+      name: '言語',
+    })
+
+    // Act
+    await userEvent.selectOptions(choice, 'English')
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Bookings' })).toBeVisible()
+    expect(document.title).toBe('Bookings | Kushi Admin')
+    expect(choice).toHaveFocus()
+  })
+
+  it('should move the focus to the heading of a screen that takes the place of another after the language is changed', async () => {
+    // Arrange
+    await stories.ScreenChange.run()
+    await userEvent.selectOptions(
+      within(screen.getByRole('banner')).getByRole('combobox', {
+        name: '言語',
+      }),
+      'English',
+    )
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '顧客台帳を開く' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
+    ).toHaveFocus()
+  })
+
+  it('should say its texts in the language of the browser before a language is chosen', async () => {
+    // Arrange
+    setBrowserLanguages(['en-US'])
+
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toBeVisible()
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('en')
+  })
+
+  it('should say its texts anew when the languages of the browser change while none is chosen', async () => {
+    // Arrange
+    await stories.NavigationInHeader.run()
+
+    // Act
+    act(() => setBrowserLanguages(['en-GB', 'ja']))
+
+    // Assert
+    expect(screen.getByRole('navigation', { name: 'Main menu' })).toBeVisible()
+  })
+
+  it('should keep to the language that was chosen when the languages of the browser change', async () => {
+    // Arrange
+    languageStore.choose('ja')
+    await stories.NavigationInHeader.run()
+
+    // Act
+    act(() => setBrowserLanguages(['en-US']))
+
+    // Assert
+    expect(
+      screen.getByRole('navigation', { name: 'メインメニュー' }),
+    ).toBeVisible()
   })
 
   it('should name the navigation and the link that skips it in English on a page in English', async () => {
