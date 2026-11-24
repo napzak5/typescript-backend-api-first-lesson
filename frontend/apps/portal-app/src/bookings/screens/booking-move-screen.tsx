@@ -186,7 +186,8 @@ type BookingToMoveProps = {
  */
 const BookingToMove = ({ booking }: BookingToMoveProps) => {
   const say = useSay()
-  const serviceId = serviceIdOf(booking) ?? ''
+  // A booking has a line at least: the API removes no last one
+  const serviceId = String(serviceIdOf(booking))
   const salon = useQuery({
     queryKey: ['salons', booking.salonId, 'salon'],
     queryFn: () => readSalon(booking.salonId),

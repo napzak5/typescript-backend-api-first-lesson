@@ -16,7 +16,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import type { Refusal, RefusedValue } from '../api/account-api'
 
 /** What a form of an account read: the value to send, or what to say at its controls */
@@ -77,6 +77,16 @@ const messageOf = ({ field, rule }: RefusedValue): LocalizedText | undefined =>
 /** A message said at a control: the value the API named */
 type Said = { field: string; message: LocalizedText }
 
+/** What is said of an attempt that the API did not carry out, whatever was sent */
+const ABOUT_THE_ATTEMPT: Record<
+  Exclude<Refusal['type'], 'invalid'>,
+  LocalizedText
+> = {
+  // The sentence of the sign-in: the API counts the attempts of an address alike
+  tooManyAttempts: sessionMessages.signInFlow.tooManyAttempts,
+  failed: NOT_SENT_MESSAGE,
+}
+
 /**
  * What a form says after the API did not carry out what it was sent for.
  * The controls are named as the properties of the request are, so a value
@@ -108,23 +118,27 @@ export const afterRefusal = (refusal: Refusal): FormSays<LocalizedText> =>
             ),
           }
     })
-    // The sentence of the sign-in: the API counts the attempts of an address alike
-    .with({ type: 'tooManyAttempts' }, () =>
-      aboutTheAttempt(sessionMessages.signInFlow.tooManyAttempts),
+    .with({ type: P.union('tooManyAttempts', 'failed') }, ({ type }) =>
+      aboutTheAttempt(ABOUT_THE_ATTEMPT[type]),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
  * The same in one sentence, where there is no control to say it at: a
- * button that sends nothing a person typed.
+ * button that sends nothing a person typed. Of the values the API named,
+ * the first it says something of is the one to act on.
  */
-export const messageAfter = (refusal: Refusal): LocalizedText => {
-  const { message, errors } = afterRefusal(refusal)
-
-  return (
-    message ??
-    Object.values(errors).find((error) => error !== undefined) ??
-    CHECK_THE_VALUES_MESSAGE
-  )
-}
+export const messageAfter = (refusal: Refusal): LocalizedText =>
+  match(refusal)
+    .returnType<LocalizedText>()
+    .with(
+      { type: 'invalid' },
+      ({ values }) =>
+        values.map(messageOf).find((message) => message !== undefined) ??
+        CHECK_THE_VALUES_MESSAGE,
+    )
+    .with(
+      { type: P.union('tooManyAttempts', 'failed') },
+      ({ type }) => ABOUT_THE_ATTEMPT[type],
+    )
+    .exhaustive()

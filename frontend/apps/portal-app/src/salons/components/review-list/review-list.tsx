@@ -141,10 +141,12 @@ export const ReviewList = ({
   customer,
 }: ReviewListProps) => {
   const say = useSay()
+  // The options are the orders: the one chosen is one of them
   const choose = (event: ChangeEvent<HTMLSelectElement>): void => {
-    const chosen = ORDERS.find((order) => order.value === event.target.value)
-    if (chosen !== undefined) {
-      onSortChange(chosen.value)
+    for (const { value } of ORDERS.filter(
+      (order) => order.value === event.target.value,
+    )) {
+      onSortChange(value)
     }
   }
 

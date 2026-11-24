@@ -73,7 +73,8 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const focusHeading = useScreenHeadingFocus()
-  const serviceId = serviceIdOf(booking) ?? ''
+  // A booking has a line at least: the API removes no last one
+  const serviceId = String(serviceIdOf(booking))
   const own = ['own', 'bookings', booking.id]
   const salon = useQuery({
     queryKey: ['salons', booking.salonId, 'salon'],

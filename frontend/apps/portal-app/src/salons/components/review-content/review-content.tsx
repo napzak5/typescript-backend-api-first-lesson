@@ -78,14 +78,11 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
       {review.helpfulCount > 0 && (
         <Note size='small'>{say(words.helpfulCount(review.helpfulCount))}</Note>
       )}
-      {review.ownerResponse !== null && (
+      {/* The database keeps a response with the moment it was written */}
+      {review.ownerResponse !== null && review.ownerRespondedAt !== null && (
         <div className={styles['response']}>
           <p className={styles['responseHead']}>
-            {say(
-              review.ownerRespondedAt === null
-                ? reviewMessages.response
-                : words.responseOn(dayOf(review.ownerRespondedAt, timezone)),
-            )}
+            {say(words.responseOn(dayOf(review.ownerRespondedAt, timezone)))}
           </p>
           <WrittenText className={styles['text']}>
             {review.ownerResponse}

@@ -1,7 +1,6 @@
 import {
   FAILED,
   from,
-  isUnread,
   type NotFound,
   outsideTheContract,
   type Page,
@@ -202,19 +201,22 @@ const readNames = async (
     Promise.all(salonIds.map(readSalon)),
     Promise.all(withStaff.map(readStaff)),
   ])
-  const reads = [...salons, ...lists]
-
-  return reads.some(isUnread)
-    ? whyUnread(reads)
-    : {
+  return match([salons, lists])
+    .returnType<({ type: 'found' } & Names) | Unread>()
+    .with(
+      [
+        P.array({ type: P.union('found', 'notFound') }),
+        P.array({ type: 'found' }),
+      ],
+      ([read, found]) => ({
         type: 'found',
-        salons: salons.flatMap((salon) =>
+        salons: read.flatMap((salon) =>
           salon.type === 'found' ? [salon.salon] : [],
         ),
-        staff: lists.flatMap((list) =>
-          list.type === 'found' ? list.staff : [],
-        ),
-      }
+        staff: found.flatMap(({ staff }) => staff),
+      }),
+    )
+    .otherwise(() => whyUnread([...salons, ...lists]))
 }
 
 const ownReviewOf = (

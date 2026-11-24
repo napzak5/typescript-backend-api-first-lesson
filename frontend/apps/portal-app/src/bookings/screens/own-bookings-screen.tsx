@@ -1,6 +1,7 @@
 import {
   cursorAfter,
   firstCursor,
+  isUnread,
   listingOf,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
@@ -49,8 +50,6 @@ const LIST_NAMES: Record<When, LocalizedText> = {
   upcoming: words.upcoming,
   past: words.past,
 }
-
-const UNREAD_TYPES: readonly string[] = ['tooManyRequests', 'failed']
 
 type BookingsProps = {
   when: When
@@ -110,7 +109,8 @@ const Bookings = ({ when }: BookingsProps) => {
   const readingNamesAgain = named.some((one) => one.isRefetching)
   const readNamesAgain = (): void => {
     for (const one of named) {
-      if (UNREAD_TYPES.includes(one.data?.type ?? '')) {
+      // A name still on its way is not read again
+      if (one.data !== undefined && isUnread(one.data)) {
         void one.refetch()
       }
     }
