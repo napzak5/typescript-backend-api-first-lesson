@@ -224,8 +224,13 @@ export const readOrderEntry = (
           .exhaustive(),
       ),
     ),
+    // Said at the first row: the form is shown with one at least
     ...(read.every((row) => row.type === 'notOrdered')
-      ? { [quantityControlOf(rows[0]?.id ?? '')]: ERRORS.noneOrdered }
+      ? Object.fromEntries(
+          rows
+            .slice(0, 1)
+            .map(({ id }) => [quantityControlOf(id), ERRORS.noneOrdered]),
+        )
       : {}),
     ...(beyond === undefined
       ? {}

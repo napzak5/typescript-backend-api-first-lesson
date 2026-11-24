@@ -19,13 +19,16 @@ export type SuggestionGroup = {
   suggestions: ModelsReorderSuggestionResponse[]
 }
 
-/** Suppliers in the order of their names, no supplier last */
-const bySupplier = (one: string | null, other: string | null): number => {
-  if (one === null || other === null) {
-    return one === other ? 0 : one === null ? 1 : -1
-  }
+/** The suppliers of the suggestions, each once, in the order of their names, no supplier last. */
+const suppliersOf = (
+  suggestions: readonly ModelsReorderSuggestionResponse[],
+): (string | null)[] => {
+  const suppliers = new Set(suggestions.map(({ supplier }) => supplier))
+  const named = [...suppliers]
+    .flatMap((supplier) => (supplier === null ? [] : [supplier]))
+    .toSorted((one, other) => one.localeCompare(other, 'ja'))
 
-  return one.localeCompare(other, 'ja')
+  return suppliers.has(null) ? [...named, null] : named
 }
 
 /**
@@ -36,14 +39,12 @@ const bySupplier = (one: string | null, other: string | null): number => {
 export const suggestionGroupsOf = (
   suggestions: readonly ModelsReorderSuggestionResponse[],
 ): SuggestionGroup[] =>
-  [...new Set(suggestions.map(({ supplier }) => supplier))]
-    .toSorted(bySupplier)
-    .map((supplier) => ({
-      supplier,
-      suggestions: suggestions.filter(
-        (suggestion) => suggestion.supplier === supplier,
-      ),
-    }))
+  suppliersOf(suggestions).map((supplier) => ({
+    supplier,
+    suggestions: suggestions.filter(
+      (suggestion) => suggestion.supplier === supplier,
+    ),
+  }))
 
 /**
  * The quantities a new order of a supplier starts with, by the IDs of the
