@@ -106,7 +106,7 @@ export type TrendPart = {
 
 /**
  * The parts of a trend, each with its sums. The API answers with arrays of
- * one length, the same place the same part.
+ * one length, the same place the same part, so every label has its sums.
  */
 export const partsOf = ({
   labels,
@@ -116,22 +116,23 @@ export const partsOf = ({
 }: ModelsSalesTrendsResponse): TrendPart[] =>
   labels.map((label, index) => ({
     label,
-    sales: sales[index] ?? 0,
-    transactions: transactions[index] ?? 0,
-    average: average[index] ?? 0,
+    sales: Number(sales[index]),
+    transactions: Number(transactions[index]),
+    average: Number(average[index]),
   }))
 
 /**
  * The top of the scale of a chart of amounts: the least of 1, 2 or 5 times
  * a power of ten that is no less than the largest amount, so that it and
- * its half are round. 1 when there is nothing to draw.
+ * its half are round, and else the next power of ten. 1 when there is
+ * nothing to draw.
  */
 export const scaleTopOf = (largest: number): number => {
   if (largest <= 0) {
     return 1
   }
   const power = 10 ** Math.floor(Math.log10(largest))
-  const times = [1, 2, 5, 10].find((step) => step * power >= largest) ?? 10
+  const times = [1, 2, 5].find((step) => step * power >= largest) ?? 10
 
   return times * power
 }

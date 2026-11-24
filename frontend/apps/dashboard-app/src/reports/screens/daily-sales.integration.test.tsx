@@ -3,8 +3,10 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   salonIdOf,
   signInAs,
+  takeAway,
 } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
@@ -221,6 +223,28 @@ describe('the sales of one day, against the API', () => {
     // Assert
     expect(await termsOnceThere(salesOf('2020-01-01'))).toEqual(NOTHING)
     expect(screen.getByRole('link', { name: '次の日' })).toBeVisible()
+  })
+
+  it('should say that the sales of the day could not be read, and show them once they are read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellTwoDays()
+    await takeAway('sales')
+    renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '売上を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    expect(await termsOnceThere(salesOf(await dayFromToday(0)))).toEqual(
+      SUMS_OF_TODAY,
+    )
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should go back to today from a day long ago', async () => {
@@ -454,6 +478,28 @@ describe('the sales of one day on a page in English, against the API', () => {
     ])
     expect(screen.getByRole('navigation', { name: 'Other days' })).toBeVisible()
     expect(screen.getByRole('link', { name: 'Previous day' })).toBeVisible()
+  })
+
+  it('should say in English that the sales of the day could not be read, and show them once they are read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellTwoDays()
+    await takeAway('sales')
+    renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load the sales. Check your connection and try again.',
+    )
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Load again' }))
+
+    // Assert
+    expect(
+      (await termsOnceThere(salesInEnglishOf(await dayFromToday(0))))[0],
+    ).toEqual(['Sales', '¥14,300'])
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should say in English that a day is needed, and give the field the focus', async () => {

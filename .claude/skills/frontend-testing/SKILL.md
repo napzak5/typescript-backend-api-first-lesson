@@ -20,6 +20,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/utils/salon-format.test.ts` |
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/screens/app-frame.test.tsx` |
 | The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/screens/start-application.test.tsx` |
+| The entry of an application (`src/main.tsx`): that it starts this application | Imported inside `act` into a document with the element `root` of `index.html`; nothing ends it, and the document of the file goes with it; no API | `frontend/apps/dashboard-app/src/main.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
@@ -1726,7 +1727,8 @@ so is `@testing-library/user-event` when its tests work a screen.
 
 `full: true` says that the tests of the package cover all of it; from then
 on `pnpm test:coverage` and the job Coverage of CI fail below 100%. Every
-shared package says so; the applications do not yet. What is measured and
+shared package and the dashboard say so; the portal and the admin
+application do not yet. What is measured and
 what is not, and what is done about what no test reached, is in
 [Coverage](../../../docs/testing-requirements.md#coverage) of the testing
 requirements.

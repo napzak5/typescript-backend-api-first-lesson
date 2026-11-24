@@ -3,8 +3,10 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
 import {
@@ -313,6 +315,31 @@ describe('the trends of the sales, against the API', () => {
     },
   )
 
+  it('should say that the trend could not be read, and show it once it is read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellOverTime()
+    await takeAway('sales')
+    renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '売上の推移を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    expect(screen.queryByRole('table', { name: TABLE })).toBeNull()
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    await screen.findByRole('table', { name: TABLE })
+    expect(rowsOf(TABLE).at(-1)).toEqual([
+      monthNameOf(await dayFromToday(0)),
+      ...TODAY,
+    ])
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
   it('should say nothing more of what was wrong once the header leads to the twelve months', async () => {
     // Arrange
     const user = userEvent.setup()
@@ -533,6 +560,28 @@ describe('the trends of the sales on a page in English, against the API', () => 
         /The first and the last week or month count only the days within the period\.$/,
       ),
     ).toBeVisible()
+  })
+
+  it('should say in English that the trend could not be read, and show it once it is read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellOverTime()
+    await takeAway('sales')
+    renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load the sales trends. Check your connection and try again.',
+    )
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Load again' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('table', { name: TABLE_IN_ENGLISH }),
+    ).toBeVisible()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should tell the owner in English that the trend of another salon is not theirs to see', async () => {

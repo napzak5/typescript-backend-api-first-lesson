@@ -7,8 +7,10 @@ import {
 } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   salonIdOf,
   signInAs,
+  takeAway,
 } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
@@ -216,6 +218,30 @@ describe('the sales report, against the API', () => {
     expect(
       screen.queryByRole('button', { name: 'CSV に出力する' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('should say that the report could not be read, and show it once it is read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToday()
+    await takeAway('sales')
+    renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '売上レポートを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    // Nothing was read, so there is nothing to export
+    expect(
+      screen.queryByRole('button', { name: 'CSV に出力する' }),
+    ).not.toBeInTheDocument()
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should count the days shown anew when they are counted again, since sales are entered meanwhile', async () => {
@@ -561,6 +587,28 @@ describe('the sales report on a page in English, against the API', () => {
         `Sales for ${periodInEnglish('2020-01-01', '2020-12-31')}`,
       ),
     ).toBeVisible()
+  })
+
+  it('should say in English that the report could not be read, and show it once it is read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToday()
+    await takeAway('sales')
+    renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load the sales report. Check your connection and try again.',
+    )
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Load again' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('region', { name: 'Totals for the period' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should save the sales of the period and say so in English', async () => {
