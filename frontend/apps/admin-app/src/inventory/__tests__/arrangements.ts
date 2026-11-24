@@ -127,6 +127,16 @@ export const minimumOf = async (
   )
 }
 
+/** Lets the salon carry none of its products: it keeps the rows it has. */
+export const carriesNothing = async (salon: string): Promise<void> => {
+  await testApi().query(
+    `update products p set "isActive" = false, "updatedAt" = now()
+     from salons s
+     where s.id = p."salonId" and s.name = $1`,
+    [salon],
+  )
+}
+
 /** Lets somebody else have marked a product as kept by lots, or not, meanwhile. */
 export const lotsKeptMeanwhile = async (
   salon: string,

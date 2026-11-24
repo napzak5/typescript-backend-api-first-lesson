@@ -45,6 +45,12 @@ import {
   rowRemovedMeanwhile,
   storedRowsOf,
 } from '../__tests__/arrangements'
+import {
+  openedChange,
+  openedRow,
+  openedStock,
+  openedStockEntry,
+} from '../__tests__/screens'
 import { expiryNameOf } from '../utils/stock-format'
 
 /*
@@ -54,30 +60,6 @@ import { expiryNameOf } from '../utils/stock-format'
  * Storage Room A. Its owner and its manager keep the rows, its stylist
  * reads them. Somebody did something meanwhile where a test says so.
  */
-
-/** Waits for the stock: its heading comes first, the table once the rows and their products were read. */
-const openedStock = async (caption = '在庫'): Promise<void> => {
-  await heading('在庫')
-  await screen.findByRole('table', { name: caption })
-}
-
-/** Waits for a row: its heading comes first, the record once the row was read. */
-const openedRow = async (): Promise<void> => {
-  await heading('在庫の行')
-  await screen.findByRole('region', { name: '在庫' })
-}
-
-/** Waits for the form of a new row: its heading comes first, the form once the products were read. */
-const openedEntry = async (): Promise<void> => {
-  await heading('在庫の行を足す')
-  await screen.findByRole('combobox', { name: /^商品/ })
-}
-
-/** Waits for the form of a row: its heading comes first, the form once the row was read. */
-const openedChange = async (): Promise<void> => {
-  await heading('在庫の行を直す')
-  await screen.findByRole('textbox', { name: '保管場所' })
-}
 
 /** What a card of the record of a row says, term by term. */
 const terms = (card: string): [string, string][] =>
@@ -384,7 +366,7 @@ describe('the stock screens', () => {
     await openAs(inventoryHrefOf(salonId), OWNER)
     await openedStock()
     await user.click(screen.getByRole('link', { name: '在庫の行を足す' }))
-    await openedEntry()
+    await openedStockEntry()
     expect(optionsOf(product())).toEqual([
       '選んでください',
       'Lightening Powder 500g（BLEACH001）',
@@ -454,7 +436,7 @@ describe('the stock screens', () => {
     const user = userEvent.setup()
     const before = await storedRowsOf(TOKYO)
     await openAs(stockEntryHrefOf(await salonIdOf(TOKYO)), MANAGER)
-    await openedEntry()
+    await openedStockEntry()
     await user.selectOptions(
       product(),
       'Hair Color - Natural Brown（COLOR001）',
@@ -507,7 +489,7 @@ describe('the stock screens', () => {
     await anotherRow({ salon: TOKYO, productCode: 'WAX001', lotNumber: null })
     const before = await storedRowsOf(TOKYO)
     await openAs(stockEntryHrefOf(await salonIdOf(TOKYO)), OWNER)
-    await openedEntry()
+    await openedStockEntry()
     await user.selectOptions(product(), 'Styling Wax 80g（WAX001）')
 
     // Act
@@ -525,7 +507,7 @@ describe('the stock screens', () => {
     const user = userEvent.setup()
     const before = await storedRowsOf(TOKYO)
     await openAs(stockEntryHrefOf(await salonIdOf(TOKYO)), OWNER)
-    await openedEntry()
+    await openedStockEntry()
 
     // Act
     await user.click(screen.getByRole('button', { name: '足す' }))
@@ -561,7 +543,7 @@ describe('the stock screens', () => {
     // Arrange
     const user = userEvent.setup()
     await openAs(stockEntryHrefOf(await salonIdOf(TOKYO)), OWNER)
-    await openedEntry()
+    await openedStockEntry()
     await user.selectOptions(product(), 'Styling Wax 80g（WAX001）')
     expect(
       screen.queryByRole('textbox', { name: /^ロット番号/ }),
@@ -890,7 +872,7 @@ describe('the stock screens', () => {
       () => openedStock('期限切れ間近'),
     ],
     ['a row', stockRowHrefOf, openedRow],
-    ['the entry', (salonId) => stockEntryHrefOf(salonId), openedEntry],
+    ['the entry', (salonId) => stockEntryHrefOf(salonId), openedStockEntry],
     ['the change', stockRowChangeHrefOf, openedChange],
   ])(
     'should have no accessibility violations on %s',
