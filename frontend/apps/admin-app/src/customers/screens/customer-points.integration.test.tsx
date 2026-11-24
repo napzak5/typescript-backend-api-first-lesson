@@ -23,7 +23,6 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -248,8 +247,8 @@ describe('the points of customers, against the API', () => {
       expect(
         await screen.findByRole('region', { name: '残高' }),
       ).toHaveTextContent('3,600 ポイント')
-      const yesterday = inJapanese(dayNameOf(await dayFromToday(-1)))
-      const soon = inJapanese(dayNameOf(await dayFromToday(10)))
+      const yesterday = dayNameOf(await dayFromToday(-1)).ja
+      const soon = dayNameOf(await dayFromToday(10)).ja
       const expiring = await screen.findByRole('region', {
         name: '期限が近いポイント',
       })
@@ -286,7 +285,7 @@ describe('the points of customers, against the API', () => {
           '付与',
           '+400',
           '3,500 ポイント',
-          inJapanese(dayNameOf(await dayFromToday(90))),
+          dayNameOf(await dayFromToday(90)).ja,
           'ほかのサロンの売上',
           '記録なし',
         ],
@@ -379,7 +378,7 @@ describe('the points of customers, against the API', () => {
         '付与',
         '+500',
         '3,000 ポイント',
-        inJapanese(dayNameOf(day)),
+        dayNameOf(day).ja,
         '',
         '誕生月のポイント',
       ])

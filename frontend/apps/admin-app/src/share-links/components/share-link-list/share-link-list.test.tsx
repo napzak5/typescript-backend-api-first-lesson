@@ -1,14 +1,15 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { forTheCustomer } from '../examples'
 import * as shareLinkListStories from './share-link-list.stories'
 
 const stories = composeStories(shareLinkListStories)
 
-const part = () => screen.getByRole('region', { name: '共有リンク' })
+const part = (name = '共有リンク') => screen.getByRole('region', { name })
 
 describe('ShareLinkList', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -120,5 +121,85 @@ describe('ShareLinkList', () => {
     expect(within(part()).getByText(said)).toBeVisible()
     expect(within(part()).queryByRole('link')).toBeNull()
     expect(within(part()).queryByRole('table')).toBeNull()
+  })
+})
+
+describe('ShareLinkList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the links of a file in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Listed.run()
+
+    // Assert
+    const table = screen.getByRole('table', { name: 'Issued share links' })
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Issued', 'Expires', 'Downloads', 'Password', 'Status'])
+    expect(rowsOf(table)).toEqual([
+      [
+        'Sat, November 21, 2026 at 09:40',
+        'Sat, November 28, 2026 at 09:40',
+        '1 time (limit: 3 times)',
+        'Set',
+        'Usable',
+      ],
+      [
+        'Fri, November 20, 2026 at 11:00',
+        'Tue, November 24, 2026 at 11:00',
+        '1 time (limit: 1 time)',
+        'None',
+        'Download limit reached',
+      ],
+      [
+        'Thu, November 19, 2026 at 09:00',
+        'Fri, November 20, 2026 at 09:00',
+        '4 times (no limit)',
+        'None',
+        'Expired',
+      ],
+    ])
+    expect(
+      within(part('Share links')).getByRole('link', {
+        name: 'Issue a share link',
+      }),
+    ).toBeVisible()
+    expect(part('Share links')).toHaveTextContent(
+      /A link that shows this file to people who have no account/,
+    )
+  })
+
+  it('should say in English that a file has no link, and how to issue one', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoneIssued.run()
+
+    // Assert
+    expect(part('Share links')).toHaveTextContent(
+      'No share linksWith “Issue a share link”, a link is issued with how long it is valid for, a download limit and a password.',
+    )
+  })
+
+  it('should tell in English a member who shares no file who does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotTheirsToShare.run()
+
+    // Assert
+    expect(part('Share links')).toHaveTextContent(
+      'Only the owners and managers of the salon and administrators can issue and revoke the share links of files.',
+    )
+    expect(screen.queryByRole('link')).toBeNull()
   })
 })

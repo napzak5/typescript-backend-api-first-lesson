@@ -18,12 +18,10 @@ import styles from './notifications.module.css'
 export type Notification = {
   tone: Tone
   /**
-   * What happened, as a sentence: 「予約を確定しました。」. A message is said
-   * where the notification is shown, in the language the page has then. A
-   * string is shown as it is: that of a screen that is written in Japanese
-   * alone, until the last screen is written in every language
+   * What happened, as a sentence: 「予約を確定しました。」. It is said where
+   * the notification is shown, in the language the page has then
    */
-  message: LocalizedText | string
+  message: LocalizedText
 }
 
 type Notifications = {
@@ -74,8 +72,8 @@ export const NotificationProvider = ({
 }
 
 /**
- * `notify({ tone: 'success', message: '予約を確定しました。' })` after
- * something was done. What went wrong with a form is said in the form, with
+ * `notify({ tone: 'success', message: words.booked })` after something
+ * was done, with a message of the catalogues. What went wrong with a form is said in the form, with
  * an `Alert`, not here.
  */
 export const useNotifications = (): Pick<Notifications, 'notify' | 'dismiss'> =>
@@ -99,11 +97,7 @@ export const NotificationOutlet = () => {
     >
       <p role='status'>
         {current !== null && (
-          <span key={current.id}>
-            {typeof current.message === 'string'
-              ? current.message
-              : say(current.message)}
-          </span>
+          <span key={current.id}>{say(current.message)}</span>
         )}
       </p>
       {current !== null && (

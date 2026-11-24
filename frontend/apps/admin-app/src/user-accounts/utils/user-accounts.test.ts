@@ -20,6 +20,12 @@ import {
 
 const EMAIL = 'yuki.tanaka@example.com'
 
+/** What a part says after too many requests */
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+
 const SESSION = '0f1e2d3c-4b5a-4987-8a6b-5c4d3e2f1a0b'
 
 describe('administersAccounts', () => {
@@ -35,14 +41,14 @@ describe('administersAccounts', () => {
 })
 
 describe('userRoleNameOf', () => {
-  it.each<[ModelsUserRoleType, string]>([
-    ['customer', 'お客様'],
-    ['staff', 'スタッフ'],
-    ['manager', 'マネージャー'],
-    ['owner', 'オーナー'],
-    ['admin', '管理者'],
-  ])('should call %s %s', (role, name) => {
-    expect(userRoleNameOf(role)).toBe(name)
+  it.each<[ModelsUserRoleType, string, string]>([
+    ['customer', 'Customer', 'お客様'],
+    ['staff', 'Staff', 'スタッフ'],
+    ['manager', 'Manager', 'マネージャー'],
+    ['owner', 'Owner', 'オーナー'],
+    ['admin', 'Administrator', '管理者'],
+  ])('should call %s %s', (role, en, ja) => {
+    expect(userRoleNameOf(role)).toEqual({ en, ja })
   })
 })
 
@@ -79,31 +85,39 @@ describe('lockOf', () => {
 })
 
 describe('failuresNameOf', () => {
-  it.each<[number, string]>([
-    [0, 'ありません'],
-    [1, '1 回続けて誤っています'],
-    [5, '5 回続けて誤っています'],
-  ])('should say %i wrong passwords as %s', (failures, name) => {
-    expect(failuresNameOf(failures)).toBe(name)
+  it.each<[number, string, string]>([
+    [0, 'None', 'ありません'],
+    [1, '1 wrong password in a row', '1 回続けて誤っています'],
+    [5, '5 wrong passwords in a row', '5 回続けて誤っています'],
+    [1200, '1,200 wrong passwords in a row', '1,200 回続けて誤っています'],
+  ])('should say %i wrong passwords as %s', (failures, en, ja) => {
+    expect(failuresNameOf(failures)).toEqual({ en, ja })
   })
 })
 
 describe('ledgersOf', () => {
-  it.each<[string, Partial<ModelsUserResponse>, string]>([
-    ['a customer', {}, 'お客様の台帳'],
+  it.each<[string, Partial<ModelsUserResponse>, string, string]>([
+    ['a customer', {}, 'Customer ledger', 'お客様の台帳'],
     [
       'a member of the staff',
       { customerId: null, staffId: '4a2e6c8b-1d3f-4e5a-8b7c-9d0e1f2a3b51' },
+      'Staff ledger',
       'スタッフ台帳',
     ],
     [
       'both',
       { staffId: '4a2e6c8b-1d3f-4e5a-8b7c-9d0e1f2a3b51' },
+      'Customer ledger, Staff ledger',
       'お客様の台帳、スタッフ台帳',
     ],
-    ['none', { customerId: null }, 'どの台帳にも紐づいていません'],
-  ])('should name the ledgers of %s', (_, changes, name) => {
-    expect(ledgersOf(aUser(changes))).toBe(name)
+    [
+      'none',
+      { customerId: null },
+      'Linked to no ledger',
+      'どの台帳にも紐づいていません',
+    ],
+  ])('should name the ledgers of %s', (_, changes, en, ja) => {
+    expect(ledgersOf(aUser(changes))).toEqual({ en, ja })
   })
 })
 
@@ -155,8 +169,10 @@ describe('afterUnlocking', () => {
     expect(says).toEqual({
       type: 'done',
       user,
-      message:
-        'yuki.tanaka@example.com のロックを解除しました。いまのパスワードで、すぐにログインできます。',
+      message: {
+        en: 'Lifted the lock of yuki.tanaka@example.com. It can sign in at once with its current password.',
+        ja: 'yuki.tanaka@example.com のロックを解除しました。いまのパスワードで、すぐにログインできます。',
+      },
     })
   })
 
@@ -166,8 +182,10 @@ describe('afterUnlocking', () => {
       { type: 'notLocked' },
       {
         type: 'meanwhile',
-        message:
-          'このアカウントのロックは、その間に解けていました。利用者がログインしたか、パスワードを再設定したか、ほかの管理者が解除しました。いまの状態を表示しています。',
+        message: {
+          en: 'Meanwhile, the lock of this account was lifted: the user signed in or set a new password, or another administrator lifted it. This is how it stands now.',
+          ja: 'このアカウントのロックは、その間に解けていました。利用者がログインしたか、パスワードを再設定したか、ほかの管理者が解除しました。いまの状態を表示しています。',
+        },
       },
     ],
     ['an account deleted meanwhile', { type: 'notFound' }, { type: 'gone' }],
@@ -179,19 +197,17 @@ describe('afterUnlocking', () => {
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      {
-        type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-      },
+      { type: 'again', message: TOO_MANY_REQUESTS },
     ],
     [
       'no answer',
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'ロックを解除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Could not lift the lock. Check your connection and try again.',
+          ja: 'ロックを解除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what follows %s', (_, outcome, says) => {
@@ -211,8 +227,10 @@ describe('afterTwoFactorReset', () => {
     expect(says).toEqual({
       type: 'done',
       user,
-      message:
-        'yuki.tanaka@example.com の 2 要素認証をリセットしました。パスワードだけでログインできます。利用者には、メールで知らせます。',
+      message: {
+        en: 'Reset the two-factor authentication of yuki.tanaka@example.com. It can sign in with the password alone. The user is told by email.',
+        ja: 'yuki.tanaka@example.com の 2 要素認証をリセットしました。パスワードだけでログインできます。利用者には、メールで知らせます。',
+      },
     })
   })
 
@@ -222,8 +240,10 @@ describe('afterTwoFactorReset', () => {
       { type: 'notEnabled' },
       {
         type: 'meanwhile',
-        message:
-          'このアカウントの 2 要素認証は、その間に有効でなくなっていました。利用者が無効にしたか、ほかの管理者がリセットしました。いまの状態を表示しています。',
+        message: {
+          en: 'Meanwhile, the two-factor authentication of this account was turned off: the user turned it off, or another administrator reset it. This is how it stands now.',
+          ja: 'このアカウントの 2 要素認証は、その間に有効でなくなっていました。利用者が無効にしたか、ほかの管理者がリセットしました。いまの状態を表示しています。',
+        },
       },
     ],
     ['an account deleted meanwhile', { type: 'notFound' }, { type: 'gone' }],
@@ -235,19 +255,17 @@ describe('afterTwoFactorReset', () => {
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      {
-        type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-      },
+      { type: 'again', message: TOO_MANY_REQUESTS },
     ],
     [
       'no answer',
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '2 要素認証をリセットできませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Could not reset two-factor authentication. Check your connection and try again.',
+          ja: '2 要素認証をリセットできませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what follows %s', (_, outcome, says) => {

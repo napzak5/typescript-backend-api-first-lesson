@@ -261,17 +261,15 @@ operation is a message of the file of its domain
 (`DomainErrors.conflict(saleMessages.alreadyVoid)`), told as it is: a value
 in it (a status, an ID) stands in every language as it is, and a string
 does not compile. Read [docs/i18n.md](docs/i18n.md) before
-adding one: it also says what is told in one language alone (the mails, the
-log, and the areas of the admin application that are not done yet).
+adding one: it also says what is told in one language alone (the mails and
+the log).
 
 A page has one language, the one its visitor chose and Japanese without a
 choice (`languageStore` of `io`): every request says it to the API in
 `Accept-Language`, and a component says a message in it with `useSay` of
-`ui`. The texts of the screens become messages a package, and in an
-application an area (`src/<area>/`), at a time, and a package that is done
-has a test that fails on a text written in Japanese in its source
-(`src/texts.test.ts`; an application names there the areas that are done,
-until all are, as in the portal and the dashboard). A number, an amount, a day or a time is
+`ui`. Every text of the screens is a message, and every package and
+application has a test that fails on a text written in Japanese in its
+source (`src/texts.test.ts`). A number, an amount, a day or a time is
 written in every language by the formats of `@beauty-salon-shared/i18n/formats`,
 and nowhere else. See "値の書き方" and "画面の言語" in
 [docs/i18n.md](docs/i18n.md) and the skill frontend-ui.

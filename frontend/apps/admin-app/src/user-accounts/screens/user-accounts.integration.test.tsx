@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
@@ -15,6 +16,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -38,12 +40,11 @@ import {
   unlockedMeanwhile,
   userIdOf,
 } from '../__tests__/arrangements'
-import {
-  ADMINISTRATORS_ONLY,
-  lockNameOf,
-  NOTHING_TO_DO,
-  OWN_ACCOUNT,
-} from '../utils/user-accounts'
+import { lockNameOf } from '../utils/user-accounts'
+
+const { nothingToDo: NOTHING_TO_DO, own: OWN_ACCOUNT } =
+  adminUserAccountMessages
+const ADMINISTRATORS_ONLY = adminUserAccountMessages.administratorsOnly.ja
 
 /*
  * The accounts of the users against the API: an administrator is led to
@@ -54,14 +55,19 @@ import {
  */
 
 /** Opens the account of an address as the administrator, and waits for its record. */
-const openAccountOf = async (email: string): Promise<void> => {
-  await openAs(userAccountHrefOf(await userIdOf(email)), OPERATOR)
-  await screen.findByRole('region', { name: 'アカウントの状態' })
+const openAccountOf = async (
+  email: string,
+  language: 'ja' | 'en' = 'ja',
+): Promise<void> => {
+  await openAs(userAccountHrefOf(await userIdOf(email)), OPERATOR, language)
+  await screen.findByRole('region', {
+    name: language === 'ja' ? 'アカウントの状態' : 'State of the account',
+  })
 }
 
 /** Each term of the record of the account with its description */
-const detailsOf = (): string[][] => {
-  const record = screen.getByRole('region', { name: 'アカウントの状態' })
+const detailsOf = (name = 'アカウントの状態'): string[][] => {
+  const record = screen.getByRole('region', { name })
   const descriptions = within(record).getAllByRole('definition')
 
   return within(record)
@@ -151,7 +157,7 @@ describe('the accounts of the users, against the API', () => {
           ['紐づいている台帳', 'お客様の台帳'],
         ]),
       )
-      expect(screen.getByText(NOTHING_TO_DO)).toBeVisible()
+      expect(screen.getByText(NOTHING_TO_DO.ja)).toBeVisible()
       expect(screen.queryByRole('region', { name: 'ロックの解除' })).toBeNull()
       expect(
         screen.queryByRole('region', { name: '2 要素認証のリセット' }),
@@ -292,7 +298,7 @@ describe('the accounts of the users, against the API', () => {
       expect(detailsOf()).toEqual(
         expect.arrayContaining([
           ['状態', 'ロック中'],
-          ['ロック', lockNameOf({ type: 'locked', until }, timezone)],
+          ['ロック', lockNameOf({ type: 'locked', until }, timezone).ja],
           ['パスワードの誤り', '5 回続けて誤っています'],
         ]),
       )
@@ -314,7 +320,7 @@ describe('the accounts of the users, against the API', () => {
         ]),
       )
       expect(screen.queryByRole('region', { name: 'ロックの解除' })).toBeNull()
-      expect(screen.getByText(NOTHING_TO_DO)).toBeVisible()
+      expect(screen.getByText(NOTHING_TO_DO.ja)).toBeVisible()
       expect(recordHeading()).toHaveFocus()
       expect(await storedAccountOf(YUKI.email)).toEqual([
         expect.objectContaining({
@@ -536,7 +542,7 @@ describe('the accounts of the users, against the API', () => {
     goTo(userAccountHrefOf(await userIdOf(OPERATOR)))
 
     // Assert
-    expect(await screen.findByText(OWN_ACCOUNT)).toBeVisible()
+    expect(await screen.findByText(OWN_ACCOUNT.ja)).toBeVisible()
     expect(detailsOf()).toEqual(
       expect.arrayContaining([
         ['ロール', '管理者'],
@@ -590,5 +596,93 @@ describe('the accounts of the users, against the API', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the accounts of the users on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show until when the account is locked, and lift the lock, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeLock(YUKI.email)
+    const until = await lockedUntilOf(YUKI.email)
+    await openAccountOf(YUKI.email, 'en')
+    expect(await heading('Sign-in account')).toBeVisible()
+    expect(detailsOf('State of the account')).toEqual(
+      expect.arrayContaining([
+        ['Role', 'Customer'],
+        ['Status', 'Locked'],
+        ['Lock', lockNameOf({ type: 'locked', until }, timezone).en],
+        ['Wrong passwords', '5 wrong passwords in a row'],
+        ['Linked ledgers', 'Customer ledger'],
+      ]),
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Lift the lock' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        `Lifted the lock of ${YUKI.email}. It can sign in at once with its current password.`,
+      ),
+    ).toBeVisible()
+    expect(detailsOf('State of the account')).toEqual(
+      expect.arrayContaining([
+        ['Status', 'Active'],
+        ['Lock', 'Not locked'],
+        ['Wrong passwords', 'None'],
+      ]),
+    )
+    expect(screen.getByText(NOTHING_TO_DO.en)).toBeVisible()
+  })
+
+  it('should reset the second factor after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeTwoFactor(YUKI.email)
+    await openAccountOf(YUKI.email, 'en')
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Reset two-factor authentication',
+      }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: `Reset the two-factor authentication of ${YUKI.email}?`,
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Reset' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        `Reset the two-factor authentication of ${YUKI.email}. It can sign in with the password alone. The user is told by email.`,
+      ),
+    ).toBeVisible()
+    expect(detailsOf('State of the account')).toEqual(
+      expect.arrayContaining([['Two-factor authentication', 'Not set up']]),
+    )
+  })
+
+  it('should tell an owner in English who looks after the accounts', async () => {
+    // Act
+    await openAs(userAccountHrefOf(await userIdOf(YUKI.email)), OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(adminUserAccountMessages.administratorsOnly.en),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the top' })).toBeVisible()
   })
 })

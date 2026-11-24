@@ -5,10 +5,11 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
-  inJapanese,
   Table,
   type TableColumn,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminOperationMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { SystemState } from '../../api/operations-api'
 import {
   checkNameOf,
@@ -19,6 +20,9 @@ import {
   responseTimeNameOf,
 } from '../../utils/operations'
 import styles from './system-state.module.css'
+
+const { system } = adminOperationMessages
+const { table } = system
 
 export type SystemStateRecordProps = {
   state: SystemState
@@ -31,27 +35,6 @@ export type SystemStateRecordProps = {
   /** The button that asks the probes again was pressed */
   onCheck: () => void
 }
-
-const COLUMNS: TableColumn<ModelsHealthCheck>[] = [
-  {
-    key: 'name',
-    header: '依存先',
-    cell: ({ name }) => dependencyNameOf(name),
-  },
-  { key: 'status', header: '状態', cell: ({ status }) => checkNameOf(status) },
-  {
-    key: 'responseTime',
-    header: '応答時間',
-    cell: ({ responseTime }) => responseTimeNameOf(responseTime),
-    align: 'end',
-  },
-  {
-    key: 'error',
-    header: 'エラー',
-    wrap: 'words',
-    cell: ({ error }) => error ?? 'ありません',
-  },
-]
 
 /**
  * What the three probes of the API said, for an administrator who is told
@@ -67,31 +50,60 @@ export const SystemStateRecord = ({
   checking = false,
   onCheck,
 }: SystemStateRecordProps) => {
-  const items: DescriptionListItem[] = [
-    { term: 'プロセス', description: livenessNameOf(liveness) },
-    { term: 'リクエストの受け付け', description: readinessNameOf(readiness) },
+  const say = useSay()
+  const columns: TableColumn<ModelsHealthCheck>[] = [
     {
-      term: '全体の状態',
-      description:
+      key: 'name',
+      header: say(table.dependency),
+      cell: ({ name }) => say(dependencyNameOf(name)),
+    },
+    {
+      key: 'status',
+      header: say(table.status),
+      cell: ({ status }) => say(checkNameOf(status)),
+    },
+    {
+      key: 'responseTime',
+      header: say(table.responseTime),
+      cell: ({ responseTime }) => say(responseTimeNameOf(responseTime)),
+      align: 'end',
+    },
+    {
+      key: 'error',
+      header: say(table.error),
+      wrap: 'words',
+      cell: ({ error }) => error ?? say(table.noError),
+    },
+  ]
+  const items: DescriptionListItem[] = [
+    { term: say(system.process), description: say(livenessNameOf(liveness)) },
+    {
+      term: say(system.requests),
+      description: say(readinessNameOf(readiness)),
+    },
+    {
+      term: say(system.overall),
+      description: say(
         health.type === 'reported'
           ? healthNameOf(health.health.status)
-          : '応答がありません',
+          : system.noAnswer,
+      ),
     },
     ...(health.type === 'reported'
-      ? [{ term: 'API のバージョン', description: health.health.version }]
+      ? [{ term: say(system.version), description: health.health.version }]
       : []),
     {
-      term: '確かめた日時',
-      description: inJapanese(momentNameAt(readAt, timezone)),
+      term: say(system.checkedAt),
+      description: say(momentNameAt(readAt, timezone)),
     },
   ]
 
   return (
     <Card
-      title='システムの状態'
+      title={say(system.title)}
       actions={
         <Button pending={checking} onClick={onCheck}>
-          もう一度確かめる
+          {say(system.checkAgain)}
         </Button>
       }
     >
@@ -99,11 +111,11 @@ export const SystemStateRecord = ({
         <DescriptionList items={items} />
         {health.type === 'reported' && (
           <Table
-            caption='依存先の状態'
-            columns={COLUMNS}
+            caption={say(table.caption)}
+            columns={columns}
             rows={health.health.checks}
             rowKey={({ name }) => name}
-            emptyMessage='API が確かめる依存先はありません'
+            emptyMessage={say(table.none)}
           />
         )}
       </div>

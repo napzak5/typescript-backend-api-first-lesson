@@ -1,3 +1,4 @@
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { aLockedUser, aUser, NOW, TIMEZONE } from '../examples'
 import { UserRecord } from './user-record'
@@ -72,7 +73,6 @@ export const Administrator: Story = {
 /** The last attempt found that the lock was lifted meanwhile */
 export const ChangedMeanwhile: Story = {
   args: {
-    meanwhile:
-      'このアカウントのロックは、その間に解けていました。利用者がログインしたか、パスワードを再設定したか、ほかの管理者が解除しました。いまの状態を表示しています。',
+    meanwhile: adminUserAccountMessages.unlock.meanwhile,
   },
 }

@@ -1,8 +1,9 @@
+import { FAILED, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { consentForm } from '../../../attachments/components/examples'
 import { salon } from '../../../bookings/components/examples'
-import { NOT_UPLOADED_NOTE, SHARING_NOTE } from '../../utils/share-link'
 import { NOW, SHARE_LINKS_OF_THE_FILE } from '../examples'
 import { ShareLinkList } from './share-link-list'
 
@@ -63,18 +64,21 @@ export const Unread: Story = {
   args: {
     listing: {
       type: 'unread',
-      message:
-        '共有リンクを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: unreadMessageOf(adminShareLinkMessages.names.shareLinks, FAILED),
     },
   },
 }
 
 /** A member of the staff, who shares no file */
 export const NotTheirsToShare: Story = {
-  args: { listing: { type: 'notShared', note: SHARING_NOTE } },
+  args: {
+    listing: { type: 'notShared', note: adminShareLinkMessages.sharers },
+  },
 }
 
 /** A file whose upload was not finished */
 export const NotUploaded: Story = {
-  args: { listing: { type: 'notShared', note: NOT_UPLOADED_NOTE } },
+  args: {
+    listing: { type: 'notShared', note: adminShareLinkMessages.notUploaded },
+  },
 }

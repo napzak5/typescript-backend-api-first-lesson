@@ -1,14 +1,15 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as invitationRecordStories from './invitation-record.stories'
 
 const stories = composeStories(invitationRecordStories)
 
 /** The terms of the invitation with what they say, in their order. */
-const terms = (): [string | null, string | null][] =>
-  within(screen.getByRole('region', { name: '招待' }))
+const terms = (region = '招待'): [string | null, string | null][] =>
+  within(screen.getByRole('region', { name: region }))
     .getAllByRole('term')
     .map((term) => [
       term.textContent,
@@ -77,4 +78,57 @@ describe('InvitationRecord', () => {
       screen.getByText(/台帳のメールアドレスが変わりました/),
     ).toHaveTextContent('（いまはmisaki.tanaka@example.com）')
   })
+})
+
+describe('InvitationRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show an invitation in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Waiting.run()
+
+    // Assert
+    expect(terms('Invitation')).toEqual([
+      ['Status', 'Waiting to be accepted'],
+      ['Sent to', 'misaki.tanaka@example.com'],
+      ['Role', 'Staff'],
+      ['Expires', 'Thu, November 26, 2026 at 10:00'],
+      ['Sent', 'Thu, November 19, 2026 at 10:00'],
+    ])
+    expect(
+      screen.getByText(/^Once the invited staff member chooses a password/),
+    ).toBeVisible()
+  })
+
+  it.each<[keyof typeof stories, string, RegExp]>([
+    ['Expired', 'Expired', /^The invitation expired/],
+    [
+      'Elsewhere',
+      'Cannot be used',
+      /^The email address in the staff ledger changed after the invitation \(it is misaki\.tanaka@example\.com now\)/,
+    ],
+    [
+      'OfAnInactiveMember',
+      'Cannot be used',
+      /^An invitation of an inactive staff member/,
+    ],
+  ])(
+    'should say in English that the invitation of the story %s cannot be taken, and why',
+    async (story, state, why) => {
+      // Arrange
+      languageStore.choose('en')
+
+      // Act
+      await stories[story].run()
+
+      // Assert
+      expect(terms('Invitation')[0]).toEqual(['Status', state])
+      expect(screen.getByText(why)).toBeVisible()
+    },
+  )
 })

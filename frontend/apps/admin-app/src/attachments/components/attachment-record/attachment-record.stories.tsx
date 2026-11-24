@@ -1,3 +1,5 @@
+import { FAILED, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -14,7 +16,7 @@ const meta: Meta<typeof AttachmentRecord> = {
   args: {
     attachment: photo,
     timezone: salon.timezone,
-    uploaderName: 'あなた',
+    uploaderName: adminAttachmentMessages.uploaders.you,
     links: { type: 'issued', open: PICTURE, save: `${PICTURE}#save` },
     onRetryLinks: fn(),
     removes: true,
@@ -35,7 +37,7 @@ export const Photo: Story = {}
 export const DocumentOfAnother: Story = {
   args: {
     attachment: consentForm,
-    uploaderName: '佐藤 美咲',
+    uploaderName: { en: '佐藤 美咲', ja: '佐藤 美咲' },
     links: {
       type: 'issued',
       open: 'https://storage.salon.example/consent.pdf?inline',
@@ -55,8 +57,10 @@ export const Unread: Story = {
   args: {
     links: {
       type: 'unread',
-      message:
-        'ファイルを開くアドレスを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: unreadMessageOf(
+        adminAttachmentMessages.names.openingAddress,
+        FAILED,
+      ),
     },
   },
 }
@@ -70,7 +74,6 @@ export const Asking: Story = {
 export const RemovalFailed: Story = {
   args: {
     asking: true,
-    message:
-      'ファイルを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminAttachmentMessages.removal.failed,
   },
 }

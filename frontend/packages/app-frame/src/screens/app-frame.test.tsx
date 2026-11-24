@@ -43,7 +43,12 @@ const Saving = () => {
     <>
       <PageHeader title='サロンを探す' />
       <Button
-        onClick={() => notify({ tone: 'success', message: '保存しました。' })}
+        onClick={() =>
+          notify({
+            tone: 'success',
+            message: { en: 'Saved.', ja: '保存しました。' },
+          })
+        }
       >
         保存する
       </Button>

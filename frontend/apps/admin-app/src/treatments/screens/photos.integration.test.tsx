@@ -21,7 +21,6 @@ import {
   VIP,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -471,7 +470,7 @@ describe('the photos and the statistics of the treatment records, against the AP
     expect(screen.getByLabelText('集計する期間（まで）')).toHaveValue(today)
     expect(
       screen.getByText(
-        `${inJapanese(periodNameOf({ from: first, to: today }))}に書いた施術記録`,
+        `${periodNameOf({ from: first, to: today }).ja}に書いた施術記録`,
       ),
     ).toBeVisible()
     const counted = await screen.findByRole('region', { name: '施術記録の数' })
@@ -532,7 +531,7 @@ describe('the photos and the statistics of the treatment records, against the AP
     ).toBeVisible()
     expect(
       screen.getByText(
-        `${inJapanese(periodNameOf({ from: '2020-01-01', to: '2021-12-31' }))}に書いた施術記録`,
+        `${periodNameOf({ from: '2020-01-01', to: '2021-12-31' }).ja}に書いた施術記録`,
       ),
     ).toBeVisible()
   })

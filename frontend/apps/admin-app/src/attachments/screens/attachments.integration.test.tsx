@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   findAccessibilityViolations,
   PDF_BYTES,
@@ -612,5 +613,137 @@ describe('the files of a salon', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the files of a salon on a page in English', () => {
+  /** A moment as a page in English writes it */
+  const MOMENT_IN_ENGLISH =
+    /^[A-Z][a-z]{2}, [A-Z][a-z]+ \d+, \d{4} at \d{2}:\d{2}$/
+
+  const englishFileControl = (): HTMLElement =>
+    screen.getByLabelText('File', { selector: 'input' })
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should upload an image and list it, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(await filesOfTokyo(), MANAGER, 'en')
+    await heading('Files')
+    expect(await screen.findByText('No files')).toBeVisible()
+    await user.upload(
+      englishFileControl(),
+      new File([PNG_BYTES], '施術前.png', { type: 'image/png' }),
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Upload' }))
+
+    // Assert
+    expect(await screen.findByText('Uploaded “施術前.png”.')).toBeVisible()
+    await screen.findByRole('table', { name: 'Files' })
+    expect(rowsOf('Files')).toEqual([
+      [
+        '施術前.png',
+        'PNG image',
+        '24 bytes',
+        'You',
+        expect.stringMatching(MOMENT_IN_ENGLISH),
+      ],
+    ])
+  })
+
+  it('should say in English at the control that a file is not what the ending of its name says', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(await filesOfTokyo(), OWNER, 'en')
+    await heading('Files')
+    await user.upload(
+      await waitFor(englishFileControl),
+      new File([PNG_BYTES], '同意書.pdf', { type: 'application/pdf' }),
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Upload' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(englishFileControl()).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'The content of the file does not match the type of its extension.',
+        ),
+      ),
+    )
+  })
+
+  it('should show a file and remove it after the dialog asks, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    const id = await arrangeFile({
+      salonId,
+      filename: '前.pdf',
+      uploadedBy: STYLIST,
+    })
+    await openAs(attachmentHrefOf(salonId, id), STYLIST, 'en')
+    await screen.findByRole('link', { name: 'Save' })
+    expect(
+      within(screen.getByRole('region', { name: 'File' }))
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual(['File name', 'Type', 'Size', 'Uploaded by', 'Uploaded'])
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Delete the file' }))
+    const dialog = screen.getByRole('dialog', { name: 'Delete the file?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+    // Assert
+    expect(await screen.findByText('Deleted “前.pdf”.')).toBeVisible()
+    await heading('Files')
+    expect(await storedFilesOf(salonId)).toMatchObject([
+      { filename: '前.pdf', removed: true },
+    ])
+  })
+
+  it('should tell a member of another salon in English that its files are not theirs to see', async () => {
+    // Act
+    await openAs(await filesOfTokyo(), THERAPIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        /^You cannot see the files of this salon\. Only .+ can\.$/,
+      ),
+    ).toBeVisible()
+    expect(screen.queryByLabelText('File', { selector: 'input' })).toBeNull()
+  })
+
+  it('should say in English that a file at the address is none', async () => {
+    // Act
+    await openAs(
+      attachmentHrefOf(
+        await salonIdOf(TOKYO),
+        '00000000-0000-4000-8000-000000000000',
+      ),
+      OPERATOR,
+      'en',
+    )
+
+    // Assert
+    expect(await heading('File not found')).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the files' }),
+    ).toBeVisible()
   })
 })

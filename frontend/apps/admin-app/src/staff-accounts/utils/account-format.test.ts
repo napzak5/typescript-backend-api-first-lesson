@@ -22,7 +22,8 @@ describe('rolesGivenBy and roleDescriptionFor', () => {
 
     // Assert
     expect(roles).toEqual(['owner', 'manager', 'staff'])
-    expect(roleDescriptionFor('admin')).not.toContain('管理者です')
+    expect(roleDescriptionFor('admin').ja).not.toContain('管理者です')
+    expect(roleDescriptionFor('admin').en).not.toContain('administrator')
   })
 
   it('should let an owner give the roles of a manager and of the staff, and say who gives that of an owner', () => {
@@ -31,9 +32,14 @@ describe('rolesGivenBy and roleDescriptionFor', () => {
 
     // Assert
     expect(roles).toEqual(['manager', 'staff'])
-    expect(roleDescriptionFor('owner')).toMatch(
-      /オーナーのロールを与えられるのは、管理者です。$/,
-    )
+    expect(roleDescriptionFor('owner')).toEqual({
+      en: expect.stringMatching(
+        / Only an administrator can give the role of an owner\.$/,
+      ),
+      ja: expect.stringMatching(
+        /。オーナーのロールを与えられるのは、管理者です。$/,
+      ),
+    })
   })
 })
 

@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as attachmentTableStories from './attachment-table.stories'
 
 const stories = composeStories(attachmentTableStories)
@@ -65,5 +66,50 @@ describe('AttachmentTable', () => {
     // Assert
     expect(screen.getByText('23 件（2 件を表示しています）')).toBeVisible()
     expect(screen.getByRole('button', { name: 'さらに表示' })).toBeVisible()
+  })
+})
+
+describe('AttachmentTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the files in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Files.run()
+
+    // Assert
+    const table = screen.getByRole('table', { name: 'Files' })
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['File name', 'Type', 'Size', 'Uploaded by', 'Uploaded'])
+    expect(rowsOf(table)).toEqual([
+      [
+        'カラー同意書_田中様.pdf',
+        'PDF',
+        '340 kB',
+        '佐藤 美咲',
+        'Sat, November 21, 2026 at 09:31',
+      ],
+      [
+        '施術前.jpg',
+        'JPEG image',
+        '1.2 MB',
+        'You',
+        'Fri, November 20, 2026 at 10:01',
+      ],
+      [
+        'logo.png',
+        'PNG image',
+        '912 bytes',
+        'Another account',
+        'Thu, November 19, 2026 at 15:00',
+      ],
+    ])
   })
 })

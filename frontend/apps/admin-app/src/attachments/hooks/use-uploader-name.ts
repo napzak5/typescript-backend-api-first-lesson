@@ -1,4 +1,5 @@
 import { useSession } from '@beauty-salon-frontend/session'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
 import { readWholeLedger, wholeLedgerKeyOf } from '../../staff/api/staff-api'
@@ -12,7 +13,7 @@ import { uploaderNameOf } from '../utils/attachment-file'
  */
 export const useUploaderName = (
   salonId: string,
-): ((uploadedBy: string) => string) => {
+): ((uploadedBy: string) => LocalizedText) => {
   const session = useSession()
   const account = session.type === 'signedIn' ? session.user : undefined
   const ledger = useQuery({

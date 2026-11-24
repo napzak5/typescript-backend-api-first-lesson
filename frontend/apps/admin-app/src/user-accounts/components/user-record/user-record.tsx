@@ -4,9 +4,11 @@ import {
   Alert,
   Card,
   DescriptionList,
-  inJapanese,
   Note,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
 import {
   statusNameOf,
@@ -23,6 +25,9 @@ import {
   userRoleNameOf,
 } from '../../utils/user-accounts'
 
+const { record } = adminUserAccountMessages
+const { words } = record
+
 export type UserRecordProps = {
   user: ModelsUserResponse
   /** The moment the lock is weighed against: the time of the screen */
@@ -32,7 +37,7 @@ export type UserRecordProps = {
   /** The heading, which takes the focus when the account is shown after a write */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** What changed meanwhile, which the last attempt found: said above the record */
-  meanwhile?: string | undefined
+  meanwhile?: LocalizedText | undefined
 }
 
 /**
@@ -50,6 +55,7 @@ export const UserRecord = ({
   headingRef,
   meanwhile,
 }: UserRecordProps) => {
+  const say = useSay()
   const lock = lockOf(user, now)
   // A locked state is said by the lock, with its moment
   const statusNote =
@@ -57,59 +63,72 @@ export const UserRecord = ({
   const lockNote = lockNoteOf(lock, timezone)
 
   return (
-    <Card title='アカウントの状態' headingRef={headingRef}>
-      {meanwhile !== undefined && <Alert tone='warning'>{meanwhile}</Alert>}
+    <Card title={say(record.title)} headingRef={headingRef}>
+      {meanwhile !== undefined && (
+        <Alert tone='warning'>{say(meanwhile)}</Alert>
+      )}
       <DescriptionList
         items={[
           {
-            term: 'メールアドレス',
+            term: say(words.email),
             description: user.email,
           },
-          { term: 'ロール', description: userRoleNameOf(user.role) },
-          { term: '状態', description: statusNameOf(user.status) },
           {
-            term: 'メールアドレスの確認',
-            description: user.emailVerified
-              ? '確認済み'
-              : 'まだ確認していません',
-          },
-          { term: 'ロック', description: lockNameOf(lock, timezone) },
-          {
-            term: 'パスワードの誤り',
-            description: failuresNameOf(user.failedLoginAttempts),
+            term: say(words.role),
+            description: say(userRoleNameOf(user.role)),
           },
           {
-            term: '2 要素認証',
-            description: twoFactorNameOf(user.twoFactorStatus),
+            term: say(words.status),
+            description: say(statusNameOf(user.status)),
           },
           {
-            term: 'パスワードの変更',
-            description:
+            term: say(record.emailVerified),
+            description: say(
+              user.emailVerified ? record.verified : record.notVerified,
+            ),
+          },
+          {
+            term: say(record.lock),
+            description: say(lockNameOf(lock, timezone)),
+          },
+          {
+            term: say(record.failures),
+            description: say(failuresNameOf(user.failedLoginAttempts)),
+          },
+          {
+            term: say(words.twoFactor),
+            description: say(twoFactorNameOf(user.twoFactorStatus)),
+          },
+          {
+            term: say(record.passwordChange),
+            description: say(
               user.lastPasswordChange === null
-                ? 'まだ変えていません'
-                : inJapanese(momentNameAt(user.lastPasswordChange, timezone)),
+                ? record.neverChanged
+                : momentNameAt(user.lastPasswordChange, timezone),
+            ),
           },
           {
-            term: '最後のログイン',
-            description:
+            term: say(words.lastLogin),
+            description: say(
               user.lastLoginAt === null
-                ? 'まだログインしていません'
-                : inJapanese(momentNameAt(user.lastLoginAt, timezone)),
+                ? words.neverSignedIn
+                : momentNameAt(user.lastLoginAt, timezone),
+            ),
           },
           {
-            term: '最後のログインの IP アドレス',
-            description: user.lastLoginIp ?? '記録がありません',
+            term: say(record.lastLoginIp),
+            description: user.lastLoginIp ?? say(record.noIp),
           },
-          { term: '紐づいている台帳', description: ledgersOf(user) },
+          { term: say(record.ledgers), description: say(ledgersOf(user)) },
           {
-            term: '作った日時',
-            description: inJapanese(momentNameAt(user.createdAt, timezone)),
+            term: say(words.createdAt),
+            description: say(momentNameAt(user.createdAt, timezone)),
           },
         ]}
       />
-      {statusNote !== undefined && <Note>{statusNote}</Note>}
-      {lockNote !== undefined && <Note>{lockNote}</Note>}
-      <Note>{timeZoneNoteOf(timezone)}</Note>
+      {statusNote !== undefined && <Note>{say(statusNote)}</Note>}
+      {lockNote !== undefined && <Note>{say(lockNote)}</Note>}
+      <Note>{say(timeZoneNoteOf(timezone))}</Note>
     </Card>
   )
 }

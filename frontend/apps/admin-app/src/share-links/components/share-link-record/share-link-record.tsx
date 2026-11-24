@@ -7,9 +7,11 @@ import {
   Card,
   DescriptionList,
   Dialog,
-  inJapanese,
   Note,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   downloadsNameOf,
   passwordNameOf,
@@ -18,6 +20,8 @@ import {
 } from '../../utils/share-link'
 import styles from './share-link-record.module.css'
 
+const { record: RECORD, revocation: REVOCATION } = adminShareLinkMessages
+
 export type ShareLinkRecordProps = {
   shareLink: ModelsShareLinkResponse
   /** The time zone of the salon, which the moments are said in */
@@ -25,13 +29,13 @@ export type ShareLinkRecordProps = {
   /** The moment the state of the link is that of */
   now: Date
   /** Who issued the link */
-  issuerName: string
+  issuerName: LocalizedText
   /** The revocation is on its way */
   pending?: boolean | undefined
   /** Whether the dialog of the revocation is open */
   asking?: boolean | undefined
   /** What went wrong with the revocation, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button of the revocation was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -57,63 +61,61 @@ export const ShareLinkRecord = ({
   onClose,
   onRevoke,
 }: ShareLinkRecordProps) => {
+  const say = useSay()
   const state = stateOf(shareLink, now)
 
   return (
-    <Card title='共有リンク'>
+    <Card title={say(RECORD.title)}>
       <div className={styles['record']}>
         <DescriptionList
           items={[
             {
-              term: '状態',
+              term: say(RECORD.state),
               description: (
                 <Badge tone={state === 'usable' ? 'success' : 'neutral'}>
-                  {stateNameOf(state)}
+                  {say(stateNameOf(state))}
                 </Badge>
               ),
             },
             {
-              term: '有効期限',
-              description: inJapanese(
-                momentNameAt(shareLink.expiresAt, timezone),
-              ),
+              term: say(RECORD.expiresAt),
+              description: say(momentNameAt(shareLink.expiresAt, timezone)),
             },
-            { term: 'ダウンロード', description: downloadsNameOf(shareLink) },
             {
-              term: 'パスワード',
-              description: passwordNameOf(shareLink.hasPassword),
+              term: say(RECORD.downloads),
+              description: say(downloadsNameOf(shareLink)),
             },
-            { term: '発行した人', description: issuerName },
             {
-              term: '発行日時',
-              description: inJapanese(
-                momentNameAt(shareLink.createdAt, timezone),
-              ),
+              term: say(RECORD.password),
+              description: say(passwordNameOf(shareLink.hasPassword)),
+            },
+            { term: say(RECORD.issuer), description: say(issuerName) },
+            {
+              term: say(RECORD.createdAt),
+              description: say(momentNameAt(shareLink.createdAt, timezone)),
             },
           ]}
         />
-        <Note>
-          リンクのアドレスは、発行したときにだけ表示しました。なくしたときは、この共有リンクを取り消して、発行し直してください。
-        </Note>
+        <Note>{say(RECORD.addressShownOnce)}</Note>
         <Button variant='danger' onClick={onAsk}>
-          共有リンクを取り消す
+          {say(REVOCATION.button)}
         </Button>
       </div>
       <Dialog
         open={asking}
         onClose={onClose}
-        title='共有リンクを取り消しますか？'
-        description='このリンクは、すぐに使えなくなります。取り消した共有リンクは、元に戻せません。'
+        title={say(REVOCATION.title)}
+        description={say(REVOCATION.description)}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(REVOCATION.back)}</Button>
             <Button variant='danger' pending={pending} onClick={onRevoke}>
-              取り消す
+              {say(REVOCATION.confirm)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </Card>
   )

@@ -1,3 +1,7 @@
+import {
+  adminAttachmentMessages,
+  adminShareLinkMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -11,7 +15,7 @@ const meta: Meta<typeof ShareLinkRecord> = {
     shareLink: forTheCustomer,
     timezone: salon.timezone,
     now: NOW,
-    issuerName: 'あなた',
+    issuerName: adminAttachmentMessages.uploaders.you,
     onAsk: fn(),
     onClose: fn(),
     onRevoke: fn(),
@@ -32,7 +36,7 @@ export const UsedUp: Story = {
 
 /** A link that ran out, which a member of the staff issued */
 export const RanOut: Story = {
-  args: { shareLink: ranOut, issuerName: '佐藤 美咲' },
+  args: { shareLink: ranOut, issuerName: { en: '佐藤 美咲', ja: '佐藤 美咲' } },
 }
 
 /** The dialog asks before the link is revoked */
@@ -44,7 +48,6 @@ export const Asking: Story = {
 export const RevocationFailed: Story = {
   args: {
     asking: true,
-    message:
-      '共有リンクを取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminShareLinkMessages.revocation.failed,
   },
 }

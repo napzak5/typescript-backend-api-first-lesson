@@ -20,7 +20,13 @@ const Screen = (notification: Notification) => {
         <Button onClick={() => notify(notification)}>予約を確定する</Button>{' '}
         <Button
           onClick={() =>
-            notify({ tone: 'info', message: '予約の一覧を更新しました。' })
+            notify({
+              tone: 'info',
+              message: {
+                en: 'Updated the list of bookings.',
+                ja: '予約の一覧を更新しました。',
+              },
+            })
           }
         >
           一覧を更新する
@@ -42,7 +48,7 @@ const meta: Meta<typeof Screen> = {
   ],
   args: {
     tone: 'success',
-    message: '予約を確定しました。',
+    message: { en: 'Confirmed the booking.', ja: '予約を確定しました。' },
   },
 }
 
@@ -63,26 +69,41 @@ export const Success: Story = {
 }
 
 export const Info: Story = {
-  args: { tone: 'info', message: '次回の予約は 12 月 3 日（木）です。' },
+  args: {
+    tone: 'info',
+    message: {
+      en: 'Your next booking is on Thu, December 3.',
+      ja: '次回の予約は 12 月 3 日（木）です。',
+    },
+  },
   play: confirmTheBooking,
 }
 
 export const Warning: Story = {
   args: {
     tone: 'warning',
-    message: '予約を確定しました。確認のメールは送信できませんでした。',
+    message: {
+      en: 'Confirmed the booking. Could not send the confirmation email.',
+      ja: '予約を確定しました。確認のメールは送信できませんでした。',
+    },
   },
   play: confirmTheBooking,
 }
 
 export const Danger: Story = {
-  args: { tone: 'danger', message: '予約を確定できませんでした。' },
+  args: {
+    tone: 'danger',
+    message: {
+      en: 'Could not confirm the booking.',
+      ja: '予約を確定できませんでした。',
+    },
+  },
   play: confirmTheBooking,
 }
 
 /**
- * A message that is written in every language: the notification says it
- * in the language of the page, and anew when another one is chosen.
+ * A message of the catalogues: the notification says it in the language
+ * of the page, and anew when another one is chosen.
  */
 export const NothingChanged: Story = {
   args: { tone: 'info', message: NO_CHANGE_MESSAGE },

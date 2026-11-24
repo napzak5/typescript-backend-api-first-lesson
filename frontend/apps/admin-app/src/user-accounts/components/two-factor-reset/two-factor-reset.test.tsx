@@ -1,12 +1,14 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as twoFactorResetStories from './two-factor-reset.stories'
 
 const stories = composeStories(twoFactorResetStories)
 
-const part = () => screen.getByRole('region', { name: '2 要素認証のリセット' })
+const part = (name = '2 要素認証のリセット') =>
+  screen.getByRole('region', { name })
 
 describe('TwoFactorReset', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -72,5 +74,58 @@ describe('TwoFactorReset', () => {
     expect(within(part()).getByRole('alert')).toHaveTextContent(
       'このアカウントでは、ログインアカウントを扱えません。',
     )
+  })
+})
+
+describe('TwoFactorReset on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say whom a reset is for, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Offered.run()
+
+    // Assert
+    expect(part('Resetting two-factor authentication')).toHaveTextContent(
+      'This is for a user who lost both the authenticator app and the backup codes. Once it is reset, the user signs in with the password alone and sets up two-factor authentication again.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Reset two-factor authentication' }),
+    ).toBeVisible()
+  })
+
+  it('should ask in English, naming the account, that the user be made sure of first', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Reset the two-factor authentication of yuki.tanaka@example.com?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      /^Before you reset it, make sure through the support procedure/,
+    )
+    expect(within(dialog).getByRole('button', { name: 'Reset' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+  })
+
+  it('should say in English why the account resets nothing', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Forbidden.run()
+
+    // Assert
+    expect(
+      within(part('Resetting two-factor authentication')).getByRole('alert'),
+    ).toHaveTextContent(/^This account cannot handle sign-in accounts\./)
   })
 })

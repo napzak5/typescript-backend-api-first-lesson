@@ -1,3 +1,4 @@
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { roleDescriptionFor } from '../../utils/account-format'
@@ -39,13 +40,10 @@ export const RoleOfAnAccount: Story = {
 
 /** Sent without a role */
 export const WithoutARole: Story = {
-  args: { errors: { role: 'ロールを選んでください。' } },
+  args: { errors: { role: adminStaffAccountMessages.roles.missing } },
 }
 
 /** An invitation mailed less than a minute before */
 export const MailedMomentsAgo: Story = {
-  args: {
-    message:
-      '田中 美咲 さんには、1 分以内に招待メールを送ったばかりです。続けては送れません。',
-  },
+  args: { message: adminStaffAccountMessages.invite.recent('田中 美咲') },
 }

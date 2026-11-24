@@ -7,30 +7,33 @@ import {
   COUNTED,
   countOf,
   EmptyState,
-  inJapanese,
   Link,
   LoadingIndicator,
   type More,
   Note,
   UnreadNotice,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import {
   downloadsNameOf,
   passwordNameOf,
-  SHARE_LINKS_NOTE,
   stateNameOf,
   stateOf,
 } from '../../utils/share-link'
 import styles from './share-link-list.module.css'
 
+const { list: LIST, loading: LOADING } = adminShareLinkMessages
+
 /** What the part shows of the links of a file */
 export type ShareLinkListing =
   /** The file is not shared by the account, or not one to share: the note says why */
-  | { type: 'notShared'; note: string }
+  | { type: 'notShared'; note: LocalizedText }
   | { type: 'reading' }
   /** They could not be read: the message says why */
-  | { type: 'unread'; message: string }
+  | { type: 'unread'; message: LocalizedText }
   | {
       type: 'listed'
       /** The links that were read so far, the latest issued first */
@@ -74,89 +77,97 @@ export const ShareLinkList = ({
   onRetry,
   retrying = false,
   onMore,
-}: ShareLinkListProps) => (
-  <Card
-    title='共有リンク'
-    actions={
-      listing.type === 'notShared' ? undefined : (
-        <ButtonLink href={entryHref}>共有リンクを発行する</ButtonLink>
-      )
-    }
-  >
-    <div className={styles['list']}>
-      <Note>
-        {listing.type === 'notShared' ? listing.note : SHARE_LINKS_NOTE}
-      </Note>
-      {match(listing)
-        .with({ type: 'notShared' }, () => null)
-        .with({ type: 'reading' }, () => (
-          <LoadingIndicator label='共有リンクを読み込んでいます' />
-        ))
-        .with({ type: 'unread' }, ({ message }) => (
-          <UnreadNotice
-            message={message}
-            onRetry={onRetry}
-            pending={retrying}
-          />
-        ))
-        .with({ type: 'listed', shareLinks: [] }, () => (
-          <EmptyState
-            title='共有リンクはありません'
-            description='「共有リンクを発行する」から、有効期間、ダウンロードの回数の上限、パスワードを決めて発行できます。'
-          />
-        ))
-        .with({ type: 'listed' }, ({ shareLinks, total, more }) => (
-          <PagedTable
-            caption='発行した共有リンク'
-            columns={[
-              {
-                key: 'createdAt',
-                header: '発行日時',
-                cell: ({ id, createdAt }) => (
-                  <Link href={shareLinkHref(id)}>
-                    {inJapanese(momentNameAt(createdAt, timezone))}
-                  </Link>
-                ),
-              },
-              {
-                key: 'expiresAt',
-                header: '有効期限',
-                cell: ({ expiresAt }) =>
-                  inJapanese(momentNameAt(expiresAt, timezone)),
-              },
-              {
-                key: 'downloadCount',
-                header: 'ダウンロード',
-                cell: downloadsNameOf,
-              },
-              {
-                key: 'hasPassword',
-                header: 'パスワード',
-                cell: ({ hasPassword }) => passwordNameOf(hasPassword),
-              },
-              {
-                key: 'state',
-                header: '状態',
-                cell: (shareLink) => {
-                  const state = stateOf(shareLink, now)
+}: ShareLinkListProps) => {
+  const say = useSay()
 
-                  return (
-                    <Badge tone={state === 'usable' ? 'success' : 'neutral'}>
-                      {stateNameOf(state)}
-                    </Badge>
-                  )
+  return (
+    <Card
+      title={say(LIST.title)}
+      actions={
+        listing.type === 'notShared' ? undefined : (
+          <ButtonLink href={entryHref}>{say(LIST.issue)}</ButtonLink>
+        )
+      }
+    >
+      <div className={styles['list']}>
+        <Note>
+          {say(
+            listing.type === 'notShared'
+              ? listing.note
+              : adminShareLinkMessages.about,
+          )}
+        </Note>
+        {match(listing)
+          .with({ type: 'notShared' }, () => null)
+          .with({ type: 'reading' }, () => (
+            <LoadingIndicator label={say(LOADING.shareLinks)} />
+          ))
+          .with({ type: 'unread' }, ({ message }) => (
+            <UnreadNotice
+              message={say(message)}
+              onRetry={onRetry}
+              pending={retrying}
+            />
+          ))
+          .with({ type: 'listed', shareLinks: [] }, () => (
+            <EmptyState
+              title={say(LIST.none)}
+              description={say(LIST.noneDescription)}
+            />
+          ))
+          .with({ type: 'listed' }, ({ shareLinks, total, more }) => (
+            <PagedTable
+              caption={say(LIST.caption)}
+              columns={[
+                {
+                  key: 'createdAt',
+                  header: say(LIST.createdAt),
+                  cell: ({ id, createdAt }) => (
+                    <Link href={shareLinkHref(id)}>
+                      {say(momentNameAt(createdAt, timezone))}
+                    </Link>
+                  ),
                 },
-              },
-            ]}
-            rows={shareLinks}
-            rowKey={({ id }) => id}
-            emptyMessage='共有リンクはありません'
-            count={inJapanese(countOf(total, shareLinks.length, COUNTED.items))}
-            more={more}
-            onMore={onMore}
-          />
-        ))
-        .exhaustive()}
-    </div>
-  </Card>
-)
+                {
+                  key: 'expiresAt',
+                  header: say(LIST.expiresAt),
+                  cell: ({ expiresAt }) =>
+                    say(momentNameAt(expiresAt, timezone)),
+                },
+                {
+                  key: 'downloadCount',
+                  header: say(LIST.downloads),
+                  cell: (shareLink) => say(downloadsNameOf(shareLink)),
+                },
+                {
+                  key: 'hasPassword',
+                  header: say(LIST.password),
+                  cell: ({ hasPassword }) => say(passwordNameOf(hasPassword)),
+                },
+                {
+                  key: 'state',
+                  header: say(LIST.state),
+                  cell: (shareLink) => {
+                    const state = stateOf(shareLink, now)
+
+                    return (
+                      <Badge tone={state === 'usable' ? 'success' : 'neutral'}>
+                        {say(stateNameOf(state))}
+                      </Badge>
+                    )
+                  },
+                },
+              ]}
+              rows={shareLinks}
+              rowKey={({ id }) => id}
+              emptyMessage={say(LIST.none)}
+              count={say(countOf(total, shareLinks.length, COUNTED.items))}
+              more={more}
+              onMore={onMore}
+            />
+          ))
+          .exhaustive()}
+      </div>
+    </Card>
+  )
+}

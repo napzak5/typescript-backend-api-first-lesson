@@ -4,7 +4,8 @@ import type {
   ModelsUserRoleType,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { TwoFactorReset, Unlocking } from '../api/user-accounts-api'
 
@@ -17,20 +18,21 @@ import type { TwoFactorReset, Unlocking } from '../api/user-accounts-api'
 /** Whether a role looks after the accounts of the users: an administrator alone. */
 export const administersAccounts = (role: string): boolean => role === 'admin'
 
-/** What an account that looks after no accounts is told */
-export const ADMINISTRATORS_ONLY =
-  'このアカウントでは、ログインアカウントを扱えません。利用者のアカウントの状態を見て、ロックを解除し、2 要素認証をリセットするのは、管理者です。'
+const {
+  lock: LOCK,
+  failures: FAILURES,
+  ledgers: LEDGERS,
+} = adminUserAccountMessages
 
-const ROLE_NAMES: Record<ModelsUserRoleType, string> = {
-  customer: 'お客様',
-  staff: 'スタッフ',
-  manager: 'マネージャー',
-  owner: 'オーナー',
-  admin: '管理者',
-}
+/** What an account that looks after no accounts is told */
+export const ADMINISTRATORS_ONLY: LocalizedText =
+  adminUserAccountMessages.administratorsOnly
+
+const ROLE_NAMES: Record<ModelsUserRoleType, LocalizedText> =
+  adminUserAccountMessages.roles
 
 /** The role of an account, in words. */
-export const userRoleNameOf = (role: ModelsUserRoleType): string =>
+export const userRoleNameOf = (role: ModelsUserRoleType): LocalizedText =>
   ROLE_NAMES[role]
 
 /** Whether wrong passwords keep an account from signing in now */
@@ -62,52 +64,47 @@ export const lockOf = (user: ModelsUserResponse, now: Date): Lock => {
 }
 
 /** Whether an account is locked, in the words of its record. */
-export const lockNameOf = (lock: Lock, timezone: string): string =>
+export const lockNameOf = (lock: Lock, timezone: string): LocalizedText =>
   match(lock)
-    .with(
-      { type: 'locked' },
-      ({ until }) => `${inJapanese(momentNameAt(until, timezone))}までロック中`,
+    .returnType<LocalizedText>()
+    .with({ type: 'locked' }, ({ until }) =>
+      LOCK.lockedUntil(momentNameAt(until, timezone)),
     )
-    .with({ type: 'ranOut' }, () => 'ロックの期限は過ぎています')
-    .with({ type: 'none' }, () => 'ロックされていません')
+    .with({ type: 'ranOut' }, () => LOCK.ranOut)
+    .with({ type: 'none' }, () => LOCK.none)
     .exhaustive()
 
 /** What a lock means for the user, said under the record; nothing when there is none. */
-export const lockNoteOf = (lock: Lock, timezone: string): string | undefined =>
+export const lockNoteOf = (
+  lock: Lock,
+  timezone: string,
+): LocalizedText | undefined =>
   match(lock)
-    .returnType<string | undefined>()
-    .with(
-      { type: 'locked' },
-      ({ until }) =>
-        `パスワードを続けて誤ったため、${inJapanese(momentNameAt(until, timezone))}まで、新しいログインができません。正しいパスワードでも同じです。ログインしている端末は、そのまま使えます。`,
+    .returnType<LocalizedText | undefined>()
+    .with({ type: 'locked' }, ({ until }) =>
+      LOCK.lockedNote(momentNameAt(until, timezone)),
     )
-    .with(
-      { type: 'ranOut' },
-      () =>
-        'ロックの期限は過ぎましたが、次にパスワードを一度誤ると、またロックされます。',
-    )
+    .with({ type: 'ranOut' }, () => LOCK.ranOutNote)
     .with({ type: 'none' }, () => undefined)
     .exhaustive()
 
 /** The wrong passwords in a row, in words. */
-export const failuresNameOf = (failures: number): string =>
-  failures === 0 ? 'ありません' : `${failures} 回続けて誤っています`
+export const failuresNameOf = (failures: number): LocalizedText =>
+  failures === 0 ? FAILURES.none : FAILURES.inARow(failures)
 
 /** The ledgers an account is linked to, in words. */
-export const ledgersOf = (user: ModelsUserResponse): string => {
+export const ledgersOf = (user: ModelsUserResponse): LocalizedText => {
   const ledgers = [
-    ...(user.customerId === null ? [] : ['お客様の台帳']),
-    ...(user.staffId === null ? [] : ['スタッフ台帳']),
+    ...(user.customerId === null ? [] : [LEDGERS.customers]),
+    ...(user.staffId === null ? [] : [LEDGERS.staff]),
   ]
 
-  return ledgers.length === 0
-    ? 'どの台帳にも紐づいていません'
-    : ledgers.join('、')
+  return ledgers.length === 0 ? LEDGERS.none : LEDGERS.listed(ledgers)
 }
 
 /** What the time zone of the device is said to be, under the moments it shows */
-export const timeZoneNoteOf = (timezone: string): string =>
-  `日時は、この端末のタイムゾーン（${timezone}）で表示しています。`
+export const timeZoneNoteOf = (timezone: string): LocalizedText =>
+  adminUserAccountMessages.deviceTimeZone(timezone)
 
 /** What an administrator may do with an account now */
 export type Support =
@@ -116,14 +113,6 @@ export type Support =
   /** Neither a lock to lift nor a second factor to reset */
   | { type: 'none' }
   | { type: 'some'; unlock: boolean; reset: boolean }
-
-/** What an administrator says of their own account */
-export const OWN_ACCOUNT =
-  'ご自身のアカウントです。ロックの解除と 2 要素認証のリセットは、ほかの管理者が行います。'
-
-/** What is said of an account that needs neither */
-export const NOTHING_TO_DO =
-  'このアカウントは、ロックされておらず、2 要素認証も有効ではありません。ここで行う操作はありません。'
 
 /**
  * What an administrator may do with an account at a moment, as the API
@@ -148,15 +137,15 @@ export const supportOf = (
 /** What the screen does after an attempt to lift a lock or to reset a second factor. */
 export type SupportSays =
   /** It was done: the account is shown as the API answered, and the notification says so */
-  | { type: 'done'; user: ModelsUserResponse; message: string }
+  | { type: 'done'; user: ModelsUserResponse; message: LocalizedText }
   /** The account changed meanwhile: it is read anew, and the record says why nothing was done */
-  | { type: 'meanwhile'; message: string }
+  | { type: 'meanwhile'; message: LocalizedText }
   /** The account was deleted meanwhile: the screen says it is not found */
   | { type: 'gone' }
   /** It may be done on another attempt: said where the attempt was made, the dialog if there is one */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** Another attempt changes nothing: the dialog closes, and the part says why */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
 /** What follows an attempt to lift the lock of the account of the address. */
 export const afterUnlocking = (
@@ -168,12 +157,11 @@ export const afterUnlocking = (
     .with({ type: 'unlocked' }, ({ user }) => ({
       type: 'done',
       user,
-      message: `${email} のロックを解除しました。いまのパスワードで、すぐにログインできます。`,
+      message: adminUserAccountMessages.unlock.done(email),
     }))
     .with({ type: 'notLocked' }, () => ({
       type: 'meanwhile',
-      message:
-        'このアカウントのロックは、その間に解けていました。利用者がログインしたか、パスワードを再設定したか、ほかの管理者が解除しました。いまの状態を表示しています。',
+      message: adminUserAccountMessages.unlock.meanwhile,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
@@ -182,12 +170,11 @@ export const afterUnlocking = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'ロックを解除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: adminUserAccountMessages.unlock.failed,
     }))
     .exhaustive()
 
@@ -201,12 +188,11 @@ export const afterTwoFactorReset = (
     .with({ type: 'reset' }, ({ user }) => ({
       type: 'done',
       user,
-      message: `${email} の 2 要素認証をリセットしました。パスワードだけでログインできます。利用者には、メールで知らせます。`,
+      message: adminUserAccountMessages.reset.done(email),
     }))
     .with({ type: 'notEnabled' }, () => ({
       type: 'meanwhile',
-      message:
-        'このアカウントの 2 要素認証は、その間に有効でなくなっていました。利用者が無効にしたか、ほかの管理者がリセットしました。いまの状態を表示しています。',
+      message: adminUserAccountMessages.reset.meanwhile,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
@@ -215,11 +201,10 @@ export const afterTwoFactorReset = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '2 要素認証をリセットできませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: adminUserAccountMessages.reset.failed,
     }))
     .exhaustive()

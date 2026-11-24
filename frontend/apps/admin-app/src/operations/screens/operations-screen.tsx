@@ -1,11 +1,13 @@
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminOperationMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { match } from 'ts-pattern'
@@ -37,16 +39,13 @@ import {
   ranAtOf,
 } from '../utils/operations'
 
-const TITLE = '運用'
-
-/** What the operations that are run by hand have in common, said above them */
-const LEAD =
-  'ポイントの失効、データの消去の依頼の実行、添付ファイルの掃除は、定期的に行う操作で、ここでは管理者が手で実行します。どれも、そのときに期限の来たものをすべて処理し、同じものを二度は処理しません。'
+const { title: TITLE } = adminOperationMessages
 
 type SystemPartProps = { timezone: string }
 
 /** The state of the system, asked whenever the screen opens and whenever the administrator asks again */
 const SystemPart = ({ timezone }: SystemPartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: SYSTEM_STATE_KEY,
     queryFn: readSystemState,
@@ -54,7 +53,7 @@ const SystemPart = ({ timezone }: SystemPartProps) => {
   })
 
   return read.data === undefined ? (
-    <LoadingIndicator label='システムの状態を確かめています' />
+    <LoadingIndicator label={say(adminOperationMessages.system.checking)} />
   ) : (
     <SystemStateRecord
       state={read.data}
@@ -71,7 +70,7 @@ type RunPartProps<Result> = {
   /** Runs the operation, and says what the screen does then */
   run: () => Promise<RunSays<Result>>
   /** What a run did, in words: in the part and in the notification */
-  wordsOf: (result: Result) => string
+  wordsOf: (result: Result) => LocalizedText
   /** What a run did, in detail, below the words */
   details?: ((result: Result) => ReactNode) | undefined
   timezone: string
@@ -91,8 +90,8 @@ const RunPart = <Result,>({
 }: RunPartProps<Result>) => {
   const { notify } = useNotifications()
   const [asking, setAsking] = useState(false)
-  const [message, setMessage] = useState<string>()
-  const [refusal, setRefusal] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const [ran, setRan] = useState<{ at: string; result: Result }>()
 
   const mutation = useMutation({
@@ -118,10 +117,7 @@ const RunPart = <Result,>({
       result={
         ran === undefined
           ? undefined
-          : ranAtOf(
-              inJapanese(momentNameAt(ran.at, timezone)),
-              wordsOf(ran.result),
-            )
+          : ranAtOf(momentNameAt(ran.at, timezone), wordsOf(ran.result))
       }
       refusal={refusal}
       asking={asking}
@@ -144,17 +140,18 @@ const RunPart = <Result,>({
 }
 
 const OperationsPage = () => {
+  const say = useSay()
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='システムの状態と、定期的に行う操作'
+        title={say(TITLE)}
+        description={say(adminOperationMessages.description)}
       />
-      <p>{timeZoneNoteOf(timezone)}</p>
+      <p>{say(timeZoneNoteOf(timezone))}</p>
       <SystemPart timezone={timezone} />
-      <p>{LEAD}</p>
+      <p>{say(adminOperationMessages.lead)}</p>
       <RunPart
         copy={EXPIRY_COPY}
         run={async () => afterExpiry(await expirePoints())}
@@ -187,13 +184,16 @@ const OperationsPage = () => {
  * and the operations that are meant to run at intervals, run by hand.
  * Another role is told who does it, and the API is not asked.
  */
-export const OperationsScreen = () =>
-  useRunsOperations() ? (
+export const OperationsScreen = () => {
+  const say = useSay()
+
+  return useRunsOperations() ? (
     <OperationsPage />
   ) : (
     <>
-      <PageHeader title={TITLE} />
-      <p>{ADMINISTRATORS_ONLY}</p>
-      <ButtonLink href='/'>トップへ戻る</ButtonLink>
+      <PageHeader title={say(TITLE)} />
+      <p>{say(ADMINISTRATORS_ONLY)}</p>
+      <ButtonLink href='/'>{say(adminOperationMessages.toTop)}</ButtonLink>
     </>
   )
+}

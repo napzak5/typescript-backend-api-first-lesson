@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   salonIdOf,
@@ -43,11 +44,15 @@ import {
  */
 
 /** Opens the account of a member of the salon in Tokyo, signed in as an account of the seed data. */
-const openAccountOf = async (staffCode: string, as = OWNER): Promise<void> => {
+const openAccountOf = async (
+  staffCode: string,
+  as = OWNER,
+  language: 'ja' | 'en' = 'ja',
+): Promise<void> => {
   renderAt(
     staffAccountHrefOf(await salonIdOf(TOKYO), await staffIdOf(staffCode)),
   )
-  await signInAs(as)
+  await signInAs(as, language)
 }
 
 const cardHeading = (name: string) =>
@@ -65,8 +70,8 @@ const expectFocusOn = async (name: string): Promise<void> => {
 }
 
 /** The roles a form offers, and whether each is chosen. */
-const rolesOffered = (): [string, boolean][] =>
-  within(screen.getByRole('radiogroup', { name: 'ロール' }))
+const rolesOffered = (label = 'ロール'): [string, boolean][] =>
+  within(screen.getByRole('radiogroup', { name: label }))
     .getAllByRole('radio')
     .map((radio) => [
       radio.closest('label')?.textContent ?? '',
@@ -605,5 +610,140 @@ describe('the accounts of the staff, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the accounts of the staff on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should invite a member without an account, and show the invitation that was mailed, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAccountOf(WATANABE.code, OWNER, 'en')
+    expect(
+      await screen.findByText(/^There is no sign-in account yet\./),
+    ).toBeVisible()
+    expect(rolesOffered('Role')).toEqual([
+      ['Manager', false],
+      ['Staff', false],
+    ])
+    expect(
+      screen.getByText(
+        /^The invitation email goes to the address of the staff ledger \(yui\.watanabe@beautysalon\.jp\)\./,
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.click(screen.getByRole('radio', { name: 'Staff' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Send the invitation email' }),
+    )
+
+    // Assert
+    await expectFocusOn('Invitation')
+    expect(notifications()).toContain(
+      'Sent the invitation email to Yui Watanabe.',
+    )
+    expect(termsOf('Invitation')).toEqual([
+      ['Status', 'Waiting to be accepted'],
+      ['Sent to', WATANABE.email],
+      ['Role', 'Staff'],
+      ['Expires', expect.stringMatching(/, \d{4} at \d{2}:\d{2}$/)],
+      ['Sent', expect.stringMatching(/, \d{4} at \d{2}:\d{2}$/)],
+    ])
+    expect(await mailedTo()).toEqual([WATANABE.email])
+  })
+
+  it('should show an account that is locked, in English', async () => {
+    // Arrange
+    await arrangeAccount(STYLIST, {
+      status: 'locked',
+      twoFactorStatus: 'enabled',
+      lastLoginAt: '2026-11-19T00:15:00Z',
+    })
+
+    // Act
+    await openAccountOf(TANAKA, OWNER, 'en')
+
+    // Assert
+    await cardHeading('Sign-in account')
+    expect(termsOf('Sign-in account').slice(0, 5)).toEqual([
+      ['Email address', STYLIST],
+      ['Role', 'Staff'],
+      ['Status', 'Locked'],
+      ['Two-factor authentication', 'Set up'],
+      ['Last sign-in', 'Thu, November 19, 2026 at 09:15'],
+    ])
+    expect(
+      screen.getByText(
+        /^After wrong passwords in a row, the account cannot sign in anew for 15 minutes/,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should give an account another role, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAccountOf(TANAKA, OWNER, 'en')
+    await user.click(await screen.findByRole('radio', { name: 'Manager' }))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Change the role' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Changed the role of Hiroshi Tanaka to Manager. The new role takes effect from the next action of the account.',
+      ),
+    ).toBeVisible()
+    expect(termsOf('Sign-in account')[1]).toEqual(['Role', 'Manager'])
+  })
+
+  it('should unlink an account after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAccountOf(TANAKA, OWNER, 'en')
+    await user.click(
+      await screen.findByRole('button', { name: 'Unlink the account' }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Unlink the sign-in account of Hiroshi Tanaka?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Unlink' }))
+
+    // Assert
+    await expectFocusOn('Invite')
+    expect(notifications()).toContain(
+      'Unlinked the sign-in account of Hiroshi Tanaka.',
+    )
+    expect(await storedAccountOf(STYLIST)).toEqual([
+      { role: 'staff', linked: false },
+    ])
+  })
+
+  it('should tell an owner who gives the role of another owner back, in English', async () => {
+    // Arrange
+    await arrangeOwnerAccount(MANAGER)
+
+    // Act
+    await openAccountOf('STF901', OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByRole('radiogroup', { name: 'Role' }),
+    ).toHaveAccessibleDescription(
+      /Once the role of an owner is taken away, only an administrator can give it back\.$/,
+    )
   })
 })

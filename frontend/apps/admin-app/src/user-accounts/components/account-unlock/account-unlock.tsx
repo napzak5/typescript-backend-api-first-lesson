@@ -1,11 +1,15 @@
-import { Alert, Button, Card } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import styles from './account-unlock.module.css'
+
+const { unlock } = adminUserAccountMessages
 
 export type AccountUnlockProps = {
   /** The lifting is on its way */
   pending?: boolean | undefined
   /** What went wrong with the last attempt, or why it changed nothing: said above the button */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button was pressed */
   onUnlock: () => void
 }
@@ -20,17 +24,18 @@ export const AccountUnlock = ({
   pending = false,
   message,
   onUnlock,
-}: AccountUnlockProps) => (
-  <Card title='ロックの解除'>
-    <div className={styles['unlock']}>
-      <p>
-        解除すると、利用者は、いまのパスワードですぐにログインできます。パスワードの誤りの回数は
-        0 に戻ります。パスワードと、ログインしている端末は変わりません。
-      </p>
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-      <Button variant='primary' pending={pending} onClick={onUnlock}>
-        ロックを解除する
-      </Button>
-    </div>
-  </Card>
-)
+}: AccountUnlockProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(unlock.title)}>
+      <div className={styles['unlock']}>
+        <p>{say(unlock.text)}</p>
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+        <Button variant='primary' pending={pending} onClick={onUnlock}>
+          {say(unlock.button)}
+        </Button>
+      </div>
+    </Card>
+  )
+}

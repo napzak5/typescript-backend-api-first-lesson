@@ -1,3 +1,4 @@
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ADMINISTRATORS_ONLY } from '../../utils/user-accounts'
@@ -31,8 +32,7 @@ export const Asking: Story = {
 export const Failed: Story = {
   args: {
     asking: true,
-    message:
-      '2 要素認証をリセットできませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminUserAccountMessages.reset.failed,
   },
 }
 

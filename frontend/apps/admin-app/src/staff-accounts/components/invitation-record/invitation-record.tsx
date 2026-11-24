@@ -7,9 +7,12 @@ import {
   Badge,
   Card,
   DescriptionList,
-  inJapanese,
   Note,
+  type Tone,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode, Ref } from 'react'
 import { match } from 'ts-pattern'
 import {
@@ -17,6 +20,8 @@ import {
   invitationStateOf,
   roleNameOf,
 } from '../../utils/account-format'
+
+const { words, invitation: INVITATION } = adminStaffAccountMessages
 
 export type InvitationRecordProps = {
   invitation: ModelsStaffInvitationResponse
@@ -32,40 +37,24 @@ export type InvitationRecordProps = {
   actions?: ReactNode
 }
 
-type StateWordsProps = { state: InvitationState; member: ModelsStaffResponse }
-
 /** Whether the member can take the invitation now, and what to do when they cannot. */
-const StateWords = ({ state, member }: StateWordsProps) =>
+const stateNoteOf = (
+  state: InvitationState,
+  member: ModelsStaffResponse,
+): LocalizedText =>
   match(state)
-    .with('waiting', () => (
-      <Note>
-        招待されたスタッフが、メールのリンクからパスワードを決めると、ログインアカウントができます。すでにスタッフのアカウントを持っていて、どのサロンにも属していない人は、そのアカウントでログインして招待に参加します。
-      </Note>
-    ))
-    .with('expired', () => (
-      <Note>
-        期限が切れたので、この招待のリンクは使えません。招待し直すと、新しいリンクを送ります。
-      </Note>
-    ))
-    .with('elsewhere', () => (
-      <Note>
-        招待したあとで、台帳のメールアドレスが変わりました（いまは
-        {member.email}
-        ）。この招待のリンクは使えません。招待し直すと、いまのメールアドレスに送ります。
-      </Note>
-    ))
-    .with('inactive', () => (
-      <Note>
-        無効なスタッフへの招待は、スタッフ情報を有効に戻すまで使えません。
-      </Note>
-    ))
+    .with('waiting', () => INVITATION.notes.waiting)
+    .with('expired', () => INVITATION.notes.expired)
+    .with('elsewhere', () => INVITATION.notes.elsewhere(member.email))
+    .with('inactive', () => INVITATION.notes.inactive)
     .exhaustive()
 
-const BADGES: Record<InvitationState, ReactNode> = {
-  waiting: <Badge tone='info'>受け入れ待ち</Badge>,
-  expired: <Badge tone='warning'>期限切れ</Badge>,
-  elsewhere: <Badge tone='danger'>使えません</Badge>,
-  inactive: <Badge tone='danger'>使えません</Badge>,
+/** The badge of the state of an invitation: its tone, and its words */
+const BADGES: Record<InvitationState, { tone: Tone; words: LocalizedText }> = {
+  waiting: { tone: 'info', words: INVITATION.states.waiting },
+  expired: { tone: 'warning', words: INVITATION.states.expired },
+  elsewhere: { tone: 'danger', words: INVITATION.states.unusable },
+  inactive: { tone: 'danger', words: INVITATION.states.unusable },
 }
 
 /**
@@ -82,33 +71,41 @@ export const InvitationRecord = ({
   headingRef,
   actions,
 }: InvitationRecordProps) => {
+  const say = useSay()
   const state = invitationStateOf(invitation, member, now)
+  const badge = BADGES[state]
 
   return (
-    <Card title='招待' headingRef={headingRef} actions={actions}>
+    <Card
+      title={say(INVITATION.title)}
+      headingRef={headingRef}
+      actions={actions}
+    >
       <DescriptionList
         items={[
-          { term: '状態', description: BADGES[state] },
           {
-            term: '宛先',
+            term: say(words.status),
+            description: <Badge tone={badge.tone}>{say(badge.words)}</Badge>,
+          },
+          {
+            term: say(INVITATION.recipient),
             description: invitation.email,
           },
-          { term: 'ロール', description: roleNameOf(invitation.role) },
           {
-            term: '期限',
-            description: inJapanese(
-              momentNameAt(invitation.expiresAt, timezone),
-            ),
+            term: say(words.role),
+            description: say(roleNameOf(invitation.role)),
           },
           {
-            term: '送った日時',
-            description: inJapanese(
-              momentNameAt(invitation.createdAt, timezone),
-            ),
+            term: say(INVITATION.expiresAt),
+            description: say(momentNameAt(invitation.expiresAt, timezone)),
+          },
+          {
+            term: say(INVITATION.sentAt),
+            description: say(momentNameAt(invitation.createdAt, timezone)),
           },
         ]}
       />
-      <StateWords state={state} member={member} />
+      <Note>{say(stateNoteOf(state, member))}</Note>
     </Card>
   )
 }

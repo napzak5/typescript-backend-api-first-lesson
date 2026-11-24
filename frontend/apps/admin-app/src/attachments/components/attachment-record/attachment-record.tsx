@@ -6,34 +6,37 @@ import {
   Card,
   DescriptionList,
   Dialog,
-  inJapanese,
   LoadingIndicator,
   Note,
   UnreadNotice,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import {
   contentTypeNameOf,
   isImage,
-  REMOVAL_NOTE,
   sizeNameOf,
 } from '../../utils/attachment-file'
 import styles from './attachment-record.module.css'
+
+const { record: RECORD, removal: REMOVAL } = adminAttachmentMessages
 
 /** The URLs of the storage that open a file and save it, which last five minutes */
 export type FileLinks =
   | { type: 'reading' }
   | { type: 'issued'; open: string; save: string }
   /** They could not be read: the message says why */
-  | { type: 'unread'; message: string }
+  | { type: 'unread'; message: LocalizedText }
 
 export type AttachmentRecordProps = {
   attachment: ModelsAttachmentResponse
   /** The time zone of the salon, which the moment of the upload is said in */
   timezone: string
   /** Who uploaded the file */
-  uploaderName: string
+  uploaderName: LocalizedText
   links: FileLinks
   /** Reads the URLs again */
   onRetryLinks: () => void
@@ -46,7 +49,7 @@ export type AttachmentRecordProps = {
   /** Whether the dialog of the removal is open */
   asking?: boolean | undefined
   /** What went wrong with the removal, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button of the removal was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -74,90 +77,101 @@ export const AttachmentRecord = ({
   onAsk,
   onClose,
   onRemove,
-}: AttachmentRecordProps) => (
-  <Card title='ファイル'>
-    <div className={styles['record']}>
-      {match(links)
-        .with({ type: 'reading' }, () => (
-          <LoadingIndicator label='ファイルを開く準備をしています' />
-        ))
-        .with({ type: 'unread' }, ({ message: why }) => (
-          <UnreadNotice
-            message={why}
-            onRetry={onRetryLinks}
-            pending={retryingLinks}
-          />
-        ))
-        .with({ type: 'issued' }, ({ open, save }) => (
-          <>
-            {isImage(attachment.contentType) && (
-              <img
-                className={styles['preview']}
-                src={open}
-                alt={attachment.filename}
-              />
-            )}
-            <ul className={styles['links']} aria-label='ファイルを開く'>
-              <li>
-                <a href={open} target='_blank' rel='noopener noreferrer'>
-                  新しいタブで開く
-                </a>
-              </li>
-              <li>
-                <a href={save} rel='noreferrer'>
-                  保存する
-                </a>
-              </li>
-            </ul>
-          </>
-        ))
-        .exhaustive()}
-      <DescriptionList
-        items={[
-          { term: 'ファイル名', description: attachment.filename },
-          {
-            term: '種類',
-            description: contentTypeNameOf(attachment.contentType),
-          },
-          {
-            term: 'サイズ',
-            description: `${sizeNameOf(attachment.size)}（${inJapanese(formats.bytesOf(attachment.size))}）`,
-          },
-          { term: 'アップロードした人', description: uploaderName },
-          {
-            term: 'アップロード日時',
-            description: inJapanese(
-              momentNameAt(
-                attachment.uploadedAt ?? attachment.createdAt,
-                timezone,
+}: AttachmentRecordProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(RECORD.title)}>
+      <div className={styles['record']}>
+        {match(links)
+          .with({ type: 'reading' }, () => (
+            <LoadingIndicator
+              label={say(adminAttachmentMessages.loading.opening)}
+            />
+          ))
+          .with({ type: 'unread' }, ({ message: why }) => (
+            <UnreadNotice
+              message={say(why)}
+              onRetry={onRetryLinks}
+              pending={retryingLinks}
+            />
+          ))
+          .with({ type: 'issued' }, ({ open, save }) => (
+            <>
+              {isImage(attachment.contentType) && (
+                <img
+                  className={styles['preview']}
+                  src={open}
+                  alt={attachment.filename}
+                />
+              )}
+              <ul className={styles['links']} aria-label={say(RECORD.open)}>
+                <li>
+                  <a href={open} target='_blank' rel='noopener noreferrer'>
+                    {say(RECORD.newTab)}
+                  </a>
+                </li>
+                <li>
+                  <a href={save} rel='noreferrer'>
+                    {say(RECORD.save)}
+                  </a>
+                </li>
+              </ul>
+            </>
+          ))
+          .exhaustive()}
+        <DescriptionList
+          items={[
+            { term: say(RECORD.filename), description: attachment.filename },
+            {
+              term: say(RECORD.type),
+              description: say(contentTypeNameOf(attachment.contentType)),
+            },
+            {
+              term: say(RECORD.size),
+              description: say(
+                RECORD.sizeOf(
+                  sizeNameOf(attachment.size),
+                  formats.bytesOf(attachment.size),
+                ),
               ),
-            ),
-          },
-        ]}
-      />
-      {removes ? (
-        <Button variant='danger' onClick={onAsk}>
-          ファイルを削除する
-        </Button>
-      ) : (
-        <Note>{REMOVAL_NOTE}</Note>
-      )}
-    </div>
-    <Dialog
-      open={asking}
-      onClose={onClose}
-      title='ファイルを削除しますか？'
-      description={`「${attachment.filename}」を、サロンのファイルから削除します。削除したファイルは元に戻せません。このファイルの共有リンクも、使えなくなります。`}
-      actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='danger' pending={pending} onClick={onRemove}>
-            削除する
+            },
+            { term: say(RECORD.uploader), description: say(uploaderName) },
+            {
+              term: say(RECORD.uploadedAt),
+              description: say(
+                momentNameAt(
+                  attachment.uploadedAt ?? attachment.createdAt,
+                  timezone,
+                ),
+              ),
+            },
+          ]}
+        />
+        {removes ? (
+          <Button variant='danger' onClick={onAsk}>
+            {say(REMOVAL.button)}
           </Button>
-        </>
-      }
-    >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </Card>
-)
+        ) : (
+          <Note>{say(REMOVAL.forbidden)}</Note>
+        )}
+      </div>
+      <Dialog
+        open={asking}
+        onClose={onClose}
+        title={say(REMOVAL.title)}
+        description={say(REMOVAL.description(attachment.filename))}
+        actions={
+          <>
+            <Button onClick={onClose}>{say(REMOVAL.back)}</Button>
+            <Button variant='danger' pending={pending} onClick={onRemove}>
+              {say(REMOVAL.confirm)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </Card>
+  )
+}

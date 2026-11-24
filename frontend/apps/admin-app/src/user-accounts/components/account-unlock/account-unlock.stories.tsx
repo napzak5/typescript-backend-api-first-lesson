@@ -1,3 +1,4 @@
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { AccountUnlock } from './account-unlock'
@@ -23,7 +24,6 @@ export const Pending: Story = {
 /** The last attempt did not reach the API */
 export const Failed: Story = {
   args: {
-    message:
-      'ロックを解除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminUserAccountMessages.unlock.failed,
   },
 }

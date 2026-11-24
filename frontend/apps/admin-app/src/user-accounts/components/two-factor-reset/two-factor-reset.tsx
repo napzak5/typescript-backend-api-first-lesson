@@ -1,17 +1,21 @@
-import { Alert, Button, Card, Dialog } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, Dialog, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import styles from './two-factor-reset.module.css'
+
+const { reset } = adminUserAccountMessages
 
 export type TwoFactorResetProps = {
   /** The address of the account, which the dialog names */
   email: string
   /** Why the last attempt changed nothing, said above the button */
-  refusal?: string | undefined
+  refusal?: LocalizedText | undefined
   /** Whether the dialog of the reset is open */
   asking?: boolean | undefined
   /** The reset is on its way */
   pending?: boolean | undefined
   /** What went wrong with the last attempt, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button of the reset was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -35,33 +39,34 @@ export const TwoFactorReset = ({
   onAsk,
   onClose,
   onReset,
-}: TwoFactorResetProps) => (
-  <Card title='2 要素認証のリセット'>
-    <div className={styles['reset']}>
-      <p>
-        認証アプリとバックアップコードの両方をなくした利用者のための操作です。リセットすると、利用者は、パスワードだけでログインし、2
-        要素認証を設定し直します。
-      </p>
-      {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <Button variant='danger' onClick={onAsk}>
-        2 要素認証をリセットする
-      </Button>
-    </div>
-    <Dialog
-      open={asking}
-      onClose={onClose}
-      title={`${email} の 2 要素認証をリセットしますか？`}
-      description='依頼した人が、このアカウントの利用者本人であることを、サポートの手続きで確かめてから行ってください。システムは確かめません。リセットすると、認証アプリのコードもバックアップコードも使えなくなります。利用者には、メールで知らせます。ログインしている端末は、そのまま使えます。'
-      actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='danger' pending={pending} onClick={onReset}>
-            リセットする
-          </Button>
-        </>
-      }
-    >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </Card>
-)
+}: TwoFactorResetProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(reset.title)}>
+      <div className={styles['reset']}>
+        <p>{say(reset.text)}</p>
+        {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
+        <Button variant='danger' onClick={onAsk}>
+          {say(reset.button)}
+        </Button>
+      </div>
+      <Dialog
+        open={asking}
+        onClose={onClose}
+        title={say(reset.question(email))}
+        description={say(reset.warning)}
+        actions={
+          <>
+            <Button onClick={onClose}>{say(reset.back)}</Button>
+            <Button variant='danger' pending={pending} onClick={onReset}>
+              {say(reset.confirm)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </Card>
+  )
+}
