@@ -37,6 +37,7 @@ describe('productConditionsIn', () => {
     ['a state that is none', 'carried=yes'],
     ['a use that is none', 'use=both'],
   ])('should take %s for no condition', (_case, query) => {
+    // Assert
     expect(productConditionsIn(new URLSearchParams(query))).toEqual({})
   })
 
@@ -47,6 +48,7 @@ describe('productConditionsIn', () => {
   ])(
     'should keep a %s of 100 characters, counted as the API counts them',
     (name, text) => {
+      // Assert
       expect(
         productConditionsIn(new URLSearchParams({ [name]: text })),
       ).toEqual({ [name]: text })
@@ -54,6 +56,7 @@ describe('productConditionsIn', () => {
   )
 
   it('should keep a category as it is written, and a barcode without the spaces around it', () => {
+    // Assert
     expect(
       productConditionsIn(
         new URLSearchParams('category=+Hair+Care+&barcode=+490+'),
@@ -109,8 +112,14 @@ describe('readProductConditions', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        keyword: 'キーワードは、100 文字以内で入力してください。',
-        barcode: 'バーコードは、100 文字以内で入力してください。',
+        keyword: {
+          en: 'Keyword: enter up to 100 characters.',
+          ja: 'キーワードは、100 文字以内で入力してください。',
+        },
+        barcode: {
+          en: 'Barcode: enter up to 100 characters.',
+          ja: 'バーコードは、100 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -140,6 +149,7 @@ describe('productQueryOf', () => {
   })
 
   it('should tell the whole ledger from a narrowed one', () => {
+    // Assert
     expect([isNarrowed({}), isNarrowed({ carried: 'carried' })]).toEqual([
       false,
       true,
@@ -166,6 +176,7 @@ describe('productListParamsOf', () => {
       { keyword: 'wax', barcode: '490', category: 'Styling' },
     ],
   ])('should ask the API for %s', (_case, conditions, params) => {
+    // Assert
     expect(productListParamsOf(conditions)).toEqual(params)
   })
 })

@@ -7,13 +7,17 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
   NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import {
@@ -26,6 +30,8 @@ import {
   TIME_ZONE_CHOICES,
 } from '../../utils/salon-form'
 
+const { form: WORDS, words } = adminSettingsMessages
+
 /** What the form is opened for. */
 type SalonFormSubject =
   /** A salon to be added: the form opens with `NEW_SALON`, and the time zone and the currency are chosen */
@@ -35,11 +41,13 @@ type SalonFormSubject =
 
 export type SalonFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
   subject: SalonFormSubject
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 const textOrEmpty = (text: string | null): string => text ?? ''
@@ -53,227 +61,231 @@ const textOrEmpty = (text: string | null): string => text ?? ''
  */
 export const SalonForm = ({
   subject,
+  message,
   errors = NO_ERRORS,
   ...form
 }: SalonFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
   const salon: SalonShown =
     subject.type === 'existing' ? subject.salon : NEW_SALON
 
   return (
-    <Form {...form} errors={errors}>
-      <FormPart label='サロン'>
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(words.salon)}>
         <TextField
-          label='名前'
+          label={say(words.name)}
           name='name'
           autoComplete='organization'
           required
-          description={`${inJapanese(upTo(LONGEST_NAME))}お客様がサロンを探すときに出ます。`}
+          description={say(WORDS.nameDescription(LONGEST_NAME))}
           defaultValue={salon.name}
-          error={errors['name']}
+          error={said.errors['name']}
         />
         <TextField
-          label='カナ'
+          label={say(words.nameKana)}
           name='nameKana'
           autoComplete='off'
-          description={inJapanese(upTo(LONGEST_NAME))}
+          description={say(upTo(LONGEST_NAME))}
           defaultValue={textOrEmpty(salon.nameKana)}
-          error={errors['nameKana']}
+          error={said.errors['nameKana']}
         />
         <TextArea
-          label='紹介'
+          label={say(words.description)}
           name='description'
           rows={4}
-          description='サロンの詳細に出ます。'
+          description={say(WORDS.descriptionDescription)}
           defaultValue={textOrEmpty(salon.description)}
-          error={errors['description']}
+          error={said.errors['description']}
         />
         <Checkbox
-          label='オンライン予約を受け付ける'
+          label={say(WORDS.accepting)}
           name='isActive'
-          description='外すと、お客様は空き枠を見られず、予約できなくなります。サロンが台帳に入れる予約には使えます。'
+          description={say(WORDS.acceptingDescription)}
           defaultChecked={salon.isActive}
         />
       </FormPart>
-      <FormPart label='所在地'>
+      <FormPart label={say(words.location)}>
         <FieldRow>
           <TextField
-            label='郵便番号'
+            label={say(words.postalCode)}
             name='postalCode'
             autoComplete='postal-code'
-            description={inJapanese(upTo(LONGEST_POSTAL_CODE))}
+            description={say(upTo(LONGEST_POSTAL_CODE))}
             defaultValue={textOrEmpty(salon.postalCode)}
-            error={errors['postalCode']}
+            error={said.errors['postalCode']}
           />
           <TextField
-            label='都道府県'
+            label={say(words.prefecture)}
             name='prefecture'
             autoComplete='address-level1'
             required
             defaultValue={salon.prefecture}
-            error={errors['prefecture']}
+            error={said.errors['prefecture']}
           />
         </FieldRow>
         <FieldRow>
           <TextField
-            label='市区町村'
+            label={say(words.city)}
             name='city'
             autoComplete='address-level2'
             required
             defaultValue={salon.city}
-            error={errors['city']}
+            error={said.errors['city']}
           />
           <TextField
-            label='町名・番地'
+            label={say(words.address)}
             name='address'
             autoComplete='address-line1'
             required
             defaultValue={salon.address}
-            error={errors['address']}
+            error={said.errors['address']}
           />
         </FieldRow>
         <TextField
-          label='建物'
+          label={say(words.building)}
           name='building'
           autoComplete='address-line2'
-          description='建物の名前と階、部屋の番号。'
+          description={say(WORDS.buildingDescription)}
           defaultValue={textOrEmpty(salon.building)}
-          error={errors['building']}
+          error={said.errors['building']}
         />
         <FieldRow>
           <TextField
-            label='緯度'
+            label={say(words.latitude)}
             name='latitude'
             inputMode='decimal'
             autoComplete='off'
-            description='-90 から 90 まで。地図にサロンを示すときに使います。'
+            description={say(WORDS.latitudeDescription)}
             defaultValue={coordinateTextOf(salon.latitude)}
-            error={errors['latitude']}
+            error={said.errors['latitude']}
           />
           <TextField
-            label='経度'
+            label={say(words.longitude)}
             name='longitude'
             inputMode='decimal'
             autoComplete='off'
-            description='-180 から 180 まで。'
+            description={say(WORDS.longitudeDescription)}
             defaultValue={coordinateTextOf(salon.longitude)}
-            error={errors['longitude']}
+            error={said.errors['longitude']}
           />
         </FieldRow>
       </FormPart>
-      <FormPart label='連絡先'>
+      <FormPart label={say(words.contact)}>
         <FieldRow>
           <TextField
-            label='電話番号'
+            label={say(words.phoneNumber)}
             name='phoneNumber'
             type='tel'
             autoComplete='tel'
             required
-            description='市外局番から。'
+            description={say(WORDS.phoneNumberDescription)}
             defaultValue={salon.phoneNumber}
-            error={errors['phoneNumber']}
+            error={said.errors['phoneNumber']}
           />
           <TextField
-            label='予備の電話番号'
+            label={say(words.alternativePhone)}
             name='alternativePhone'
             type='tel'
             autoComplete='off'
             defaultValue={textOrEmpty(salon.alternativePhone)}
-            error={errors['alternativePhone']}
+            error={said.errors['alternativePhone']}
           />
         </FieldRow>
         <TextField
-          label='メールアドレス'
+          label={say(words.email)}
           name='email'
           type='email'
           autoComplete='email'
           required
-          description='お客様からの問い合わせを受けるアドレス。ほかのサロンと同じアドレスは使えません。'
+          description={say(WORDS.emailDescription)}
           defaultValue={salon.email}
-          error={errors['email']}
+          error={said.errors['email']}
         />
         <TextField
-          label='公式サイト'
+          label={say(words.websiteUrl)}
           name='websiteUrl'
           type='url'
           autoComplete='url'
-          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
+          description={say(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={textOrEmpty(salon.websiteUrl)}
-          error={errors['websiteUrl']}
+          error={said.errors['websiteUrl']}
         />
       </FormPart>
-      <FormPart label='写真'>
+      <FormPart label={say(words.photos)}>
         <TextField
-          label='ロゴの URL'
+          label={say(words.logoUrl)}
           name='logoUrl'
           type='url'
           autoComplete='off'
-          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
+          description={say(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={textOrEmpty(salon.logoUrl)}
-          error={errors['logoUrl']}
+          error={said.errors['logoUrl']}
         />
         <TextArea
-          label='写真の URL'
+          label={say(words.imageUrls)}
           name='imageUrls'
-          description='1 行に 1 つ。店舗や内装の写真。'
+          description={say(WORDS.imageUrlsDescription)}
           defaultValue={salon.imageUrls.join('\n')}
-          error={errors['imageUrls']}
+          error={said.errors['imageUrls']}
         />
       </FormPart>
-      <FormPart label='特徴と設備'>
+      <FormPart label={say(words.featuresAndAmenities)}>
         <TextField
-          label='特徴'
+          label={say(words.features)}
           name='features'
           autoComplete='off'
-          description='「、」か「,」で区切って書きます。お客様がサロンを探すときに使います。'
-          defaultValue={inJapanese(tagsTextOf(salon.features))}
-          error={errors['features']}
+          description={say(WORDS.featuresDescription)}
+          defaultValue={say(tagsTextOf(salon.features))}
+          error={said.errors['features']}
         />
         <TextField
-          label='設備'
+          label={say(words.amenities)}
           name='amenities'
           autoComplete='off'
-          description='Wi-Fi や駐車場など。「、」か「,」で区切って書きます。'
-          defaultValue={inJapanese(tagsTextOf(salon.amenities))}
-          error={errors['amenities']}
+          description={say(WORDS.amenitiesDescription)}
+          defaultValue={say(tagsTextOf(salon.amenities))}
+          error={said.errors['amenities']}
         />
       </FormPart>
-      <FormPart label='会計'>
+      <FormPart label={say(words.accounting)}>
         <TextField
           width='short'
-          label='税率（%）'
+          label={say(WORDS.taxRate)}
           name='taxRate'
           inputMode='decimal'
           autoComplete='off'
           required
-          description='0 から 100 まで、小数は 2 桁まで。これからの会計の計算に使います。'
+          description={say(WORDS.taxRateDescription)}
           defaultValue={String(salon.taxRate)}
-          error={errors['taxRate']}
+          error={said.errors['taxRate']}
         />
         {match(subject)
           .with({ type: 'existing' }, () => (
             <Note size='small'>
-              {`タイムゾーン（${salon.timezone}）と通貨（${salon.currency}）は、変えられません。予約の日時と料金は、これらで読みます。`}
+              {say(WORDS.kept(salon.timezone, salon.currency))}
             </Note>
           ))
           .with({ type: 'new' }, () => (
             <FieldRow>
               <Select
-                label='タイムゾーン'
+                label={say(words.timezone)}
                 name='timezone'
                 required
                 options={TIME_ZONE_CHOICES}
-                description='予約の日時は、このタイムゾーンで読みます。登録したあとは、変えられません。'
+                description={say(WORDS.timezoneDescription)}
                 defaultValue={salon.timezone}
-                error={errors['timezone']}
+                error={said.errors['timezone']}
               />
               <Select
-                label='通貨'
+                label={say(words.currency)}
                 name='currency'
                 required
-                options={CURRENCY_CHOICES}
-                description='料金と売上は、この通貨で表します。登録したあとは、変えられません。'
+                options={options(CURRENCY_CHOICES)}
+                description={say(WORDS.currencyDescription)}
                 defaultValue={salon.currency}
-                error={errors['currency']}
+                error={said.errors['currency']}
               />
             </FieldRow>
           ))

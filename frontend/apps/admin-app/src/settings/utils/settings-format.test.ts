@@ -37,6 +37,10 @@ const date = (
   ...changes,
 })
 
+/** What is said of a day the salon does not open on */
+const CLOSED = { en: 'Closed', ja: '休業' }
+const CLOSED_ALL_DAY = { en: 'Closed all day', ja: '終日休業' }
+
 describe('weekHoursOf', () => {
   it('should name the hours of every day of the week from Monday, a day without an entry closed', () => {
     // Act
@@ -63,13 +67,25 @@ describe('weekHoursOf', () => {
 
     // Assert
     expect(week).toEqual([
-      { weekday: 'monday', hours: '10:00〜20:00（休憩 13:00〜14:00）' },
-      { weekday: 'tuesday', hours: '10:00〜13:00、15:00〜20:00' },
-      { weekday: 'wednesday', hours: '休業' },
-      { weekday: 'thursday', hours: '休業' },
-      { weekday: 'friday', hours: '10:00〜20:00' },
-      { weekday: 'saturday', hours: '休業' },
-      { weekday: 'sunday', hours: '09:00〜18:00' },
+      {
+        weekday: 'monday',
+        hours: {
+          en: '10:00–20:00 (break 13:00–14:00)',
+          ja: '10:00〜20:00（休憩 13:00〜14:00）',
+        },
+      },
+      {
+        weekday: 'tuesday',
+        hours: {
+          en: '10:00–13:00, 15:00–20:00',
+          ja: '10:00〜13:00、15:00〜20:00',
+        },
+      },
+      { weekday: 'wednesday', hours: CLOSED },
+      { weekday: 'thursday', hours: CLOSED },
+      { weekday: 'friday', hours: { en: '10:00–20:00', ja: '10:00〜20:00' } },
+      { weekday: 'saturday', hours: CLOSED },
+      { weekday: 'sunday', hours: { en: '09:00–18:00', ja: '09:00〜18:00' } },
     ])
   })
 
@@ -88,21 +104,17 @@ describe('weekHoursOf', () => {
     )
 
     // Assert
-    expect(monday?.hours).toBe(
-      '10:00〜20:00・2026年4月1日から2026年9月30日まで',
-    )
+    expect(monday?.hours).toEqual({
+      en: '10:00–20:00, from April 1, 2026 to September 30, 2026',
+      ja: '10:00〜20:00・2026年4月1日から2026年9月30日まで',
+    })
   })
 
   it('should close every day of a salon whose week is not set', () => {
-    expect(weekHoursOf(null, 'Asia/Tokyo').map(({ hours }) => hours)).toEqual([
-      '休業',
-      '休業',
-      '休業',
-      '休業',
-      '休業',
-      '休業',
-      '休業',
-    ])
+    // Assert
+    expect(weekHoursOf(null, 'Asia/Tokyo').map(({ hours }) => hours)).toEqual(
+      Array.from({ length: 7 }, () => CLOSED),
+    )
   })
 })
 
@@ -134,30 +146,30 @@ describe('calendarFrom', () => {
     expect(calendar).toEqual([
       {
         date: '2026-11-21',
-        day: '2026年11月21日（土）',
-        hours: '10:00〜17:00',
-        holiday: 'いいえ',
+        day: { en: 'Sat, November 21, 2026', ja: '2026年11月21日（土）' },
+        hours: { en: '10:00–17:00', ja: '10:00〜17:00' },
+        holiday: { en: 'No', ja: 'いいえ' },
         notes: null,
       },
       {
         date: '2026-11-23',
-        day: '2026年11月23日（月）',
-        hours: '10:00〜17:00',
-        holiday: '勤労感謝の日',
+        day: { en: 'Mon, November 23, 2026', ja: '2026年11月23日（月）' },
+        hours: { en: '10:00–17:00', ja: '10:00〜17:00' },
+        holiday: { en: '勤労感謝の日', ja: '勤労感謝の日' },
         notes: null,
       },
       {
         date: '2026-11-24',
-        day: '2026年11月24日（火）',
-        hours: '終日休業',
-        holiday: '店休日',
+        day: { en: 'Tue, November 24, 2026', ja: '2026年11月24日（火）' },
+        hours: CLOSED_ALL_DAY,
+        holiday: { en: '店休日', ja: '店休日' },
         notes: '設備の点検',
       },
       {
         date: '2026-11-25',
-        day: '2026年11月25日（水）',
-        hours: '終日休業',
-        holiday: '祝日・休業日',
+        day: { en: 'Wed, November 25, 2026', ja: '2026年11月25日（水）' },
+        hours: CLOSED_ALL_DAY,
+        holiday: { en: 'Holiday or day off', ja: '祝日・休業日' },
         notes: null,
       },
     ])
@@ -170,26 +182,52 @@ describe('taxRateNameOf', () => {
     [8.5, '8.5%'],
     [0, '0%'],
   ])('should name %s as %s', (rate, name) => {
-    expect(taxRateNameOf(rate)).toBe(name)
+    // Assert
+    expect(taxRateNameOf(rate)).toEqual({ en: name, ja: name })
   })
 })
 
 describe('coordinatesNameOf', () => {
-  it.each<[number | null, number | null, string | null]>([
-    [35.658, 139.7016, '緯度 35.658、経度 139.7016'],
-    [35.658, null, '緯度 35.658、経度 記録なし'],
+  it.each<[number | null, number | null, { en: string; ja: string } | null]>([
+    [
+      35.658,
+      139.7016,
+      {
+        en: 'Latitude 35.658, longitude 139.7016',
+        ja: '緯度 35.658、経度 139.7016',
+      },
+    ],
+    [
+      35.658,
+      null,
+      {
+        en: 'Latitude 35.658, longitude Not recorded',
+        ja: '緯度 35.658、経度 記録なし',
+      },
+    ],
+    [
+      -33.85678912,
+      151.215,
+      {
+        en: 'Latitude -33.85678912, longitude 151.215',
+        ja: '緯度 -33.85678912、経度 151.215',
+      },
+    ],
     [null, null, null],
-  ])('should name %s and %s as %s', (latitude, longitude, name) => {
-    expect(coordinatesNameOf(latitude, longitude)).toBe(name)
+  ])('should name %s and %s as %o', (latitude, longitude, name) => {
+    // Assert
+    expect(coordinatesNameOf(latitude, longitude)).toEqual(name)
   })
 })
 
 describe('ratingNameOf', () => {
-  it.each<[number | null, number, string]>([
-    [4, 3, '4.0（3 件のレビュー）'],
-    [4.25, 12, '4.3（12 件のレビュー）'],
-    [null, 0, 'まだありません'],
-  ])('should name %s of %s reviews as %s', (rating, count, name) => {
-    expect(ratingNameOf(rating, count)).toBe(name)
+  it.each<[number | null, number, { en: string; ja: string }]>([
+    [4, 3, { en: '4.0 (3 reviews)', ja: '4.0（3 件のレビュー）' }],
+    [4.25, 12, { en: '4.3 (12 reviews)', ja: '4.3（12 件のレビュー）' }],
+    [4.5, 1, { en: '4.5 (1 review)', ja: '4.5（1 件のレビュー）' }],
+    [null, 0, { en: 'None yet', ja: 'まだありません' }],
+  ])('should name %s of %s reviews as %o', (rating, count, name) => {
+    // Assert
+    expect(ratingNameOf(rating, count)).toEqual(name)
   })
 })

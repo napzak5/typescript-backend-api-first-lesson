@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -7,7 +8,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ProductConditions } from '../../utils/product-ledger'
 import { ProductFilter, type ProductFilterProps } from './product-filter'
 import * as productFilterStories from './product-filter.stories'
@@ -176,6 +177,61 @@ describe('ProductFilter', () => {
     expect(screen.getByRole('button', { name: '条件（4）' })).toHaveAttribute(
       'aria-haspopup',
       'dialog',
+    )
+  })
+})
+
+describe('ProductFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its conditions and offer their choices, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Everything.run()
+
+    // Assert
+    const search = screen.getByRole('searchbox', { name: 'Keyword' })
+    expect(search.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Search products',
+    )
+    expect(search).toHaveAccessibleDescription(
+      'Part of the name, the product code or the brand.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Barcode' }),
+    ).toHaveAccessibleDescription(
+      'The whole barcode. A barcode reader can enter it.',
+    )
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Category' })),
+    ).toEqual(['All', 'スタイリング', 'ヘアカラー', 'ヘアケア'])
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Availability' })),
+    ).toEqual(['All', 'Active', 'Discontinued'])
+    expect(optionsOf(screen.getByRole('combobox', { name: 'Use' }))).toEqual([
+      'All',
+      'Sold in store',
+      'Used in treatments',
+    ])
+  })
+
+  it('should say what is wrong at the control, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('searchbox', { name: 'Keyword' }),
+    ).toHaveAccessibleDescription(
+      'Part of the name, the product code or the brand. Keyword: enter up to 100 characters.',
     )
   })
 })

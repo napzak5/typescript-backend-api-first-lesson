@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -412,5 +413,89 @@ describe('the hours of a salon, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
+  })
+})
+
+describe('the hours of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the manager change the week in English, and show it in the settings in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(hoursChangeHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await heading('Edit the hours')
+    const monday = within(await screen.findByRole('group', { name: 'Monday' }))
+
+    // Act
+    await writeTime(user, monday.getByLabelText('Break starts'), '13:00')
+    await writeTime(user, monday.getByLabelText('Break ends'), '14:00')
+    await user.click(
+      within(screen.getByRole('group', { name: 'Sunday' })).getByRole('radio', {
+        name: 'Closed',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // Assert
+    expect(await heading('Salon settings')).toHaveFocus()
+    expect(await screen.findByText('Saved the hours.')).toBeInTheDocument()
+    await screen.findByRole('table', { name: 'Hours' })
+    expect(rowsOf('Hours').slice(0, 2)).toEqual([
+      ['Monday', '10:00–20:00 (break 13:00–14:00)'],
+      ['Tuesday', '10:00–20:00'],
+    ])
+  })
+
+  it('should say in English what is wrong at the controls, and ask the API for nothing', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const before = await storedSalonOf(TOKYO)
+    await openAs(hoursChangeHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await heading('Edit the hours')
+    const tuesday = within(
+      await screen.findByRole('group', { name: 'Tuesday' }),
+    )
+    await writeTime(user, tuesday.getByLabelText('Closes'), '09:00')
+    await writeTime(user, tuesday.getByLabelText('Break starts'), '12:00')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(tuesday.getByLabelText('Closes')).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'Make the closing time later than the opening time.',
+        ),
+      ),
+    )
+    expect(tuesday.getByLabelText('Break ends')).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the end of the break as well.'),
+    )
+    expect(await storedSalonOf(TOKYO)).toEqual(before)
+  })
+
+  it('should tell a stylist in English that the hours are not theirs to change', async () => {
+    // Act
+    await openAs(hoursChangeHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot change the salon settings. Only the owners and managers of the salon, and administrators, can change the settings.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the settings' }),
+    ).toBeInTheDocument()
   })
 })

@@ -1,4 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../../bookings/components/examples'
 import {
@@ -75,6 +76,7 @@ describe('readSalonChange', () => {
     ['a salon with little recorded', salon],
     ['a salon with everything recorded', described],
   ])('should send nothing for %s when nothing was changed', (_, shown) => {
+    // Assert
     expect(readSalonChange(formOf(shown), shown)).toEqual({
       type: 'unchanged',
     })
@@ -158,139 +160,213 @@ describe('readSalonChange', () => {
     })
   })
 
-  it.each<[string, string, string, string]>([
-    ['name', '', 'name', 'サロンの名前を、255 文字以内で入力してください。'],
+  it.each<[string, string, string, LocalizedText]>([
+    [
+      'name',
+      '',
+      'name',
+      {
+        en: 'Salon name: enter 1 to 255 characters.',
+        ja: 'サロンの名前を、255 文字以内で入力してください。',
+      },
+    ],
     [
       'name',
       'あ'.repeat(256),
       'name',
-      'サロンの名前を、255 文字以内で入力してください。',
+      {
+        en: 'Salon name: enter 1 to 255 characters.',
+        ja: 'サロンの名前を、255 文字以内で入力してください。',
+      },
     ],
     [
       'nameKana',
       'ア'.repeat(256),
       'nameKana',
-      'カナは、255 文字以内で入力してください。',
+      {
+        en: 'Name in kana: enter up to 255 characters.',
+        ja: 'カナは、255 文字以内で入力してください。',
+      },
     ],
     [
       'postalCode',
       '150-0001-01',
       'postalCode',
-      '郵便番号は、10 文字以内で入力してください。',
+      {
+        en: 'Postal code: enter up to 10 characters.',
+        ja: '郵便番号は、10 文字以内で入力してください。',
+      },
     ],
     [
       'prefecture',
       ' ',
       'prefecture',
-      '都道府県を、50 文字以内で入力してください。',
+      {
+        en: 'Prefecture: enter 1 to 50 characters.',
+        ja: '都道府県を、50 文字以内で入力してください。',
+      },
     ],
     [
       'prefecture',
       'あ'.repeat(51),
       'prefecture',
-      '都道府県を、50 文字以内で入力してください。',
+      {
+        en: 'Prefecture: enter 1 to 50 characters.',
+        ja: '都道府県を、50 文字以内で入力してください。',
+      },
     ],
     [
       'city',
       'あ'.repeat(101),
       'city',
-      '市区町村を、100 文字以内で入力してください。',
+      {
+        en: 'City: enter 1 to 100 characters.',
+        ja: '市区町村を、100 文字以内で入力してください。',
+      },
     ],
     [
       'address',
       '',
       'address',
-      '町名・番地を、255 文字以内で入力してください。',
+      {
+        en: 'Street address: enter 1 to 255 characters.',
+        ja: '町名・番地を、255 文字以内で入力してください。',
+      },
     ],
     [
       'building',
       'あ'.repeat(256),
       'building',
-      '建物は、255 文字以内で入力してください。',
+      {
+        en: 'Building: enter up to 255 characters.',
+        ja: '建物は、255 文字以内で入力してください。',
+      },
     ],
     [
       'latitude',
       '90.5',
       'latitude',
-      '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
+      {
+        en: 'Enter the latitude as a number from -90 to 90, with up to 8 decimal places.',
+        ja: '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
+      },
     ],
     [
       'latitude',
       '35.123456789',
       'latitude',
-      '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
+      {
+        en: 'Enter the latitude as a number from -90 to 90, with up to 8 decimal places.',
+        ja: '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
+      },
     ],
     [
       'longitude',
       '-180.1',
       'longitude',
-      '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。',
+      {
+        en: 'Enter the longitude as a number from -180 to 180, with up to 8 decimal places.',
+        ja: '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。',
+      },
     ],
     [
       'longitude',
       '東経 139',
       'longitude',
-      '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。',
+      {
+        en: 'Enter the longitude as a number from -180 to 180, with up to 8 decimal places.',
+        ja: '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。',
+      },
     ],
     [
       'phoneNumber',
       '03-1234',
       'phoneNumber',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     [
       'alternativePhone',
       '内線 12',
       'alternativePhone',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     [
       'email',
       'hikari',
       'email',
-      'メールアドレスは、hanako@example.com のような形で入力してください。',
+      {
+        en: 'Enter an email address in a form such as hanako@example.com.',
+        ja: 'メールアドレスは、hanako@example.com のような形で入力してください。',
+      },
     ],
     [
       'websiteUrl',
       'hikari.example.com',
       'websiteUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'logoUrl',
       `https://example.com/${'a'.repeat(481)}`,
       'logoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'imageUrls',
       'https://example.com/1.jpg\nexample.com/2.jpg',
       'imageUrls',
-      '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      {
+        en: 'Check line 2. Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
+        ja: '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      },
     ],
     [
       'taxRate',
       '',
       'taxRate',
-      '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      {
+        en: 'Enter the tax rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      },
     ],
     [
       'taxRate',
       '100.5',
       'taxRate',
-      '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      {
+        en: 'Enter the tax rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      },
     ],
     [
       'taxRate',
       '8.125',
       'taxRate',
-      '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      {
+        en: 'Enter the tax rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      },
     ],
     [
       'taxRate',
       '-1',
       'taxRate',
-      '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      {
+        en: 'Enter the tax rate as a number from 0 to 100, with up to 2 decimal places.',
+        ja: '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+      },
     ],
   ])('should refuse %s written as %j', (control, text, at, message) => {
     expect(readSalonChange(formOf(salon, { [control]: text }), salon)).toEqual({
@@ -314,6 +390,7 @@ describe('readSalonChange', () => {
     ['logoUrl', `https://example.com/${'a'.repeat(480)}`],
     ['imageUrls', `https://example.com/${'a'.repeat(600)}`],
   ])('should take %s written as %j', (control, text) => {
+    // Assert
     expect(
       readSalonChange(formOf(salon, { [control]: text }), salon).type,
     ).toBe('valid')
@@ -329,6 +406,7 @@ describe('coordinateTextOf', () => {
     [0, '0'],
     [null, ''],
   ])('should write %s as %j', (coordinate, text) => {
+    // Assert
     expect(coordinateTextOf(coordinate)).toBe(text)
   })
 
@@ -346,31 +424,46 @@ describe('coordinateTextOf', () => {
 
 describe('afterSalonChange', () => {
   it('should say an email address of another salon at the email address', () => {
+    // Assert
     expect(afterSalonChange({ type: 'emailTaken' })).toEqual({
       message: undefined,
       errors: {
-        email:
-          'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
+        email: {
+          en: 'Another salon uses this email address. Enter another email address.',
+          ja: 'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
+        },
       },
     })
   })
 
-  it.each<[Parameters<typeof afterSalonChange>[0], string]>([
+  it.each<[Parameters<typeof afterSalonChange>[0], LocalizedText]>([
     [
       { type: 'invalid', values: [{ field: 'name', rule: 'too_big' }] },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       { type: 'forbidden' },
-      'このサロンの設定は、変えられません。設定を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The settings of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its settings.',
+        ja: 'このサロンの設定は、変えられません。設定を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
-      'サロンの情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the salon information. Check your connection and try again.',
+        ja: 'サロンの情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %j above the form', (outcome, message) => {
     expect(afterSalonChange(outcome)).toEqual({ message, errors: {} })
@@ -455,21 +548,54 @@ describe('readSalonEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        name: 'サロンの名前を、255 文字以内で入力してください。',
-        email: 'メールアドレスを入力してください。',
-        timezone: 'タイムゾーンを選んでください。',
-        currency: '通貨を選んでください。',
+        name: {
+          en: 'Salon name: enter 1 to 255 characters.',
+          ja: 'サロンの名前を、255 文字以内で入力してください。',
+        },
+        email: {
+          en: 'Enter an email address.',
+          ja: 'メールアドレスを入力してください。',
+        },
+        timezone: {
+          en: 'Choose a time zone.',
+          ja: 'タイムゾーンを選んでください。',
+        },
+        currency: { en: 'Choose a currency.', ja: '通貨を選んでください。' },
       },
     })
   })
 
-  it.each<[string, string | null, string]>([
-    ['timezone', 'Mars/Olympus', 'タイムゾーンを選んでください。'],
-    ['timezone', 'asia/tokyo', 'タイムゾーンを選んでください。'],
-    ['timezone', null, 'タイムゾーンを選んでください。'],
-    ['currency', 'jpy', '通貨を選んでください。'],
-    ['currency', 'YEN', '通貨を選んでください。'],
-    ['currency', null, '通貨を選んでください。'],
+  it.each<[string, string | null, LocalizedText]>([
+    [
+      'timezone',
+      'Mars/Olympus',
+      { en: 'Choose a time zone.', ja: 'タイムゾーンを選んでください。' },
+    ],
+    [
+      'timezone',
+      'asia/tokyo',
+      { en: 'Choose a time zone.', ja: 'タイムゾーンを選んでください。' },
+    ],
+    [
+      'timezone',
+      null,
+      { en: 'Choose a time zone.', ja: 'タイムゾーンを選んでください。' },
+    ],
+    [
+      'currency',
+      'jpy',
+      { en: 'Choose a currency.', ja: '通貨を選んでください。' },
+    ],
+    [
+      'currency',
+      'YEN',
+      { en: 'Choose a currency.', ja: '通貨を選んでください。' },
+    ],
+    [
+      'currency',
+      null,
+      { en: 'Choose a currency.', ja: '通貨を選んでください。' },
+    ],
   ])('should refuse %s chosen as %j', (control, text, message) => {
     expect(readSalonEntry(entryOf(salon, { [control]: text }))).toEqual({
       type: 'invalid',
@@ -480,6 +606,7 @@ describe('readSalonEntry', () => {
 
 describe('the choices of a salon to be added', () => {
   it('should offer the time zones by their names, the one of Japan among them', () => {
+    // Assert
     expect(TIME_ZONE_CHOICES).toContainEqual({
       value: 'Asia/Tokyo',
       label: 'Asia/Tokyo',
@@ -488,17 +615,19 @@ describe('the choices of a salon to be added', () => {
   })
 
   it('should offer the currencies by their codes and names', () => {
+    // Assert
     expect(CURRENCY_CHOICES).toContainEqual({
       value: 'JPY',
-      label: 'JPY（日本円）',
+      label: { en: 'JPY (Japanese Yen)', ja: 'JPY（日本円）' },
     })
     expect(CURRENCY_CHOICES).toContainEqual({
       value: 'EUR',
-      label: 'EUR（ユーロ）',
+      label: { en: 'EUR (Euro)', ja: 'EUR（ユーロ）' },
     })
   })
 
   it('should open with what the choices offer', () => {
+    // Assert
     expect(TIME_ZONE_CHOICES.map(({ value }) => value)).toContain(
       NEW_SALON.timezone,
     )
@@ -510,31 +639,46 @@ describe('the choices of a salon to be added', () => {
 
 describe('afterSalonEntry', () => {
   it('should say an email address of another salon at the email address', () => {
+    // Assert
     expect(afterSalonEntry({ type: 'emailTaken' })).toEqual({
       message: undefined,
       errors: {
-        email:
-          'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
+        email: {
+          en: 'Another salon uses this email address. Enter another email address.',
+          ja: 'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
+        },
       },
     })
   })
 
-  it.each<[Parameters<typeof afterSalonEntry>[0], string]>([
+  it.each<[Parameters<typeof afterSalonEntry>[0], LocalizedText]>([
     [
       { type: 'invalid', values: [{ field: 'timezone', rule: 'custom' }] },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       { type: 'forbidden' },
-      'このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。',
+      {
+        en: 'This account cannot register salons. Only administrators can register a salon.',
+        ja: 'このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。',
+      },
     ],
     [
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
-      'サロンを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not register the salon. Check your connection and try again.',
+        ja: 'サロンを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %j above the form', (outcome, message) => {
     expect(afterSalonEntry(outcome)).toEqual({ message, errors: {} })

@@ -1,9 +1,16 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
-import { match } from 'ts-pattern'
+import type { NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminInventoryMessages,
+  adminProductMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { Carried, Purpose } from './product-ledger'
 import { quantityOf } from './quantity'
+
+const { carried, dropped, expiryOf, leadTimeOf, lots, noLevel, usesOf } =
+  adminProductMessages
 
 /*
  * How the products of a salon are named on the screens.
@@ -13,41 +20,41 @@ import { quantityOf } from './quantity'
 export const priceNameOf = (
   price: number | null,
   currency: string,
-): string | null =>
-  price === null ? null : inJapanese(amountOf(price, currency))
+): LocalizedText | null => (price === null ? null : amountOf(price, currency))
 
 /** What a product is for: 「店頭販売、施術」, 「店頭販売」, 「施術」, or 「どちらでもない」 (supplies). */
 export const usesNameOf = ({
   isForSale,
   isForTreatment,
-}: Pick<ModelsProductResponse, 'isForSale' | 'isForTreatment'>): string =>
-  match([isForSale, isForTreatment])
-    .returnType<string>()
-    .with([true, true], () => '店頭販売、施術')
-    .with([true, false], () => '店頭販売')
-    .with([false, true], () => '施術')
-    .with([false, false], () => 'どちらでもない')
-    .exhaustive()
+}: Pick<
+  ModelsProductResponse,
+  'isForSale' | 'isForTreatment'
+>): LocalizedText => usesOf({ isForSale, isForTreatment })
 
 /** Whether the salon carries a product. */
-export const carriedNameOf = (isActive: boolean): string =>
-  isActive ? '取り扱い中' : '取り扱いをやめた'
+export const carriedNameOf = (isActive: boolean): LocalizedText =>
+  isActive ? carried : dropped
 
 /** A level of the stock in the unit of the product: 「10 bottle」, or 「決めていない」. */
-export const levelNameOf = (level: number | null, unit: string): string =>
-  level === null ? '決めていない' : `${inJapanese(quantityOf(level))} ${unit}`
+export const levelNameOf = (
+  level: number | null,
+  unit: string,
+): LocalizedText =>
+  level === null
+    ? noLevel
+    : adminInventoryMessages.inUnit(quantityOf(level), unit)
 
 /** The days a delivery takes: 「3 日」, or `null` when they are not recorded. */
-export const leadTimeNameOf = (days: number | null): string | null =>
-  days === null ? null : `${days} 日`
+export const leadTimeNameOf = (days: number | null): LocalizedText | null =>
+  days === null ? null : leadTimeOf(days)
 
 /** How long a product keeps: 「24 か月」, or `null` when it is not recorded. */
-export const expiryNameOf = (months: number | null): string | null =>
-  months === null ? null : `${months} か月`
+export const expiryNameOf = (months: number | null): LocalizedText | null =>
+  months === null ? null : expiryOf(months)
 
 /** Whether the stock of a product is kept by lot. */
-export const lotsNameOf = (requiresLotTracking: boolean): string =>
-  requiresLotTracking ? 'ロット番号で分ける' : '分けない'
+export const lotsNameOf = (requiresLotTracking: boolean): LocalizedText =>
+  requiresLotTracking ? lots.kept : lots.notKept
 
 /**
  * The categories of the products, each once, in the order of their names.
@@ -68,13 +75,13 @@ export const categoriesOf = (
   ].sort((one, other) => one.localeCompare(other, 'ja'))
 
 /** Whether the salon carries the products the ledger shows, to choose from */
-export const CARRIED_OPTIONS: readonly (ChoiceOption & { value: Carried })[] = [
-  { value: 'carried', label: '取り扱い中' },
-  { value: 'dropped', label: '取り扱いをやめた' },
+export const CARRIED_CHOICES: readonly (NamedChoice & { value: Carried })[] = [
+  { value: 'carried', label: carried },
+  { value: 'dropped', label: dropped },
 ]
 
 /** What the products the ledger shows are for, to choose from */
-export const USE_OPTIONS: readonly (ChoiceOption & { value: Purpose })[] = [
-  { value: 'sale', label: '店頭で販売する' },
-  { value: 'treatment', label: '施術で使う' },
+export const USE_CHOICES: readonly (NamedChoice & { value: Purpose })[] = [
+  { value: 'sale', label: adminProductMessages.forSale },
+  { value: 'treatment', label: adminProductMessages.forTreatment },
 ]

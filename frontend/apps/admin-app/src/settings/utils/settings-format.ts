@@ -3,12 +3,15 @@ import type {
   ModelsDateRange,
   ModelsDayOfWeekType,
   ModelsOpeningHours,
-  ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, NOT_RECORDED } from '@beauty-salon-frontend/ui'
+import { NOT_RECORDED } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
-import { timeNameOf, WEEKDAYS } from '../../shifts/utils/shift-week'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { WEEKDAYS } from '../../shifts/utils/shift-week'
+
+const { hours: HOURS, record } = adminSettingsMessages
 
 /*
  * The words of the settings of a salon: its hours, by the day of the week
@@ -16,33 +19,21 @@ import { timeNameOf, WEEKDAYS } from '../../shifts/utils/shift-week'
  * of the clock of the salon, as the API keeps them.
  */
 
-/** What is said of a day the salon is not open on */
-const CLOSED = '休業'
-
-/** Hours from one time to another: 「10:00〜20:00」, several of them with 「、」. */
-const slotsNameOf = (slots: readonly ModelsTimeSlot[]): string =>
-  slots
-    .map(
-      ({ startTime, endTime }) =>
-        `${timeNameOf(startTime)}〜${timeNameOf(endTime)}`,
-    )
-    .join('、')
-
-/** A day without its day of the week: 「2026年4月1日」. */
-const dateNameOf = (day: string): string => inJapanese(formats.dayOf(day))
-
 /** The days hours are kept in, at the clock of the salon: 「2026年4月1日から2026年9月30日まで」. */
 export const periodNameOf = (
   { startDate, endDate }: ModelsDateRange,
   timezone: string,
-): string =>
-  `${dateNameOf(dayAt(new Date(startDate), timezone))}から${dateNameOf(dayAt(new Date(endDate), timezone))}まで`
+): LocalizedText =>
+  HOURS.periodOf(
+    formats.dayOf(dayAt(new Date(startDate), timezone)),
+    formats.dayOf(dayAt(new Date(endDate), timezone)),
+  )
 
 /** The hours of a day of the week, as a row of the regular week. */
 export type WeekdayHours = {
   weekday: ModelsDayOfWeekType
   /** 「10:00〜20:00」, with the break and the period it is kept in; 「休業」 for a day the salon is closed */
-  hours: string
+  hours: LocalizedText
 }
 
 /**
@@ -62,20 +53,20 @@ export const weekHoursOf = (
       entry.isClosed ||
       entry.operatingSlots.length === 0
     ) {
-      return { weekday, hours: CLOSED }
+      return { weekday, hours: HOURS.closed }
     }
-    const rest =
-      entry.breakSlots === null || entry.breakSlots.length === 0
-        ? ''
-        : `（休憩 ${slotsNameOf(entry.breakSlots)}）`
-    const period =
-      entry.effectivePeriod === null
-        ? ''
-        : `・${periodNameOf(entry.effectivePeriod, timezone)}`
 
     return {
       weekday,
-      hours: `${slotsNameOf(entry.operatingSlots)}${rest}${period}`,
+      hours: HOURS.ofTheWeek(
+        formats.timeSlotsOf(entry.operatingSlots),
+        entry.breakSlots === null || entry.breakSlots.length === 0
+          ? null
+          : formats.timeSlotsOf(entry.breakSlots),
+        entry.effectivePeriod === null
+          ? null
+          : periodNameOf(entry.effectivePeriod, timezone),
+      ),
     }
   })
 
@@ -83,11 +74,11 @@ export const weekHoursOf = (
 export type CalendarDay = {
   date: string
   /** 「2026年11月23日（月）」 */
-  day: string
+  day: LocalizedText
   /** 「10:00〜17:00」, or 「終日休業」 */
-  hours: string
-  /** The name of the holiday or of the day off, 「祝日・休業日」 for one without a name, and 「いいえ」 for an ordinary day */
-  holiday: string
+  hours: LocalizedText
+  /** The name of the holiday or of the day off as it was written, 「祝日・休業日」 for one without a name, and 「いいえ」 for an ordinary day */
+  holiday: LocalizedText
   /** `null` when nothing was noted of the day */
   notes: string | null
 }
@@ -106,34 +97,46 @@ export const calendarFrom = (
     .toSorted((one, other) => one.date.localeCompare(other.date))
     .map((entry) => ({
       date: entry.date,
-      day: inJapanese(dayNameOf(entry.date)),
+      day: dayNameOf(entry.date),
       hours:
         entry.openTime === null || entry.closeTime === null
-          ? '終日休業'
-          : `${timeNameOf(entry.openTime)}〜${timeNameOf(entry.closeTime)}`,
+          ? HOURS.closedAllDay
+          : formats.timeSlotsOf([
+              { startTime: entry.openTime, endTime: entry.closeTime },
+            ]),
       holiday: entry.isHoliday
-        ? (entry.holidayName ?? '祝日・休業日')
-        : 'いいえ',
+        ? entry.holidayName === null
+          ? HOURS.unnamedHoliday
+          : HOURS.holidayNamed(entry.holidayName)
+        : HOURS.noHoliday,
       notes: entry.notes,
     }))
 
 /** A rate of tax: 「10%」, 「8.5%」. */
-export const taxRateNameOf = (taxRate: number): string => `${taxRate}%`
+export const taxRateNameOf = (taxRate: number): LocalizedText =>
+  formats.percentOf(taxRate)
+
+/** A coordinate as it is written, with the decimals the API keeps, or that it is not recorded. */
+const coordinateNameOf = (coordinate: number | null): LocalizedText =>
+  coordinate === null ? NOT_RECORDED : formats.numberOf(coordinate, { most: 8 })
 
 /** The place of a salon on the map: 「緯度 35.658、経度 139.7016」, or `null` when it is not recorded. */
 export const coordinatesNameOf = (
   latitude: number | null,
   longitude: number | null,
-): string | null =>
+): LocalizedText | null =>
   latitude === null && longitude === null
     ? null
-    : `緯度 ${latitude ?? inJapanese(NOT_RECORDED)}、経度 ${longitude ?? inJapanese(NOT_RECORDED)}`
+    : record.placeOf(coordinateNameOf(latitude), coordinateNameOf(longitude))
 
 /** How the customers rate the salon: 「4.0（3 件のレビュー）」, or that there is no rating yet. */
 export const ratingNameOf = (
   rating: number | null,
   reviewCount: number,
-): string =>
+): LocalizedText =>
   rating === null
-    ? 'まだありません'
-    : `${inJapanese(formats.numberOf(rating, { most: 1, least: 1 }))}（${reviewCount} 件のレビュー）`
+    ? record.notRated
+    : record.ratingOf(
+        formats.numberOf(rating, { most: 1, least: 1 }),
+        reviewCount,
+      )

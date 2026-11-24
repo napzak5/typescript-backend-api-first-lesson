@@ -2,6 +2,7 @@ import type {
   ModelsBusinessHours,
   ModelsOpeningHours,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { type Hours, hoursOf } from '../api/hours-api'
 import { aDescribedSalon, TODAY } from '../components/examples'
@@ -260,6 +261,7 @@ describe('calendarPartsOf', () => {
   })
 
   it('should show a date that is today', () => {
+    // Assert
     expect(
       calendarPartsOf(
         [{ ...NEW_YEAR, dayOfWeek: 'saturday', date: TODAY }],
@@ -632,108 +634,144 @@ describe('readHoursChange', () => {
   })
 
   describe('a form that is not sent', () => {
-    it.each<[string, [string, string][], string, string]>([
+    it.each<[string, [string, string][], string, LocalizedText]>([
       [
         'a day without its opening',
         [['monday.openTime', '']],
         'monday.openTime',
-        '開店の時刻を入力してください。',
+        { en: 'Enter the opening time.', ja: '開店の時刻を入力してください。' },
       ],
       [
         'a day without its closing',
         [['saturday.closeTime', '']],
         'saturday.closeTime',
-        '閉店の時刻を入力してください。',
+        { en: 'Enter the closing time.', ja: '閉店の時刻を入力してください。' },
       ],
       [
         'a day closing when it opens',
         [['tuesday.closeTime', '10:00']],
         'tuesday.closeTime',
-        '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        {
+          en: 'Make the closing time later than the opening time. Hours cannot run past midnight.',
+          ja: '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        },
       ],
       [
         'a day closing after midnight',
         [['tuesday.closeTime', '01:00']],
         'tuesday.closeTime',
-        '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        {
+          en: 'Make the closing time later than the opening time. Hours cannot run past midnight.',
+          ja: '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        },
       ],
       [
         'a break without its end',
         [['monday.breakEnd', '']],
         'monday.breakEnd',
-        '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        {
+          en: 'Enter the end of the break as well. When there is no break, leave both its start and its end empty.',
+          ja: '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        },
       ],
       [
         'a break without its start',
         [['monday.breakStart', '']],
         'monday.breakStart',
-        '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        {
+          en: 'Enter the start of the break as well. When there is no break, leave both its start and its end empty.',
+          ja: '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        },
       ],
       [
         'a break starting at the opening',
         [['monday.breakStart', '10:00']],
         'monday.breakStart',
-        '休憩は、開店より後に始めてください。',
+        {
+          en: 'Start the break after the opening time.',
+          ja: '休憩は、開店より後に始めてください。',
+        },
       ],
       [
         'a break ending when it starts',
         [['monday.breakEnd', '13:00']],
         'monday.breakEnd',
-        '休憩の終わりは、休憩の始まりより後の時刻にしてください。',
+        {
+          en: 'Make the end of the break later than its start.',
+          ja: '休憩の終わりは、休憩の始まりより後の時刻にしてください。',
+        },
       ],
       [
         'a break ending at the closing',
         [['monday.breakEnd', '20:00']],
         'monday.breakEnd',
-        '休憩は、閉店より前に終えてください。',
+        {
+          en: 'End the break before the closing time.',
+          ja: '休憩は、閉店より前に終えてください。',
+        },
       ],
       [
         'a time that is not one',
         [['friday.openTime', '25:00']],
         'friday.openTime',
-        '開店の時刻を入力してください。',
+        { en: 'Enter the opening time.', ja: '開店の時刻を入力してください。' },
       ],
       [
         'a row without its date',
         [['dates.0.date', '']],
         'dates.0.date',
-        '日付を入力してください。',
+        { en: 'Enter a date.', ja: '日付を入力してください。' },
       ],
       [
         'a date beyond the years the API keeps',
         [['dates.1.date', '3000-01-01']],
         'dates.1.date',
-        '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。',
+        {
+          en: 'Enter a date from January 1, 1900 to December 31, 2999.',
+          ja: '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。',
+        },
       ],
       [
         'a date before today',
         [['dates.0.date', '2026-11-20']],
         'dates.0.date',
-        '今日か、今日より後の日付を入力してください。',
+        {
+          en: 'Enter today or a later date.',
+          ja: '今日か、今日より後の日付を入力してください。',
+        },
       ],
       [
         'a date of an earlier row',
         [['dates.1.date', '2026-11-23']],
         'dates.1.date',
-        'この日付は、1 行目と同じです。1 つの日付に入れられるのは 1 行です。',
+        {
+          en: 'This date is the same as that of row 1. A date takes one row.',
+          ja: 'この日付は、1 行目と同じです。1 つの日付に入れられるのは 1 行です。',
+        },
       ],
       [
         'an open date without its opening',
         [['dates.0.openTime', '']],
         'dates.0.openTime',
-        '開店の時刻を入力してください。',
+        { en: 'Enter the opening time.', ja: '開店の時刻を入力してください。' },
       ],
       [
         'an open date closing before it opens',
         [['dates.0.closeTime', '09:00']],
         'dates.0.closeTime',
-        '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        {
+          en: 'Make the closing time later than the opening time. Hours cannot run past midnight.',
+          ja: '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
+        },
       ],
       [
         'a name of a holiday longer than 100 characters',
         [['dates.1.holidayName', 'あ'.repeat(101)]],
         'dates.1.holidayName',
-        '祝日・休業日の名前は、100 文字以内で入力してください。',
+        {
+          en: 'Name of the holiday or day off: enter up to 100 characters.',
+          ja: '祝日・休業日の名前は、100 文字以内で入力してください。',
+        },
       ],
     ])(
       'should say what is wrong with %s, at its control',
@@ -790,36 +828,54 @@ describe('readHoursChange', () => {
 })
 
 describe('afterHoursChange', () => {
-  it.each<[string, Parameters<typeof afterHoursChange>[0], string]>([
+  it.each<[string, Parameters<typeof afterHoursChange>[0], LocalizedText]>([
     [
       'hours changed meanwhile',
       { type: 'changed', hours: HOURS },
-      'その間に、ほかのアカウントがこのサロンの営業時間を変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの営業時間を、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で設定に戻ってください。',
+      {
+        en: 'Meanwhile, another account changed the hours of this salon. What this form holds is not saved yet. Press “Save” again to replace the hours with what this form holds. To see the change of the other account, go back to the settings with “Cancel”.',
+        ja: 'その間に、ほかのアカウントがこのサロンの営業時間を変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの営業時間を、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で設定に戻ってください。',
+      },
     ],
     [
       'values the API refused',
       { type: 'invalid', values: [] },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'an email address of another salon',
       { type: 'emailTaken' },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'a refusal of the account',
       { type: 'forbidden' },
-      'このサロンの営業時間は、変えられません。営業時間を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The hours of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its hours.',
+        ja: 'このサロンの営業時間は、変えられません。営業時間を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'a failure',
       { type: 'failed' },
-      '営業時間を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the hours. Check your connection and try again.',
+        ja: '営業時間を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])(
     'should say after %s what keeps the form from being saved',

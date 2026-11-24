@@ -1,4 +1,3 @@
-import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -7,16 +6,20 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
-  inJapanese,
   NO_ERRORS,
   Note,
   RadioGroup,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ReactNode, useState } from 'react'
 import { timeInputOf } from '../../../shifts/utils/schedule-form'
-import { weekdayNameOf } from '../../../shifts/utils/shift-week'
 import type { Hours } from '../../api/hours-api'
 import {
   CLOSED,
@@ -30,6 +33,20 @@ import {
 } from '../../utils/hours-form'
 import { periodNameOf } from '../../utils/settings-format'
 
+const { hoursForm: WORDS } = adminSettingsMessages
+
+/** Whether a day of the week opens */
+const WEEKDAY_CHOICES = [
+  { value: OPEN, label: WORDS.isOpen },
+  { value: CLOSED, label: WORDS.isClosed },
+]
+
+/** Whether a date opens */
+const DATE_CHOICES = [
+  { value: OPEN, label: WORDS.isOpen },
+  { value: CLOSED, label: WORDS.isClosedAllDay },
+]
+
 export type HoursFormProps = {
   /** The hours the form was opened with, as the API keeps them */
   hours: Hours
@@ -38,8 +55,10 @@ export type HoursFormProps = {
   /** The time zone of the salon, which the period of hours is named in */
   timezone: string
   submitLabel: string
-  message?: string | undefined
-  errors?: FormErrors | undefined
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   pending?: boolean | undefined
   actions?: ReactNode
   onSubmit: (values: FormData) => void
@@ -75,28 +94,32 @@ type TimesProps = {
 }
 
 /** The hours of a day the salon is open on, at the clock of the salon. */
-const Times = ({ nameOf, openTime, closeTime, errors }: TimesProps) => (
-  <FieldRow>
-    <TextField
-      label='開店'
-      type='time'
-      name={nameOf('openTime')}
-      autoComplete='off'
-      required
-      defaultValue={timeInputOf(openTime ?? null)}
-      error={errors[nameOf('openTime')]}
-    />
-    <TextField
-      label='閉店'
-      type='time'
-      name={nameOf('closeTime')}
-      autoComplete='off'
-      required
-      defaultValue={timeInputOf(closeTime ?? null)}
-      error={errors[nameOf('closeTime')]}
-    />
-  </FieldRow>
-)
+const Times = ({ nameOf, openTime, closeTime, errors }: TimesProps) => {
+  const say = useSay()
+
+  return (
+    <FieldRow>
+      <TextField
+        label={say(WORDS.opens)}
+        type='time'
+        name={nameOf('openTime')}
+        autoComplete='off'
+        required
+        defaultValue={timeInputOf(openTime ?? null)}
+        error={errors[nameOf('openTime')]}
+      />
+      <TextField
+        label={say(WORDS.closes)}
+        type='time'
+        name={nameOf('closeTime')}
+        autoComplete='off'
+        required
+        defaultValue={timeInputOf(closeTime ?? null)}
+        error={errors[nameOf('closeTime')]}
+      />
+    </FieldRow>
+  )
+}
 
 /**
  * The hours of a salon: a part for every day of the week, and the rows of
@@ -122,12 +145,15 @@ export const HoursForm = ({
   actions,
   onSubmit,
 }: HoursFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
   const week = weekPartsOf(hours.businessHours)
   const calendar = calendarPartsOf(hours.openingHours, today)
   const [opens, setOpens] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(week.map(({ weekday, opens }) => [weekday, opens])),
   )
-  const dates = useRepeatedRows<DateRow>(
+  const dates = useRepeatedRows<DateRow, LocalizedText>(
     () =>
       calendar.dates.map((date) => ({
         shown: {
@@ -142,18 +168,20 @@ export const HoursForm = ({
       })),
     errors,
   )
+  const dateErrors = useSaidForm(undefined, dates.errors).errors
+
   return (
     <Form
       submitLabel={submitLabel}
-      message={message}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={actions}
       onSubmit={onSubmit}
     >
       <FormPart
-        label='毎週'
-        description='曜日ごとの営業時間です。時刻は、サロンの時計の時刻です。お客様の予約の空き枠は、営業時間から休憩を除いた時間にできます。'
+        label={say(WORDS.week)}
+        description={say(WORDS.weekDescription)}
       >
         {week.map((part) => {
           const nameOf = (property: HoursProperty): string =>
@@ -161,14 +189,14 @@ export const HoursForm = ({
           const open = opens[part.weekday] ?? false
 
           return (
-            <FormRow key={part.weekday} label={weekdayNameOf(part.weekday)}>
+            <FormRow
+              key={part.weekday}
+              label={say(termMessages.dayOfWeek[part.weekday])}
+            >
               <RadioGroup
-                label='営業'
+                label={say(WORDS.open)}
                 name={nameOf('opens')}
-                options={[
-                  { value: OPEN, label: '営業する' },
-                  { value: CLOSED, label: '休業' },
-                ]}
+                options={options(WEEKDAY_CHOICES)}
                 value={open ? OPEN : CLOSED}
                 onChange={(event) =>
                   setOpens({
@@ -183,38 +211,37 @@ export const HoursForm = ({
                     nameOf={nameOf}
                     openTime={part.openTime}
                     closeTime={part.closeTime}
-                    errors={errors}
+                    errors={said.errors}
                   />
                   <FieldRow>
                     <TextField
-                      label='休憩の始まり'
+                      label={say(WORDS.breakStart)}
                       type='time'
                       name={nameOf('breakStart')}
                       autoComplete='off'
-                      description='休憩がないときは、始まりも終わりも空にします。'
+                      description={say(WORDS.breakDescription)}
                       defaultValue={timeInputOf(part.breakStart ?? null)}
-                      error={errors[nameOf('breakStart')]}
+                      error={said.errors[nameOf('breakStart')]}
                     />
                     <TextField
-                      label='休憩の終わり'
+                      label={say(WORDS.breakEnd)}
                       type='time'
                       name={nameOf('breakEnd')}
                       autoComplete='off'
                       defaultValue={timeInputOf(part.breakEnd ?? null)}
-                      error={errors[nameOf('breakEnd')]}
+                      error={said.errors[nameOf('breakEnd')]}
                     />
                   </FieldRow>
                 </>
               )}
-              {part.more && (
-                <Note size='small'>
-                  この曜日には、営業時間か休憩が 2
-                  つ以上あります。毎週の営業時間を変えて保存すると、最初の営業時間と最初の休憩だけが残ります。
-                </Note>
-              )}
+              {part.more && <Note size='small'>{say(WORDS.moreSlots)}</Note>}
               {part.effectivePeriod !== null && (
                 <Note size='small'>
-                  {`この曜日の営業時間は、${periodNameOf(part.effectivePeriod, timezone)}です。期間は、この画面では変えません。`}
+                  {say(
+                    WORDS.periodKept(
+                      periodNameOf(part.effectivePeriod, timezone),
+                    ),
+                  )}
                 </Note>
               )}
             </FormRow>
@@ -222,8 +249,8 @@ export const HoursForm = ({
         })}
       </FormPart>
       <FormPart
-        label='日付ごと'
-        description='祝日、臨時休業、短縮営業の日です。日付ごとの行がある日は、曜日の営業時間の代わりに、その行を使います。'
+        label={say(WORDS.dates)}
+        description={say(WORDS.datesDescription)}
       >
         {dates.rows.map((row, index) => {
           const nameOf = (property: HoursProperty): string =>
@@ -233,25 +260,22 @@ export const HoursForm = ({
             <FormRow
               key={row.key}
               ref={dates.rowRef(row.key)}
-              label={`${index + 1} 行目`}
+              label={say(WORDS.row(index + 1))}
             >
               <TextField
                 width='short'
-                label='日付'
+                label={say(WORDS.date)}
                 type='date'
                 name={nameOf('date')}
                 autoComplete='off'
                 required
                 defaultValue={row.value.shown.date}
-                error={dates.errors[nameOf('date')]}
+                error={dateErrors[nameOf('date')]}
               />
               <RadioGroup
-                label='営業'
+                label={say(WORDS.open)}
                 name={nameOf('opens')}
-                options={[
-                  { value: OPEN, label: '営業する' },
-                  { value: CLOSED, label: '終日休業' },
-                ]}
+                options={options(DATE_CHOICES)}
                 value={row.value.opens ? OPEN : CLOSED}
                 onChange={(event) =>
                   dates.change(row.key, {
@@ -266,37 +290,39 @@ export const HoursForm = ({
                     nameOf={nameOf}
                     openTime={row.value.shown.openTime}
                     closeTime={row.value.shown.closeTime}
-                    errors={dates.errors}
+                    errors={dateErrors}
                   />
                   <Checkbox
-                    label='祝日の営業'
+                    label={say(WORDS.holidayOpen)}
                     name={nameOf('isHoliday')}
-                    description='祝日や店休日に、時間を決めて営業する日に印を付けます。'
+                    description={say(WORDS.holidayOpenDescription)}
                     defaultChecked={row.value.shown.isHoliday}
                   />
                 </>
               )}
               <TextField
-                label='祝日・休業日の名前'
+                label={say(WORDS.holidayName)}
                 name={nameOf('holidayName')}
                 autoComplete='off'
-                description={`${inJapanese(upTo(LONGEST_HOLIDAY_NAME))}「元日」「年末年始」「設備の点検」など。`}
+                description={say(
+                  WORDS.holidayNameDescription(LONGEST_HOLIDAY_NAME),
+                )}
                 defaultValue={row.value.shown.holidayName}
-                error={dates.errors[nameOf('holidayName')]}
+                error={dateErrors[nameOf('holidayName')]}
               />
               <TextField
-                label='備考'
+                label={say(WORDS.notes)}
                 name={nameOf('notes')}
                 autoComplete='off'
                 defaultValue={row.value.shown.notes}
-                error={dates.errors[nameOf('notes')]}
+                error={dateErrors[nameOf('notes')]}
               />
               <Button
                 size='small'
-                aria-label={`${index + 1} 行目を外す`}
+                aria-label={say(WORDS.removeRow(index + 1))}
                 onClick={() => dates.remove(row.key)}
               >
-                外す
+                {say(WORDS.remove)}
               </Button>
             </FormRow>
           )
@@ -305,12 +331,10 @@ export const HoursForm = ({
           ref={dates.addRef}
           onClick={() => dates.add({ shown: EMPTY, opens: false })}
         >
-          日付の行を足す
+          {say(WORDS.addRow)}
         </Button>
         {calendar.past.length > 0 && (
-          <Note size='small'>
-            {`今日より前の日付（${calendar.past.length} 行）は、記録としてそのまま残ります。`}
-          </Note>
+          <Note size='small'>{say(WORDS.pastKept(calendar.past.length))}</Note>
         )}
       </FormPart>
     </Form>

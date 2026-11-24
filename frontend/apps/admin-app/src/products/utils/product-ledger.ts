@@ -7,11 +7,12 @@ import {
 import { keywordError, keywordIn } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
+  type FormErrors,
   type FormRead,
-  inJapaneseIfAny,
   textOf,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 
 /*
@@ -49,11 +50,14 @@ const purposeFrom = (value: string): Purpose | undefined =>
 /** The longest category and barcode the API takes */
 const LONGEST_NAME = 100
 
-const BARCODE_ERROR = tooLongOf(writtenInJapanese('バーコード'), LONGEST_NAME)
+const BARCODE_ERROR = tooLongOf(
+  adminProductMessages.words.barcode,
+  LONGEST_NAME,
+)
 
 /** What is wrong with a barcode that is looked for: none when nothing is. */
-const barcodeError = (barcode: string): string | undefined =>
-  inJapaneseIfAny(tooLongError(barcode, LONGEST_NAME, BARCODE_ERROR))
+const barcodeError = (barcode: string): LocalizedText | undefined =>
+  tooLongError(barcode, LONGEST_NAME, BARCODE_ERROR)
 
 /** A barcode the API takes: not empty, and not too long. */
 const barcodeFrom = (value: string | null): string | undefined => {
@@ -100,11 +104,11 @@ export const productConditionsIn = (
 /** The conditions that were filled in: every one may be left empty. */
 export const readProductConditions = (
   values: FormData,
-): FormRead<ProductConditions> => {
+): FormRead<ProductConditions, FormErrors<LocalizedText>> => {
   const keyword = textOf(values, 'keyword').trim()
   const barcode = textOf(values, 'barcode').trim()
-  const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt('keyword', inJapaneseIfAny(keywordError(keyword))),
+  const errors: FormErrors<LocalizedText> = Object.fromEntries([
+    ...errorAt('keyword', keywordError(keyword)),
     ...errorAt('barcode', barcodeError(barcode)),
   ])
   if (Object.keys(errors).length > 0) {

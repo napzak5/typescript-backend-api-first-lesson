@@ -11,8 +11,10 @@ describe('the texts of the parts of the admin application that are done', () => 
     'inventory',
     'menu',
     'payment-methods',
+    'products',
     'purchase-orders',
     'sales',
+    'settings',
     'treatments',
   ])
 })

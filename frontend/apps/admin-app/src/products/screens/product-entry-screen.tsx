@@ -10,7 +10,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -26,7 +29,7 @@ import { ProductForm } from '../components/product-form/product-form'
 import { afterProductWrite, readProductEntry } from '../utils/product-form'
 import { ProductsForbidden, useKeepsProducts } from './keeps-products'
 
-const TITLE = '商品を足す'
+const { entry: ENTRY, titles, words } = adminProductMessages
 
 type ProductEntryProps = { salon: ModelsSalonResponse }
 
@@ -37,8 +40,9 @@ type ProductEntryProps = { salon: ModelsSalonResponse }
 const ProductEntry = ({ salon }: ProductEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const say = useSay()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsProductCreateRequest) =>
       addProduct(salon.id, request),
@@ -50,7 +54,7 @@ const ProductEntry = ({ salon }: ProductEntryProps) => {
           queryClient.removeQueries({ queryKey: productsKeyOf(salon.id) })
           notify({
             tone: 'success',
-            message: `商品「${product.name}」を足しました。`,
+            message: ENTRY.added(product.name),
           })
           void navigate(productHrefOf(salon.id, product.id))
         })
@@ -86,17 +90,17 @@ const ProductEntry = ({ salon }: ProductEntryProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.entry)} description={salon.name} />
       <ProductForm
         product={null}
-        submitLabel='足す'
+        submitLabel={say(ENTRY.submit)}
         message={said.message}
         errors={said.errors}
         pending={entry.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={productsHrefOf(salon.id)} variant='quiet'>
-            やめる
+            {say(words.cancel)}
           </ButtonLink>
         }
       />
@@ -108,14 +112,15 @@ const ProductEntry = ({ salon }: ProductEntryProps) => {
 export const ProductEntryScreen = () => {
   const { salonId = '' } = useParams()
   const keeps = useKeepsProducts()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) =>
         keeps ? (
           <ProductEntry key={salon.id} salon={salon} />
         ) : (
-          <ProductsForbidden salon={salon} title={TITLE} />
+          <ProductsForbidden salon={salon} title={titles.entry} />
         )
       }
     </WithSalon>

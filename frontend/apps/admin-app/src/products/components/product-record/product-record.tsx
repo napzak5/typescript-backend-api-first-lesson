@@ -1,5 +1,12 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
-import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  useSay,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   carriedNameOf,
   expiryNameOf,
@@ -10,6 +17,8 @@ import {
   usesNameOf,
 } from '../../utils/product-format'
 import styles from './product-record.module.css'
+
+const { record, words } = adminProductMessages
 
 export type ProductRecordProps = {
   product: ModelsProductResponse
@@ -22,105 +31,119 @@ export type ProductRecordProps = {
  * and how it is managed. The addresses of its image and its safety data
  * sheet are shown as they are written: they lead out of the application.
  */
-export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
-  <div className={styles['record']}>
-    <Card title='商品'>
-      <DescriptionList
-        items={[
-          { term: '商品コード', description: product.productCode },
-          { term: '商品名', description: product.name },
-          {
-            term: '説明',
-            description: <WrittenText>{product.description}</WrittenText>,
-          },
-          {
-            term: 'カテゴリー',
-            description: product.category,
-          },
-          { term: 'ブランド', description: product.brand },
-          { term: '単位', description: product.unit },
-          { term: '用途', description: usesNameOf(product) },
-          { term: '状態', description: carriedNameOf(product.isActive) },
-        ]}
-      />
-    </Card>
-    <Card title='価格'>
-      <DescriptionList
-        items={[
-          {
-            term: '仕入価格',
-            description: priceNameOf(product.purchasePrice, currency),
-          },
-          {
-            term: '定価',
-            description: priceNameOf(product.retailPrice, currency),
-          },
-          {
-            term: '販売価格',
-            description: priceNameOf(product.salonPrice, currency),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='在庫の水準'>
-      <DescriptionList
-        items={[
-          {
-            term: '最低在庫数',
-            description: levelNameOf(product.minimumStock, product.unit),
-          },
-          {
-            term: '発注点',
-            description: levelNameOf(product.reorderPoint, product.unit),
-          },
-          {
-            term: '最大在庫数',
-            description: levelNameOf(product.maximumStock, product.unit),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='仕入れ'>
-      <DescriptionList
-        items={[
-          { term: '仕入先', description: product.supplier },
-          {
-            term: '仕入先の商品コード',
-            description: product.supplierProductCode,
-          },
-          {
-            term: '納品までの日数',
-            description: leadTimeNameOf(product.leadTimeDays),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='管理'>
-      <DescriptionList
-        items={[
-          { term: 'バーコード', description: product.barcode },
-          {
-            term: 'ロット番号',
-            description: lotsNameOf(product.requiresLotTracking),
-          },
-          {
-            term: '使用期限の目安',
-            description: expiryNameOf(product.expiryMonths),
-          },
-          {
-            term: '保管条件',
-            description: <WrittenText>{product.storageConditions}</WrittenText>,
-          },
-          {
-            term: '商品画像の URL',
-            description: product.imageUrl,
-          },
-          {
-            term: '安全データシートの URL',
-            description: product.safetyDataSheet,
-          },
-        ]}
-      />
-    </Card>
-  </div>
-)
+export const ProductRecord = ({ product, currency }: ProductRecordProps) => {
+  const say = useSay()
+  /** A value that may not be recorded, in the language of the page */
+  const sayIfAny = (value: LocalizedText | null): string | null =>
+    value === null ? null : say(value)
+
+  return (
+    <div className={styles['record']}>
+      <Card title={say(words.product)}>
+        <DescriptionList
+          items={[
+            { term: say(words.productCode), description: product.productCode },
+            { term: say(words.name), description: product.name },
+            {
+              term: say(words.description),
+              description: <WrittenText>{product.description}</WrittenText>,
+            },
+            {
+              term: say(words.category),
+              description: product.category,
+            },
+            { term: say(words.brand), description: product.brand },
+            { term: say(words.unit), description: product.unit },
+            { term: say(words.uses), description: say(usesNameOf(product)) },
+            {
+              term: say(words.status),
+              description: say(carriedNameOf(product.isActive)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.prices)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.purchasePrice),
+              description: sayIfAny(
+                priceNameOf(product.purchasePrice, currency),
+              ),
+            },
+            {
+              term: say(words.retailPrice),
+              description: sayIfAny(priceNameOf(product.retailPrice, currency)),
+            },
+            {
+              term: say(words.salonPrice),
+              description: sayIfAny(priceNameOf(product.salonPrice, currency)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.levels)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.minimumStock),
+              description: say(levelNameOf(product.minimumStock, product.unit)),
+            },
+            {
+              term: say(words.reorderPoint),
+              description: say(levelNameOf(product.reorderPoint, product.unit)),
+            },
+            {
+              term: say(words.maximumStock),
+              description: say(levelNameOf(product.maximumStock, product.unit)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.purchasing)}>
+        <DescriptionList
+          items={[
+            { term: say(words.supplier), description: product.supplier },
+            {
+              term: say(words.supplierProductCode),
+              description: product.supplierProductCode,
+            },
+            {
+              term: say(words.leadTimeDays),
+              description: sayIfAny(leadTimeNameOf(product.leadTimeDays)),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.management)}>
+        <DescriptionList
+          items={[
+            { term: say(words.barcode), description: product.barcode },
+            {
+              term: say(record.lots),
+              description: say(lotsNameOf(product.requiresLotTracking)),
+            },
+            {
+              term: say(record.expiry),
+              description: sayIfAny(expiryNameOf(product.expiryMonths)),
+            },
+            {
+              term: say(words.storageConditions),
+              description: (
+                <WrittenText>{product.storageConditions}</WrittenText>
+              ),
+            },
+            {
+              term: say(words.imageUrl),
+              description: product.imageUrl,
+            },
+            {
+              term: say(words.safetyDataSheet),
+              description: product.safetyDataSheet,
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}

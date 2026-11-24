@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -341,4 +342,70 @@ describe('the settings of a salon, against the API', () => {
       expect(await findAccessibilityViolations(container)).toEqual([])
     },
   )
+})
+
+describe('the settings of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show the stylist the settings in English', async () => {
+    // Act
+    await openAs(settingsHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+
+    // Assert
+    await heading('Salon settings')
+    await screen.findByRole('region', { name: 'Salon' })
+    expect(termsOf('Salon')).toEqual([
+      ['Name', TOKYO],
+      ['Name in kana', 'Not recorded'],
+      ['Introduction', 'Premium beauty salon in the heart of Tokyo'],
+      ['Online booking', 'Accepted'],
+      ['Rating', '4.0 (3 reviews)'],
+    ])
+    expect(termsOf('Accounting')).toEqual([
+      ['Time zone', 'Asia/Tokyo'],
+      ['Currency', 'JPY'],
+      ['Tax rate', '10%'],
+      ['Payment methods', 'See the payment methods'],
+    ])
+    expect(rowsOf('Hours')).toContainEqual(['Sunday', 'Closed'])
+    expect(rowsOf('Calendar').map(([, , holiday]) => holiday)).toContain('No')
+  })
+
+  it('should say in English what is wrong, then save the change and say so in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(salonChangeHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await heading('Edit the salon information')
+    await screen.findByRole('group', { name: 'Accounting' })
+    const taxRate = text('Tax rate (%)')
+    await user.clear(taxRate)
+    await user.type(taxRate, '101')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(taxRate).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Enter the tax rate as a number from 0 to 100, with up to 2 decimal places.',
+      ),
+    )
+    await user.clear(taxRate)
+    await user.type(taxRate, '8')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Saved the salon information.'),
+    ).toBeInTheDocument()
+    await screen.findByRole('region', { name: 'Accounting' })
+    expect(termsOf('Accounting')).toContainEqual(['Tax rate', '8%'])
+  })
 })

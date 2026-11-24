@@ -1,9 +1,12 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { hoursOf } from '../../api/hours-api'
 import { aDescribedSalon, TODAY } from '../examples'
 import { HoursForm } from './hours-form'
+
+const { hoursForm } = adminSettingsMessages
 
 const HOURS = hoursOf(aDescribedSalon())
 
@@ -73,10 +76,8 @@ export const MoreThanTheFormHolds: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      'monday.closeTime':
-        '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。',
-      'dates.1.date':
-        'この日付は、1 行目と同じです。1 つの日付に入れられるのは 1 行です。',
+      'monday.closeTime': hoursForm.errors.closeBeforeOpen,
+      'dates.1.date': hoursForm.errors.sameDate(1),
     },
   },
 }
@@ -84,7 +85,6 @@ export const WithErrors: Story = {
 /** Another account changed the hours since the form opened */
 export const ChangedMeanwhile: Story = {
   args: {
-    message:
-      'その間に、ほかのアカウントがこのサロンの営業時間を変えていました。このフォームの内容は、まだ保存していません。',
+    message: hoursForm.changedMeanwhile,
   },
 }

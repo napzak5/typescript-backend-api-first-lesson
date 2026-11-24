@@ -6,6 +6,8 @@ import { isDay } from '@beauty-salon-frontend/fields'
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { inJapanese } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -26,17 +28,9 @@ export const WEEKDAYS: readonly ModelsDayOfWeekType[] = [
   'sunday',
 ]
 
-/** A day of the week as the screens name it: 「月曜日」. */
+/** A day of the week as the screens of the shifts name it: 「月曜日」. */
 export const weekdayNameOf = (weekday: ModelsDayOfWeekType): string =>
-  match(weekday)
-    .with('monday', () => '月曜日')
-    .with('tuesday', () => '火曜日')
-    .with('wednesday', () => '水曜日')
-    .with('thursday', () => '木曜日')
-    .with('friday', () => '金曜日')
-    .with('saturday', () => '土曜日')
-    .with('sunday', () => '日曜日')
-    .exhaustive()
+  inJapanese(termMessages.dayOfWeek[weekday])
 
 /** The day of the week a day of the calendar is. */
 export const weekdayOf = (day: string): ModelsDayOfWeekType =>
@@ -139,12 +133,14 @@ export const shiftOf = (row: ModelsStaffSchedule | undefined): Shift =>
  */
 
 /** What is said at the end of a break that has a start only. */
-export const NO_BREAK_END =
-  '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
+export const NO_BREAK_END = inJapanese(
+  adminSettingsMessages.hoursForm.errors.noBreakEnd,
+)
 
 /** What is said at the start of a break that has an end only. */
-export const NO_BREAK_START =
-  '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
+export const NO_BREAK_START = inJapanese(
+  adminSettingsMessages.hoursForm.errors.noBreakStart,
+)
 
 /** The rows of a form that dates are written at (`dates.0.date`, …), by their numbers. */
 export const dateRowsIn = (values: FormData): number[] =>

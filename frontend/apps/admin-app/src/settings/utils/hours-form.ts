@@ -13,21 +13,15 @@ import type {
 import { isDay, tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
-import {
-  dateRowsIn,
-  NO_BREAK_END,
-  NO_BREAK_START,
-  WEEKDAYS,
-  weekdayOf,
-} from '../../shifts/utils/shift-week'
+import { dateRowsIn, WEEKDAYS, weekdayOf } from '../../shifts/utils/shift-week'
 import type { Hours, HoursAttempt } from '../api/hours-api'
 
 /*
@@ -42,13 +36,18 @@ export const OPEN = 'open'
 export const CLOSED = 'closed'
 
 /** The longest name of a holiday the API takes */
-/** The longest name of a holiday the API takes */
 export const LONGEST_HOLIDAY_NAME = 100
 
+const { hoursForm } = adminSettingsMessages
+const { errors: ERRORS } = hoursForm
+
 const HOLIDAY_NAME_TOO_LONG = tooLongOf(
-  writtenInJapanese('祝日・休業日の名前'),
+  hoursForm.holidayName,
   LONGEST_HOLIDAY_NAME,
 )
+
+/** What is said at a control, under its name, or nothing */
+type Entry = [string, LocalizedText | undefined]
 
 /** A value of a part or of a row, as a control of the form is named after it */
 export type HoursProperty =
@@ -162,17 +161,14 @@ type Rest = {
 const timeEntriesOf = (
   { openTime, closeTime }: Times,
   nameOf: (property: HoursProperty) => string,
-): [string, string | undefined][] => [
-  [
-    nameOf('openTime'),
-    openTime === undefined ? '開店の時刻を入力してください。' : undefined,
-  ],
+): Entry[] => [
+  [nameOf('openTime'), openTime === undefined ? ERRORS.openMissing : undefined],
   [
     nameOf('closeTime'),
     closeTime === undefined
-      ? '閉店の時刻を入力してください。'
+      ? ERRORS.closeMissing
       : openTime !== undefined && closeTime <= openTime
-        ? '閉店は、開店より後の時刻にしてください。日付をまたぐ営業は入れられません。'
+        ? ERRORS.closeBeforeOpen
         : undefined,
   ],
 ]
@@ -182,15 +178,15 @@ const restEntriesOf = (
   { openTime, closeTime }: Times,
   { breakStart, breakEnd }: Rest,
   nameOf: (property: HoursProperty) => string,
-): [string, string | undefined][] => [
+): Entry[] => [
   [
     nameOf('breakStart'),
     breakStart === undefined
       ? breakEnd === undefined
         ? undefined
-        : NO_BREAK_START
+        : ERRORS.noBreakStart
       : openTime !== undefined && breakStart <= openTime
-        ? '休憩は、開店より後に始めてください。'
+        ? ERRORS.breakBeforeOpen
         : undefined,
   ],
   [
@@ -198,11 +194,11 @@ const restEntriesOf = (
     breakEnd === undefined
       ? breakStart === undefined
         ? undefined
-        : NO_BREAK_END
+        : ERRORS.noBreakEnd
       : breakStart !== undefined && breakEnd <= breakStart
-        ? '休憩の終わりは、休憩の始まりより後の時刻にしてください。'
+        ? ERRORS.breakEndBeforeStart
         : closeTime !== undefined && breakEnd >= closeTime
-          ? '休憩は、閉店より前に終えてください。'
+          ? ERRORS.breakAfterClose
           : undefined,
   ],
 ]
@@ -268,28 +264,26 @@ const dateErrorOf = (
   date: string,
   earlier: readonly string[],
   today: string,
-): string | undefined => {
+): LocalizedText | undefined => {
   if (date === '') {
-    return '日付を入力してください。'
+    return ERRORS.dayMissing
   }
   if (!isDay(date)) {
-    return '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。'
+    return ERRORS.dayOutOfRange
   }
   if (date < today) {
-    return '今日か、今日より後の日付を入力してください。'
+    return ERRORS.dayPast
   }
   const same = earlier.indexOf(date)
 
-  return same === -1
-    ? undefined
-    : `この日付は、${same + 1} 行目と同じです。1 つの日付に入れられるのは 1 行です。`
+  return same === -1 ? undefined : ERRORS.sameDate(same + 1)
 }
 
 /** What a change of the hours asks for, nothing when nothing was changed, or what is wrong with the form. */
 export type HoursChangeRead =
   | { type: 'valid'; value: ModelsSalonUpdateRequest }
   | { type: 'unchanged' }
-  | { type: 'invalid'; errors: Record<string, string> }
+  | { type: 'invalid'; errors: FormErrors<LocalizedText> }
 
 /**
  * What the form of the hours asks for, against the hours it was opened
@@ -345,7 +339,7 @@ export const readHoursChange = (
       notes: textOrNull(textOf(values, nameOf('notes'))),
     }
   })
-  const entries: [string, string | undefined][] = [
+  const entries: Entry[] = [
     ...week.flatMap(({ nameOf, opens, times, rest }) =>
       opens
         ? [
@@ -355,10 +349,7 @@ export const readHoursChange = (
         : [],
     ),
     ...dated.flatMap(
-      (
-        { nameOf, date, opens, times, holidayName },
-        position,
-      ): [string, string | undefined][] => [
+      ({ nameOf, date, opens, times, holidayName }, position): Entry[] => [
         [
           nameOf('date'),
           dateErrorOf(
@@ -370,19 +361,17 @@ export const readHoursChange = (
         ...(opens ? timeEntriesOf(times, nameOf) : []),
         [
           nameOf('holidayName'),
-          inJapaneseIfAny(
-            tooLongError(
-              holidayName,
-              LONGEST_HOLIDAY_NAME,
-              HOLIDAY_NAME_TOO_LONG,
-            ),
+          tooLongError(
+            holidayName,
+            LONGEST_HOLIDAY_NAME,
+            HOLIDAY_NAME_TOO_LONG,
           ),
         ],
       ],
     ),
   ]
-  const errors = Object.fromEntries(
-    entries.flatMap(([name, error]): [string, string][] =>
+  const errors: FormErrors<LocalizedText> = Object.fromEntries(
+    entries.flatMap(([name, error]): [string, LocalizedText][] =>
       error === undefined ? [] : [[name, error]],
     ),
   )
@@ -434,34 +423,25 @@ export const readHoursChange = (
     : { type: 'valid', value: request }
 }
 
-const CHANGED_MEANWHILE =
-  'その間に、ほかのアカウントがこのサロンの営業時間を変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの営業時間を、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で設定に戻ってください。'
-
 /**
  * What the form of the hours says after the API did not take them. A
  * salon that is gone is no failure of the form: the screen says so.
  */
 export const afterHoursChange = (
   outcome: Exclude<HoursAttempt, { type: 'written' } | NotFound>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
-    .with({ type: 'changed' }, () => aboutTheAttempt(CHANGED_MEANWHILE))
+    .returnType<FormSays<LocalizedText>>()
+    .with({ type: 'changed' }, () =>
+      aboutTheAttempt(hoursForm.changedMeanwhile),
+    )
     // The form sends no email address: a refusal of one is a refusal of the form
     .with({ type: P.union('invalid', 'emailTaken') }, () =>
-      aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
+      aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
     )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt(
-        'このサロンの営業時間は、変えられません。営業時間を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-      ),
-    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(hoursForm.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '営業時間を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(hoursForm.failed))
     .exhaustive()

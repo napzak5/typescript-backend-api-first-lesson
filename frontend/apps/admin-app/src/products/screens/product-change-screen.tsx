@@ -19,15 +19,16 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -53,7 +54,14 @@ import {
   useKeepsProducts,
 } from './keeps-products'
 
-const TITLE = '商品を直す'
+const {
+  change: CHANGE,
+  loading,
+  names,
+  removal: REMOVAL,
+  titles,
+  words,
+} = adminProductMessages
 
 type ProductChangeProps = {
   salon: ModelsSalonResponse
@@ -70,11 +78,12 @@ type ProductChangeProps = {
 const ProductChange = ({ salon, product }: ProductChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const say = useSay()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = productKeyOf(product.id)
   const page = productHrefOf(salon.id, product.id)
 
@@ -99,7 +108,7 @@ const ProductChange = ({ salon, product }: ProductChangeProps) => {
           forgetList()
           notify({
             tone: 'success',
-            message: `商品「${changed.name}」を直しました。`,
+            message: CHANGE.changed(changed.name),
           })
           void navigate(page)
         })
@@ -161,7 +170,7 @@ const ProductChange = ({ salon, product }: ProductChangeProps) => {
     <>
       <ProductForm
         product={product}
-        submitLabel='変更を保存する'
+        submitLabel={say(CHANGE.submit)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -169,10 +178,10 @@ const ProductChange = ({ salon, product }: ProductChangeProps) => {
         actions={
           <>
             <ButtonLink href={page} variant='quiet'>
-              やめる
+              {say(words.cancel)}
             </ButtonLink>
             <Button variant='danger' onClick={() => setRemoving(true)}>
-              削除
+              {say(REMOVAL.remove)}
             </Button>
           </>
         }
@@ -180,11 +189,11 @@ const ProductChange = ({ salon, product }: ProductChangeProps) => {
       <Dialog
         open={removing}
         onClose={close}
-        title={`商品「${product.name}」を削除しますか？`}
-        description='商品台帳と、施術記録の材料に出なくなります。在庫の記録がある商品は、削除できません。そのときは、取り扱いをやめてください。削除した商品は、元に戻せません。'
+        title={say(REMOVAL.title(product.name))}
+        description={say(REMOVAL.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(REMOVAL.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -193,12 +202,12 @@ const ProductChange = ({ salon, product }: ProductChangeProps) => {
                 removal.mutate()
               }}
             >
-              削除する
+              {say(REMOVAL.submit)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -220,29 +229,30 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const say = useSay()
+  const header = (
+    <PageHeader title={say(titles.change)} description={salon.name} />
+  )
 
   return match(product.isFetchedAfterMount ? product.data : undefined)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='商品を読み込んでいます' />
+        <LoadingIndicator label={say(loading.product)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <ProductNotFound salon={salon} />)
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('商品')} />
+        <OtherSalonNotice what={names.productsOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('商品'), reason),
-          )}
+          message={say(unreadMessageOf(names.product, reason))}
           onRetry={() => void product.refetch()}
           pending={product.isFetching}
         />
@@ -261,14 +271,15 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
 export const ProductChangeScreen = () => {
   const { salonId = '', productId = '' } = useParams()
   const keeps = useKeepsProducts()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={productId} salon={salon} productId={productId} />
         ) : (
-          <ProductsForbidden salon={salon} title={TITLE} />
+          <ProductsForbidden salon={salon} title={titles.change} />
         )
       }
     </WithSalon>

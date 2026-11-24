@@ -6,12 +6,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -20,7 +20,7 @@ import { productKeyOf, readProduct } from '../api/products-api'
 import { ProductRecord } from '../components/product-record/product-record'
 import { ProductNotFound, useKeepsProducts } from './keeps-products'
 
-const TITLE = '商品の内容'
+const { loading, names, titles, words } = adminProductMessages
 
 type ProductPartProps = {
   salon: ModelsSalonResponse
@@ -38,29 +38,30 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
     queryFn: () => readProduct(salon.id, productId),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const say = useSay()
+  const header = (
+    <PageHeader title={say(titles.product)} description={salon.name} />
+  )
 
   return match(product.data)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='商品を読み込んでいます' />
+        <LoadingIndicator label={say(loading.product)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <ProductNotFound salon={salon} />)
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('商品')} />
+        <OtherSalonNotice what={names.productsOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('商品'), reason),
-          )}
+          message={say(unreadMessageOf(names.product, reason))}
           onRetry={() => void product.refetch()}
           pending={product.isFetching}
         />
@@ -69,7 +70,7 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
     .with({ type: 'found' }, (found) => (
       <>
         <PageHeader
-          title={TITLE}
+          title={say(titles.product)}
           description={salon.name}
           actions={
             keeps ? (
@@ -77,13 +78,15 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
                 href={productChangeHrefOf(salon.id, found.product.id)}
                 variant='primary'
               >
-                商品を直す
+                {say(titles.change)}
               </ButtonLink>
             ) : undefined
           }
         />
         <ProductRecord product={found.product} currency={salon.currency} />
-        <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
+        <ButtonLink href={productsHrefOf(salon.id)}>
+          {say(words.toLedger)}
+        </ButtonLink>
       </>
     ))
     .exhaustive()
@@ -92,9 +95,10 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
 /** A product of the salon of the address, for everybody who works there and an administrator. */
 export const ProductScreen = () => {
   const { salonId = '', productId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.product)}>
       {(salon) => (
         <ProductPart key={productId} salon={salon} productId={productId} />
       )}

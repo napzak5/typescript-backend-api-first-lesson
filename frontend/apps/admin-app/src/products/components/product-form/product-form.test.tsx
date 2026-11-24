@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as formStories from './product-form.stories'
 
 const stories = composeStories(formStories)
@@ -214,5 +215,76 @@ describe('ProductForm', () => {
 
     // Assert
     expect(text(label)).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('ProductForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the parts of the form and its controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual(['Product', 'Prices', 'Stock levels', 'Purchasing', 'Management'])
+    expect(text(/^Product code/)).toHaveAccessibleDescription(
+      'Up to 100 characters. Another product of this salon that was not removed cannot have the same code, nor can a product that is no longer carried.',
+    )
+    expect(text(/^Unit/)).toHaveAccessibleDescription(
+      'Such as bottles, pieces or ml. Up to 20 characters. The unit the stock is counted in.',
+    )
+    expect(text('Lead time in days')).toHaveAccessibleDescription(
+      'A whole number from 0: the days from ordering to delivery.',
+    )
+    expect(checkbox('Active')).toHaveAccessibleDescription(
+      'Without it, the product is discontinued and no longer shown among the materials of the treatment records. Its stock records and treatment records stay.',
+    )
+    expect(
+      [
+        'Sold in store',
+        'Used in treatments',
+        'Keep the stock by lot number',
+      ].map((name) => checkbox(name).getAttribute('name')),
+    ).toEqual(['isForSale', 'isForTreatment', 'requiresLotTracking'])
+  })
+
+  it('should say what is wrong under the control, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('Purchase price')).toHaveAccessibleDescription(
+      'Enter the purchase price as a whole number of yen from 0.',
+    )
+    expect(text(/^Reorder point/)).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the reorder point the same as the minimum stock or larger.',
+      ),
+    )
+  })
+
+  it('should say what went wrong with the attempt above the form, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The products of this salon cannot be changed.',
+    )
   })
 })

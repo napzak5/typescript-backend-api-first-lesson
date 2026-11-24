@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import * as salonRecordStories from './salon-record.stories'
 
@@ -125,4 +126,110 @@ describe('SalonRecord', () => {
   })
 
   itShouldBeAccessibleInEveryStory(stories)
+})
+
+describe('SalonRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say everything the salon keeps of itself, card by card, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(termsOf('Salon')).toEqual([
+      ['Name', 'Salon Hikari 表参道店'],
+      ['Name in kana', 'サロン ヒカリ オモテサンドウテン'],
+      ['Introduction', '表参道の駅から歩いて 3 分です。\n個室もあります。'],
+      ['Online booking', 'Accepted'],
+      ['Rating', '4.5 (12 reviews)'],
+    ])
+    expect(termsOf('Location').map(([term]) => term)).toEqual([
+      'Postal code',
+      'Prefecture',
+      'City',
+      'Street address',
+      'Building',
+      'Place on the map',
+    ])
+    expect(termsOf('Location')).toContainEqual([
+      'Place on the map',
+      'Latitude 35.665, longitude 139.7121',
+    ])
+    expect(termsOf('Contact').map(([term]) => term)).toEqual([
+      'Phone number',
+      'Alternative phone number',
+      'Email address',
+      'Website',
+    ])
+    expect(termsOf('Photos').map(([term]) => term)).toEqual([
+      'Logo URL',
+      'Photo URLs',
+    ])
+    expect(screen.getByRole('list', { name: 'Amenities' })).toBeInTheDocument()
+    expect(termsOf('Accounting')).toEqual([
+      ['Time zone', 'Asia/Tokyo'],
+      ['Currency', 'JPY'],
+      ['Tax rate', '10%'],
+      ['Payment methods', 'See the payment methods'],
+    ])
+  })
+
+  it('should say the week and the dates of the calendar in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(rowsOf('Hours')).toEqual([
+      ['Monday', '10:00–20:00 (break 13:00–14:00)'],
+      ['Tuesday', '10:00–20:00'],
+      ['Wednesday', '10:00–20:00'],
+      ['Thursday', '10:00–20:00'],
+      ['Friday', '10:00–20:00'],
+      ['Saturday', '09:00–18:00'],
+      ['Sunday', 'Closed'],
+    ])
+    expect(rowsOf('Calendar')).toEqual([
+      ['Mon, November 23, 2026', '10:00–17:00', '勤労感謝の日', '短縮営業'],
+      ['Thu, December 31, 2026', 'Closed all day', '年末年始', 'Not recorded'],
+    ])
+  })
+
+  it('should say in English what is not recorded, and that the week decides', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.LittleRecorded.run()
+
+    // Assert
+    expect(termsOf('Salon')).toContainEqual(['Rating', 'None yet'])
+    expect(termsOf('Features and amenities')).toEqual([
+      ['Features', 'None'],
+      ['Amenities', 'None'],
+    ])
+    expect(
+      within(screen.getByRole('table', { name: 'Calendar' })).getByText(
+        'No dates from today on. The salon keeps the hours of the days of the week.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('should say in English that the salon has stopped taking bookings online', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotBookedOnline.run()
+
+    // Assert
+    expect(termsOf('Salon')).toContainEqual(['Online booking', 'Paused'])
+  })
 })

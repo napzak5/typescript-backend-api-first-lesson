@@ -1,9 +1,13 @@
+import { neededWithin, WEB_ADDRESS_ERROR } from '@beauty-salon-frontend/fields'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminProductMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { shampoo } from '../examples'
 import { ProductForm } from './product-form'
+
+const { form, words } = adminProductMessages
 
 const meta: Meta<typeof ProductForm> = {
   title: 'Admin/Products/ProductForm',
@@ -36,12 +40,10 @@ export const Recorded: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      productCode: '商品コードを、100 文字以内で入力してください。',
-      purchasePrice: '仕入価格は、0 以上の円の整数で入力してください。',
-      reorderPoint:
-        '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
-      safetyDataSheet:
-        'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      productCode: neededWithin(words.productCode, 100),
+      purchasePrice: form.errors.purchasePrice,
+      reorderPoint: form.errors.reorderBelowMinimum,
+      safetyDataSheet: WEB_ADDRESS_ERROR,
     },
   },
 }
@@ -51,7 +53,6 @@ export const Refused: Story = {
   args: {
     product: shampoo,
     submitLabel: '変更を保存する',
-    message:
-      'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+    message: form.forbidden,
   },
 }

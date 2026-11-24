@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { ProductRemoval } from '../api/products-api'
 import { shampoo } from '../components/examples'
@@ -93,6 +94,7 @@ describe('levelOf', () => {
     ['-1', undefined],
     ['十', undefined],
   ])('should read %s as %s', (text, level) => {
+    // Assert
     expect(levelOf(text)).toBe(level)
   })
 })
@@ -170,14 +172,23 @@ describe('readProductEntry', () => {
     expect(read.type).toBe('valid')
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'no code, no name and no unit',
       { productCode: ' ', name: '', unit: '　' },
       {
-        productCode: '商品コードを、100 文字以内で入力してください。',
-        name: '商品名を、255 文字以内で入力してください。',
-        unit: '単位を、20 文字以内で入力してください。',
+        productCode: {
+          en: 'Product code: enter 1 to 100 characters.',
+          ja: '商品コードを、100 文字以内で入力してください。',
+        },
+        name: {
+          en: 'Product name: enter 1 to 255 characters.',
+          ja: '商品名を、255 文字以内で入力してください。',
+        },
+        unit: {
+          en: 'Unit: enter 1 to 20 characters.',
+          ja: '単位を、20 文字以内で入力してください。',
+        },
       },
     ],
     [
@@ -193,44 +204,88 @@ describe('readProductEntry', () => {
         barcode: '1'.repeat(101),
       },
       {
-        productCode: '商品コードを、100 文字以内で入力してください。',
-        name: '商品名を、255 文字以内で入力してください。',
-        category: 'カテゴリーは、100 文字以内で入力してください。',
-        brand: 'ブランドは、100 文字以内で入力してください。',
-        unit: '単位を、20 文字以内で入力してください。',
-        supplier: '仕入先は、255 文字以内で入力してください。',
-        supplierProductCode:
-          '仕入先の商品コードは、100 文字以内で入力してください。',
-        barcode: 'バーコードは、100 文字以内で入力してください。',
+        productCode: {
+          en: 'Product code: enter 1 to 100 characters.',
+          ja: '商品コードを、100 文字以内で入力してください。',
+        },
+        name: {
+          en: 'Product name: enter 1 to 255 characters.',
+          ja: '商品名を、255 文字以内で入力してください。',
+        },
+        category: {
+          en: 'Category: enter up to 100 characters.',
+          ja: 'カテゴリーは、100 文字以内で入力してください。',
+        },
+        brand: {
+          en: 'Brand: enter up to 100 characters.',
+          ja: 'ブランドは、100 文字以内で入力してください。',
+        },
+        unit: {
+          en: 'Unit: enter 1 to 20 characters.',
+          ja: '単位を、20 文字以内で入力してください。',
+        },
+        supplier: {
+          en: 'Supplier: enter up to 255 characters.',
+          ja: '仕入先は、255 文字以内で入力してください。',
+        },
+        supplierProductCode: {
+          en: 'Supplier product code: enter up to 100 characters.',
+          ja: '仕入先の商品コードは、100 文字以内で入力してください。',
+        },
+        barcode: {
+          en: 'Barcode: enter up to 100 characters.',
+          ja: 'バーコードは、100 文字以内で入力してください。',
+        },
       },
     ],
     [
       'prices that are no whole numbers of yen',
       { purchasePrice: '-1', retailPrice: '1.5', salonPrice: '3000000000' },
       {
-        purchasePrice: '仕入価格は、0 以上の円の整数で入力してください。',
-        retailPrice: '定価は、0 以上の円の整数で入力してください。',
-        salonPrice: '販売価格は、0 以上の円の整数で入力してください。',
+        purchasePrice: {
+          en: 'Enter the purchase price as a whole number of yen from 0.',
+          ja: '仕入価格は、0 以上の円の整数で入力してください。',
+        },
+        retailPrice: {
+          en: 'Enter the list price as a whole number of yen from 0.',
+          ja: '定価は、0 以上の円の整数で入力してください。',
+        },
+        salonPrice: {
+          en: 'Enter the sale price as a whole number of yen from 0.',
+          ja: '販売価格は、0 以上の円の整数で入力してください。',
+        },
       },
     ],
     [
       'no minimum, and levels that are no numbers the API takes',
       { minimumStock: '', reorderPoint: '1.234', maximumStock: '100000000' },
       {
-        minimumStock:
-          '最低在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
-        reorderPoint:
-          '発注点は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
-        maximumStock:
-          '最大在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        minimumStock: {
+          en: 'Enter the minimum stock as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '最低在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
+        reorderPoint: {
+          en: 'Enter the reorder point as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '発注点は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
+        maximumStock: {
+          en: 'Enter the maximum stock as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '最大在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
       },
     ],
     [
       'days and months that are no whole numbers, or no month at all',
       { leadTimeDays: '1.5', expiryMonths: '0' },
       {
-        leadTimeDays: '納品までの日数は、0 以上の整数で入力してください。',
-        expiryMonths: '使用期限までの月数は、1 以上の整数で入力してください。',
+        leadTimeDays: {
+          en: 'Enter the lead time as a whole number of days from 0.',
+          ja: '納品までの日数は、0 以上の整数で入力してください。',
+        },
+        expiryMonths: {
+          en: 'Enter the months to expiry as a whole number from 1.',
+          ja: '使用期限までの月数は、1 以上の整数で入力してください。',
+        },
       },
     ],
     [
@@ -240,23 +295,30 @@ describe('readProductEntry', () => {
         safetyDataSheet: `https://example.com/${'a'.repeat(481)}`,
       },
       {
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-        safetyDataSheet:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
+        safetyDataSheet: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     ],
     [
       'an address of a path alone',
       { imageUrl: '/images/a.jpg' },
       {
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     ],
   ])(
     'should send nothing with %s, and say why at each control',
     (_case, changes, errors) => {
+      // Assert
       expect(readProductEntry(formOf(changes))).toEqual({
         type: 'invalid',
         errors,
@@ -264,44 +326,55 @@ describe('readProductEntry', () => {
     },
   )
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'a reorder point below the minimum',
       { minimumStock: '5', reorderPoint: '4' },
       {
-        reorderPoint:
-          '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
+        reorderPoint: {
+          en: 'Make the reorder point the same as the minimum stock or larger.',
+          ja: '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
+        },
       },
     ],
     [
       'a maximum below the reorder point',
       { minimumStock: '5', reorderPoint: '10', maximumStock: '8' },
       {
-        maximumStock:
-          '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        maximumStock: {
+          en: 'Make the maximum stock the same as the reorder point or larger.',
+          ja: '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        },
       },
     ],
     [
       'a maximum below the minimum, without a reorder point',
       { minimumStock: '5', maximumStock: '4.99' },
       {
-        maximumStock:
-          '最大在庫数は、最低在庫数と同じか、それより大きい数にしてください。',
+        maximumStock: {
+          en: 'Make the maximum stock the same as the minimum stock or larger.',
+          ja: '最大在庫数は、最低在庫数と同じか、それより大きい数にしてください。',
+        },
       },
     ],
     [
       'both levels above the minimum out of order',
       { minimumStock: '10', reorderPoint: '5', maximumStock: '3' },
       {
-        reorderPoint:
-          '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
-        maximumStock:
-          '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        reorderPoint: {
+          en: 'Make the reorder point the same as the minimum stock or larger.',
+          ja: '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
+        },
+        maximumStock: {
+          en: 'Make the maximum stock the same as the reorder point or larger.',
+          ja: '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        },
       },
     ],
   ])(
     'should say at the higher level that the levels are out of order: %s',
     (_case, changes, errors) => {
+      // Assert
       expect(readProductEntry(formOf(changes))).toEqual({
         type: 'invalid',
         errors,
@@ -310,6 +383,7 @@ describe('readProductEntry', () => {
   )
 
   it('should compare no levels while one of them is none the API takes', () => {
+    // Assert
     expect(
       readProductEntry(
         formOf({ minimumStock: '10', reorderPoint: '5', maximumStock: 'x' }),
@@ -317,8 +391,10 @@ describe('readProductEntry', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        maximumStock:
-          '最大在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        maximumStock: {
+          en: 'Enter the maximum stock as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '最大在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
       },
     })
   })
@@ -348,6 +424,7 @@ describe('readProductChange', () => {
   })
 
   it('should take a form sent as it was opened for no change', () => {
+    // Assert
     expect(readProductChange(shampooFormOf(), shampoo)).toEqual({
       type: 'unchanged',
     })
@@ -372,13 +449,16 @@ describe('readProductChange', () => {
   })
 
   it('should send nothing when what was changed is none the API takes', () => {
+    // Assert
     expect(
       readProductChange(shampooFormOf({ maximumStock: '9' }), shampoo),
     ).toEqual({
       type: 'invalid',
       errors: {
-        maximumStock:
-          '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        maximumStock: {
+          en: 'Make the maximum stock the same as the reorder point or larger.',
+          ja: '最大在庫数は、発注点と同じか、それより大きい数にしてください。',
+        },
       },
     })
   })
@@ -403,56 +483,89 @@ describe('afterProductWrite', () => {
     expect(said).toEqual({
       message: undefined,
       errors: {
-        productCode: '商品コードを、100 文字以内で入力してください。',
-        minimumStock:
-          '最低在庫数は、発注点と最大在庫数と同じか、それより小さい数にしてください。',
-        reorderPoint:
-          '発注点は、最低在庫数から最大在庫数までの数にしてください。',
-        maximumStock:
-          '最大在庫数は、最低在庫数と発注点と同じか、それより大きい数にしてください。',
-        salonPrice: '販売価格は、0 以上の円の整数で入力してください。',
-        imageUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        productCode: {
+          en: 'Product code: enter 1 to 100 characters.',
+          ja: '商品コードを、100 文字以内で入力してください。',
+        },
+        minimumStock: {
+          en: 'Make the minimum stock the same as the reorder point and the maximum stock, or smaller.',
+          ja: '最低在庫数は、発注点と最大在庫数と同じか、それより小さい数にしてください。',
+        },
+        reorderPoint: {
+          en: 'Make the reorder point a number from the minimum stock to the maximum stock.',
+          ja: '発注点は、最低在庫数から最大在庫数までの数にしてください。',
+        },
+        maximumStock: {
+          en: 'Make the maximum stock the same as the minimum stock and the reorder point, or larger.',
+          ja: '最大在庫数は、最低在庫数と発注点と同じか、それより大きい数にしてください。',
+        },
+        salonPrice: {
+          en: 'Enter the sale price as a whole number of yen from 0.',
+          ja: '販売価格は、0 以上の円の整数で入力してください。',
+        },
+        imageUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
       },
     })
   })
 
   it('should say above the form what it has no control for', () => {
+    // Assert
     expect(
       afterProductWrite({
         type: 'invalid',
         values: [{ field: 'salonId', rule: 'unrecognized_keys' }],
       }),
     ).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
   it('should say at the code that another product has it, those no longer carried among them', () => {
+    // Assert
     expect(afterProductWrite({ type: 'codeTaken' })).toEqual({
       message: undefined,
       errors: {
-        productCode:
-          'この商品コードは、このサロンのほかの商品が使っています。取り扱いをやめた商品のコードも使えません。ほかのコードを入力してください。',
+        productCode: {
+          en: 'Another product of this salon uses this product code, and the code of a discontinued product cannot be used either. Enter another code.',
+          ja: 'この商品コードは、このサロンのほかの商品が使っています。取り扱いをやめた商品のコードも使えません。ほかのコードを入力してください。',
+        },
       },
     })
   })
 
-  it.each<['forbidden' | 'tooManyRequests' | 'failed', string]>([
+  it.each<
+    ['forbidden' | 'tooManyRequests' | 'failed', { en: string; ja: string }]
+  >([
     [
       'forbidden',
-      'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The products of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its products.',
+        ja: 'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       'tooManyRequests',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'failed',
-      '商品を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the product. Check your connection and try again.',
+        ja: '商品を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form what came of %s', (type, message) => {
+    // Assert
     expect(afterProductWrite({ type })).toEqual({ message, errors: {} })
   })
 })
@@ -461,14 +574,22 @@ describe('afterProductRemoval', () => {
   it.each<[ProductRemoval, ReturnType<typeof afterProductRemoval>]>([
     [
       { type: 'removed' },
-      { type: 'done', message: '商品「Styling Wax 80g」を削除しました。' },
+      {
+        type: 'done',
+        message: {
+          en: 'Removed the product “Styling Wax 80g”.',
+          ja: '商品「Styling Wax 80g」を削除しました。',
+        },
+      },
     ],
     [
       { type: 'inStock' },
       {
         type: 'refused',
-        message:
-          '商品「Styling Wax 80g」には在庫の記録があるので、削除できません。取り扱いをやめるときは、「取り扱い中」の印を外して保存してください。',
+        message: {
+          en: 'The product “Styling Wax 80g” has stock records, so it cannot be removed. To discontinue it, clear “Active” and save.',
+          ja: '商品「Styling Wax 80g」には在庫の記録があるので、削除できません。取り扱いをやめるときは、「取り扱い中」の印を外して保存してください。',
+        },
       },
     ],
     [{ type: 'notFound' }, { type: 'gone' }],
@@ -476,27 +597,34 @@ describe('afterProductRemoval', () => {
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        message: {
+          en: 'The products of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its products.',
+          ja: 'このサロンの商品は、変えられません。商品を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        },
       },
     ],
     [
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '商品を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Could not remove the product. Check your connection and try again.',
+          ja: '商品を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what came of %o', (outcome, says) => {
+    // Assert
     expect(afterProductRemoval(outcome, 'Styling Wax 80g')).toEqual(says)
   })
 })
