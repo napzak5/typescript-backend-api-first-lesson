@@ -2,8 +2,10 @@ import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
 import {
@@ -154,6 +156,28 @@ describe('the sales of the staff, against the API', () => {
       await screen.findByText('この期間に、スタッフが担当した売上はありません'),
     ).toBeVisible()
     expect(screen.queryByRole('table', { name: TABLE })).toBeNull()
+  })
+
+  it('should say that the sales of the staff could not be read, and show them once they are read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToBreakDown()
+    await takeAway('sales')
+    renderAt(staffSalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER)
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'スタッフ別の売上を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+    expect(screen.queryByRole('table', { name: TABLE })).toBeNull()
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+    // Assert
+    await screen.findByRole('table', { name: TABLE })
+    expect(rowsOf(TABLE)).toEqual(STAFF_OF_TODAY)
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should say what is wrong with the days, give it the focus and count nothing anew', async () => {
@@ -332,6 +356,28 @@ describe('the sales of the staff on a page in English, against the API', () => {
     expect(
       await screen.findByText('No sales handled by the staff in this period'),
     ).toBeVisible()
+  })
+
+  it('should say in English that the sales by staff could not be read, and show them once they are read again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToBreakDown()
+    await takeAway('sales')
+    renderAt(staffSalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load the sales by staff. Check your connection and try again.',
+    )
+    await giveBack('sales')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Load again' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('table', { name: 'Sales by staff' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('should tell the owner in English that the staff of another salon are not theirs to see', async () => {
