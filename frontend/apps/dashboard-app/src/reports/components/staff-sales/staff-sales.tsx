@@ -28,7 +28,7 @@ type Ranked = { rank: number; counted: ModelsSalesByStaffResponse }
 export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
   const say = useSay()
   const money = (amount: number): string => say(amountOf(amount, currency))
-  const most = staff[0]?.totalSales ?? 0
+  const most = Math.max(...staff.map(({ totalSales }) => totalSales))
 
   return (
     <Card title={say(words.title)}>
