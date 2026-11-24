@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as formStories from './payment-method-form.stories'
 
 const stories = composeStories(formStories)
@@ -152,5 +153,94 @@ describe('PaymentMethodForm', () => {
 
     // Assert
     expect(text(label)).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('PaymentMethodForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer every kind of payment and name the controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    const kind = screen.getByRole('combobox', { name: /Type/ })
+    expect(
+      Array.from(kind.querySelectorAll('option'), (option) => option.text),
+    ).toEqual([
+      'Choose',
+      'Cash',
+      'Credit card',
+      'Debit card',
+      'E-money',
+      'QR code payment',
+      'Bank transfer',
+      'Points',
+    ])
+    expect(kind).toHaveAccessibleDescription(
+      'It cannot be changed once added. Only credit and debit cards record the last four digits and the brand of the card.',
+    )
+    for (const control of [
+      text(/^Display name/),
+      text('Description'),
+      text('Smallest amount at a time (yen)'),
+      text('Largest amount at a time (yen)'),
+      text('Fee rate (%)'),
+      text('Payment processor'),
+      text(/^Sort order/),
+      screen.getByRole('checkbox', { name: 'Use for checkouts in store' }),
+      screen.getByRole('checkbox', { name: 'Use for online payments' }),
+      screen.getByRole('checkbox', { name: 'Use this payment method' }),
+    ]) {
+      expect(control).toBeVisible()
+    }
+  })
+
+  it('should say the kind it keeps, how long the texts may be, and what is wrong, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(
+      screen.getByText(/^Type: Credit card\. The type cannot be changed\./),
+    ).toBeVisible()
+    expect(text(/^Display name/)).toHaveAccessibleDescription(
+      'Up to 100 characters. The name shown on the sales screens and the receipts.',
+    )
+    expect(text('Payment processor')).toHaveAccessibleDescription(
+      'Up to 100 characters. Leave it empty when the payments do not go through a processor.',
+    )
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text(/^Display name/)).toHaveAccessibleDescription(
+      expect.stringContaining('Display name: enter 1 to 100 characters.'),
+    )
+    expect(
+      screen.getByRole('combobox', { name: /Type/ }),
+    ).toHaveAccessibleDescription(expect.stringContaining('Choose a type.'))
+    expect(text('Largest amount at a time (yen)')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the largest amount the same as the smallest amount or larger.',
+      ),
+    )
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The payment methods of this salon cannot be changed.',
+    )
   })
 })

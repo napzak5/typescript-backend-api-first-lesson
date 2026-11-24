@@ -10,6 +10,8 @@ describe('the texts of the parts of the admin application that are done', () => 
     'customers',
     'inventory',
     'menu',
+    'payment-methods',
+    'purchase-orders',
     'sales',
     'treatments',
   ])

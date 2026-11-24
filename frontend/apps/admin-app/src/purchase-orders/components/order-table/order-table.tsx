@@ -4,10 +4,11 @@ import {
   Badge,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   deliveryDayNameOf,
   orderDayNameOf,
@@ -15,8 +16,10 @@ import {
   orderStatusToneOf,
 } from '../../utils/order-format'
 
+const { list, words } = adminPurchaseOrderMessages
+
 export type OrderTableProps = {
-  /** What the table lists: 「発注」 or 「条件に合う発注」 */
+  /** What the table lists, in the language of the page: 「発注」 or 「条件に合う発注」 */
   caption: string
   /** The orders that were read so far, the latest made first; at least one */
   orders: readonly ModelsPurchaseOrderResponse[]
@@ -47,51 +50,59 @@ export const OrderTable = ({
   total,
   more,
   onMore,
-}: OrderTableProps) => (
-  <PagedTable
-    caption={caption}
-    rowHeader='orderNumber'
-    columns={[
-      {
-        key: 'orderNumber',
-        header: '発注番号',
-        cell: ({ id, orderNumber }) => (
-          <Link href={orderHref(id)}>{orderNumber}</Link>
-        ),
-      },
-      {
-        key: 'orderDate',
-        header: '発注日',
-        cell: ({ orderDate }) => orderDayNameOf(orderDate, timezone),
-      },
-      { key: 'supplier', header: '仕入先', cell: ({ supplier }) => supplier },
-      {
-        key: 'status',
-        header: 'ステータス',
-        cell: ({ status }) => (
-          <Badge tone={orderStatusToneOf(status)}>
-            {orderStatusNameOf(status)}
-          </Badge>
-        ),
-      },
-      {
-        key: 'totalAmount',
-        header: '合計',
-        align: 'end',
-        cell: ({ totalAmount }) => inJapanese(amountOf(totalAmount, currency)),
-      },
-      {
-        key: 'expectedDelivery',
-        header: '納品予定日',
-        cell: ({ expectedDelivery }) =>
-          deliveryDayNameOf(expectedDelivery, timezone),
-      },
-    ]}
-    rows={orders}
-    rowKey={({ id }) => id}
-    emptyMessage='発注はありません'
-    count={inJapanese(countOf(total, orders.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: OrderTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={caption}
+      rowHeader='orderNumber'
+      columns={[
+        {
+          key: 'orderNumber',
+          header: say(words.orderNumber),
+          cell: ({ id, orderNumber }) => (
+            <Link href={orderHref(id)}>{orderNumber}</Link>
+          ),
+        },
+        {
+          key: 'orderDate',
+          header: say(words.orderDate),
+          cell: ({ orderDate }) => say(orderDayNameOf(orderDate, timezone)),
+        },
+        {
+          key: 'supplier',
+          header: say(words.supplier),
+          cell: ({ supplier }) => supplier,
+        },
+        {
+          key: 'status',
+          header: say(words.status),
+          cell: ({ status }) => (
+            <Badge tone={orderStatusToneOf(status)}>
+              {say(orderStatusNameOf(status))}
+            </Badge>
+          ),
+        },
+        {
+          key: 'totalAmount',
+          header: say(words.total),
+          align: 'end',
+          cell: ({ totalAmount }) => say(amountOf(totalAmount, currency)),
+        },
+        {
+          key: 'expectedDelivery',
+          header: say(words.expectedDelivery),
+          cell: ({ expectedDelivery }) =>
+            say(deliveryDayNameOf(expectedDelivery, timezone)),
+        },
+      ]}
+      rows={orders}
+      rowKey={({ id }) => id}
+      emptyMessage={say(list.none)}
+      count={say(countOf(total, orders.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

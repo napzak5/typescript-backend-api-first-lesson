@@ -12,6 +12,7 @@ const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
 
 describe('orderConditionsIn', () => {
   it('should read the status, the supplier and the days of an address', () => {
+    // Assert
     expect(
       orderConditionsIn(
         new URLSearchParams(
@@ -27,6 +28,7 @@ describe('orderConditionsIn', () => {
   })
 
   it('should keep a supplier of 255 characters, counted as the API counts them', () => {
+    // Assert
     expect(
       orderConditionsIn(new URLSearchParams({ supplier: '𠮷'.repeat(255) })),
     ).toEqual({ supplier: '𠮷'.repeat(255) })
@@ -47,6 +49,7 @@ describe('orderConditionsIn', () => {
   })
 
   it('should take a supplier of exactly 255 letters', () => {
+    // Assert
     expect(
       orderConditionsIn(new URLSearchParams(`supplier=${'仕'.repeat(255)}`)),
     ).toEqual({ supplier: '仕'.repeat(255) })
@@ -55,6 +58,7 @@ describe('orderConditionsIn', () => {
 
 describe('readOrderConditions', () => {
   it('should read what was filled in, each of it if it was', () => {
+    // Assert
     expect(
       readOrderConditions(
         formOf({
@@ -76,6 +80,7 @@ describe('readOrderConditions', () => {
   })
 
   it('should say what is wrong with a supplier too long and a day that is none', () => {
+    // Assert
     expect(
       readOrderConditions(
         formOf({ supplier: '仕'.repeat(256), from: '2026-13-01', to: '' }),
@@ -83,19 +88,26 @@ describe('readOrderConditions', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        supplier: '仕入先は、255 文字以内で入力してください。',
-        from: '日付を入力してください。',
+        supplier: {
+          en: 'Supplier: enter up to 255 characters.',
+          ja: '仕入先は、255 文字以内で入力してください。',
+        },
+        from: { en: 'Enter a date.', ja: '日付を入力してください。' },
       },
     })
   })
 
   it('should say that the last day is before the first, and take the same day', () => {
+    // Assert
     expect(
       readOrderConditions(formOf({ from: '2026-11-20', to: '2026-11-19' })),
     ).toEqual({
       type: 'invalid',
       errors: {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        to: {
+          en: 'Make the last day the same as the first day, or later.',
+          ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        },
       },
     })
     expect(
@@ -124,6 +136,7 @@ describe('orderQueryOf', () => {
 
 describe('orderListParamsOf', () => {
   it('should ask for the days at the salon from the moment the first begins to the moment before the day after the last', () => {
+    // Assert
     expect(
       orderListParamsOf(
         SALON_ID,
@@ -145,6 +158,7 @@ describe('orderListParamsOf', () => {
   })
 
   it('should ask for every order of the salon without conditions', () => {
+    // Assert
     expect(orderListParamsOf(SALON_ID, {}, 'Asia/Tokyo')).toEqual({
       salonId: SALON_ID,
     })

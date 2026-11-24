@@ -14,6 +14,7 @@ import {
 
 describe('suggestionGroupsOf', () => {
   it('should group the suggestions by supplier, in the order of the names, and those of no supplier last', () => {
+    // Assert
     expect(
       suggestionGroupsOf(SUGGESTIONS_OF_THE_SALON.toReversed()).map(
         ({ supplier, suggestions }) => [
@@ -42,6 +43,7 @@ describe('suggestionGroupsOf', () => {
   })
 
   it('should give no groups for no suggestions', () => {
+    // Assert
     expect(suggestionGroupsOf([])).toEqual([])
   })
 })
@@ -51,6 +53,7 @@ describe('suggestedQuantitiesOf', () => {
   const ROWS = [expiredColour, colourLot, shampooRow, glovesRow]
 
   it('should put the quantity of each product of the supplier on its last row', () => {
+    // Assert
     expect(
       suggestedQuantitiesOf(
         SUGGESTIONS_OF_THE_SALON,
@@ -61,12 +64,14 @@ describe('suggestedQuantitiesOf', () => {
   })
 
   it('should take the products that name no supplier for the supplier nobody named', () => {
+    // Assert
     expect(suggestedQuantitiesOf(SUGGESTIONS_OF_THE_SALON, ROWS, '')).toEqual({
       [glovesRow.id]: '1.5',
     })
   })
 
   it('should leave out a product whose rows were not read', () => {
+    // Assert
     expect(
       suggestedQuantitiesOf(
         SUGGESTIONS_OF_THE_SALON,
@@ -78,29 +83,39 @@ describe('suggestedQuantitiesOf', () => {
 })
 
 describe('suggestedNoteOf', () => {
-  it.each<[string, string, number, string]>([
+  it.each<[string, string, number, { en: string; ja: string }]>([
     [
       'a supplier',
       '東京ビューティーサプライ',
       2,
-      '東京ビューティーサプライ の発注の提案の数量を 2 行に入れました。数量と単価を確かめてください。',
+      {
+        en: 'Filled in the suggested quantities of 東京ビューティーサプライ in 2 rows. Check the quantities and the unit prices.',
+        ja: '東京ビューティーサプライ の発注の提案の数量を 2 行に入れました。数量と単価を確かめてください。',
+      },
     ],
     [
       'the products that name no supplier',
       '',
       1,
-      '仕入先の決まっていない商品の、発注の提案の数量を 1 行に入れました。仕入先を入力し、数量と単価を確かめてください。',
+      {
+        en: 'Filled in the suggested quantities of the products without a supplier in 1 row. Enter the supplier, and check the quantities and the unit prices.',
+        ja: '仕入先の決まっていない商品の、発注の提案の数量を 1 行に入れました。仕入先を入力し、数量と単価を確かめてください。',
+      },
     ],
     [
       'a supplier with nothing suggested now',
       '東京ビューティーサプライ',
       0,
-      'この仕入先の発注の提案は、いまはありません。発注する行に、数量を入力してください。',
+      {
+        en: 'There are no reorder suggestions of this supplier now. Enter a quantity in the rows to order.',
+        ja: 'この仕入先の発注の提案は、いまはありません。発注する行に、数量を入力してください。',
+      },
     ],
   ])(
     'should say what the form starts with for %s',
     (_case, supplier, filled, note) => {
-      expect(suggestedNoteOf(supplier, filled)).toBe(note)
+      // Assert
+      expect(suggestedNoteOf(supplier, filled)).toEqual(note)
     },
   )
 })

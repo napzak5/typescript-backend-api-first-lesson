@@ -1,12 +1,15 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, Link, Table } from '@beauty-salon-frontend/ui'
+import { Link, Table, useSay } from '@beauty-salon-frontend/ui'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   amountsNameOf,
   feeNameOf,
   placesNameOf,
   usedNameOf,
 } from '../../utils/payment-method-format'
+
+const { words: WORDS, list, titles } = adminPaymentMethodMessages
 
 export type PaymentMethodTableProps = {
   /** The payment methods of the salon, in their order */
@@ -26,46 +29,54 @@ export const PaymentMethodTable = ({
   methods,
   currency,
   methodHref,
-}: PaymentMethodTableProps) => (
-  <Table
-    caption='支払い方法'
-    captionHidden
-    columns={[
-      {
-        key: 'displayName',
-        header: '表示名',
-        cell: ({ id, displayName }) => (
-          <Link href={methodHref(id)}>{displayName}</Link>
-        ),
-      },
-      {
-        key: 'method',
-        header: '種類',
-        cell: ({ method }) => inJapanese(methodKindNameOf(method)),
-      },
-      {
-        key: 'amounts',
-        header: '1 回の金額',
-        cell: (method) => amountsNameOf(method, currency),
-      },
-      {
-        key: 'fee',
-        header: '手数料率',
-        cell: ({ fee }) => feeNameOf(fee),
-      },
-      {
-        key: 'places',
-        header: '使う場所',
-        cell: (method) => placesNameOf(method),
-      },
-      {
-        key: 'isActive',
-        header: '状態',
-        cell: ({ isActive }) => usedNameOf(isActive),
-      },
-    ]}
-    rows={methods}
-    rowKey={({ id }) => id}
-    emptyMessage='支払い方法はありません'
-  />
-)
+}: PaymentMethodTableProps) => {
+  const say = useSay()
+
+  return (
+    <Table
+      caption={say(titles.methods)}
+      captionHidden
+      columns={[
+        {
+          key: 'displayName',
+          header: say(WORDS.displayName),
+          cell: ({ id, displayName }) => (
+            <Link href={methodHref(id)}>{displayName}</Link>
+          ),
+        },
+        {
+          key: 'method',
+          header: say(WORDS.kind),
+          cell: ({ method }) => say(methodKindNameOf(method)),
+        },
+        {
+          key: 'amounts',
+          header: say(WORDS.amounts),
+          cell: (method) => say(amountsNameOf(method, currency)),
+        },
+        {
+          key: 'fee',
+          header: say(WORDS.fee),
+          cell: ({ fee }) => {
+            const named = feeNameOf(fee)
+
+            return named === null ? null : say(named)
+          },
+        },
+        {
+          key: 'places',
+          header: say(WORDS.places),
+          cell: (method) => say(placesNameOf(method)),
+        },
+        {
+          key: 'isActive',
+          header: say(WORDS.status),
+          cell: ({ isActive }) => say(usedNameOf(isActive)),
+        },
+      ]}
+      rows={methods}
+      rowKey={({ id }) => id}
+      emptyMessage={say(list.none)}
+    />
+  )
+}

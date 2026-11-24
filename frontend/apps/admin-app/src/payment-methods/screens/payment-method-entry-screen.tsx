@@ -11,14 +11,15 @@ import {
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -44,7 +45,13 @@ import {
   useKeepsPaymentMethods,
 } from './keeps-payment-methods'
 
-const TITLE = '支払い方法を足す'
+const {
+  entry: ENTRY,
+  loading,
+  names,
+  titles,
+  words,
+} = adminPaymentMethodMessages
 
 type PaymentMethodEntryProps = { salon: ModelsSalonResponse; sortOrder: number }
 
@@ -54,10 +61,11 @@ type PaymentMethodEntryProps = { salon: ModelsSalonResponse; sortOrder: number }
  * belongs among them, and the screens of the sales offer it.
  */
 const PaymentMethodEntry = ({ salon, sortOrder }: PaymentMethodEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsPaymentMethodCreateRequest) =>
       addPaymentMethod(salon.id, request),
@@ -71,7 +79,7 @@ const PaymentMethodEntry = ({ salon, sortOrder }: PaymentMethodEntryProps) => {
           })
           notify({
             tone: 'success',
-            message: `支払い方法「${method.displayName}」を足しました。`,
+            message: ENTRY.added(method.displayName),
           })
           void navigate(paymentMethodHrefOf(salon.id, method.id))
         })
@@ -103,14 +111,14 @@ const PaymentMethodEntry = ({ salon, sortOrder }: PaymentMethodEntryProps) => {
     <PaymentMethodForm
       method={null}
       sortOrder={sortOrder}
-      submitLabel='足す'
+      submitLabel={say(ENTRY.submit)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={paymentMethodsHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -121,6 +129,7 @@ type EntryPartProps = { salon: ModelsSalonResponse }
 
 /** The payment methods there are, read anew to place the new one last, and the form once they were. */
 const EntryPart = ({ salon }: EntryPartProps) => {
+  const say = useSay()
   const methods = useQuery({
     queryKey: paymentMethodsKeyOf(salon.id),
     queryFn: () => readPaymentMethods(salon.id),
@@ -129,21 +138,19 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.entry)} description={salon.name} />
       {match(methods.isFetchedAfterMount ? methods.data : undefined)
         .with(undefined, () => (
-          <LoadingIndicator label='支払い方法を読み込んでいます' />
+          <LoadingIndicator label={say(loading.methods)} />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
+          <OtherSalonNotice what={names.methodsOfTheSalon} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('支払い方法'), reason),
-              )}
+              message={say(unreadMessageOf(names.methods, reason))}
               onRetry={() => void methods.refetch()}
               pending={methods.isFetching}
             />
@@ -162,16 +169,17 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
 /** Adds a payment method to the salon of the address, for the owner, a manager and an administrator. */
 export const PaymentMethodEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsPaymentMethods()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) =>
         keeps ? (
           <EntryPart key={salon.id} salon={salon} />
         ) : (
-          <PaymentMethodsForbidden salon={salon} title={TITLE} />
+          <PaymentMethodsForbidden salon={salon} title={titles.entry} />
         )
       }
     </WithSalon>

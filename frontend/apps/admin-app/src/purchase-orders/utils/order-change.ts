@@ -9,16 +9,19 @@ import type {
 import { dayAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { OrderUpdate } from '../api/purchase-orders-api'
 import { DAY_ERROR, deliveryOf } from './order-entry'
+
+const CHANGE = adminPurchaseOrderMessages.form.change
 
 /*
  * How the form that changes the day of the delivery and the notes of an
@@ -32,14 +35,12 @@ export const deliveryDayOf = (
   expectedDelivery === null ? '' : dayAt(new Date(expectedDelivery), timezone)
 
 /** What the screen says of an order that was delivered or cancelled: the API does not change it any more */
-export const CLOSED_ORDERS: Record<'delivered' | 'cancelled', string> = {
-  delivered: 'この発注は納品済みです。納品済みの発注は、直せません。',
-  cancelled: 'この発注は取り消しました。取り消した発注は、直せません。',
-}
+export const CLOSED_ORDERS: Record<'delivered' | 'cancelled', LocalizedText> =
+  CHANGE.closed
 
 /** What the form gives: what was changed, nothing, or what is wrong with a field */
 export type OrderChangeRead =
-  | FormRead<ModelsPurchaseOrderUpdateRequest>
+  | FormRead<ModelsPurchaseOrderUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 
 /**
@@ -86,29 +87,22 @@ export const afterOrderChange = (
     OrderUpdate,
     { type: 'invalid' | 'forbidden' | 'tooManyRequests' | 'failed' }
   >,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const others = values.filter(({ field }) => field !== 'expectedDelivery')
       const atDay = others.length < values.length
 
       return {
-        message: inJapaneseIfAny(
+        message:
           atDay && others.length === 0 ? undefined : CHECK_THE_VALUES_MESSAGE,
-        ),
         errors: atDay ? { expectedDelivery: DAY_ERROR } : {},
       }
     })
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この発注を直せません。'),
-    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(CHANGE.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '発注を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(CHANGE.failed))
     .exhaustive()

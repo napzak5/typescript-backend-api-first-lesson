@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as reorderSuggestionsStories from './reorder-suggestions.stories'
 
 const stories = composeStories(reorderSuggestionsStories)
@@ -115,5 +116,62 @@ describe('ReorderSuggestions', () => {
         '/salons/salon/purchase-orders/new?suggested=',
       ],
     ])
+  })
+})
+
+describe('ReorderSuggestions on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the cards, the columns and the values of the suggestions, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.BySupplier.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('heading', { level: 2 })
+        .map(({ textContent }) => textContent),
+    ).toEqual([
+      'カラーテック・ジャパン',
+      '東京ビューティーサプライ',
+      'Products without a supplier',
+    ])
+    const table = screen.getByRole('table', {
+      name: 'Suggestions for 東京ビューティーサプライ',
+    })
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map(({ textContent }) => textContent),
+    ).toEqual([
+      'Product code',
+      'Product name',
+      'In stock',
+      'On order',
+      'Reorder point',
+      'Maximum stock',
+      'Suggested quantity',
+      'Last ordered',
+    ])
+    expect(
+      screen.getByRole('table', {
+        name: 'Suggestions for the products without a supplier',
+      }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', {
+        name: 'Create an order to 東京ビューティーサプライ',
+      }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', {
+        name: 'Choose a supplier and create an order',
+      }),
+    ).toBeVisible()
   })
 })

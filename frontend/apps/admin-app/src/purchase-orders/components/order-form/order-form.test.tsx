@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   colourLot,
   expiredColour,
@@ -166,6 +167,70 @@ describe('OrderForm', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       '発注する在庫の行のどれかが、その間に削除されました。',
+    )
+  })
+})
+
+describe('OrderForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and say what the items come to, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Rows.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Supplier' }),
+    ).toHaveAccessibleDescription('Orders are also searched for by this name.')
+    const shampoo = within(
+      screen.getByRole('group', {
+        name: 'プロフェッショナル シャンプー 500ml',
+      }),
+    )
+    expect(
+      shampoo.getByRole('textbox', { name: 'Quantity' }),
+    ).toHaveAccessibleDescription('In stock: 8 本')
+    expect(
+      shampoo.getByRole('textbox', { name: 'Unit price (yen)' }),
+    ).toHaveValue('1500')
+    expect(screen.getByText('Subtotal ¥0')).toBeVisible()
+    expect(
+      screen.getByRole('textbox', { name: 'Tax (yen)' }),
+    ).toHaveAccessibleDescription(
+      'Enter it as the bill of the supplier says. 10% of the subtotal is ¥0 (rounded down to the yen).',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Shipping (yen)' }),
+    ).toHaveAccessibleDescription(
+      'Optional. Leave it empty when there is no shipping cost.',
+    )
+    expect(
+      screen.getByLabelText('Expected delivery'),
+    ).toHaveAccessibleDescription('Optional. The day the supplier promised.')
+  })
+
+  it('should say what is wrong under the controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Supplier' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the supplier.'),
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Tax (yen)' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the tax. Enter 0 when there is none.'),
     )
   })
 })

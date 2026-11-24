@@ -11,14 +11,15 @@ import {
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -42,7 +43,13 @@ import {
 } from '../utils/order-receipt'
 import { OrderNotFound } from './order-not-found'
 
-const TITLE = '入荷を記録する'
+const {
+  loading,
+  names,
+  receipt: WORDS,
+  titles,
+  words,
+} = adminPurchaseOrderMessages
 
 type OrderReceiptProps = {
   salon: ModelsSalonResponse
@@ -58,10 +65,11 @@ type OrderReceiptProps = {
  * or the screen says why nothing can.
  */
 const OrderReceipt = ({ salon, order }: OrderReceiptProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = purchaseOrderKeyOf(order.id)
   const page = purchaseOrderHrefOf(salon.id, order.id)
 
@@ -84,7 +92,7 @@ const OrderReceipt = ({ salon, order }: OrderReceiptProps) => {
           }
           notify({
             tone: 'success',
-            message: `発注 ${delivered.orderNumber} の入荷を記録しました。届いた ${request.items.length} 件の明細を、在庫に入れました。`,
+            message: WORDS.done(delivered.orderNumber, request.items.length),
           })
           void navigate(page)
         })
@@ -117,19 +125,17 @@ const OrderReceipt = ({ salon, order }: OrderReceiptProps) => {
 
   return (
     <>
-      <p>
-        発注 {order.orderNumber}（{order.supplier}）
-      </p>
+      <p>{say(words.orderOf(order.orderNumber, order.supplier))}</p>
       <OrderReceiptForm
         order={order}
-        submitLabel='入荷を記録する'
+        submitLabel={say(WORDS.submit)}
         message={said.message}
         errors={said.errors}
         pending={receipt.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={page} variant='quiet'>
-            やめる
+            {say(words.cancel)}
           </ButtonLink>
         }
       />
@@ -145,15 +151,19 @@ const NotReceived = ({
 }: {
   salonId: string
   order: Pick<ModelsPurchaseOrderResponse, 'id'>
-  reason: string
-}) => (
-  <>
-    <p>{reason}</p>
-    <ButtonLink href={purchaseOrderHrefOf(salonId, order.id)}>
-      発注へ戻る
-    </ButtonLink>
-  </>
-)
+  reason: LocalizedText
+}) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(reason)}</p>
+      <ButtonLink href={purchaseOrderHrefOf(salonId, order.id)}>
+        {say(words.toOrder)}
+      </ButtonLink>
+    </>
+  )
+}
 
 type ReceiptPartProps = { salon: ModelsSalonResponse; purchaseOrderId: string }
 
@@ -164,6 +174,7 @@ type ReceiptPartProps = { salon: ModelsSalonResponse; purchaseOrderId: string }
  * with those it was opened with.
  */
 const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: purchaseOrderKeyOf(purchaseOrderId),
     queryFn: () => readOrder(purchaseOrderId),
@@ -171,13 +182,15 @@ const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.receipt)} description={salon.name} />
+  )
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='発注を読み込んでいます' />
+        <LoadingIndicator label={say(loading.order)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <OrderNotFound salonId={salon.id} />)
@@ -188,16 +201,14 @@ const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('発注')} />
+        <OtherSalonNotice what={names.ordersOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('発注'), reason),
-          )}
+          message={say(unreadMessageOf(names.order, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -250,10 +261,11 @@ const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
 
 /** The goods that came for an order of the salon of the address, for every member of its staff and an administrator. */
 export const PurchaseOrderReceiptScreen = () => {
+  const say = useSay()
   const { salonId = '', purchaseOrderId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.receipt)}>
       {(salon) => (
         <ReceiptPart
           key={purchaseOrderId}

@@ -7,12 +7,12 @@ import {
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -25,7 +25,13 @@ import { ReorderSuggestions } from '../components/reorder-suggestions/reorder-su
 import { suggestionGroupsOf } from '../utils/order-suggestions'
 import { ToTheOrders } from './order-not-found'
 
-const TITLE = '発注の提案'
+const {
+  loading,
+  names,
+  suggestions: WORDS,
+  titles,
+  words,
+} = adminPurchaseOrderMessages
 
 /**
  * The products a salon had better order, read whenever the screen opens,
@@ -33,6 +39,7 @@ const TITLE = '発注の提案'
  * suggestions.
  */
 const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: suggestionsKeyOf(salon.id),
     queryFn: () => readEverySuggestion(salon.id),
@@ -41,33 +48,29 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
-      <p>
-        在庫と発注中の数の和が、発注点以下になった商品です。提案する数量は、最大在庫数（ない商品は発注点）まで補う数です。発注中の数には、下書きと承認待ちの発注も入ります。
-      </p>
+      <PageHeader title={say(titles.suggestions)} description={salon.name} />
+      <p>{say(WORDS.description)}</p>
       {match(read.data)
         .with(undefined, () => (
-          <LoadingIndicator label='発注の提案を読み込んでいます' />
+          <LoadingIndicator label={say(loading.suggestions)} />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what={writtenInJapanese('発注の提案')} />
+          <OtherSalonNotice what={names.suggestionsOfTheSalon} />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('発注の提案'), reason),
-            )}
+            message={say(unreadMessageOf(names.suggestions, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'found', items: [] }, () => (
           <EmptyState
-            title='発注の提案はありません'
-            description='在庫と発注中の数の和が、発注点以下になった商品はありません。'
+            title={say(WORDS.none)}
+            description={say(WORDS.noneDescription)}
             actions={
               <ButtonLink href={purchaseOrdersHrefOf(salon.id)}>
-                発注へ
+                {say(words.toOrders)}
               </ButtonLink>
             }
           />
@@ -91,10 +94,11 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The reorder suggestions of the salon of the address, for every member of its staff and an administrator. */
 export const ReorderSuggestionsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.suggestions)}>
       {(salon) => <SuggestionsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )
