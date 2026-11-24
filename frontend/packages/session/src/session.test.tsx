@@ -23,6 +23,7 @@ import {
   signIn,
   signOut,
   useSession,
+  useSignedInUser,
 } from '.'
 
 const API_ORIGIN = 'http://localhost:3000'
@@ -173,6 +174,15 @@ const renderSession = (queryClient = queryClientOfATest()) => {
 }
 
 const signedIn = (user: ModelsUserResponse) => ({ type: 'signedIn', user })
+
+const renderSignedInUser = () =>
+  renderHook(() => useSignedInUser(), {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClientOfATest()}>
+        {children}
+      </QueryClientProvider>
+    ),
+  })
 
 describe('the session of an application', () => {
   afterEach(() => {
@@ -382,6 +392,32 @@ describe('the session of an application', () => {
       expect(states.slice(before).map((state) => state.type)).not.toContain(
         'loading',
       )
+    })
+  })
+
+  describe('useSignedInUser', () => {
+    it('should be the user the API says is signed in', async () => {
+      // Arrange
+      stubApi()
+      sessionStore.write(sessionOf(HANAKO, 1))
+
+      // Act
+      const { result } = renderSignedInUser()
+
+      // Assert
+      expect(result.current).toBeUndefined()
+      await waitFor(() => expect(result.current).toEqual(HANAKO))
+    })
+
+    it('should be nobody while no session is stored', () => {
+      // Arrange
+      stubApi()
+
+      // Act
+      const { result } = renderSignedInUser()
+
+      // Assert
+      expect(result.current).toBeUndefined()
     })
   })
 
