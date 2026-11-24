@@ -34,7 +34,7 @@ import {
   rowRemovedMeanwhile,
   storedMovementsOf,
 } from '../__tests__/arrangements'
-import { openedCount, openedValue } from '../__tests__/screens'
+import { NOT_THEIRS, openedCount, openedValue } from '../__tests__/screens'
 
 /*
  * The count of the stock and its value, against the API. The salon in
@@ -405,11 +405,7 @@ describe('the screens of the count and the value of the stock', () => {
 
       // Assert
       await heading(title)
-      expect(
-        await screen.findByText(
-          'このサロンの在庫は、見られません。在庫を見られるのは、そのサロンのスタッフと、管理者です。',
-        ),
-      ).toBeVisible()
+      expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
     },
   )
 

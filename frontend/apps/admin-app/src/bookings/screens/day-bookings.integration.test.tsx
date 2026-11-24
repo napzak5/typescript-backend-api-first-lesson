@@ -32,7 +32,7 @@ import {
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../../__tests__/screens'
+import { openAs, REST_UNREAD, renderAt } from '../../__tests__/screens'
 import {
   customerIdOf,
   staffRemovedMeanwhile,
@@ -55,10 +55,6 @@ const rowsOfDay = async (day: string): Promise<string[][]> =>
       name: `${dayNameOf(day).ja}の予約`,
     }),
   )
-
-/** What is said below a list whose next page did not come. */
-const NEXT_UNREAD =
-  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
 
 /** Opens the bookings of a day of the Tokyo salon, signed in as `email`. */
 const openDay = async (days: number, email = OWNER): Promise<string> => {
@@ -678,7 +674,7 @@ describe('the bookings of a salon, against the API', () => {
       const day = await openDay(20)
       expect(await rowsOfDay(day)).toHaveLength(50)
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(await rowsOfDay(day)).toHaveLength(50)
       await restore()
 
@@ -699,7 +695,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(await rowsOfDay(day)).toHaveLength(50)
       await takeAway('bookings')
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(await rowsOfDay(day)).toHaveLength(50)
       await giveBack('bookings')
 
@@ -725,7 +721,7 @@ describe('the bookings of a salon, against the API', () => {
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
       // Assert
-      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(await rowsOfDay(day)).toHaveLength(50)
 
       // Act

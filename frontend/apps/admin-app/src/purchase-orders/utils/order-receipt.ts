@@ -102,10 +102,16 @@ export const readOrderReceipt = (
         row.type === 'wrong' ? Object.entries(row.errors) : [],
       ),
     ),
+    // Said at the first item: the form is shown with one at least
     ...(read.every((row) => row.type === 'notReceived')
-      ? {
-          [receivedControlOf(items[0]?.inventoryId ?? '')]: ERRORS.noneReceived,
-        }
+      ? Object.fromEntries(
+          items
+            .slice(0, 1)
+            .map(({ inventoryId }) => [
+              receivedControlOf(inventoryId),
+              ERRORS.noneReceived,
+            ]),
+        )
       : {}),
     ...(notes === null && kept !== null
       ? { deliveryNotes: ERRORS.notesKept }

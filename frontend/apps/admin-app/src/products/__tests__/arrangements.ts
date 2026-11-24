@@ -127,6 +127,15 @@ export const droppedMeanwhile = async (
   )
 }
 
+/** Lets the salon have removed every product of its ledger, as the API removes one. */
+export const everyProductRemoved = async (salon: string): Promise<void> => {
+  await testApi().query(
+    `update products p set "deletedAt" = now(), "updatedAt" = now()
+     from salons s where s.id = p."salonId" and s.name = $1`,
+    [salon],
+  )
+}
+
 /** Lets somebody else have removed a product meanwhile, as the API removes it. */
 export const removedMeanwhile = async (
   salon: string,

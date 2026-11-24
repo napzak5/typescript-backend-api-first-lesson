@@ -1,3 +1,4 @@
+import type { ModelsProductUpdateRequest } from '@beauty-salon-frontend/api-client'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { ProductRemoval } from '../api/products-api'
@@ -423,6 +424,111 @@ describe('readProductChange', () => {
     })
   })
 
+  it.each<
+    [
+      string,
+      Record<string, string>,
+      readonly string[],
+      ModelsProductUpdateRequest,
+    ]
+  >([
+    [
+      'the code',
+      { productCode: 'SHMP002' },
+      SHAMPOO_CHECKED,
+      { productCode: 'SHMP002' },
+    ],
+    [
+      'the name',
+      { name: 'シャンプー 1L' },
+      SHAMPOO_CHECKED,
+      { name: 'シャンプー 1L' },
+    ],
+    [
+      'the description',
+      { description: '' },
+      SHAMPOO_CHECKED,
+      { description: null },
+    ],
+    [
+      'the category',
+      { category: 'ヘアカラー' },
+      SHAMPOO_CHECKED,
+      { category: 'ヘアカラー' },
+    ],
+    [
+      'the purchase price',
+      { purchasePrice: '1600' },
+      SHAMPOO_CHECKED,
+      { purchasePrice: 1600 },
+    ],
+    [
+      'the list price',
+      { retailPrice: '3600' },
+      SHAMPOO_CHECKED,
+      { retailPrice: 3600 },
+    ],
+    ['the unit', { unit: '個' }, SHAMPOO_CHECKED, { unit: '個' }],
+    [
+      'the maximum stock',
+      { maximumStock: '60' },
+      SHAMPOO_CHECKED,
+      { maximumStock: 60 },
+    ],
+    [
+      'the code of the supplier',
+      { supplierProductCode: '' },
+      SHAMPOO_CHECKED,
+      { supplierProductCode: null },
+    ],
+    [
+      'the days until delivery',
+      { leadTimeDays: '5' },
+      SHAMPOO_CHECKED,
+      { leadTimeDays: 5 },
+    ],
+    [
+      'the address of the image',
+      { imageUrl: '' },
+      SHAMPOO_CHECKED,
+      { imageUrl: null },
+    ],
+    ['the barcode', { barcode: '' }, SHAMPOO_CHECKED, { barcode: null }],
+    [
+      'whether it is sold',
+      {},
+      ['isForTreatment', 'isActive'],
+      { isForSale: false },
+    ],
+    [
+      'the months until it expires',
+      { expiryMonths: '24' },
+      SHAMPOO_CHECKED,
+      { expiryMonths: 24 },
+    ],
+    [
+      'how it is kept',
+      { storageConditions: '' },
+      SHAMPOO_CHECKED,
+      { storageConditions: null },
+    ],
+    [
+      'the address of the safety data sheet',
+      { safetyDataSheet: '' },
+      SHAMPOO_CHECKED,
+      { safetyDataSheet: null },
+    ],
+  ])(
+    'should send %s alone when it alone was changed',
+    (_, changes, checked, sent) => {
+      // Act
+      const read = readProductChange(shampooFormOf(changes, checked), shampoo)
+
+      // Assert
+      expect(read).toEqual({ type: 'valid', value: sent })
+    },
+  )
+
   it('should take a form sent as it was opened for no change', () => {
     // Assert
     expect(readProductChange(shampooFormOf(), shampoo)).toEqual({
@@ -506,6 +612,97 @@ describe('afterProductWrite', () => {
         imageUrl: {
           en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
           ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
+      },
+    })
+  })
+
+  it('should say at each other control what it takes, the levels compared with one another, and a value of a control without words of its own as refused', () => {
+    // Act
+    const said = afterProductWrite({
+      type: 'invalid',
+      values: [
+        { field: 'name', rule: 'too_big' },
+        { field: 'category', rule: 'too_big' },
+        { field: 'brand', rule: 'too_big' },
+        { field: 'unit', rule: 'too_small' },
+        { field: 'purchasePrice', rule: 'too_small' },
+        { field: 'retailPrice', rule: 'too_small' },
+        { field: 'minimumStock', rule: 'too_big' },
+        { field: 'reorderPoint', rule: 'too_big' },
+        { field: 'maximumStock', rule: 'too_big' },
+        { field: 'supplier', rule: 'too_big' },
+        { field: 'supplierProductCode', rule: 'too_big' },
+        { field: 'leadTimeDays', rule: 'too_small' },
+        { field: 'barcode', rule: 'too_big' },
+        { field: 'expiryMonths', rule: 'too_small' },
+        { field: 'description', rule: 'too_big' },
+      ],
+    })
+
+    // Assert
+    expect(said).toEqual({
+      message: undefined,
+      errors: {
+        name: {
+          en: 'Product name: enter 1 to 255 characters.',
+          ja: '商品名を、255 文字以内で入力してください。',
+        },
+        category: {
+          en: 'Category: enter up to 100 characters.',
+          ja: 'カテゴリーは、100 文字以内で入力してください。',
+        },
+        brand: {
+          en: 'Brand: enter up to 100 characters.',
+          ja: 'ブランドは、100 文字以内で入力してください。',
+        },
+        unit: {
+          en: 'Unit: enter 1 to 20 characters.',
+          ja: '単位を、20 文字以内で入力してください。',
+        },
+        purchasePrice: {
+          en: 'Enter the purchase price as a whole number of yen from 0.',
+          ja: '仕入価格は、0 以上の円の整数で入力してください。',
+        },
+        retailPrice: {
+          en: 'Enter the list price as a whole number of yen from 0.',
+          ja: '定価は、0 以上の円の整数で入力してください。',
+        },
+        minimumStock: {
+          en: 'Enter the minimum stock as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '最低在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
+        reorderPoint: {
+          en: 'Enter the reorder point as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '発注点は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
+        maximumStock: {
+          en: 'Enter the maximum stock as a number from 0 to 99,999,999.99, with up to 2 decimal places.',
+          ja: '最大在庫数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+        },
+        supplier: {
+          en: 'Supplier: enter up to 255 characters.',
+          ja: '仕入先は、255 文字以内で入力してください。',
+        },
+        supplierProductCode: {
+          en: 'Supplier product code: enter up to 100 characters.',
+          ja: '仕入先の商品コードは、100 文字以内で入力してください。',
+        },
+        leadTimeDays: {
+          en: 'Enter the lead time as a whole number of days from 0.',
+          ja: '納品までの日数は、0 以上の整数で入力してください。',
+        },
+        barcode: {
+          en: 'Barcode: enter up to 100 characters.',
+          ja: 'バーコードは、100 文字以内で入力してください。',
+        },
+        expiryMonths: {
+          en: 'Enter the months to expiry as a whole number from 1.',
+          ja: '使用期限までの月数は、1 以上の整数で入力してください。',
+        },
+        description: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
         },
       },
     })

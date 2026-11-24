@@ -1,3 +1,4 @@
+import type { ModelsProductCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
   asked,
@@ -29,6 +30,34 @@ import {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
+
+/** A product to add, with nothing but what it must have */
+const OIL: ModelsProductCreateRequest = {
+  productCode: 'OIL001',
+  name: 'ヘアオイル',
+  description: null,
+  category: null,
+  brand: null,
+  purchasePrice: null,
+  retailPrice: null,
+  salonPrice: null,
+  unit: '本',
+  minimumStock: 0,
+  maximumStock: null,
+  reorderPoint: null,
+  supplier: null,
+  supplierProductCode: null,
+  leadTimeDays: null,
+  imageUrl: null,
+  barcode: null,
+  isForSale: true,
+  isForTreatment: false,
+  requiresLotTracking: false,
+  expiryMonths: null,
+  storageConditions: null,
+  safetyDataSheet: null,
+  isActive: true,
+}
 
 describe('readProducts', () => {
   it('should read the products of the salon to their end in their largest pages', async () => {
@@ -64,6 +93,17 @@ describe('readProducts', () => {
 
     // Assert
     expect(read).toEqual({ type: 'failed' })
+  })
+
+  it('should say that the salon is not found after it was removed', async () => {
+    // Arrange: the screens read the products together with what else they show, and a salon removed between the two reads cannot be arranged
+    answering(() => problem(404))
+
+    // Act
+    const read = await readProducts(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type: 'notFound' })
   })
 
   it.each(UNREAD)('should read nothing after %s', async (_, answer, type) => {
@@ -153,6 +193,20 @@ describe('readProduct', () => {
 })
 
 describe('addProduct', () => {
+  it('should name the values the API refused', async () => {
+    // Arrange: the form checks every value before it sends, as the API does
+    answering(() => problem(400, [{ field: 'name', rule: 'too_big' }]))
+
+    // Act
+    const written = await addProduct(salon.id, OIL)
+
+    // Assert
+    expect(written).toEqual({
+      type: 'invalid',
+      values: [{ field: 'name', rule: 'too_big' }],
+    })
+  })
+
   it.each(UNWRITTEN)(
     'should add no product after %s',
     async (_, given, type) => {
@@ -160,32 +214,7 @@ describe('addProduct', () => {
       answering(given)
 
       // Act
-      const written = await addProduct(salon.id, {
-        productCode: 'OIL001',
-        name: 'ヘアオイル',
-        description: null,
-        category: null,
-        brand: null,
-        purchasePrice: null,
-        retailPrice: null,
-        salonPrice: null,
-        unit: '本',
-        minimumStock: 0,
-        maximumStock: null,
-        reorderPoint: null,
-        supplier: null,
-        supplierProductCode: null,
-        leadTimeDays: null,
-        imageUrl: null,
-        barcode: null,
-        isForSale: true,
-        isForTreatment: false,
-        requiresLotTracking: false,
-        expiryMonths: null,
-        storageConditions: null,
-        safetyDataSheet: null,
-        isActive: true,
-      })
+      const written = await addProduct(salon.id, OIL)
 
       // Assert
       expect(written).toEqual({ type })

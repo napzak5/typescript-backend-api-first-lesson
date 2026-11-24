@@ -31,7 +31,7 @@ import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { REST_UNREAD, renderAt } from '../../__tests__/screens'
 import { arrange } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
@@ -451,9 +451,7 @@ describe('the points of customers, against the API', () => {
       await screen.findByRole('table', { name: 'ポイントの履歴' })
       await takeAway('customer_points')
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      )
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(historyShown()).toHaveLength(20)
       await giveBack('customer_points')
 

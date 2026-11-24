@@ -46,6 +46,7 @@ import {
   storedRowsOf,
 } from '../__tests__/arrangements'
 import {
+  NOT_THEIRS,
   openedChange,
   openedRow,
   openedStock,
@@ -813,11 +814,7 @@ describe('the stock screens', () => {
     await openAs(inventoryHrefOf(await salonIdOf(OSAKA)), MANAGER)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このサロンの在庫は、見られません。在庫を見られるのは、そのサロンのスタッフと、管理者です。',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(NOT_THEIRS)).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

@@ -26,6 +26,7 @@ import {
   orderMovedTo,
   storedOrderOf,
 } from '../__tests__/arrangements'
+import { openOrderAs, orderAt, REASON, SAVE } from '../__tests__/screens'
 
 /*
  * The status of a purchase order and what is written down on it as it
@@ -37,19 +38,6 @@ import {
  * orders; its stylist moves them on and writes on them. Somebody did
  * something meanwhile where a test says so.
  */
-
-/** The address of an order of the salon in Tokyo, by its number */
-const orderAt = async (orderNumber: string): Promise<string> =>
-  purchaseOrderHrefOf(await salonIdOf(TOKYO), await orderIdOf(orderNumber))
-
-/** Opens an order, and waits for its status. */
-const openOrderAs = async (
-  orderNumber: string,
-  email: string,
-): Promise<void> => {
-  await openAs(await orderAt(orderNumber), email)
-  await heading(`発注 ${orderNumber}`)
-}
 
 const STATUS = '状態'
 
@@ -70,11 +58,7 @@ const termOf = (term: string): string | undefined =>
 
 const dialog = (): HTMLElement => screen.getByRole('dialog')
 
-const REASON = '取り消す理由'
-
 const CHANGE = '納品予定日とメモを直す'
-
-const SAVE = '変更を保存する'
 
 const APPROVERS_ONLY =
   '発注を承認し、取り消せるのは、サロンのオーナーとマネージャーと、管理者です。'

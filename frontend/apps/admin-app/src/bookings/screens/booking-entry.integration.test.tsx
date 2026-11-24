@@ -40,7 +40,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { openAs, renderAt } from '../../__tests__/screens'
+import { openAs, REST_UNREAD, renderAt } from '../../__tests__/screens'
 import {
   arrangeCrowd,
   customerIdOf,
@@ -297,9 +297,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await waitFor(() => expect(crowd()).toHaveLength(20))
       await takeAway('customers')
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      )
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(crowd()).toHaveLength(20)
       await giveBack('customers')
 

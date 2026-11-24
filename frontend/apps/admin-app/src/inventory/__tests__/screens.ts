@@ -67,7 +67,3 @@ export const openedAlerts = async (caption = ALERTS): Promise<void> => {
 /** What a screen of the stock tells an account that does not work at the salon, or no longer does */
 export const NOT_THEIRS =
   'このサロンの在庫は、見られません。在庫を見られるのは、そのサロンのスタッフと、管理者です。'
-
-/** What a list of the stock says of a page after the first that did not come */
-export const REST_UNREAD =
-  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'

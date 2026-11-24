@@ -23,6 +23,7 @@ import {
 } from '../../customers/__tests__/arrangements'
 import { stockRowChangeHrefOf, stockRowHrefOf } from '../../navigation'
 import { productIdOf } from '../../products/__tests__/arrangements'
+import { PRODUCTS_UNREAD } from '../../products/__tests__/screens'
 import {
   anotherRow,
   displayNameOf,
@@ -130,11 +131,7 @@ describe('a stock row and its change, when something fails or changes meanwhile,
         hrefOf(await salonIdOf(TOKYO), await rowIdOf(TOKYO, 'COLOR001')),
         OWNER,
       )
-      expect(
-        await screen.findByText(
-          '商品を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-        ),
-      ).toBeVisible()
+      expect(await screen.findByText(PRODUCTS_UNREAD)).toBeVisible()
       await readable()
 
       // Act

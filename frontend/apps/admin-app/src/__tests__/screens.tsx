@@ -12,6 +12,10 @@ import { App } from '../App'
  * screen is in `@beauty-salon-frontend/testing/screens`.
  */
 
+/** What a list says of a page after the first that did not come */
+export const REST_UNREAD =
+  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
+
 /** The application at an address. */
 export const renderAt = (path: string, options?: ApplicationAt): RenderResult =>
   renderApplicationAt(<App />, path, options)
