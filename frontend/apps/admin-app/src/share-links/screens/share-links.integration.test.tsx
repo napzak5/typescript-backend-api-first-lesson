@@ -978,6 +978,8 @@ describe('the share links of a file on a page in English', () => {
 
     // Assert
     expect(await screen.findByText('Revoked the share link.')).toBeVisible()
+    await heading(CONSENT)
+    expect(address()).toBe(attachmentHrefOf(file.salonId, file.attachmentId))
     expect(
       await within(englishLinksPart()).findByText('No share links'),
     ).toBeVisible()
