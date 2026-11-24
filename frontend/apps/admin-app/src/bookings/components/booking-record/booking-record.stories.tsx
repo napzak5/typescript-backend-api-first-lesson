@@ -90,7 +90,7 @@ export const Completed: Story = {
   },
 }
 
-/** A booking that was cancelled, of a customer who was removed since */
+/** A booking that was cancelled, of a customer, a member and a service the salon has no more */
 export const Cancelled: Story = {
   args: {
     booking: aBooking({
@@ -99,6 +99,11 @@ export const Cancelled: Story = {
       cancellationReason: '体調不良のため',
       cancellationFee: 0,
       staffId: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9e09',
+      services: aBooking().services.map((line) => ({
+        ...line,
+        serviceId: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9f09',
+        staffId: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9e09',
+      })),
     }),
     customer: null,
   },

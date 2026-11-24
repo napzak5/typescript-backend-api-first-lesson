@@ -1,4 +1,7 @@
-import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsBookingResponse,
+  ModelsBookingStatusType,
+} from '@beauty-salon-frontend/api-client'
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
@@ -217,7 +220,7 @@ const DONE: [StatusAction, LocalizedText][] = [
   ],
 ]
 
-const NOT_DONE: [string, StatusChange, ChangeSays][] = [
+const NOT_DONE: [string, StatusChange, ChangeSays<ModelsBookingResponse>][] = [
   [
     'a booking that changed elsewhere',
     { type: 'conflict' },
@@ -250,11 +253,18 @@ const NOT_DONE: [string, StatusChange, ChangeSays][] = [
 ]
 
 describe('afterChange', () => {
-  it.each(DONE)('should say that %s was done', (action, message) => {
-    expect(
-      afterChange({ type: 'changed', booking: aBooking() }, action),
-    ).toEqual({ type: 'done', message })
-  })
+  it.each(DONE)(
+    'should say that %s was done, with the booking as it is now',
+    (action, message) => {
+      const booking = aBooking()
+
+      expect(afterChange({ type: 'changed', booking }, action)).toEqual({
+        type: 'done',
+        message,
+        now: booking,
+      })
+    },
+  )
 
   it.each(NOT_DONE)('should say what follows %s', (_case, outcome, says) => {
     expect(afterChange(outcome, 'cancel')).toEqual(says)

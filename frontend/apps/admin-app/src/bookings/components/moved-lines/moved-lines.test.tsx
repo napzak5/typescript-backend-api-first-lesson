@@ -28,6 +28,16 @@ describe('MovedLines', () => {
     ])
   })
 
+  it('should say that the service and the member of a line are gone', async () => {
+    // Act
+    await stories.OfWhatIsGone.run()
+
+    // Assert
+    expect(linesSaid()).toEqual([
+      '明細 1 削除されたメニュー11:00〜12:00 担当 一覧にないスタッフ',
+    ])
+  })
+
   it('should say under each line what was found out about its member', async () => {
     // Act
     await stories.Taken.run()

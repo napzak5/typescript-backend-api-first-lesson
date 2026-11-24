@@ -91,12 +91,11 @@ export const BookingLineRecord = ({
           },
           {
             term: say(WORDS.completed),
+            // The database keeps a line that was done with when it was recorded
             description: say(
-              line.isCompleted
-                ? line.completedAt === null
-                  ? WORDS.done
-                  : WORDS.doneAt(momentNameAt(line.completedAt, timezone))
-                : WORDS.notDone,
+              line.completedAt === null
+                ? WORDS.notDone
+                : WORDS.doneAt(momentNameAt(line.completedAt, timezone)),
             ),
           },
           { term: say(WORDS.notes), description: line.notes },

@@ -2,6 +2,7 @@ import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsOrderStatusType,
   ModelsPurchaseOrderCancelRequest,
+  ModelsPurchaseOrderResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
   type FormErrors,
@@ -119,12 +120,13 @@ export const afterOrderStep = (
   outcome: OrderStep,
   action: OrderAction,
   orderNumber: string,
-): ChangeSays =>
+): ChangeSays<ModelsPurchaseOrderResponse> =>
   match(outcome)
-    .returnType<ChangeSays>()
-    .with({ type: 'changed' }, () => ({
+    .returnType<ChangeSays<ModelsPurchaseOrderResponse>>()
+    .with({ type: 'changed' }, ({ order }) => ({
       type: 'done',
       message: STATUS.done[action](orderNumber),
+      now: order,
     }))
     .with({ type: 'conflict' }, () => ({
       type: 'changed',

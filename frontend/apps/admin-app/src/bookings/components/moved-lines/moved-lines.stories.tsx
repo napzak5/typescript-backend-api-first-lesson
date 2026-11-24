@@ -56,6 +56,17 @@ type Story = StoryObj<typeof meta>
 /** Where the lines would be: an hour later, the first with another member, the second with nobody */
 export const Moved: Story = {}
 
+/** A line of a service the menu no longer has, by a member the salon no longer shows */
+export const OfWhatIsGone: Story = {
+  args: {
+    lines: (meta.args?.lines ?? []).slice(0, 1).map((line) => ({
+      ...line,
+      serviceId: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9f09',
+      staffId: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9e09',
+    })),
+  },
+}
+
 /** The API refused the move: the member of the first line is taken by another booking */
 export const Taken: Story = {
   args: {
