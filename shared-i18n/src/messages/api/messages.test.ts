@@ -27,6 +27,9 @@ import {
 
 const FOUND = messagesOf(catalogues, '')
 
+/** The catalogues whose messages that are made from a value are tested in a file of their own, beside the catalogue (`mails.test.ts`) */
+const TESTED_APART = ['mailMessages']
+
 /** Every message that is made from a value, with a value and what it then says. */
 const MADE: [string, LocalizedText, LocalizedText][] = [
   [
@@ -622,7 +625,11 @@ describe('the messages of the API', () => {
   it('should have a value in this test for every message that is made from one', () => {
     // Assert
     expect(MADE.map(([where]) => where).toSorted()).toEqual(
-      FOUND.made.toSorted(),
+      FOUND.made
+        .filter(
+          (where) => !TESTED_APART.some((name) => where.startsWith(`${name}.`)),
+        )
+        .toSorted(),
     )
   })
 
