@@ -13,6 +13,7 @@ import { openAs } from '../../__tests__/screens'
 import { madeStaffMeanwhile } from '../../customers/__tests__/arrangements'
 import { stockCountHrefOf, stockValueHrefOf } from '../../navigation'
 import { productIdOf } from '../../products/__tests__/arrangements'
+import { PRODUCTS_UNREAD } from '../../products/__tests__/screens'
 import { countsOf, rowIdOf } from '../__tests__/arrangements'
 import { openedCount, openedValue } from '../__tests__/screens'
 
@@ -70,11 +71,7 @@ describe('the count and the value of the stock, when something fails or changes 
         await productIdOf(TOKYO, 'COLOR001'),
       )
       await openAs(stockCountHrefOf(await salonIdOf(TOKYO)), OWNER)
-      expect(
-        await screen.findByText(
-          '商品を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-        ),
-      ).toBeVisible()
+      expect(await screen.findByText(PRODUCTS_UNREAD)).toBeVisible()
       await readable()
 
       // Act

@@ -14,7 +14,7 @@ import {
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs } from '../../__tests__/screens'
+import { openAs, REST_UNREAD } from '../../__tests__/screens'
 import { salonRemovedMeanwhile } from '../../bookings/__tests__/arrangements'
 import {
   madeStaffMeanwhile,
@@ -22,6 +22,7 @@ import {
 } from '../../customers/__tests__/arrangements'
 import { inventoryHrefOf, stockEntryHrefOf } from '../../navigation'
 import { productIdOf } from '../../products/__tests__/arrangements'
+import { PRODUCTS_UNREAD } from '../../products/__tests__/screens'
 import {
   anotherRow,
   carriesNothing,
@@ -30,11 +31,7 @@ import {
   rowIdOf,
   storedRowsOf,
 } from '../__tests__/arrangements'
-import {
-  openedStock,
-  openedStockEntry,
-  REST_UNREAD,
-} from '../__tests__/screens'
+import { openedStock, openedStockEntry } from '../__tests__/screens'
 
 /*
  * The stock of a salon and the form of a new row when a request fails,
@@ -140,11 +137,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
         await productIdOf(TOKYO, 'COLOR001'),
       )
       await openAs(inventoryHrefOf(await salonIdOf(TOKYO)), OWNER)
-      expect(
-        await screen.findByText(
-          '商品を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-        ),
-      ).toBeVisible()
+      expect(await screen.findByText(PRODUCTS_UNREAD)).toBeVisible()
       await readable()
 
       // Act
@@ -238,11 +231,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
         await productIdOf(TOKYO, 'COLOR001'),
       )
       await openAs(stockEntryHrefOf(await salonIdOf(TOKYO)), OWNER)
-      expect(
-        await screen.findByText(
-          '商品を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-        ),
-      ).toBeVisible()
+      expect(await screen.findByText(PRODUCTS_UNREAD)).toBeVisible()
       await readable()
 
       // Act

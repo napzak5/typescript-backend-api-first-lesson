@@ -10,7 +10,7 @@ import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs } from '../../__tests__/screens'
+import { openAs, REST_UNREAD } from '../../__tests__/screens'
 import { staffRemovedMeanwhile } from '../../customers/__tests__/arrangements'
 import { stockAlertsHrefOf } from '../../navigation'
 import {
@@ -20,7 +20,7 @@ import {
   padAlertsOf,
   rowIdOf,
 } from '../__tests__/arrangements'
-import { ALERTS, openedAlerts, REST_UNREAD } from '../__tests__/screens'
+import { ALERTS, openedAlerts } from '../__tests__/screens'
 
 /*
  * The alerts of the stock when a request fails, and when the account

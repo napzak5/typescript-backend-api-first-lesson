@@ -36,7 +36,7 @@ import {
   rowIdOf,
   usedUpMeanwhile,
 } from '../__tests__/arrangements'
-import { ALERTS, openedAlerts } from '../__tests__/screens'
+import { ALERTS, NOT_THEIRS, openedAlerts } from '../__tests__/screens'
 import { expiryNameOf } from '../utils/stock-format'
 
 /*
@@ -534,11 +534,7 @@ describe('the screen of the alerts of the stock', () => {
     await openAs(stockAlertsHrefOf(await salonIdOf(OSAKA)), STYLIST)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このサロンの在庫は、見られません。在庫を見られるのは、そのサロンのスタッフと、管理者です。',
-      ),
-    ).toBeVisible()
+    expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
     expect(screen.queryByRole('table')).toBeNull()
     expect(within(screen.getByRole('main')).queryByRole('combobox')).toBeNull()
   })

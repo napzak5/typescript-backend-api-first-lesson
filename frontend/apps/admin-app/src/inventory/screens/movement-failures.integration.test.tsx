@@ -12,7 +12,7 @@ import { MANAGER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs } from '../../__tests__/screens'
+import { openAs, REST_UNREAD } from '../../__tests__/screens'
 import {
   madeStaffMeanwhile,
   staffRemovedMeanwhile,
@@ -30,7 +30,6 @@ import {
   NOT_THEIRS,
   openedHistory,
   openedMovementEntry,
-  REST_UNREAD,
 } from '../__tests__/screens'
 
 /*

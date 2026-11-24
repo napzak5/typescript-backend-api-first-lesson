@@ -39,6 +39,14 @@ import {
   storedItemsOf,
   storedOrdersOf,
 } from '../__tests__/arrangements'
+import {
+  ENTRY,
+  NOT_THEIRS,
+  ORDERS,
+  ofRow,
+  openedEntry,
+  openedOrders,
+} from '../__tests__/screens'
 
 /*
  * The purchase orders, against the API. The salon in Tokyo of the seed
@@ -52,35 +60,11 @@ import {
  * test says so.
  */
 
-const ORDERS = '発注'
-
 const NARROWED = '条件に合う発注'
-
-const ENTRY = '発注を作る'
-
-/** Waits for the orders: the heading comes first, the table once the orders were read. */
-const openedOrders = async (caption = ORDERS): Promise<void> => {
-  await heading(ORDERS)
-  await screen.findByRole('table', { name: caption })
-}
 
 const POWDER = 'Lightening Powder 500g'
 const COLOUR = 'Hair Color - Natural Brown'
 const SHAMPOO = 'Professional Shampoo 500ml'
-
-/** The group of the controls of the row of a product, named by the product and the lot the seed drew */
-const rowOf = (product: string): HTMLElement =>
-  screen.getByRole('group', { name: new RegExp(`^${product}（`) })
-
-/** A control of the row of a product */
-const ofRow = (product: string, label: string): HTMLElement =>
-  within(rowOf(product)).getByRole('textbox', { name: label })
-
-/** Waits for the form of a new order: its heading comes first, the rows once they were read. */
-const openedEntry = async (): Promise<void> => {
-  await heading(ENTRY)
-  await screen.findByRole('group', { name: new RegExp(`^${POWDER}（`) })
-}
 
 /** What the statuses of the screen say: how many orders the table shows among them */
 const statuses = (): (string | null)[] =>
@@ -634,13 +618,13 @@ describe('the screens of the purchase orders', () => {
       'the orders of another salon',
       async () => purchaseOrdersHrefOf(await salonIdOf(OSAKA)),
       STYLIST,
-      'このサロンの発注は、見られません。発注を見られるのは、そのサロンのスタッフと、管理者です。',
+      NOT_THEIRS,
     ],
     [
       'a new order of another salon',
       async () => purchaseOrderEntryHrefOf(await salonIdOf(OSAKA)),
       MANAGER,
-      'このサロンの発注は、見られません。発注を見られるのは、そのサロンのスタッフと、管理者です。',
+      NOT_THEIRS,
     ],
     [
       'an order at the address of another salon',

@@ -34,6 +34,12 @@ import {
   reorderPointChangedMeanwhile,
   storedProductsOf,
 } from '../__tests__/arrangements'
+import {
+  NOT_THEIRS,
+  openedForm,
+  openedLedger,
+  openedProduct,
+} from '../__tests__/screens'
 
 /*
  * The product ledger of a salon, read and kept against the API. The salon
@@ -42,24 +48,6 @@ import {
  * stylist reads them. Somebody did something meanwhile where a test says
  * so.
  */
-
-/** Waits for the ledger: its heading comes first, the table once the products were read. */
-const openedLedger = async (caption = '商品台帳'): Promise<void> => {
-  await heading('商品台帳')
-  await screen.findByRole('table', { name: caption })
-}
-
-/** Waits for a product: its heading comes first, the record once the product was read. */
-const openedProduct = async (): Promise<void> => {
-  await heading('商品の内容')
-  await screen.findByRole('region', { name: '価格' })
-}
-
-/** Waits for a form: its heading comes first, the form once what it needs was read. */
-const openedForm = async (title: string): Promise<void> => {
-  await heading(title)
-  await screen.findByRole('textbox', { name: /^商品コード/ })
-}
 
 /** What a card of the record of a product says, term by term. */
 const terms = (card: string): [string, string][] =>
@@ -721,11 +709,7 @@ describe('the product ledger of a salon, against the API', () => {
       )
 
       // Assert
-      expect(
-        await screen.findByText(
-          'このサロンの商品は、見られません。商品を見られるのは、そのサロンのスタッフと、管理者です。',
-        ),
-      ).toBeInTheDocument()
+      expect(await screen.findByText(NOT_THEIRS)).toBeInTheDocument()
       expect(screen.queryByRole('table')).not.toBeInTheDocument()
     },
   )

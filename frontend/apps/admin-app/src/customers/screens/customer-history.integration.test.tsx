@@ -37,7 +37,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest'
-import { openAs } from '../../__tests__/screens'
+import { openAs, REST_UNREAD } from '../../__tests__/screens'
 import {
   changedMeanwhile,
   customerIdOf,
@@ -596,9 +596,7 @@ describe('removing customers, bringing them back, and their history, against the
       await screen.findByRole('table', { name: '版の一覧' })
       await takeAway('customer_versions')
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      )
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(versionsShown()).toHaveLength(20)
       await giveBack('customer_versions')
 

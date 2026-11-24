@@ -12,7 +12,7 @@ import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs } from '../../__tests__/screens'
+import { openAs, REST_UNREAD } from '../../__tests__/screens'
 import { staffRemovedMeanwhile } from '../../customers/__tests__/arrangements'
 import { arrangeCounterSales, arrangeVisit } from '../__tests__/arrangements'
 import { openAt } from '../__tests__/screens'
@@ -73,11 +73,7 @@ describe('the ledger of the sales, a page at a time and when a request fails, ag
     await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
     // Assert
-    expect(
-      await screen.findByText(
-        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    ).toBeVisible()
+    expect(await screen.findByText(REST_UNREAD)).toBeVisible()
     expect(await numbersListed()).toHaveLength(50)
 
     // Act
@@ -103,11 +99,7 @@ describe('the ledger of the sales, a page at a time and when a request fails, ag
     await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
     // Assert
-    expect(
-      await screen.findByText(
-        '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    ).toBeVisible()
+    expect(await screen.findByText(REST_UNREAD)).toBeVisible()
     expect(await numbersListed()).toHaveLength(50)
   })
 

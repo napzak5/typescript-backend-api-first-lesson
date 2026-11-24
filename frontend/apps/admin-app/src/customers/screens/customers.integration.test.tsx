@@ -35,7 +35,7 @@ import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../../__tests__/screens'
+import { openAs, REST_UNREAD, renderAt } from '../../__tests__/screens'
 import { arrange } from '../../bookings/__tests__/arrangements'
 import {
   arrangeCustomers,
@@ -129,10 +129,6 @@ const chooseReferrer = async (
 /** What is said of what could not be read, by what it is */
 const unread = (what: string): string =>
   `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
-
-/** What is said when the next page of a list could not be read */
-const NEXT_UNREAD =
-  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
 
 /** Lets a row of the customers be one the API cannot answer with; what it returns gives the row back. */
 const unreadableCustomer = async (email: string) =>
@@ -407,7 +403,7 @@ describe('the ledger of the customers, against the API', () => {
       await theLedger('条件に合うお客様')
       await takeAway('customers')
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
-      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await screen.findByRole('alert')).toHaveTextContent(REST_UNREAD)
       expect(rowsOf('条件に合うお客様')).toHaveLength(20)
       await giveBack('customers')
 
@@ -620,7 +616,7 @@ describe('the ledger of the customers, against the API', () => {
       )
       expect(
         await within(referrerDialog()).findByRole('alert'),
-      ).toHaveTextContent(NEXT_UNREAD)
+      ).toHaveTextContent(REST_UNREAD)
       expect(found()).toHaveLength(20)
       await giveBack('customers')
 

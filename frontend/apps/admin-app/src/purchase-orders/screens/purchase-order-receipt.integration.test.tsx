@@ -44,6 +44,7 @@ import {
   storedOrderOf,
   storedOrdersOf,
 } from '../__tests__/arrangements'
+import { openReceiptAs, RECEIVE, receiptAt } from '../__tests__/screens'
 
 /*
  * The goods that come for a purchase order, and the suggestions of what
@@ -57,27 +58,12 @@ import {
  * says so.
  */
 
-/** The address of the receipt of an order of the salon in Tokyo, by its number */
-const receiptAt = async (orderNumber: string): Promise<string> =>
-  orderReceiptHrefOf(await salonIdOf(TOKYO), await orderIdOf(orderNumber))
-
-/** Opens the receipt of an order, and waits for its form. */
-const openReceiptAs = async (
-  orderNumber: string,
-  email: string,
-): Promise<void> => {
-  await openAs(await receiptAt(orderNumber), email)
-  await screen.findByRole('group', { name: '届いた数量' })
-}
-
 const box = (name: string | RegExp): HTMLElement =>
   screen.getByRole('textbox', { name })
 
 const MASK = 'TREAT001 Intensive Hair Mask 250ml'
 const SHAMPOO = 'SHMP001 Professional Shampoo 500ml'
 const CONDITIONER = 'COND001 Professional Conditioner 500ml'
-
-const RECEIVE = '入荷を記録する'
 
 /** The stock of the row of a product of the salon in Tokyo, as the database keeps it */
 const stockOf = async (productCode: string): Promise<string | undefined> =>
