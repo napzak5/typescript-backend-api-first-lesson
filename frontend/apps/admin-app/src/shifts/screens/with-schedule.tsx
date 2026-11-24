@@ -13,12 +13,12 @@ import type {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -34,6 +34,8 @@ import {
   type ScheduleRead,
   scheduleKeyOf,
 } from '../api/schedules-api'
+
+const { loading, member: MEMBER, names, record } = adminShiftMessages
 
 /** A member of the staff, and their schedule */
 export type ScheduleOf = {
@@ -157,29 +159,37 @@ const shownOf = (
 type ScheduleNotFoundProps = { salon: ModelsSalonResponse }
 
 /** What a screen of a schedule says when there is no member to show. */
-const ScheduleNotFound = ({ salon }: ScheduleNotFoundProps) => (
-  <>
-    <PageHeader
-      title='スタッフが見つかりません'
-      description='アドレスが正しいか、お確かめください。削除したスタッフは、表示できません。無効なスタッフの勤務スケジュールは、オーナーと管理者が、スタッフ台帳から開けます。'
-    />
-    <ButtonLink href={shiftsHrefOf(salon.id)}>シフトへ</ButtonLink>
-  </>
-)
+const ScheduleNotFound = ({ salon }: ScheduleNotFoundProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(MEMBER.notFound)}
+        description={say(MEMBER.notFoundDescription)}
+      />
+      <ButtonLink href={shiftsHrefOf(salon.id)}>
+        {say(record.toShifts)}
+      </ButtonLink>
+    </>
+  )
+}
 
 /** What an account is told that may not read a schedule. */
-const ScheduleForbidden = () => (
-  <>
-    <p>
-      この勤務スケジュールは、見られません。勤務スケジュールを見られるのは、そのサロンのオーナー、マネージャー、管理者と、そのスタッフ自身です。
-    </p>
-    <ButtonLink href='/'>トップへ戻る</ButtonLink>
-  </>
-)
+const ScheduleForbidden = () => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(MEMBER.forbidden)}</p>
+      <ButtonLink href='/'>{say(MEMBER.toStart)}</ButtonLink>
+    </>
+  )
+}
 
 export type WithScheduleProps = {
   salon: ModelsSalonResponse
-  /** The title of the screen */
+  /** The title of the screen, in the language of the page */
   title: string
   /**
    * Whether the screen shows the schedule only once it was read anew: a
@@ -207,6 +217,7 @@ export const WithSchedule = ({
   actions,
   children,
 }: WithScheduleProps) => {
+  const say = useSay()
   const { staffId = '' } = useParams()
   const member = useMember(salon.id, staffId)
   const schedule = useQuery({
@@ -227,7 +238,7 @@ export const WithSchedule = ({
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='勤務スケジュールを読み込んでいます' />
+        <LoadingIndicator label={say(loading.schedule)} />
       </>
     ))
     .with({ type: 'found' }, ({ schedule: found }) => (
@@ -237,12 +248,8 @@ export const WithSchedule = ({
           description={salon.name}
           actions={actions?.(found)}
         />
-        <p>{`${found.name} さん`}</p>
-        {!found.isActive && (
-          <p>
-            無効なスタッフです。有効に戻すまで、シフトには出ません。復帰の前に、勤務スケジュールを組んでおけます。
-          </p>
-        )}
+        <p>{say(MEMBER.called(found.name))}</p>
+        {!found.isActive && <p>{say(MEMBER.inactive)}</p>}
         {children(found)}
       </>
     ))
@@ -257,9 +264,7 @@ export const WithSchedule = ({
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('勤務スケジュール'), reason),
-          )}
+          message={say(unreadMessageOf(names.schedule, reason))}
           onRetry={() => {
             member.again()
             void schedule.refetch()

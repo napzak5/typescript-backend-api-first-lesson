@@ -438,9 +438,18 @@ In an area of an application that is done, the same rules hold, and:
   information and its hours in files of their own, the days of the week
   as `termMessages.dayOfWeek`), the products (`adminProductMessages`,
   its form in a file of its own), the charts (`adminChartMessages`, its
-  form and the allergies in files of their own) and the profile of the
+  form and the allergies in files of their own), the profile of the
   signed-in member (`adminProfileMessages`, which says the introduction
-  with `adminStaffMessages.introduction`).
+  with `adminStaffMessages.introduction`), the reviews
+  (`adminReviewMessages`, the answer of the salon in a file of its own),
+  the reports of reviews (`adminReviewReportMessages`, the reasons as
+  `termMessages.reviewReportReason`) and the shifts
+  (`adminShiftMessages`, the form of a schedule in a file of its own,
+  which says the errors of a break and the rows of dates with the
+  messages of `hoursForm` of the settings). The words of the reviews that
+  the portal and the admin application say alike (the sides of a visit,
+  the counts of the ratings, the orders of a list, the dialog of a
+  report) are `reviewMessages` of `messages/ui`.
   How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
@@ -478,12 +487,12 @@ In an area of an application that is done, the same rules hold, and:
   that are done (`'customers/components/customer-form'`), until the whole
   area is and its name takes their place (`'bookings'`, `'customers'`,
   `'charts'`, `'inventory'`, `'menu'`, `'own-profile'`,
-  `'payment-methods'`, `'products'`, `'purchase-orders'`, `'sales'`,
-  `'settings'`, `'staff'` and `'treatments'` of the admin application).
+  `'payment-methods'`, `'products'`, `'purchase-orders'`,
+  `'review-reports'`, `'reviews'`, `'sales'`, `'salons'`, `'settings'`,
+  `'shifts'`, `'staff'` and `'treatments'` of the admin application).
 - An area that is still written in Japanese says what it takes of an area
-  that is done with `inJapanese` (the shifts say the errors of a break
-  of the settings and the names of the days of the week of the terms so,
-  and the accounts of the staff `staffCalled` of the staff). An area that is done
+  that is done with `inJapanese` (the accounts of the staff say
+  `staffCalled` of the staff so). An area that is done
   hands on the strings of one that is not as they are. A type of an area
   that is done that one that is not uses takes the type of its texts as a
   parameter, with strings for the default. Once

@@ -1,3 +1,4 @@
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -57,7 +58,6 @@ export const Asking: Story = {
 export const WithdrawalFailed: Story = {
   args: {
     asking: true,
-    message:
-      '返信を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminReviewMessages.withdrawal.failed,
   },
 }

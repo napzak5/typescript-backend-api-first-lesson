@@ -1,3 +1,4 @@
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon, staff } from '../../../bookings/components/examples'
@@ -36,8 +37,6 @@ export const Narrowed: Story = {
 export const WithErrors: Story = {
   args: {
     conditions: {},
-    errors: {
-      max: '評価の上限は、下限と同じか、それより高くしてください。',
-    },
+    errors: { max: adminReviewMessages.list.rangeReversed },
   },
 }

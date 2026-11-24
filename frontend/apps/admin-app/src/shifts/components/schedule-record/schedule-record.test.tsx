@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as scheduleRecordStories from './schedule-record.stories'
 
 const stories = composeStories(scheduleRecordStories)
@@ -53,5 +54,59 @@ describe('ScheduleRecord', () => {
       ),
     ).toBeVisible()
     expect(screen.queryByText(/今日より前の日付の行が/)).toBeNull()
+  })
+})
+
+describe('ScheduleRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the hours of every day of the week and of the dates, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Whole.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('table', { name: 'Every week' }))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Day', 'Work', 'Break', 'Notes'])
+    expect(rowsOf('Every week')).toEqual([
+      ['Monday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Tuesday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Wednesday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Thursday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Friday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Saturday', '10:00–18:00', 'None', 'Not recorded'],
+      ['Sunday', 'Day off', '', '定休日'],
+    ])
+    expect(rowsOf('By date')).toEqual([
+      ['Sat, November 21, 2026', '12:00–18:00', 'None', '午前は講習'],
+    ])
+    expect(
+      screen.getByText('Also kept: 2 rows of dates before today.'),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a day without a row has no work, and that there are no dates', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(rowsOf('Every week').map((row) => row[1])).toEqual(
+      Array.from({ length: 7 }, () => 'Not working'),
+    )
+    expect(
+      within(screen.getByRole('table', { name: 'By date' })).getByText(
+        /^No dates from today on\./,
+      ),
+    ).toBeVisible()
   })
 })

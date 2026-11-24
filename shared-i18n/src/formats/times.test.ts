@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../languages/localized-text'
-import { durationOf, minutesOf, timeSlotsOf } from './times'
+import { durationOf, minutesOf, timeRangeOf, timeSlotsOf } from './times'
 
 describe('durationOf', () => {
   it.each<[number, LocalizedText]>([
@@ -94,4 +94,20 @@ describe('timeSlotsOf', () => {
     // Assert
     expect(written).toEqual({ en: '', ja: '' })
   })
+})
+
+describe('timeRangeOf', () => {
+  it.each<[string, string, LocalizedText]>([
+    ['09:00', '20:00', { en: '09:00–20:00', ja: '09:00〜20:00' }],
+    ['09:00:30', '13:00', { en: '09:00:30–13:00', ja: '09:00:30〜13:00' }],
+  ])(
+    'should write from %s until %s as each language joins two times',
+    (from, to, expected) => {
+      // Act
+      const written = timeRangeOf(from, to)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
 })

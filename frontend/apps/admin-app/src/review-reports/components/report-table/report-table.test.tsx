@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { waitingReport } from '../examples'
 import * as reportTableStories from './report-table.stories'
@@ -95,4 +96,70 @@ describe('ReportTable', () => {
   })
 
   itShouldBeAccessibleInEveryStory(stories)
+})
+
+describe('ReportTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list each report with when it came, its review, why and its state, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfTheSalon.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('table'))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Received', 'Review', 'Reason', 'Details', 'Status'])
+    expect(rowsOf('通報')).toEqual([
+      [
+        'Fri, November 20, 2026 at 08:45',
+        'Review rated 3',
+        'Advertising, or something that has nothing to do with a visit',
+        'Not recorded',
+        'DismissedDismissed on Sat, November 21, 2026 at 09:15',
+      ],
+      [
+        'Fri, November 20, 2026 at 10:30',
+        'Review rated 3',
+        'Something that is not true',
+        'Not recorded',
+        'Pending',
+      ],
+      [
+        'Fri, November 20, 2026 at 14:10',
+        'ヘッドスパが気持ちよかった',
+        'Other',
+        '来店の記録がない日付のレビューです。\n予約台帳で確かめましたが、該当する予約がありません。',
+        'Pending',
+      ],
+    ])
+    expect(screen.getByText('3 items')).toBeInTheDocument()
+  })
+
+  it('should dismiss a report that waits from its row, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfOneReview.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('table'))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Received', 'Reason', 'Details', 'Status', 'Dismissal'])
+    expect(
+      screen.getByRole('button', {
+        name: 'Dismiss the report received on Fri, November 20, 2026 at 10:30',
+      }),
+    ).toHaveTextContent('Dismiss')
+    expect(screen.getByText('Done')).toBeInTheDocument()
+  })
 })

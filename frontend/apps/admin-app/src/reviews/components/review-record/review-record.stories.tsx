@@ -1,3 +1,4 @@
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { customers, salon } from '../../../bookings/components/examples'
 import { answeredReview, reportedReview } from '../examples'
@@ -16,7 +17,7 @@ const meta: Meta<typeof ReviewRecord> = {
       name: '山田 花子',
       href: `${SALON}/customers/${customers[0]?.id}`,
     },
-    staffName: '田中 美咲',
+    staffName: adminStaffMessages.named('田中 美咲'),
     bookingHref: `${SALON}/bookings/${answeredReview.bookingId}`,
   },
 }

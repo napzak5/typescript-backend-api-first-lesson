@@ -6,16 +6,27 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
-  inJapanese,
   Link,
   NONE,
   Rating,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminReviewMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
 import { detailRatingsOf, reviewDayNameOf } from '../../utils/review-format'
 import styles from './review-record.module.css'
+
+const { record, titles, words } = adminReviewMessages
+
+/** A message, in the language of the page */
+type Say = (message: LocalizedText) => string
 
 /** Who wrote a review, as the ledger of the salon holds them */
 export type ReviewAuthor =
@@ -34,19 +45,19 @@ export type ReviewRecordProps = {
   timezone: string
   author: ReviewAuthor
   /** The member of the staff the review rates, by name; `undefined` while the staff are read */
-  staffName: string | undefined
+  staffName: LocalizedText | undefined
   /** The screen of the booking of the visit */
   bookingHref: string
 }
 
-const authorOf = (author: ReviewAuthor): ReactNode =>
+const authorOf = (author: ReviewAuthor, say: Say): ReactNode =>
   match(author)
     .with({ type: 'found' }, ({ name, href }) => (
       <Link href={href}>{name}</Link>
     ))
-    .with({ type: 'gone' }, () => '台帳から削除されたお客様')
+    .with({ type: 'gone' }, () => say(adminTreatmentMessages.removedCustomer))
     .with({ type: 'reading' }, () => '')
-    .with({ type: 'unread' }, () => '読み込めませんでした')
+    .with({ type: 'unread' }, () => say(record.unreadCustomer))
     .exhaustive()
 
 /**
@@ -66,37 +77,43 @@ export const ReviewRecord = ({
   staffName,
   bookingHref,
 }: ReviewRecordProps) => {
+  const say = useSay()
   const items: DescriptionListItem[] = [
     ...detailRatingsOf(review).map(({ label, rating }) => ({
-      term: `${label}の評価`,
-      description: rating,
+      term: say(record.sideRatingOf(label)),
+      description: say(rating),
     })),
-    { term: 'お客様', description: authorOf(author) },
+    { term: say(record.customer), description: authorOf(author, say) },
     {
-      term: '予約',
-      description: <Link href={bookingHref}>来店の予約</Link>,
+      term: say(record.booking),
+      description: <Link href={bookingHref}>{say(record.visit)}</Link>,
     },
     {
-      term: '担当スタッフ',
-      description: review.staffId === null ? '指名なし' : (staffName ?? ''),
+      term: say(words.staff),
+      description:
+        review.staffId === null
+          ? say(words.noStaff)
+          : staffName === undefined
+            ? ''
+            : say(staffName),
     },
     {
-      term: '投稿日時',
-      description: inJapanese(momentNameAt(review.createdAt, timezone)),
+      term: say(record.postedAt),
+      description: say(momentNameAt(review.createdAt, timezone)),
     },
     ...(review.updatedAt === review.createdAt
       ? []
       : [
           {
-            term: '修正日時',
-            description: inJapanese(momentNameAt(review.updatedAt, timezone)),
+            term: say(record.changedAt),
+            description: say(momentNameAt(review.updatedAt, timezone)),
           },
         ]),
     ...(review.imageUrls.length === 0
       ? []
       : [
           {
-            term: '写真',
+            term: say(reviewMessages.pictures),
             description: (
               <ul className={styles['pictures']}>
                 {review.imageUrls.map((image) => {
@@ -118,29 +135,34 @@ export const ReviewRecord = ({
             ),
           },
         ]),
-    { term: '参考になった', description: `${review.helpfulCount} 人` },
     {
-      term: '未処理の通報',
+      term: say(record.helpful),
+      description: say(record.peopleOf(review.helpfulCount)),
+    },
+    {
+      term: say(record.pendingReports),
       description:
         review.reportCount === 0 ? (
-          inJapanese(NONE)
+          say(NONE)
         ) : (
-          <Badge tone='danger'>{`${review.reportCount} 件`}</Badge>
+          <Badge tone='danger'>
+            {say(record.reportsOf(review.reportCount))}
+          </Badge>
         ),
     },
   ]
 
   return (
-    <Card title='レビュー'>
+    <Card title={say(titles.review)}>
       <div className={styles['record']}>
         <p>
           <Rating value={review.overallRating} />
           <time className={styles['date']} dateTime={review.createdAt}>
-            {reviewDayNameOf(review.createdAt, timezone)}
+            {say(reviewDayNameOf(review.createdAt, timezone))}
           </time>
           {review.isVerified && (
             <Badge className={styles['verified']} tone='success'>
-              来店確認済み
+              {say(reviewMessages.verified)}
             </Badge>
           )}
         </p>
@@ -148,7 +170,7 @@ export const ReviewRecord = ({
           <p className={styles['title']}>{review.title}</p>
         )}
         <WrittenText className={styles['text']}>
-          {review.comment ?? 'コメントなし'}
+          {review.comment ?? say(words.noComment)}
         </WrittenText>
         <DescriptionList items={items} />
       </div>

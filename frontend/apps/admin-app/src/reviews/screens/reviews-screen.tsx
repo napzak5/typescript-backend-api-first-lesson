@@ -14,13 +14,14 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -51,10 +52,11 @@ import {
   reviewQueryOf,
 } from '../utils/review-search'
 
-const TITLE = 'レビュー'
+const { list, loading, names, titles } = adminReviewMessages
 
 /** What the reviews of the salon come to, read whenever the screen opens: customers write them at any time. */
 const SummaryPart = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: [...reviewsKeyOf(salonId), 'summary'],
     queryFn: () => readReviewSummary(salonId),
@@ -62,17 +64,13 @@ const SummaryPart = ({ salonId }: { salonId: string }) => {
   })
 
   return match(read.data)
-    .with(undefined, () => (
-      <LoadingIndicator label='評価のまとめを読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(loading.summary)} />)
     .with({ type: 'found' }, ({ summary }) => (
       <ReviewSummary summary={summary} />
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('評価のまとめ'), reason),
-        )}
+        message={say(unreadMessageOf(names.summary, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -91,8 +89,11 @@ type ReviewListProps = {
  * order it asks for: the latest first, unless it asks for another.
  */
 const ReviewList = ({ salon, staff }: ReviewListProps) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = reviewConditionsIn(query)
   const asked = reviewQueryOf(conditions).toString()
   const narrowed = isNarrowed(conditions)
@@ -134,13 +135,11 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
       />
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))
         .with(undefined, () => (
-          <LoadingIndicator label='レビューを読み込んでいます' />
+          <LoadingIndicator label={say(loading.reviews)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('レビュー'), reason),
-            )}
+            message={say(unreadMessageOf(names.reviews, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -148,13 +147,13 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合うレビューはありません'
-              description='評価の範囲やスタッフを変えて探してください。'
+              title={say(list.noneMatching)}
+              description={say(list.noneMatchingDescription)}
             />
           ) : (
             <EmptyState
-              title='レビューはありません'
-              description='お客様は、来店のあとに、ポータルからレビューを書けます。届いたレビューは、ここに並びます。'
+              title={say(list.none)}
+              description={say(list.noneDescription)}
             />
           ),
         )
@@ -162,7 +161,7 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
           <ReviewTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合うレビュー' : TITLE}
+            caption={say(narrowed ? list.narrowedCaption : list.caption)}
             reviews={items}
             timezone={salon.timezone}
             staff={staff}
@@ -189,6 +188,7 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
  * here to the reports of the reviews.
  */
 const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const handles = useHandlesReports()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),
@@ -198,12 +198,12 @@ const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.reviews)}
         description={salon.name}
         actions={
           handles ? (
             <ButtonLink href={reviewReportsHrefOf(salon.id)}>
-              通報を見る
+              {say(list.toReports)}
             </ButtonLink>
           ) : undefined
         }
@@ -221,10 +221,11 @@ const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The reviews of the salon of the address, for every member of its staff and an administrator. */
 export const ReviewsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.reviews)}>
       {(salon) => <ReviewsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

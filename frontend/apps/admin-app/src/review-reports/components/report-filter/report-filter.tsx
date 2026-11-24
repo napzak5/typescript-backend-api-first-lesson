@@ -1,9 +1,18 @@
-import { FilterForm, Select, useFilterValues } from '@beauty-salon-frontend/ui'
+import {
+  FilterForm,
+  Select,
+  useFilterValues,
+  useSaidChoices,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   REPORTS_SHOWN,
   type ReportsShown,
   SHOWN,
 } from '../../utils/review-reports'
+
+const { filter } = adminReviewReportMessages
 
 export type ReportFilterProps = {
   /** The reports that are shown: those of the address */
@@ -19,14 +28,16 @@ export type ReportFilterProps = {
  * changes, and what was chosen until the form is sent.
  */
 export const ReportFilter = ({ shown, onSubmit }: ReportFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(shown, () => ({ [SHOWN]: shown }))
 
   return (
-    <FilterForm label='通報を絞り込む' purpose='view' onSubmit={onSubmit}>
+    <FilterForm label={say(filter.label)} purpose='view' onSubmit={onSubmit}>
       <Select
-        label='状態'
+        label={say(filter.status)}
         name={SHOWN}
-        options={REPORTS_SHOWN}
+        options={options(REPORTS_SHOWN)}
         value={values[SHOWN]}
         onChange={(event) => hold(SHOWN, event.target.value)}
       />

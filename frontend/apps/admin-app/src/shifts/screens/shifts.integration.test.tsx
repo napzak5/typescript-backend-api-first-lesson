@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -19,6 +20,7 @@ import {
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
 import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -56,8 +58,11 @@ import { mondayOf, weekNameOf } from '../utils/shift-week'
  * weeks after it, so that the rows of dates a test arranges are shown.
  */
 
-/** The name of the table of the shifts of a week */
-const weekTableOf = (monday: string): string => `${weekNameOf(monday)}のシフト`
+/** The name of the table of the shifts of a week, in a language */
+const weekTableOf = (monday: string, language: Locale = 'ja'): string =>
+  language === 'ja'
+    ? `${weekNameOf(monday).ja}のシフト`
+    : `Shifts for ${weekNameOf(monday).en}`
 
 /** A day of the week, or a row of a date, of the form */
 const group = (name: string): HTMLElement => screen.getByRole('group', { name })
@@ -645,5 +650,165 @@ describe('the shifts, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the shifts on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show who works when in a week, in English', async () => {
+    // Arrange
+    const salonId = await salonIdOf(TOKYO)
+    const monday = mondayOf(await dayFromToday(14))
+    await arrangeDateRow(TANAKA, {
+      date: dayAfter(monday, 2),
+      hours: undefined,
+      notes: '研修',
+    })
+    await arrangeDateRow(SUZUKI, {
+      date: dayAfter(monday, 3),
+      hours: ['12:00', '16:00'],
+      notes: null,
+    })
+
+    // Act
+    renderAt(shiftWeekHrefOf(salonId, monday))
+    await signInAs(MANAGER, 'en')
+
+    // Assert
+    expect(await heading('Shifts')).toHaveFocus()
+    const name = weekTableOf(monday, 'en')
+    const table = await screen.findByRole('table', { name })
+    expect(within(table).getAllByRole('columnheader')[0]).toHaveTextContent(
+      'Staff member',
+    )
+    const weekday = '09:00–20:00Break 13:00–14:00'
+    const saturday = '10:00–18:00Break 13:00–14:00'
+    expect(rowsOf(name)).toContainEqual([
+      'Hiroshi Tanaka',
+      weekday,
+      weekday,
+      'Day off研修This date only',
+      weekday,
+      weekday,
+      saturday,
+      'Not working',
+    ])
+    expect(rowsOf(name)).toContainEqual([
+      'Mika Suzuki',
+      weekday,
+      weekday,
+      weekday,
+      '12:00–16:00This date only',
+      weekday,
+      saturday,
+      'Not working',
+    ])
+  })
+
+  it('should show the schedule of a member, every day of the week and the rows of dates, in English', async () => {
+    // Arrange
+    const salonId = await salonIdOf(TOKYO)
+    const tanaka = await staffIdOf(TANAKA)
+    const soon = await dayFromToday(3)
+    await arrangeDateRow(TANAKA, {
+      date: soon,
+      hours: undefined,
+      notes: '有給休暇',
+    })
+    await arrangeDateRow(TANAKA, {
+      date: await dayFromToday(-3),
+      hours: undefined,
+      notes: null,
+    })
+
+    // Act
+    renderAt(scheduleHrefOf(salonId, tanaka))
+    await signInAs(MANAGER, 'en')
+
+    // Assert
+    expect(await heading('Work schedule')).toHaveFocus()
+    await screen.findByRole('table', { name: 'Every week' })
+    expect(rowsOf('Every week')).toEqual([
+      ['Monday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Tuesday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Wednesday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Thursday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Friday', '09:00–20:00', '13:00–14:00', 'Not recorded'],
+      ['Saturday', '10:00–18:00', '13:00–14:00', 'Not recorded'],
+      ['Sunday', 'Not working', '', 'Not recorded'],
+    ])
+    expect(rowsOf('By date')).toEqual([
+      [dayNameOf(soon).en, 'Day off', '', '有給休暇'],
+    ])
+    expect(
+      screen.getByText('Also kept: 1 row of dates before today.'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Edit the work schedule' }),
+    ).toHaveAttribute('href', scheduleChangeHrefOf(salonId, tanaka))
+  })
+
+  it('should say what is wrong at the controls, then save the schedule, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const day = await dayFromToday(5)
+    renderAt(
+      scheduleChangeHrefOf(await salonIdOf(TOKYO), await staffIdOf(TANAKA)),
+    )
+    await signInAs(MANAGER, 'en')
+    await heading('Edit the work schedule')
+    const end = within(
+      await screen.findByRole('group', { name: 'Monday' }),
+    ).getByLabelText('Ends')
+    await writeTime(user, end, '08:00')
+    await user.click(screen.getByRole('button', { name: 'Add a date' }))
+    await user.type(within(group('Row 1')).getByLabelText('Date'), day)
+    await user.click(screen.getByRole('button', { name: 'Add a date' }))
+    await user.type(within(group('Row 2')).getByLabelText('Date'), day)
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(end).toHaveFocus())
+    expect(end).toHaveAccessibleDescription(
+      expect.stringContaining('Make the end of the work later than its start.'),
+    )
+    expect(
+      within(group('Row 2')).getByLabelText('Date'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('This date is the same as that of row 1.'),
+    )
+    await writeTime(user, end, '20:00')
+    await user.click(screen.getByRole('button', { name: 'Remove row 2' }))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    // Assert
+    expect(await heading('Work schedule')).toHaveFocus()
+    expect(notifications()).toContain(
+      'Saved the work schedule of Hiroshi Tanaka.',
+    )
+    expect(await storedScheduleOf(TANAKA)).toEqual([
+      ...SEED_ROWS,
+      {
+        dayOfWeek: null,
+        date: day,
+        startTime: null,
+        endTime: null,
+        breakStartTime: null,
+        breakEndTime: null,
+        isRecurring: false,
+        isAvailable: false,
+        notes: null,
+      },
+    ])
   })
 })

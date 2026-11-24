@@ -10,13 +10,14 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -27,8 +28,6 @@ import { readReportPage, reviewReportsKeyOf } from '../api/review-reports-api'
 import { ReportFilter } from '../components/report-filter/report-filter'
 import { ReportTable } from '../components/report-table/report-table'
 import {
-  HANDLERS_ONLY,
-  type ReportsShown,
   readReportsShown,
   reportListParamsOf,
   reportsQueryOf,
@@ -36,31 +35,7 @@ import {
 } from '../utils/review-reports'
 import { useHandlesReports } from './review-handling'
 
-const TITLE = 'レビューへの通報'
-
-/** What the table of the reports shown is called, and what is said when there are none. */
-const wordsOf = (
-  shown: ReportsShown,
-): { caption: string; empty: string; description: string } =>
-  match(shown)
-    .with('pending', () => ({
-      caption: '未処理の通報',
-      empty: '未処理の通報はありません',
-      description:
-        'お客様やサロンがレビューを通報すると、ここに、届いた順に並びます。',
-    }))
-    .with('dismissed', () => ({
-      caption: '却下した通報',
-      empty: '却下した通報はありません',
-      description: '却下した通報は、ここに、届いた順に並びます。',
-    }))
-    .with('all', () => ({
-      caption: '通報',
-      empty: 'このサロンのレビューへの通報はありません',
-      description:
-        'お客様やサロンがレビューを通報すると、ここに、届いた順に並びます。',
-    }))
-    .exhaustive()
+const { lists, loading, names, reviewNames, title } = adminReviewReportMessages
 
 /** The reviews of the reports, read once each by their IDs: a row names its review by its title. */
 const useReviewsOf = (salonId: string, reviewIds: readonly string[]) => {
@@ -71,15 +46,13 @@ const useReviewsOf = (salonId: string, reviewIds: readonly string[]) => {
     })),
   })
 
-  return (reviewId: string): { name: string; href: string } => ({
+  return (reviewId: string): { name: LocalizedText; href: string } => ({
     name: match(reads[reviewIds.indexOf(reviewId)]?.data)
-      .with(undefined, () => 'レビュー（読み込んでいます）')
+      .returnType<LocalizedText>()
+      .with(undefined, () => reviewNames.loading)
       .with({ type: 'found' }, ({ review }) => reviewNameOf(review))
-      .with({ type: 'notFound' }, () => '削除されたレビュー')
-      .with(
-        { type: P.union(...UNREAD_TYPES) },
-        () => 'レビュー（題名を読めませんでした）',
-      )
+      .with({ type: 'notFound' }, () => reviewNames.removed)
+      .with({ type: P.union(...UNREAD_TYPES) }, () => reviewNames.unread)
       .exhaustive(),
     href: reviewHrefOf(salonId, reviewId),
   })
@@ -91,6 +64,7 @@ const useReviewsOf = (salonId: string, reviewIds: readonly string[]) => {
  * first received comes first, as they are handled.
  */
 const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const shown = reportsShownIn(query)
   const read = useInfiniteQuery({
@@ -110,7 +84,7 @@ const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
         : [],
     ),
   ])
-  const words = wordsOf(shown)
+  const words = lists[shown]
 
   const filter = (values: FormData): void => {
     const next = reportsQueryOf(readReportsShown(values))
@@ -126,26 +100,25 @@ const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
     <>
       <ReportFilter shown={shown} onSubmit={filter} />
       {match(listing)
-        .with(undefined, () => (
-          <LoadingIndicator label='通報を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('通報'), reason),
-            )}
+            message={say(unreadMessageOf(names.reports, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
-          <EmptyState title={words.empty} description={words.description} />
+          <EmptyState
+            title={say(words.none)}
+            description={say(words.description)}
+          />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
           <ReportTable
             // Other reports shown are another list
             key={shown}
-            caption={words.caption}
+            caption={say(words.caption)}
             reports={items}
             timezone={salon.timezone}
             reviewOf={reviewOf}
@@ -166,22 +139,23 @@ const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The reports of the reviews of a salon, for an administrator; any other account is told who handles them. */
 const ReportsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const handles = useHandlesReports()
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(title)} description={salon.name} />
       {handles ? (
         <>
-          <p>
-            お客様とサロンから届いた、このサロンのレビューへの通報です。レビューを開いて、規則に反していなければ通報を却下し、反していればレビューを削除します。
-          </p>
+          <p>{say(adminReviewReportMessages.explanation)}</p>
           <ReportList salon={salon} />
         </>
       ) : (
         <>
-          <p>{HANDLERS_ONLY}</p>
-          <ButtonLink href={reviewsHrefOf(salon.id)}>レビューへ</ButtonLink>
+          <p>{say(adminReviewReportMessages.handlersOnly)}</p>
+          <ButtonLink href={reviewsHrefOf(salon.id)}>
+            {say(adminReviewReportMessages.toReviews)}
+          </ButtonLink>
         </>
       )}
     </>
@@ -190,10 +164,11 @@ const ReportsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The reports of the reviews of the salon of the address. */
 export const ReviewReportsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(title)}>
       {(salon) => <ReportsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

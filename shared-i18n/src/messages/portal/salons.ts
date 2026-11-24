@@ -1,5 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
+import { reviewMessages } from '../ui/reviews'
 import { countedIn, joined, postalCodeOf } from '../written'
 
 /** The mark between the parts of a line of short values: 「・」 */
@@ -238,42 +239,18 @@ export const portalSalonMessages = {
       ja: 'レビューを読み込んでいます',
     }),
     noneYet: text({ en: 'No reviews yet', ja: 'レビューは、まだありません' }),
-    distribution: text({ en: 'Reviews by rating', ja: '評価ごとの件数' }),
-    /** A rating of the distribution: 「評価 5」 */
-    ratingOf: (rating: number) =>
-      text({
-        en: countedIn(rating, 'star', 'stars'),
-        ja: `評価 ${numberOf(rating).ja}`,
-      }),
-    /** How many reviews gave a rating: 「3 件」 */
-    countOf: (count: number) =>
-      text({
-        en: countedIn(count, 'review', 'reviews'),
-        ja: `${numberOf(count).ja} 件`,
-      }),
-    verified: text({ en: 'Verified visit', ja: '来店確認済み' }),
-    pictures: text({ en: 'Pictures', ja: '写真' }),
     /** How many readers found a review helpful */
     helpfulCount: (count: number) =>
       text({
         en: `${countedIn(count, 'person', 'people')} found this helpful`,
         ja: `${numberOf(count).ja} 人が「参考になった」と答えています`,
       }),
-    response: text({ en: 'Response from the salon', ja: 'サロンからの返信' }),
     /** The heading of the response, with the day the salon gave it */
     responseOn: (day: LocalizedText) =>
       text({
-        en: `Response from the salon (${day.en})`,
-        ja: `サロンからの返信（${day.ja}）`,
+        en: `${reviewMessages.response.en} (${day.en})`,
+        ja: `${reviewMessages.response.ja}（${day.ja}）`,
       }),
-    /** The sides of a visit that a review rates besides the whole, by the properties of a review */
-    sides: {
-      serviceRating: text({ en: 'Service', ja: 'サービス' }),
-      staffRating: text({ en: 'Staff', ja: 'スタッフ' }),
-      atmosphereRating: text({ en: 'Atmosphere', ja: '雰囲気' }),
-      cleanlinessRating: text({ en: 'Cleanliness', ja: '清潔さ' }),
-      valueRating: text({ en: 'Value', ja: '価格' }),
-    },
     /** The ratings of the sides of a visit, those the customer gave: 「サービス 5・スタッフ 4」 */
     detailRatings: (
       given: readonly { label: LocalizedText; rating: number }[],
@@ -298,10 +275,6 @@ export const portalSalonMessages = {
         ja:
           title === null ? `${day.ja} 投稿` : `「${title}」（${day.ja} 投稿）`,
       }),
-    sortBy: text({ en: 'Sort by', ja: '並び順' }),
-    recent: text({ en: 'Newest first', ja: '新しい順' }),
-    highestRated: text({ en: 'Highest rated first', ja: '評価の高い順' }),
-    mostHelpful: text({ en: 'Most helpful first', ja: '参考になった順' }),
     change: text({ en: 'Change the review', ja: 'レビューを変更する' }),
     changeOf: (posted: LocalizedText) =>
       text({
@@ -314,7 +287,6 @@ export const portalSalonMessages = {
         en: `Helpful: the review ${posted.en}`,
         ja: `${posted.ja}のレビューが参考になった`,
       }),
-    report: text({ en: 'Report', ja: '通報する' }),
     reportOf: (posted: LocalizedText) =>
       text({
         en: `Report the review ${posted.en}`,

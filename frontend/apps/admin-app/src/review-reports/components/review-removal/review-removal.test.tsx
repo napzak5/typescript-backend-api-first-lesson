@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reviewRemovalStories from './review-removal.stories'
 
 const stories = composeStories(reviewRemovalStories)
@@ -74,5 +75,57 @@ describe('ReviewRemoval', () => {
         'alert',
       ),
     ).toHaveTextContent('このアカウントでは、このレビューを削除できません。')
+  })
+})
+
+describe('ReviewRemoval on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what a removal does, and ask before it by the name of the review, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(
+      screen.getByRole('region', { name: 'Deleting the review' }),
+    ).toHaveTextContent(
+      'Delete a review that breaks the rules. A deleted review is gone from the screens of the customers and of the salon, with its reports. It cannot be brought back.',
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Delete “Review rated 3”?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'A deleted review cannot be brought back. Its reports go with it.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Delete' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+  })
+
+  it('should say in English what went wrong, and why the account removes nothing', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.Failed.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog')).getByRole('alert'),
+    ).toHaveTextContent(
+      'Could not delete the review. Check your connection and try again.',
+    )
+
+    // Act
+    await stories.Forbidden.run()
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('region', { name: 'Deleting the review' }),
+      ).getByRole('alert'),
+    ).toHaveTextContent('This account cannot delete this review.')
   })
 })

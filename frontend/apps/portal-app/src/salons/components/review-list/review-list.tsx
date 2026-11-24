@@ -13,6 +13,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ChangeEvent } from 'react'
 import { postedOf } from '../../utils/salon-format'
 import { ReviewContent } from '../review-content/review-content'
@@ -64,9 +65,9 @@ const ORDERS: readonly {
   value: ModelsReviewSortType
   label: LocalizedText
 }[] = [
-  { value: 'recent', label: words.recent },
-  { value: 'rating', label: words.highestRated },
-  { value: 'helpful', label: words.mostHelpful },
+  { value: 'recent', label: reviewMessages.recent },
+  { value: 'rating', label: reviewMessages.highestRated },
+  { value: 'helpful', label: reviewMessages.mostHelpful },
 ]
 
 type ReviewActionsProps = {
@@ -117,7 +118,7 @@ const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
         aria-label={say(words.reportOf(posted))}
         onClick={() => customer.onReport(review)}
       >
-        {say(words.report)}
+        {say(reviewMessages.report.submit)}
       </Button>
     </Actions>
   )
@@ -151,7 +152,7 @@ export const ReviewList = ({
     <div className={styles['reviews']}>
       <Select
         className={styles['order']}
-        label={say(words.sortBy)}
+        label={say(reviewMessages.sortBy)}
         options={ORDERS.map(({ value, label }) => ({
           value,
           label: say(label),

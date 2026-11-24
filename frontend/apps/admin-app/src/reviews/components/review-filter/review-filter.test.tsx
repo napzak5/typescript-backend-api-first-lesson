@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { staff } from '../../../bookings/components/examples'
 import * as reviewFilterStories from './review-filter.stories'
 
@@ -98,6 +99,57 @@ describe('ReviewFilter', () => {
     expect(screen.getByRole('button', { name: '条件（2）' })).toHaveAttribute(
       'aria-haspopup',
       'dialog',
+    )
+  })
+})
+
+describe('ReviewFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the ratings, the staff and the orders in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Every.run()
+
+    // Assert
+    expect(box('Lowest rating').closest('search')).toHaveAttribute(
+      'aria-label',
+      'Filter the reviews',
+    )
+    expect(optionsOf(box('Highest rating'))).toEqual([
+      'Any',
+      '5',
+      '4',
+      '3',
+      '2',
+      '1',
+    ])
+    expect(optionsOf(box('Staff member'))).toEqual([
+      'All',
+      '田中 美咲',
+      '佐藤 健',
+    ])
+    expect(optionsOf(box('Sort by'))).toEqual([
+      'Newest first',
+      'Highest rated first',
+      'Most helpful first',
+    ])
+  })
+
+  it('should say in English what is wrong with the highest rating', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(box('Highest rating')).toHaveAccessibleDescription(
+      'Make the highest rating the same as the lowest, or higher.',
     )
   })
 })

@@ -1,4 +1,5 @@
 import type { ModelsStaffSchedule } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   aPastDayOff,
@@ -16,6 +17,16 @@ import {
   type ScheduleRequest,
   timeInputOf,
 } from './schedule-form'
+
+/** What the form says at its controls */
+const START_MISSING: LocalizedText = {
+  en: 'Enter the time the work starts.',
+  ja: '勤務の始まりの時刻を入力してください。',
+}
+const REFUSED_VALUE: LocalizedText = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
 
 /** The controls of the form opened with the schedule of the examples, as the browser hands them over */
 const OPENED: [string, string][] = [
@@ -255,108 +266,144 @@ describe('readScheduleChange', () => {
     )
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'no start',
       { 'monday.startTime': '' },
-      { 'monday.startTime': '勤務の始まりの時刻を入力してください。' },
+      { 'monday.startTime': START_MISSING },
     ],
     [
       'a start that is no time',
       { 'tuesday.startTime': '9時' },
-      { 'tuesday.startTime': '勤務の始まりの時刻を入力してください。' },
+      { 'tuesday.startTime': START_MISSING },
     ],
     [
       'no end',
       { 'dates.0.endTime': '' },
-      { 'dates.0.endTime': '勤務の終わりの時刻を入力してください。' },
+      {
+        'dates.0.endTime': {
+          en: 'Enter the time the work ends.',
+          ja: '勤務の終わりの時刻を入力してください。',
+        },
+      },
     ],
     [
       'an end at the start',
       { 'saturday.endTime': '10:00' },
       {
-        'saturday.endTime':
-          '勤務の終わりは、始まりより後の時刻にしてください。日付をまたぐ勤務は入れられません。',
+        'saturday.endTime': {
+          en: 'Make the end of the work later than its start. Work cannot run past midnight.',
+          ja: '勤務の終わりは、始まりより後の時刻にしてください。日付をまたぐ勤務は入れられません。',
+        },
       },
     ],
     [
       'the start of a break without its end',
       { 'saturday.breakStartTime': '12:00' },
       {
-        'saturday.breakEndTime':
-          '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        'saturday.breakEndTime': {
+          en: 'Enter the end of the break as well. When there is no break, leave both its start and its end empty.',
+          ja: '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        },
       },
     ],
     [
       'the end of a break without its start',
       { 'monday.breakStartTime': '' },
       {
-        'monday.breakStartTime':
-          '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        'monday.breakStartTime': {
+          en: 'Enter the start of the break as well. When there is no break, leave both its start and its end empty.',
+          ja: '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。',
+        },
       },
     ],
     [
       'a break that begins with the work',
       { 'monday.breakStartTime': '09:00' },
       {
-        'monday.breakStartTime': '休憩は、勤務の始まりより後に始めてください。',
+        'monday.breakStartTime': {
+          en: 'Start the break after the work starts.',
+          ja: '休憩は、勤務の始まりより後に始めてください。',
+        },
       },
     ],
     [
       'a break that ends where it begins',
       { 'monday.breakEndTime': '13:00' },
       {
-        'monday.breakEndTime':
-          '休憩の終わりは、休憩の始まりより後の時刻にしてください。',
+        'monday.breakEndTime': {
+          en: 'Make the end of the break later than its start.',
+          ja: '休憩の終わりは、休憩の始まりより後の時刻にしてください。',
+        },
       },
     ],
     [
       'a break that ends with the work',
       { 'monday.breakEndTime': '20:00' },
-      { 'monday.breakEndTime': '休憩は、勤務の終わりより前に終えてください。' },
+      {
+        'monday.breakEndTime': {
+          en: 'End the break before the work ends.',
+          ja: '休憩は、勤務の終わりより前に終えてください。',
+        },
+      },
     ],
     [
       'no date',
       { 'dates.0.date': ' ' },
-      { 'dates.0.date': '日付を入力してください。' },
+      {
+        'dates.0.date': {
+          en: 'Enter a date.',
+          ja: '日付を入力してください。',
+        },
+      },
     ],
     [
       'a date the API does not take',
       { 'dates.0.date': '1899-12-31' },
       {
-        'dates.0.date':
-          '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。',
+        'dates.0.date': {
+          en: 'Enter a date from January 1, 1900 to December 31, 2999.',
+          ja: '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。',
+        },
       },
     ],
     [
       'the date of a row of a day before today',
       { 'dates.0.date': '2026-11-18' },
       {
-        'dates.0.date':
-          'この日付の行は、今日より前の日付の行に、すでにあります。',
+        'dates.0.date': {
+          en: 'This date already has a row among the dates before today.',
+          ja: 'この日付の行は、今日より前の日付の行に、すでにあります。',
+        },
       },
     ],
   ])(
     'should say what is wrong with %s at its control',
     (_, changed, errors) => {
-      expect(readScheduleChange(formWith(changed), aSchedule(), TODAY)).toEqual(
-        { type: 'invalid', errors },
-      )
+      // Act
+      const change = readScheduleChange(formWith(changed), aSchedule(), TODAY)
+
+      // Assert
+      expect(change).toEqual({ type: 'invalid', errors })
     },
   )
 
   it('should say at the later of two rows of the same date which row it repeats', () => {
-    expect(
-      readScheduleChange(
-        formWith({}, dayOff(1, '2026-11-21')),
-        aSchedule(),
-        TODAY,
-      ),
-    ).toEqual({
+    // Act
+    const change = readScheduleChange(
+      formWith({}, dayOff(1, '2026-11-21')),
+      aSchedule(),
+      TODAY,
+    )
+
+    // Assert
+    expect(change).toEqual({
       type: 'invalid',
       errors: {
-        'dates.1.date':
-          'この日付は、1 行目と同じです。1 つの日付に入れられるのは 1 行です。',
+        'dates.1.date': {
+          en: 'This date is the same as that of row 1. A date takes one row.',
+          ja: 'この日付は、1 行目と同じです。1 つの日付に入れられるのは 1 行です。',
+        },
       },
     })
   })
@@ -407,24 +454,24 @@ describe('afterScheduleSave', () => {
   }
 
   it('should say what the API refused at the controls the rows were written at', () => {
-    expect(
-      afterScheduleSave(
-        {
-          type: 'invalid',
-          values: [
-            { field: '0.endTime', rule: 'custom' },
-            { field: '7.date', rule: 'custom' },
-          ],
-        },
-        request,
-      ),
-    ).toEqual({
+    // Act
+    const said = afterScheduleSave(
+      {
+        type: 'invalid',
+        values: [
+          { field: '0.endTime', rule: 'custom' },
+          { field: '7.date', rule: 'custom' },
+        ],
+      },
+      request,
+    )
+
+    // Assert
+    expect(said).toEqual({
       message: undefined,
       errors: {
-        'monday.endTime':
-          'この値は受け付けられませんでした。入力を確かめてください。',
-        'dates.0.date':
-          'この値は受け付けられませんでした。入力を確かめてください。',
+        'monday.endTime': REFUSED_VALUE,
+        'dates.0.date': REFUSED_VALUE,
       },
     })
   })
@@ -436,43 +483,61 @@ describe('afterScheduleSave', () => {
   ])(
     'should ask to check what was written when the API refused %s',
     (_, field) => {
-      expect(
-        afterScheduleSave(
-          { type: 'invalid', values: [{ field, rule: 'custom' }] },
-          request,
-        ),
-      ).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+      // Act
+      const said = afterScheduleSave(
+        { type: 'invalid', values: [{ field, rule: 'custom' }] },
+        request,
+      )
+
+      // Assert
+      expect(said).toEqual({
+        message: {
+          en: 'Check what you entered and try again.',
+          ja: '入力した内容を確かめて、もう一度お試しください。',
+        },
         errors: {},
       })
     },
   )
 
-  it.each<[string, Parameters<typeof afterScheduleSave>[0], string]>([
+  it.each<[string, Parameters<typeof afterScheduleSave>[0], LocalizedText]>([
     [
       'a schedule another account changed meanwhile',
       { type: 'changed', rows: [] },
-      'その間に、ほかのアカウントがこの勤務スケジュールを変えていました。',
+      {
+        en: 'Meanwhile, another account changed this work schedule. What this form holds is not saved yet. Press “Save” again to replace the work schedule with what this form holds. To see the change of the other account, go back to the work schedule with “Cancel”.',
+        ja: 'その間に、ほかのアカウントがこの勤務スケジュールを変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの勤務スケジュールを、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で勤務スケジュールに戻ってください。',
+      },
     ],
     [
       'an account that may not plan the schedules',
       { type: 'forbidden' },
-      'このアカウントでは、勤務スケジュールを直せません。',
+      {
+        en: 'This account cannot edit work schedules. Only the owners and managers of the salon, and administrators, can edit them.',
+        ja: 'このアカウントでは、勤務スケジュールを直せません。勤務スケジュールを直せるのは、サロンのオーナー、マネージャーと、管理者です。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'no answer',
       { type: 'failed' },
-      '勤務スケジュールを保存できませんでした。',
+      {
+        en: 'Could not save the work schedule. Check your connection and try again.',
+        ja: '勤務スケジュールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what went wrong after %s', (_, outcome, message) => {
+    // Act
     const said = afterScheduleSave(outcome, request)
 
-    expect(said.message).toContain(message)
-    expect(said.errors).toEqual({})
+    // Assert
+    expect(said).toEqual({ message, errors: {} })
   })
 })

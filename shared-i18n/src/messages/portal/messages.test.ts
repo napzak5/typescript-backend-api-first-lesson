@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
+import { reviewMessages } from '../ui/reviews'
 import * as catalogues from './index'
 import {
   portalAccountMessages,
@@ -224,16 +225,6 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     { en: 'Certifications of 田中 美咲', ja: '田中 美咲の資格' },
   ],
   [
-    'portalSalonMessages.reviews.ratingOf',
-    reviews.ratingOf(4),
-    { en: '4 stars', ja: '評価 4' },
-  ],
-  [
-    'portalSalonMessages.reviews.countOf',
-    reviews.countOf(12),
-    { en: '12 reviews', ja: '12 件' },
-  ],
-  [
     'portalSalonMessages.reviews.helpfulCount',
     reviews.helpfulCount(3),
     {
@@ -252,8 +243,8 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   [
     'portalSalonMessages.reviews.detailRatings',
     reviews.detailRatings([
-      { label: reviews.sides.serviceRating, rating: 5 },
-      { label: reviews.sides.valueRating, rating: 4 },
+      { label: reviewMessages.sides.serviceRating, rating: 5 },
+      { label: reviewMessages.sides.valueRating, rating: 4 },
     ]),
     { en: 'Service 5 · Value 4', ja: 'サービス 5・価格 4' },
   ],
@@ -540,7 +531,6 @@ describe('the messages of the portal', () => {
       results.found(1),
       { en: '1 salon found', ja: '1 件のサロンが見つかりました' },
     ],
-    ['star', reviews.ratingOf(1), { en: '1 star', ja: '評価 1' }],
     ['point', membership.pointsOf(1), { en: '1 point', ja: '1 ポイント' }],
     [
       'review of the customer',
@@ -556,7 +546,6 @@ describe('the messages of the portal', () => {
       },
     ],
     ['visit', membership.visitsOf(1), { en: '1 visit', ja: '1 回' }],
-    ['review', reviews.countOf(1), { en: '1 review', ja: '1 件' }],
     [
       'person who found a review helpful',
       reviews.helpfulCount(1),
@@ -591,11 +580,6 @@ describe('the messages of the portal', () => {
       'the salons',
       results.found(1234),
       { en: '1,234 salons found', ja: '1,234 件のサロンが見つかりました' },
-    ],
-    [
-      'the reviews',
-      reviews.countOf(1234),
-      { en: '1,234 reviews', ja: '1,234 件' },
     ],
     [
       'the points',

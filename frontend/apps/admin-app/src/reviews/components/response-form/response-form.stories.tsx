@@ -1,4 +1,5 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -37,13 +38,12 @@ export const Change: Story = {
 
 /** An answer of spaces alone */
 export const WithErrors: Story = {
-  args: { errors: { ownerResponse: '返信を入力してください。' } },
+  args: { errors: { ownerResponse: adminReviewMessages.response.missing } },
 }
 
 /** The answer could not be sent */
 export const Failed: Story = {
   args: {
-    message:
-      '返信を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminReviewMessages.response.failed,
   },
 }

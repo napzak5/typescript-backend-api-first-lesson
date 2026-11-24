@@ -12,13 +12,13 @@ import {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -38,7 +38,7 @@ import {
 } from '../components/shift-table/shift-table'
 import { weekIn } from '../utils/shift-week'
 
-const TITLE = 'シフト'
+const { loading, names, titles, week: WEEK } = adminShiftMessages
 
 /** What the table of a week shows: the members and their schedules, or why they are not shown */
 type WeekShown =
@@ -92,6 +92,7 @@ type ShiftsProps = { salon: ModelsSalonResponse }
  * for the seven days. A member of the staff sees their own row.
  */
 const Shifts = ({ salon }: ShiftsProps) => {
+  const say = useSay()
   const [query] = useSearchParams()
   const session = useSession()
   const monday = weekIn(query, dayAt(new Date(), salon.timezone))
@@ -130,23 +131,19 @@ const Shifts = ({ salon }: ShiftsProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.shifts)} description={salon.name} />
       <PeriodSwitch
-        label='シフトの週'
+        label={say(WEEK.label)}
         unit='week'
         beforeHref={shiftWeekHrefOf(salon.id, dayAfter(monday, -7))}
         currentHref={shiftsHrefOf(salon.id)}
         afterHref={shiftWeekHrefOf(salon.id, dayAfter(monday, 7))}
       />
       {match(profiles.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='シフトを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.shifts)} />)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('シフト'), reason),
-            )}
+            message={say(unreadMessageOf(names.shifts, reason))}
             onRetry={readAgain}
             pending={retrying}
           />
@@ -154,12 +151,10 @@ const Shifts = ({ salon }: ShiftsProps) => {
         .with({ type: 'found' }, () =>
           members.length === 0 ? (
             <EmptyState
-              title='シフトに出るスタッフはいません'
-              description={
-                own === undefined
-                  ? '有効なスタッフが、シフトに出ます。スタッフは、オーナーがスタッフ台帳に登録します。'
-                  : 'このアカウントに結びついたスタッフは、このサロンの有効なスタッフにいません。'
-              }
+              title={say(WEEK.nobody)}
+              description={say(
+                own === undefined ? WEEK.nobodyDescription : WEEK.notOnShifts,
+              )}
             />
           ) : (
             match(
@@ -169,16 +164,14 @@ const Shifts = ({ salon }: ShiftsProps) => {
               ),
             )
               .with(undefined, () => (
-                <LoadingIndicator label='シフトを読み込んでいます' />
+                <LoadingIndicator label={say(loading.shifts)} />
               ))
               .with({ type: 'forbidden' }, () => (
-                <OtherSalonNotice what={writtenInJapanese('シフト')} />
+                <OtherSalonNotice what={names.shifts} />
               ))
               .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                 <UnreadNotice
-                  message={inJapanese(
-                    unreadMessageOf(writtenInJapanese('シフト'), reason),
-                  )}
+                  message={say(unreadMessageOf(names.shifts, reason))}
                   onRetry={readAgain}
                   pending={retrying}
                 />
@@ -200,10 +193,11 @@ const Shifts = ({ salon }: ShiftsProps) => {
 
 /** The shifts of the salon of the address, for everyone who works at it. */
 export const ShiftsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.shifts)}>
       {(salon) => <Shifts key={salon.id} salon={salon} />}
     </WithSalon>
   )

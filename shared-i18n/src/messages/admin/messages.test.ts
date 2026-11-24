@@ -795,8 +795,11 @@ const TESTED_APART = [
   'adminPaymentMethodMessages',
   'adminProductMessages',
   'adminPurchaseOrderMessages',
+  'adminReviewMessages',
+  'adminReviewReportMessages',
   'adminSaleMessages',
   'adminSettingsMessages',
+  'adminShiftMessages',
   'adminStaffMessages',
   'adminTreatmentMessages',
 ]

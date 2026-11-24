@@ -3,11 +3,16 @@ import type {
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, NONE, Note, Table } from '@beauty-salon-frontend/ui'
+import { NONE, Note, Table, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import { partsOf } from '../../utils/schedule-form'
-import { type Shift, shiftOf, weekdayNameOf } from '../../utils/shift-week'
+import { type Shift, shiftOf } from '../../utils/shift-week'
 import styles from './schedule-record.module.css'
+
+const { record } = adminShiftMessages
 
 export type ScheduleRecordProps = {
   /** The whole schedule, as the API lists it */
@@ -17,16 +22,16 @@ export type ScheduleRecordProps = {
 }
 
 /** Whether a member works on the day of a row: the hours, a day off, or no work. */
-const workOf = (shift: Shift): string =>
+const workOf = (shift: Shift): LocalizedText =>
   match(shift)
     .with({ type: 'works' }, ({ hours }) => hours)
-    .with({ type: 'off' }, () => '休み')
-    .with({ type: 'none' }, () => '勤務なし')
+    .with({ type: 'off' }, () => record.off)
+    .with({ type: 'none' }, () => record.noWork)
     .exhaustive()
 
 /** The break of the day of a row: none on a day off, or on one without a break. */
-const restOf = (shift: Shift): string =>
-  shift.type === 'works' ? (shift.rest ?? inJapanese(NONE)) : ''
+const restOf = (shift: Shift): LocalizedText | undefined =>
+  shift.type === 'works' ? (shift.rest ?? NONE) : undefined
 
 type Weekly = {
   weekday: ModelsDayOfWeekType
@@ -43,6 +48,7 @@ type Dated = { date: string; shift: Shift; notes: string | null }
  * listed.
  */
 export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
+  const say = useSay()
   const parts = partsOf(rows, today)
   const weekly = parts.weekly.map(
     ({ weekday, row }): Weekly => ({
@@ -56,45 +62,72 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
       ? []
       : [{ date: row.date, shift: shiftOf(row), notes: row.notes }],
   )
+  const restIn = (shift: Shift): string => {
+    const rest = restOf(shift)
+
+    return rest === undefined ? '' : say(rest)
+  }
 
   return (
     <div className={styles['record']}>
       <Table
-        caption='毎週'
+        caption={say(record.week)}
         columns={[
           {
             key: 'weekday',
-            header: '曜日',
-            cell: ({ weekday }: Weekly) => weekdayNameOf(weekday),
+            header: say(record.weekday),
+            cell: ({ weekday }: Weekly) => say(termMessages.dayOfWeek[weekday]),
           },
-          { key: 'work', header: '勤務', cell: ({ shift }) => workOf(shift) },
-          { key: 'rest', header: '休憩', cell: ({ shift }) => restOf(shift) },
-          { key: 'notes', header: '備考', cell: ({ notes }) => notes },
+          {
+            key: 'work',
+            header: say(record.work),
+            cell: ({ shift }) => say(workOf(shift)),
+          },
+          {
+            key: 'rest',
+            header: say(record.rest),
+            cell: ({ shift }) => restIn(shift),
+          },
+          {
+            key: 'notes',
+            header: say(record.notes),
+            cell: ({ notes }) => notes,
+          },
         ]}
         rows={weekly}
         rowKey={({ weekday }) => weekday}
-        emptyMessage='曜日はありません'
+        emptyMessage={say(record.noWeekdays)}
       />
       <Table
-        caption='日付ごと'
+        caption={say(record.dates)}
         columns={[
           {
             key: 'date',
-            header: '日付',
-            cell: ({ date }: Dated) => inJapanese(dayNameOf(date)),
+            header: say(record.date),
+            cell: ({ date }: Dated) => say(dayNameOf(date)),
           },
-          { key: 'work', header: '勤務', cell: ({ shift }) => workOf(shift) },
-          { key: 'rest', header: '休憩', cell: ({ shift }) => restOf(shift) },
-          { key: 'notes', header: '備考', cell: ({ notes }) => notes },
+          {
+            key: 'work',
+            header: say(record.work),
+            cell: ({ shift }) => say(workOf(shift)),
+          },
+          {
+            key: 'rest',
+            header: say(record.rest),
+            cell: ({ shift }) => restIn(shift),
+          },
+          {
+            key: 'notes',
+            header: say(record.notes),
+            cell: ({ notes }) => notes,
+          },
         ]}
         rows={dated}
         rowKey={({ date }) => date}
-        emptyMessage='今日から後の日付の行はありません。その日だけ勤務時間を変える日や休みの日は、日付ごとの行に入れます。'
+        emptyMessage={say(record.noDates)}
       />
       {parts.past.length > 0 && (
-        <Note>
-          {`今日より前の日付の行が、ほかに ${parts.past.length} 行あります。`}
-        </Note>
+        <Note>{say(record.pastOf(parts.past.length))}</Note>
       )}
     </div>
   )

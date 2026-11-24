@@ -1,17 +1,22 @@
-import { Alert, Button, Card, Dialog } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, Dialog, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './review-removal.module.css'
+
+const { removal } = adminReviewReportMessages
 
 export type ReviewRemovalProps = {
   /** What the review is called: its title, or its overall rating */
-  name: string
+  name: LocalizedText
   /** Why the last attempt changed nothing, said above the button */
-  refusal?: string | undefined
+  refusal?: LocalizedText | undefined
   /** Whether the dialog of the removal is open */
   asking?: boolean | undefined
   /** The removal is on its way */
   pending?: boolean | undefined
   /** What went wrong with the last attempt, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button of the removal was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -34,32 +39,34 @@ export const ReviewRemoval = ({
   onAsk,
   onClose,
   onRemove,
-}: ReviewRemovalProps) => (
-  <Card title='レビューの削除'>
-    <div className={styles['removal']}>
-      <p>
-        規則に反するレビューを削除します。削除すると、お客様の画面とサロンの画面から消え、このレビューへの通報も消えます。削除したレビューは、元に戻せません。
-      </p>
-      {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <Button variant='danger' onClick={onAsk}>
-        レビューを削除する
-      </Button>
-    </div>
-    <Dialog
-      open={asking}
-      onClose={onClose}
-      title={`「${name}」を削除しますか？`}
-      description='削除したレビューは、元に戻せません。このレビューへの通報も、一緒に消えます。'
-      actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='danger' pending={pending} onClick={onRemove}>
-            削除する
-          </Button>
-        </>
-      }
-    >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </Card>
-)
+}: ReviewRemovalProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(removal.title)}>
+      <div className={styles['removal']}>
+        <p>{say(removal.explanation)}</p>
+        {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
+        <Button variant='danger' onClick={onAsk}>
+          {say(removal.open)}
+        </Button>
+      </div>
+      <Dialog
+        open={asking}
+        onClose={onClose}
+        title={say(removal.confirm(name))}
+        description={say(removal.description)}
+        actions={
+          <>
+            <Button onClick={onClose}>{say(uiMessages.back)}</Button>
+            <Button variant='danger' pending={pending} onClick={onRemove}>
+              {say(removal.submit)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </Card>
+  )
+}

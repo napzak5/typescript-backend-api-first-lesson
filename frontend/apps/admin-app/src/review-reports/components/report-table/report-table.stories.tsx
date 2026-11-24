@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -6,11 +8,14 @@ import { reviewNameOf } from '../../../reviews/utils/review-format'
 import { REPORTS, reportWithDetails, waitingReport } from '../examples'
 import { ReportTable } from './report-table'
 
-const reviewOf = (reviewId: string) => {
+const reviewOf = (reviewId: string): { name: LocalizedText; href: string } => {
   const review = REVIEWS_OF_THE_SALON.find(({ id }) => id === reviewId)
 
   return {
-    name: review === undefined ? '削除されたレビュー' : reviewNameOf(review),
+    name:
+      review === undefined
+        ? adminReviewReportMessages.reviewNames.removed
+        : reviewNameOf(review),
     href: `/salons/${salon.id}/reviews/${reviewId}`,
   }
 }

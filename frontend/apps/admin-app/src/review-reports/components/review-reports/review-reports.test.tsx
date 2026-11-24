@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reviewReportsStories from './review-reports.stories'
 
 const stories = composeStories(reviewReportsStories)
@@ -69,6 +70,52 @@ describe('ReviewReports', () => {
         .map(({ textContent }) => textContent),
     ).toContain(
       'この通報は、その間に、ほかの管理者が却下しました。却下は、1 つの通報に 1 回です。',
+    )
+  })
+})
+
+describe('ReviewReports on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should ask in English before a report is dismissed, by when it was received', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Failed.run()
+
+    // Assert
+    expect(screen.getByRole('region', { name: 'Reports' })).toHaveTextContent(
+      'When the review breaks no rule, dismiss them. When it does, delete it under “Deleting the review”.',
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Dismiss the report?' })
+    expect(dialog).toHaveAccessibleDescription(
+      'This dismisses the report received on Fri, November 20, 2026 at 10:30. A dismissed report is no longer pending, and the review stays listed as it is. A dismissal cannot be undone.',
+    )
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Could not dismiss the report. Check your connection and try again.',
+    )
+    expect(
+      within(dialog).getByRole('button', { name: 'Dismiss' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English why the last dismissal changed nothing', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.DismissedMeanwhile.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('region', { name: 'Reports' }))
+        .getAllByRole('status')
+        .map(({ textContent }) => textContent),
+    ).toContain(
+      'Meanwhile, another administrator dismissed this report. A report is dismissed once.',
     )
   })
 })

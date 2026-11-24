@@ -10,16 +10,18 @@ import type {
   ModelsReviewResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -48,8 +50,9 @@ import {
   afterDismissal,
   afterReviewRemoval,
   handlesReports,
-  reportMomentOf,
 } from '../utils/review-reports'
+
+const { loading, names, ofReview } = adminReviewReportMessages
 
 /** Whether the signed-in account handles the reports of reviews: an administrator. */
 export const useHandlesReports = (): boolean => {
@@ -71,11 +74,12 @@ type HandlingProps = {
  * pressed was.
  */
 export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [asking, setAsking] = useState<ModelsReviewReportResponse>()
-  const [message, setMessage] = useState<string>()
-  const [refusal, setRefusal] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const heading = useRef<HTMLHeadingElement>(null)
   /** Whether the focus goes to the heading once the reports are read anew */
   const toHeading = useRef(false)
@@ -139,7 +143,7 @@ export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
       asking={
         asking === undefined
           ? undefined
-          : reportMomentOf(asking.createdAt, salon.timezone)
+          : momentNameAt(asking.createdAt, salon.timezone)
       }
       pending={dismissal.isPending}
       message={message}
@@ -152,24 +156,20 @@ export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
       }}
     >
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))
-        .with(undefined, () => (
-          <LoadingIndicator label='通報を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('通報'), reason),
-            )}
+            message={say(unreadMessageOf(names.reports, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
-          <EmptyState kind='part' title='このレビューへの通報はありません。' />
+          <EmptyState kind='part' title={say(ofReview.none)} />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
           <ReportTable
-            caption='このレビューへの通報'
+            caption={say(ofReview.caption)}
             reports={items}
             timezone={salon.timezone}
             onDismiss={(report) => {
@@ -202,8 +202,8 @@ export const RemovalOfReview = ({ salon, review }: HandlingProps) => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const [asking, setAsking] = useState(false)
-  const [message, setMessage] = useState<string>()
-  const [refusal, setRefusal] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const key = reviewKeyOf(review.id)
 
   const forget = (): void => {

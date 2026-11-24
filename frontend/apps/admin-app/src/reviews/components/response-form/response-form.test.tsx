@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answeredReview } from '../examples'
 import * as responseFormStories from './response-form.stories'
 
@@ -80,5 +81,66 @@ describe('ResponseForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       '返信を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('ResponseForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show what the customer wrote above the answer, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.FirstAnswer.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { name: 'Review by the customer' }),
+    ).toBeVisible()
+    expect(screen.getByText('Thu, November 19, 2026')).toBeVisible()
+    expect(screen.getByText('No comment')).toBeVisible()
+    expect(
+      screen.getByRole('textbox', { name: 'Response' }),
+    ).toHaveAccessibleDescription(
+      'Shown below the review as the response from the salon. The customer and everybody who reads the review read it.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Post the response' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English what is wrong with the answer, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Response' }),
+    ).toHaveAccessibleDescription(/Enter the response\./)
+
+    // Act
+    await stories.Failed.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not send the response. Check your connection and try again.',
+    )
+  })
+
+  it('should offer in English to change the answer the review holds', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Change.run()
+
+    // Assert
+    expect(
+      screen.getByRole('button', { name: 'Edit the response' }),
+    ).toBeVisible()
   })
 })

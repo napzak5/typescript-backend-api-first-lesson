@@ -11,21 +11,20 @@ import type {
 import { isDay } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { type ScheduleAttempt, sameSchedule } from '../api/schedules-api'
-import {
-  dateRowsIn,
-  NO_BREAK_END,
-  NO_BREAK_START,
-  WEEKDAYS,
-} from './shift-week'
+import { dateRowsIn, WEEKDAYS } from './shift-week'
+
+const { form } = adminShiftMessages
+const { errors: ERRORS } = form
 
 /*
  * The form of the schedule of a member: a part for every day of the week,
@@ -133,12 +132,15 @@ const filledAt = (
 })
 
 /** What is said at the end of the hours of a part. */
-const endTimeError = ({ startTime, endTime }: Filled): string | undefined => {
+const endTimeError = ({
+  startTime,
+  endTime,
+}: Filled): LocalizedText | undefined => {
   if (endTime === undefined) {
-    return '勤務の終わりの時刻を入力してください。'
+    return ERRORS.endMissing
   }
   if (startTime !== undefined && endTime <= startTime) {
-    return '勤務の終わりは、始まりより後の時刻にしてください。日付をまたぐ勤務は入れられません。'
+    return ERRORS.endBeforeStart
   }
 
   return undefined
@@ -149,12 +151,12 @@ const breakStartError = ({
   startTime,
   breakStartTime,
   breakEndTime,
-}: Filled): string | undefined => {
+}: Filled): LocalizedText | undefined => {
   if (breakStartTime === undefined) {
-    return breakEndTime === undefined ? undefined : NO_BREAK_START
+    return breakEndTime === undefined ? undefined : ERRORS.noBreakStart
   }
   if (startTime !== undefined && breakStartTime <= startTime) {
-    return '休憩は、勤務の始まりより後に始めてください。'
+    return ERRORS.breakBeforeStart
   }
 
   return undefined
@@ -165,15 +167,15 @@ const breakEndError = ({
   endTime,
   breakStartTime,
   breakEndTime,
-}: Filled): string | undefined => {
+}: Filled): LocalizedText | undefined => {
   if (breakEndTime === undefined) {
-    return breakStartTime === undefined ? undefined : NO_BREAK_END
+    return breakStartTime === undefined ? undefined : ERRORS.noBreakEnd
   }
   if (breakStartTime !== undefined && breakEndTime <= breakStartTime) {
-    return '休憩の終わりは、休憩の始まりより後の時刻にしてください。'
+    return ERRORS.breakEndBeforeStart
   }
   if (endTime !== undefined && breakEndTime >= endTime) {
-    return '休憩は、勤務の終わりより前に終えてください。'
+    return ERRORS.breakAfterEnd
   }
 
   return undefined
@@ -183,14 +185,12 @@ const breakEndError = ({
 const timeEntriesOf = (
   filled: Filled,
   nameOf: (property: ScheduleProperty) => string,
-): [string, string | undefined][] =>
+): [string, LocalizedText | undefined][] =>
   filled.works
     ? [
         [
           nameOf('startTime'),
-          filled.startTime === undefined
-            ? '勤務の始まりの時刻を入力してください。'
-            : undefined,
+          filled.startTime === undefined ? ERRORS.startMissing : undefined,
         ],
         [nameOf('endTime'), endTimeError(filled)],
         [nameOf('breakStartTime'), breakStartError(filled)],
@@ -243,21 +243,19 @@ const dateErrorOf = (
   date: string,
   earlier: readonly string[],
   kept: readonly ModelsStaffSchedule[],
-): string | undefined => {
+): LocalizedText | undefined => {
   if (date === '') {
-    return '日付を入力してください。'
+    return ERRORS.dayMissing
   }
   if (!isDay(date)) {
-    return '日付は、1900 年 1 月 1 日から 2999 年 12 月 31 日までにしてください。'
+    return ERRORS.dayOutOfRange
   }
   const same = earlier.indexOf(date)
   if (same !== -1) {
-    return `この日付は、${same + 1} 行目と同じです。1 つの日付に入れられるのは 1 行です。`
+    return ERRORS.sameDate(same + 1)
   }
 
-  return kept.some((row) => row.date === date)
-    ? 'この日付の行は、今日より前の日付の行に、すでにあります。'
-    : undefined
+  return kept.some((row) => row.date === date) ? ERRORS.pastDateKept : undefined
 }
 
 /**
@@ -272,7 +270,7 @@ const readWhole = (
   values: FormData,
   shown: readonly ModelsStaffSchedule[],
   today: string,
-): FormRead<ScheduleRequest> => {
+): FormRead<ScheduleRequest, FormErrors<LocalizedText>> => {
   const parts = partsOf(shown, today)
   const kept = values.has(DROP_PAST) ? [] : parts.past
   const weekly = WEEKDAYS.map((weekday) => ({
@@ -284,12 +282,15 @@ const readWhole = (
     date: textOf(values, dateControlOf(index, 'date')).trim(),
     filled: filledAt(values, (property) => dateControlOf(index, property)),
   }))
-  const entries: [string, string | undefined][] = [
+  const entries: [string, LocalizedText | undefined][] = [
     ...weekly.flatMap(({ weekday, filled }) =>
       timeEntriesOf(filled, (property) => weeklyControlOf(weekday, property)),
     ),
     ...dated.flatMap(
-      ({ index, date, filled }, position): [string, string | undefined][] => [
+      (
+        { index, date, filled },
+        position,
+      ): [string, LocalizedText | undefined][] => [
         [
           dateControlOf(index, 'date'),
           dateErrorOf(
@@ -303,7 +304,7 @@ const readWhole = (
     ),
   ]
   const errors = Object.fromEntries(
-    entries.flatMap(([name, error]): [string, string][] =>
+    entries.flatMap(([name, error]): [string, LocalizedText][] =>
       error === undefined ? [] : [[name, error]],
     ),
   )
@@ -360,7 +361,9 @@ const asSent = (rows: readonly ModelsStaffSchedule[]): ModelsStaffSchedule[] =>
   )
 
 /** What a change of a schedule asks for: nothing, when nothing was changed. */
-export type ScheduleChange = FormRead<ScheduleRequest> | { type: 'unchanged' }
+export type ScheduleChange =
+  | FormRead<ScheduleRequest, FormErrors<LocalizedText>>
+  | { type: 'unchanged' }
 
 /**
  * The schedule a form holds, and whether it differs from the schedule it
@@ -392,9 +395,6 @@ const PROPERTIES: readonly string[] = [
   'notes',
 ]
 
-const CHANGED_MEANWHILE =
-  'その間に、ほかのアカウントがこの勤務スケジュールを変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの勤務スケジュールを、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で勤務スケジュールに戻ってください。'
-
 /**
  * What the form of a schedule says after the API did not take it. A
  * member who is gone is no failure of the form: the screen says so.
@@ -402,9 +402,9 @@ const CHANGED_MEANWHILE =
 export const afterScheduleSave = (
   outcome: Exclude<ScheduleAttempt, { type: 'saved' } | NotFound>,
   request: ScheduleRequest,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap(({ field }) => {
         const [place, property] = field.split('.')
@@ -418,26 +418,16 @@ export const afterScheduleSave = (
       })
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
-          said.map((control) => [control, inJapanese(REFUSED_VALUE_MESSAGE)]),
+          said.map((control) => [control, REFUSED_VALUE_MESSAGE]),
         ),
       }
     })
-    .with({ type: 'changed' }, () => aboutTheAttempt(CHANGED_MEANWHILE))
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt(
-        'このアカウントでは、勤務スケジュールを直せません。勤務スケジュールを直せるのは、サロンのオーナー、マネージャーと、管理者です。',
-      ),
-    )
+    .with({ type: 'changed' }, () => aboutTheAttempt(form.changedMeanwhile))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(form.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '勤務スケジュールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(form.failed))
     .exhaustive()

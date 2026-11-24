@@ -18,7 +18,10 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
-import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import {
+  reviewMessages,
+  termMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { ProfileRead } from '../../profile/api/profile-api'
 import type { ReviewReporting } from '../api/reviews-api'
@@ -115,13 +118,19 @@ export const readReport = (
   const details = typeof entered === 'string' ? entered.trim() : ''
 
   if (reason === undefined) {
-    return { type: 'invalid', errors: { [REASON]: words.reasonMissing } }
+    return {
+      type: 'invalid',
+      errors: { [REASON]: reviewMessages.report.reasonMissing },
+    }
   }
   if (lengthOf(details) > MAX_DETAILS_LENGTH) {
     return { type: 'invalid', errors: { [DETAILS]: DETAILS_TOO_LONG } }
   }
   if (reason === 'other' && details === '') {
-    return { type: 'invalid', errors: { [DETAILS]: words.detailsMissing } }
+    return {
+      type: 'invalid',
+      errors: { [DETAILS]: reviewMessages.report.detailsMissing },
+    }
   }
 
   return {
@@ -133,7 +142,7 @@ export const readReport = (
 /** What to say at the details, for the rule the value broke. */
 const detailsMessageOf = (rule: string): LocalizedText =>
   match(rule)
-    .with('custom', () => words.detailsMissing)
+    .with('custom', () => reviewMessages.report.detailsMissing)
     .with('too_big', () => DETAILS_TOO_LONG)
     .otherwise(() => words.unacceptable)
 
@@ -152,7 +161,9 @@ const afterRefusedValues = (
     : {
         message: undefined,
         errors: {
-          ...(reason === undefined ? {} : { [REASON]: words.reasonMissing }),
+          ...(reason === undefined
+            ? {}
+            : { [REASON]: reviewMessages.report.reasonMissing }),
           ...(details === undefined
             ? {}
             : { [DETAILS]: detailsMessageOf(details.rule) }),

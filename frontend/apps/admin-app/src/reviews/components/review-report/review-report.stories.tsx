@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ReviewReport } from './review-report'
@@ -28,9 +29,7 @@ export const Asking: Story = {
 export const WithErrors: Story = {
   args: {
     asking: true,
-    errors: {
-      details: '「その他」を選んだときは、何が問題かを入力してください。',
-    },
+    errors: { details: reviewMessages.report.detailsMissing },
   },
 }
 

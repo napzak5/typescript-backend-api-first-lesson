@@ -8,7 +8,10 @@ import type {
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
-import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import {
+  reviewMessages,
+  termMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 
 const { hours: words, reviews } = portalSalonMessages
 
@@ -149,7 +152,7 @@ export type DetailRating =
   | 'cleanlinessRating'
   | 'valueRating'
 
-const SIDE_NAMES: Record<DetailRating, LocalizedText> = reviews.sides
+const SIDE_NAMES: Record<DetailRating, LocalizedText> = reviewMessages.sides
 
 /** The sides of a visit, in the order a page shows them and a form asks for them */
 const SIDES: readonly DetailRating[] = [

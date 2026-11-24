@@ -15,7 +15,12 @@ import {
   RadioGroup,
   TextField,
   useRepeatedRows,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ReactNode, useState } from 'react'
 import {
   DROP_PAST,
@@ -28,7 +33,8 @@ import {
   WORKS,
   weeklyControlOf,
 } from '../../utils/schedule-form'
-import { weekdayNameOf } from '../../utils/shift-week'
+
+const { form } = adminShiftMessages
 
 export type ScheduleFormProps = {
   /** The schedule the form was opened with, as the API lists it */
@@ -36,8 +42,10 @@ export type ScheduleFormProps = {
   /** Today at the salon: the rows of the days before it are kept out of sight */
   today: string
   submitLabel: string
-  message?: string | undefined
-  errors?: FormErrors | undefined
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   pending?: boolean | undefined
   actions?: ReactNode
   onSubmit: (values: FormData) => void
@@ -56,49 +64,53 @@ type HoursProps = {
 }
 
 /** The hours of a day the member works on, and the break, at the clock of the salon. */
-const Hours = ({ nameOf, shown, errors }: HoursProps) => (
-  <>
-    <FieldRow>
-      <TextField
-        label='始まり'
-        type='time'
-        name={nameOf('startTime')}
-        autoComplete='off'
-        required
-        defaultValue={timeInputOf(shown?.startTime ?? null)}
-        error={errors[nameOf('startTime')]}
-      />
-      <TextField
-        label='終わり'
-        type='time'
-        name={nameOf('endTime')}
-        autoComplete='off'
-        required
-        defaultValue={timeInputOf(shown?.endTime ?? null)}
-        error={errors[nameOf('endTime')]}
-      />
-    </FieldRow>
-    <FieldRow>
-      <TextField
-        label='休憩の始まり'
-        type='time'
-        name={nameOf('breakStartTime')}
-        autoComplete='off'
-        description='休憩がないときは、始まりも終わりも空にします。'
-        defaultValue={timeInputOf(shown?.breakStartTime ?? null)}
-        error={errors[nameOf('breakStartTime')]}
-      />
-      <TextField
-        label='休憩の終わり'
-        type='time'
-        name={nameOf('breakEndTime')}
-        autoComplete='off'
-        defaultValue={timeInputOf(shown?.breakEndTime ?? null)}
-        error={errors[nameOf('breakEndTime')]}
-      />
-    </FieldRow>
-  </>
-)
+const Hours = ({ nameOf, shown, errors }: HoursProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <FieldRow>
+        <TextField
+          label={say(form.start)}
+          type='time'
+          name={nameOf('startTime')}
+          autoComplete='off'
+          required
+          defaultValue={timeInputOf(shown?.startTime ?? null)}
+          error={errors[nameOf('startTime')]}
+        />
+        <TextField
+          label={say(form.end)}
+          type='time'
+          name={nameOf('endTime')}
+          autoComplete='off'
+          required
+          defaultValue={timeInputOf(shown?.endTime ?? null)}
+          error={errors[nameOf('endTime')]}
+        />
+      </FieldRow>
+      <FieldRow>
+        <TextField
+          label={say(form.breakStart)}
+          type='time'
+          name={nameOf('breakStartTime')}
+          autoComplete='off'
+          description={say(form.breakDescription)}
+          defaultValue={timeInputOf(shown?.breakStartTime ?? null)}
+          error={errors[nameOf('breakStartTime')]}
+        />
+        <TextField
+          label={say(form.breakEnd)}
+          type='time'
+          name={nameOf('breakEndTime')}
+          autoComplete='off'
+          defaultValue={timeInputOf(shown?.breakEndTime ?? null)}
+          error={errors[nameOf('breakEndTime')]}
+        />
+      </FieldRow>
+    </>
+  )
+}
 
 /**
  * The schedule of a member: a part for every day of the week, and the rows
@@ -124,6 +136,8 @@ export const ScheduleForm = ({
   actions,
   onSubmit,
 }: ScheduleFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const parts = partsOf(schedule, today)
   const [weekly, setWeekly] = useState<
     Partial<Record<ModelsDayOfWeekType, boolean>>
@@ -135,36 +149,35 @@ export const ScheduleForm = ({
       ]),
     ),
   )
-  const dates = useRepeatedRows<DateRow>(
+  const dates = useRepeatedRows<DateRow, LocalizedText>(
     () => parts.dates.map((shown) => ({ shown, works: shown.isAvailable })),
     errors,
   )
+  const dateErrors = useSaidForm(undefined, dates.errors).errors
+
   return (
     <Form
       submitLabel={submitLabel}
-      message={message}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={actions}
       onSubmit={onSubmit}
     >
-      <FormPart
-        label='毎週'
-        description='曜日ごとの勤務時間です。時刻は、サロンの時計の時刻です。勤務しない曜日に備考を書くと、休みの理由として残ります。'
-      >
+      <FormPart label={say(form.week)} description={say(form.weekDescription)}>
         {parts.weekly.map(({ weekday, row }) => {
           const nameOf = (property: ScheduleProperty): string =>
             weeklyControlOf(weekday, property)
           const works = weekly[weekday] ?? false
 
           return (
-            <FormRow key={weekday} label={weekdayNameOf(weekday)}>
+            <FormRow key={weekday} label={say(termMessages.dayOfWeek[weekday])}>
               <RadioGroup
-                label='勤務'
+                label={say(form.work)}
                 name={nameOf('works')}
                 options={[
-                  { value: WORKS, label: '勤務する' },
-                  { value: OFF, label: '勤務しない' },
+                  { value: WORKS, label: say(form.works) },
+                  { value: OFF, label: say(form.worksNot) },
                 ]}
                 value={works ? WORKS : OFF}
                 onChange={(event) =>
@@ -174,21 +187,23 @@ export const ScheduleForm = ({
                   })
                 }
               />
-              {works && <Hours nameOf={nameOf} shown={row} errors={errors} />}
+              {works && (
+                <Hours nameOf={nameOf} shown={row} errors={said.errors} />
+              )}
               <TextField
-                label='備考'
+                label={say(form.notes)}
                 name={nameOf('notes')}
                 autoComplete='off'
                 defaultValue={row?.notes ?? undefined}
-                error={errors[nameOf('notes')]}
+                error={said.errors[nameOf('notes')]}
               />
             </FormRow>
           )
         })}
       </FormPart>
       <FormPart
-        label='日付ごと'
-        description='その日だけ勤務時間を変える日や、休みの日です。日付ごとの行がある日は、曜日の勤務時間の代わりに、その行を使います。'
+        label={say(form.dates)}
+        description={say(form.datesDescription)}
       >
         {dates.rows.map((row, index) => {
           const nameOf = (property: ScheduleProperty): string =>
@@ -198,24 +213,24 @@ export const ScheduleForm = ({
             <FormRow
               key={row.key}
               ref={dates.rowRef(row.key)}
-              label={`${index + 1} 行目`}
+              label={say(form.row(index + 1))}
             >
               <TextField
                 width='short'
-                label='日付'
+                label={say(form.date)}
                 type='date'
                 name={nameOf('date')}
                 autoComplete='off'
                 required
                 defaultValue={row.value.shown?.date ?? undefined}
-                error={dates.errors[nameOf('date')]}
+                error={dateErrors[nameOf('date')]}
               />
               <RadioGroup
-                label='勤務'
+                label={say(form.work)}
                 name={nameOf('works')}
                 options={[
-                  { value: WORKS, label: '勤務する' },
-                  { value: OFF, label: '休み' },
+                  { value: WORKS, label: say(form.works) },
+                  { value: OFF, label: say(form.off) },
                 ]}
                 value={row.value.works ? WORKS : OFF}
                 onChange={(event) =>
@@ -229,23 +244,23 @@ export const ScheduleForm = ({
                 <Hours
                   nameOf={nameOf}
                   shown={row.value.shown}
-                  errors={dates.errors}
+                  errors={dateErrors}
                 />
               )}
               <TextField
-                label='備考'
+                label={say(form.notes)}
                 name={nameOf('notes')}
                 autoComplete='off'
-                description='休みの理由（有給休暇、研修など）や、勤務時間を変える理由です。'
+                description={say(form.notesDescription)}
                 defaultValue={row.value.shown?.notes ?? undefined}
-                error={dates.errors[nameOf('notes')]}
+                error={dateErrors[nameOf('notes')]}
               />
               <Button
                 size='small'
-                aria-label={`${index + 1} 行目を外す`}
+                aria-label={say(form.removeRow(index + 1))}
                 onClick={() => dates.remove(row.key)}
               >
-                外す
+                {say(form.remove)}
               </Button>
             </FormRow>
           )
@@ -255,18 +270,16 @@ export const ScheduleForm = ({
             ref={dates.addRef}
             onClick={() => dates.add({ shown: undefined, works: false })}
           >
-            日付の行を足す
+            {say(form.addRow)}
           </Button>
         ) : (
-          <Note size='small'>
-            {`日付ごとの行は、今日より前の行と合わせて ${MOST_DATES} 行まで入れられます。`}
-          </Note>
+          <Note size='small'>{say(form.mostDates(MOST_DATES))}</Note>
         )}
         {parts.past.length > 0 && (
           <Checkbox
             name={DROP_PAST}
-            label={`今日より前の日付の行（${parts.past.length} 行）を消す`}
-            description='消さないときは、そのまま残ります。済んだ日の行は、シフトに使われません。'
+            label={say(form.dropPast(parts.past.length))}
+            description={say(form.dropPastDescription)}
           />
         )}
       </FormPart>

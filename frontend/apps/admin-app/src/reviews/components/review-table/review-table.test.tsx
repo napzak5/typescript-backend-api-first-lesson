@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { answeredReview } from '../examples'
 import * as reviewTableStories from './review-table.stories'
@@ -103,5 +104,52 @@ describe('ReviewTable', () => {
     // Assert
     expect(onMore).toHaveBeenCalledOnce()
     expect(screen.getByText('23 件（2 件を表示しています）')).toBeVisible()
+  })
+})
+
+describe('ReviewTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say of each review what it is called, when it was written, whom it rates, its response and its reports, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Reviews.run()
+
+    // Assert
+    const table = screen.getByRole('table')
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Review',
+      'Posted',
+      'Rating',
+      'Comment',
+      'Staff member',
+      'Response',
+      'Reports',
+    ])
+    expect(rowsOf(table)[0]).toEqual([
+      'Review rated 3',
+      'Fri, November 20, 2026',
+      '3.0',
+      '予約していたのに 30 分待ちました。',
+      'No staff member',
+      'No response',
+      '1 pending',
+    ])
+    expect(rowsOf(table)[1]?.slice(3)).toEqual([
+      'Not recorded',
+      '佐藤 健',
+      'No response',
+      'None',
+    ])
+    expect(rowsOf(table)[2]?.[5]).toBe('Responded')
+    expect(screen.getByText('3 items')).toBeVisible()
   })
 })

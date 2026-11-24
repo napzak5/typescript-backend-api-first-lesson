@@ -1,9 +1,7 @@
 import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
 import { dayOf } from '@beauty-salon-shared/i18n/formats'
-import {
-  portalReviewMessages,
-  portalSalonMessages,
-} from '@beauty-salon-shared/i18n/messages/portal'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn, userEvent } from 'storybook/test'
@@ -76,7 +74,7 @@ export const WithoutReason: Story = {
   render: (args) => (
     <Answering
       {...args}
-      answer={{ errors: { reason: portalReviewMessages.report.reasonMissing } }}
+      answer={{ errors: { reason: reviewMessages.report.reasonMissing } }}
     />
   ),
   play: send,
@@ -92,7 +90,7 @@ export const WithoutDetails: Story = {
       {...args}
       answer={{
         errors: {
-          details: portalReviewMessages.report.detailsMissing,
+          details: reviewMessages.report.detailsMissing,
         },
       }}
     />

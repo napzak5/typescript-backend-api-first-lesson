@@ -1,12 +1,17 @@
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
+import { answeredReview } from '../../../reviews/components/examples'
+import { reviewNameOf } from '../../../reviews/utils/review-format'
 import { ReviewRemoval } from './review-removal'
+
+const { removal } = adminReviewReportMessages
 
 const meta: Meta<typeof ReviewRemoval> = {
   title: 'Admin/ReviewReports/ReviewRemoval',
   component: ReviewRemoval,
   args: {
-    name: '評価 3 のレビュー',
+    name: reviewNameOf({ ...answeredReview, title: null, overallRating: 3 }),
     onAsk: fn(),
     onClose: fn(),
     onRemove: fn(),
@@ -29,15 +34,13 @@ export const Asking: Story = {
 export const Failed: Story = {
   args: {
     asking: true,
-    message:
-      'レビューを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: removal.failed,
   },
 }
 
 /** Refused to an account that no longer removes reviews */
 export const Forbidden: Story = {
   args: {
-    refusal:
-      'このアカウントでは、このレビューを削除できません。レビューを削除できるのは、書いたお客様と、管理者です。',
+    refusal: removal.forbidden,
   },
 }

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { answeredReview, unansweredReview } from '../examples'
 import * as reviewAnswerStories from './review-answer.stories'
@@ -125,7 +126,85 @@ describe('ReviewAnswer', () => {
     expect(
       within(screen.getByRole('dialog')).getByRole('alert'),
     ).toHaveTextContent(
-      '返信を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
+      '返信を取り下げられませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('ReviewAnswer on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what the salon answered and when, and offer its change and its withdrawal, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Answered.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { name: 'Response from the salon' }),
+    ).toBeVisible()
+    expect(
+      screen.getByText('Responded on Thu, November 19, 2026 at 12:00'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Edit the response' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Withdraw the response' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the salon did not answer, and lead to the answer', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unanswered.run()
+
+    // Assert
+    expect(screen.getByText('The salon has not responded yet.')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Write a response' })).toBeVisible()
+  })
+
+  it('should say in English who writes the answers to a member of the staff', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ForStaff.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Only the owners and managers of the salon can write responses and report reviews to the team that runs the site.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should ask in English before the answer is withdrawn, and say what went wrong', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithdrawalFailed.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Withdraw the response?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'This removes the response of the salon from the review. A withdrawn response cannot be brought back; a response can be written again later.',
+    )
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Could not withdraw the response. Check your connection and try again.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(
+      within(dialog).getByRole('button', { name: 'Withdraw' }),
+    ).toBeVisible()
   })
 })

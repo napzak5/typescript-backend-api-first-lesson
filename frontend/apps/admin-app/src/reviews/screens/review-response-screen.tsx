@@ -8,15 +8,16 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -37,7 +38,7 @@ import {
 } from '../utils/review-actions'
 import { ReviewNotFound } from './review-not-found'
 
-const TITLE = 'レビューに返信する'
+const { loading, names, response: RESPONSE, titles } = adminReviewMessages
 
 type ResponseEntryProps = {
   salon: ModelsSalonResponse
@@ -50,10 +51,11 @@ type ResponseEntryProps = {
  * the screen goes back to the review, which shows it.
  */
 const ResponseEntry = ({ salon, review }: ResponseEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = reviewKeyOf(review.id)
   const page = reviewHrefOf(salon.id, review.id)
 
@@ -70,8 +72,8 @@ const ResponseEntry = ({ salon, review }: ResponseEntryProps) => {
             tone: 'success',
             message:
               review.ownerResponse === null
-                ? 'レビューに返信しました。'
-                : '返信を直しました。',
+                ? RESPONSE.responded
+                : RESPONSE.changed,
           })
           void navigate(page)
         })
@@ -115,7 +117,7 @@ const ResponseEntry = ({ salon, review }: ResponseEntryProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={page} variant='quiet'>
-          やめる
+          {say(RESPONSE.cancel)}
         </ButtonLink>
       }
     />
@@ -131,6 +133,7 @@ type ResponsePartProps = { salon: ModelsSalonResponse; reviewId: string }
  * sent with what it was opened with.
  */
 const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: reviewKeyOf(reviewId),
     queryFn: () => readReview(reviewId),
@@ -138,13 +141,15 @@ const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.response)} description={salon.name} />
+  )
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='レビューを読み込んでいます' />
+        <LoadingIndicator label={say(loading.review)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <ReviewNotFound salonId={salon.id} />)
@@ -156,9 +161,7 @@ const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('レビュー'), reason),
-          )}
+          message={say(unreadMessageOf(names.review, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -176,27 +179,30 @@ const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
 type ResponseForbiddenProps = { salon: ModelsSalonResponse; reviewId: string }
 
 /** What the screen says to an account whose role writes no answers: who does, and the way back to the review. */
-const ResponseForbidden = ({ salon, reviewId }: ResponseForbiddenProps) => (
-  <>
-    <PageHeader title={TITLE} description={salon.name} />
-    <p>
-      このアカウントでは、レビューに返信できません。返信を書けるのは、サロンのオーナーとマネージャーです。
-    </p>
-    <ButtonLink href={reviewHrefOf(salon.id, reviewId)}>
-      レビューへ戻る
-    </ButtonLink>
-  </>
-)
+const ResponseForbidden = ({ salon, reviewId }: ResponseForbiddenProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader title={say(titles.response)} description={salon.name} />
+      <p>{say(RESPONSE.notForAccount)}</p>
+      <ButtonLink href={reviewHrefOf(salon.id, reviewId)}>
+        {say(RESPONSE.toReview)}
+      </ButtonLink>
+    </>
+  )
+}
 
 /** The answer to a review of the salon of the address, for its owner and its managers. */
 export const ReviewResponseScreen = () => {
+  const say = useSay()
   const { salonId = '', reviewId = '' } = useParams()
   const session = useSession()
   const speaks =
     session.type === 'signedIn' && speaksForTheSalon(session.user.role)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.response)}>
       {(salon) =>
         speaks ? (
           <ResponsePart key={reviewId} salon={salon} reviewId={reviewId} />
