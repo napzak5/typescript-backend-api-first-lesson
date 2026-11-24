@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { CUSTOMER, STYLIST, TOKYO } from '../fixtures/seed'
-import { giveBack, refuse, takeAway, unreadable } from './failures'
+import {
+  giveBack,
+  refuse,
+  takeAway,
+  unreadable,
+  whenAskedFor,
+} from './failures'
 import { idOf, salonIdOf, testApi } from './test-api'
 
 /*
@@ -46,6 +52,10 @@ const lastSignInOf = async (email: string): Promise<unknown> =>
   )
 
 describe('how a test makes the API fail', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should let the database refuse what it was told to, and write the rest', async () => {
     // Arrange
     const salonId = await salonIdOf(TOKYO)
@@ -100,6 +110,21 @@ describe('how a test makes the API fail', () => {
     expect(await statusOf('/staff-profiles/me', accessToken)).toBe(500)
     await giveBack('staff', 'bio')
     expect(await statusOf('/staff-profiles/me', accessToken)).toBe(200)
+  })
+
+  it('should change the database the moment a request is sent, the first time only, and send it then', async () => {
+    // Arrange
+    const tokyo = await salonIdOf(TOKYO)
+    whenAskedFor(`GET /salons/${tokyo}`, () => takeAway('salons'))
+
+    // Act: another request leaves the database as it is
+    const list = await statusOf('/salons')
+    const first = await statusOf(`/salons/${tokyo}`)
+    await giveBack('salons')
+    const second = await statusOf(`/salons/${tokyo}`)
+
+    // Assert
+    expect([list, first, second]).toEqual([200, 500, 200])
   })
 
   it('should give a row a moment the API cannot answer with, and give the row its moment back', async () => {

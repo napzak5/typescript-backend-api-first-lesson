@@ -1,7 +1,12 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked, sent } from '@beauty-salon-frontend/testing/answers'
-import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  takeAway,
+  testApi,
+  whenAskedFor,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -116,23 +121,13 @@ const saveButton = () => button('変更を保存する')
  * answer then. The API answers a review while its salon is there: the
  * salon goes between the review and its name.
  */
-const removeTheSalonWhenAskedFor = (salonId: string): void => {
-  const answer = globalThis.fetch
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-    const request = new Request(input, init)
-    if (
-      request.method === 'GET' &&
-      new URL(request.url).pathname.endsWith(`/salons/${salonId}`)
-    ) {
-      await testApi().query(
-        'update salons set "deletedAt" = now() where id = $1::uuid',
-        [salonId],
-      )
-    }
-
-    return answer(input, init)
-  })
-}
+const removeTheSalonWhenAskedFor = (salonId: string): void =>
+  whenAskedFor(`GET /salons/${salonId}`, () =>
+    testApi().query(
+      'update salons set "deletedAt" = now() where id = $1::uuid',
+      [salonId],
+    ),
+  )
 
 /** A line of what was asked that is about the reviews: the screen asks for more than them. */
 const ofTheReviews = (line: string): boolean => line.includes(' /reviews')

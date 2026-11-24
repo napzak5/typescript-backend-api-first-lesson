@@ -1,4 +1,10 @@
-export { giveBack, refuse, takeAway, unreadable } from './failures'
+export {
+  giveBack,
+  refuse,
+  takeAway,
+  unreadable,
+  whenAskedFor,
+} from './failures'
 export { signInAs } from './sign-in'
 export {
   countOf,
