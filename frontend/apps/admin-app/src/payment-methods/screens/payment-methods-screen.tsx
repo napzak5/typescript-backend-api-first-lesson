@@ -6,12 +6,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -27,7 +27,7 @@ import {
 import { PaymentMethodTable } from '../components/payment-method-table/payment-method-table'
 import { useKeepsPaymentMethods } from './keeps-payment-methods'
 
-const TITLE = '支払い方法'
+const { list, loading, names, titles } = adminPaymentMethodMessages
 
 type PaymentMethodsPartProps = { salon: ModelsSalonResponse }
 
@@ -37,6 +37,7 @@ type PaymentMethodsPartProps = { salon: ModelsSalonResponse }
  * to add one.
  */
 const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
+  const say = useSay()
   const keeps = useKeepsPaymentMethods()
   const methods = useQuery({
     queryKey: paymentMethodsKeyOf(salon.id),
@@ -47,7 +48,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.methods)}
         description={salon.name}
         actions={
           keeps ? (
@@ -55,25 +56,23 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
               href={paymentMethodEntryHrefOf(salon.id)}
               variant='primary'
             >
-              支払い方法を足す
+              {say(titles.entry)}
             </ButtonLink>
           ) : undefined
         }
       />
       {match(methods.isFetchedAfterMount ? methods.data : undefined)
         .with(undefined, () => (
-          <LoadingIndicator label='支払い方法を読み込んでいます' />
+          <LoadingIndicator label={say(loading.methods)} />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
+          <OtherSalonNotice what={names.methodsOfTheSalon} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('支払い方法'), reason),
-              )}
+              message={say(unreadMessageOf(names.methods, reason))}
               onRetry={() => void methods.refetch()}
               pending={methods.isFetching}
             />
@@ -81,9 +80,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
         )
         .with({ type: 'found' }, ({ items }) => (
           <>
-            <p>
-              売上の画面で支払いを記録するときに選ぶ手段です。使っていない支払い方法は、新しい支払いには選べません。
-            </p>
+            <p>{say(list.description)}</p>
             <PaymentMethodTable
               methods={items}
               currency={salon.currency}
@@ -92,17 +89,20 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
           </>
         ))
         .exhaustive()}
-      <ButtonLink href={settingsHrefOf(salon.id)}>設定へ</ButtonLink>
+      <ButtonLink href={settingsHrefOf(salon.id)}>
+        {say(list.toSettings)}
+      </ButtonLink>
     </>
   )
 }
 
 /** The payment methods of the salon of the address, for everybody who works there and an administrator. */
 export const PaymentMethodsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.methods)}>
       {(salon) => <PaymentMethodsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

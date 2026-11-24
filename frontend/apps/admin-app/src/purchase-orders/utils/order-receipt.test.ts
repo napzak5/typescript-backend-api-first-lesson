@@ -21,11 +21,24 @@ const AS_OPENED = {
   deliveryNotes: '午前中に、裏口へ',
 }
 
-const quantityError = (ordered: string): string =>
-  `届いた数量は、0 より大きく、発注した ${ordered} までの数（小数は 2 桁まで）で入力してください。`
+/** A text in every language */
+type Said = { en: string; ja: string }
+
+/** What is said of a quantity received that is none, or more than was ordered: 「12 本」 */
+const quantityError = (ordered: string): Said => ({
+  en: `Enter the quantity received as a number above 0 and up to the ${ordered} ordered (up to 2 decimal places).`,
+  ja: `届いた数量は、0 より大きく、発注した ${ordered} までの数（小数は 2 桁まで）で入力してください。`,
+})
+
+/** Why the goods of an order of a status before it was placed are not received now */
+const notPlaced = (status: Said): Said => ({
+  en: `This order is “${status.en}”. A receipt is recorded for an order placed with the supplier (“Ordered” or “Shipped”).`,
+  ja: `この発注は${status.ja}です。入荷は、仕入先に頼んだ発注（発注済みか出荷済み）に記録します。`,
+})
 
 describe('receivableItemsOf', () => {
   it('should leave out the items whose stock rows were removed', () => {
+    // Assert
     expect(
       receivableItemsOf(shippedOrder.items).map(
         ({ inventoryId, productCode }) => [inventoryId, productCode],
@@ -39,6 +52,7 @@ describe('receivableItemsOf', () => {
 
 describe('orderedTextOf', () => {
   it('should start an item with all that was ordered', () => {
+    // Assert
     expect(orderedTextOf({ quantity: 12 })).toBe('12')
     expect(orderedTextOf({ quantity: 2.5 })).toBe('2.5')
   })
@@ -46,6 +60,7 @@ describe('orderedTextOf', () => {
 
 describe('readOrderReceipt', () => {
   it('should receive all that was ordered, and keep the notes left as they were', () => {
+    // Assert
     expect(readOrderReceipt(formOf(AS_OPENED), shippedOrder)).toEqual({
       type: 'valid',
       value: {
@@ -59,6 +74,7 @@ describe('readOrderReceipt', () => {
   })
 
   it('should receive what came of some items, and leave out those made empty', () => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({
@@ -79,6 +95,7 @@ describe('readOrderReceipt', () => {
   })
 
   it('should send the notes written on an order that had none', () => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({ ...AS_OPENED, deliveryNotes: '箱がつぶれていた' }),
@@ -99,12 +116,13 @@ describe('readOrderReceipt', () => {
     })
   })
 
-  it.each<[string, string, string]>([
+  it.each<[string, string, Said]>([
     ['more than was ordered', '12.01', quantityError('12 本')],
     ['none', '0', quantityError('12 本')],
     ['three decimals', '1.005', quantityError('12 本')],
     ['no number', '十', quantityError('12 本')],
   ])('should not receive %s', (_case, quantity, error) => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({ ...AS_OPENED, [COLOUR]: quantity }),
@@ -114,6 +132,7 @@ describe('readOrderReceipt', () => {
   })
 
   it('should not send a receipt of nothing', () => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({ ...AS_OPENED, [COLOUR]: '', [SHAMPOO]: '' }),
@@ -122,13 +141,16 @@ describe('readOrderReceipt', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        [COLOUR]:
-          '入荷する明細がありません。届いた明細に、数量を入力してください。',
+        [COLOUR]: {
+          en: 'No line item is received. Enter a quantity in the line items that arrived.',
+          ja: '入荷する明細がありません。届いた明細に、数量を入力してください。',
+        },
       },
     })
   })
 
   it('should not take the notes of the delivery away, which the API keeps for nothing', () => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({ ...AS_OPENED, deliveryNotes: ' ' }),
@@ -137,13 +159,16 @@ describe('readOrderReceipt', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        deliveryNotes:
-          'いまの納品のメモは、入荷では消せません。そのまま残すか、書き換えてください。',
+        deliveryNotes: {
+          en: 'The delivery notes cannot be cleared when the receipt is recorded. Keep them, or write others.',
+          ja: 'いまの納品のメモは、入荷では消せません。そのまま残すか、書き換えてください。',
+        },
       },
     })
   })
 
   it('should say every wrong quantity at once', () => {
+    // Assert
     expect(
       readOrderReceipt(
         formOf({ ...AS_OPENED, [COLOUR]: '13', [SHAMPOO]: '2.51' }),
@@ -161,50 +186,72 @@ describe('readOrderReceipt', () => {
 
 describe('UNRECEIVABLE', () => {
   it('should say why the goods of an order are not received now', () => {
+    // Assert
     expect(UNRECEIVABLE).toEqual({
-      draft:
-        'この発注は下書きです。入荷は、仕入先に頼んだ発注（発注済みか出荷済み）に記録します。',
-      pending:
-        'この発注は承認待ちです。入荷は、仕入先に頼んだ発注（発注済みか出荷済み）に記録します。',
-      approved:
-        'この発注は承認済みです。入荷は、仕入先に頼んだ発注（発注済みか出荷済み）に記録します。',
-      delivered: 'この発注は納品済みです。入荷は、記録してあります。',
-      cancelled: 'この発注は取り消しました。取り消した発注は、入荷できません。',
+      draft: notPlaced({ en: 'Draft', ja: '下書き' }),
+      pending: notPlaced({ en: 'Awaiting approval', ja: '承認待ち' }),
+      approved: notPlaced({ en: 'Approved', ja: '承認済み' }),
+      delivered: {
+        en: 'This order was delivered. Its receipt is recorded.',
+        ja: 'この発注は納品済みです。入荷は、記録してあります。',
+      },
+      cancelled: {
+        en: 'This order was cancelled. No receipt is recorded for a cancelled order.',
+        ja: 'この発注は取り消しました。取り消した発注は、入荷できません。',
+      },
     })
   })
 })
 
 describe('afterOrderReceipt', () => {
-  it.each<[string, Parameters<typeof afterOrderReceipt>[0], string]>([
+  it.each<[string, Parameters<typeof afterOrderReceipt>[0], Said]>([
     [
       'values the API refused',
       { type: 'invalid', values: [] },
-      '入力した内容を確かめて、もう一度お試しください。',
+      {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'a row removed meanwhile',
       { type: 'rowsChanged' },
-      '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
+      {
+        en: 'One of the stock rows of the line items was removed meanwhile. The order was loaded again. Check the quantities received and record them again.',
+        ja: '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
+      },
     ],
     [
       'an order changed meanwhile, or a stock too large',
       { type: 'conflict' },
-      '入荷を記録できませんでした。発注がその間に変わったか、入荷すると在庫数が 99,999,999.99 を超える行があります。発注を読み直しました。',
+      {
+        en: 'Could not record the receipt. The order changed meanwhile, or the stock of a row would go above 99,999,999.99. The order was loaded again.',
+        ja: '入荷を記録できませんでした。発注がその間に変わったか、入荷すると在庫数が 99,999,999.99 を超える行があります。発注を読み直しました。',
+      },
     ],
     [
       'the account',
       { type: 'forbidden' },
-      'このアカウントでは、この発注の入荷を記録できません。',
+      {
+        en: 'This account cannot record the receipt of this order.',
+        ja: 'このアカウントでは、この発注の入荷を記録できません。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'a failure',
       { type: 'failed' },
-      '入荷を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not record the receipt. Check your connection and try again.',
+        ja: '入荷を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form what came of %s', (_case, outcome, message) => {
     expect(afterOrderReceipt(outcome)).toEqual({ message, errors: {} })

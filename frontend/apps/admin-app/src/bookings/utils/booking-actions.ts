@@ -125,28 +125,27 @@ export const CHANGED_ELSEWHERE = STATUS.changedElsewhere
 
 /**
  * What follows an operation on the state of a booking, or of another
- * record that goes from state to state. An area whose texts are messages
- * says messages (`ChangeSays<LocalizedText>`).
+ * record that goes from state to state: a purchase order.
  */
-export type ChangeSays<Text = string> =
+export type ChangeSays =
   /** The booking is in its new state: a notification says so */
-  | { type: 'done'; message: Text }
+  | { type: 'done'; message: LocalizedText }
   /** Nothing was done, and nothing is known to have changed: try again */
-  | { type: 'again'; message: Text }
+  | { type: 'again'; message: LocalizedText }
   /**
    * The booking changed elsewhere: it is read again, and the screen says
    * so where its state is
    */
-  | { type: 'changed'; message: Text }
+  | { type: 'changed'; message: LocalizedText }
   /** The booking is gone, or out of reach: it is read again, and the screen says so */
   | { type: 'gone' }
 
 export const afterChange = (
   outcome: StatusChange,
   action: StatusAction,
-): ChangeSays<LocalizedText> =>
+): ChangeSays =>
   match(outcome)
-    .returnType<ChangeSays<LocalizedText>>()
+    .returnType<ChangeSays>()
     .with({ type: 'changed' }, () => ({
       type: 'done',
       message: STATUS.done[action],

@@ -8,33 +8,30 @@ import {
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
-import { inJapanese } from '@beauty-salon-frontend/ui'
-import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import type { BadgeTone, NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminPurchaseOrderMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { quantityNameOf } from '../../inventory/utils/stock-format'
 
-/** What is said of a member of the staff the salon no longer shows. */
-const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
+const { doneBy, statuses, words } = adminPurchaseOrderMessages
 
 /*
  * The statuses of the purchase orders, and how an order is named on the
  * screens.
  */
 
-type Status = {
-  name: string
-  /** The colour groups the statuses; the word says which one */
-  tone: BadgeTone
-}
-
-const STATUSES: Record<ModelsOrderStatusType, Status> = {
-  draft: { name: '下書き', tone: 'neutral' },
-  pending: { name: '承認待ち', tone: 'warning' },
-  approved: { name: '承認済み', tone: 'info' },
-  ordered: { name: '発注済み', tone: 'info' },
-  shipped: { name: '出荷済み', tone: 'info' },
-  delivered: { name: '納品済み', tone: 'success' },
-  cancelled: { name: '取り消し', tone: 'neutral' },
+/** The colour that groups the statuses; the word says which one */
+const TONES: Record<ModelsOrderStatusType, BadgeTone> = {
+  draft: 'neutral',
+  pending: 'warning',
+  approved: 'info',
+  ordered: 'info',
+  shipped: 'info',
+  delivered: 'success',
+  cancelled: 'neutral',
 }
 
 /** Every status, in the order an order goes through them */
@@ -49,16 +46,17 @@ const STATUS_ORDER: readonly ModelsOrderStatusType[] = [
 ]
 
 /** A status, by name: 「承認待ち」. */
-export const orderStatusNameOf = (status: ModelsOrderStatusType): string =>
-  STATUSES[status].name
+export const orderStatusNameOf = (
+  status: ModelsOrderStatusType,
+): LocalizedText => statuses[status]
 
 /** The colour a status is shown in. */
 export const orderStatusToneOf = (status: ModelsOrderStatusType): BadgeTone =>
-  STATUSES[status].tone
+  TONES[status]
 
 /** Every status, to narrow the orders to one */
-export const ORDER_STATUS_OPTIONS: readonly ChoiceOption[] = STATUS_ORDER.map(
-  (status) => ({ value: status, label: STATUSES[status].name }),
+export const ORDER_STATUS_CHOICES: readonly NamedChoice[] = STATUS_ORDER.map(
+  (status) => ({ value: status, label: statuses[status] }),
 )
 
 /** Whether a text is the name of a status, as an address or a form holds it. */
@@ -67,28 +65,27 @@ export const orderStatusIn = (
 ): ModelsOrderStatusType | undefined =>
   STATUS_ORDER.find((status) => status === text)
 
-/** What is said of a delivery nobody set a day for */
-const NO_DELIVERY_DAY = '未定'
-
 /** The day a moment is on at the salon, as a list names it: 「2026年11月21日（土）」. */
-export const orderDayNameOf = (moment: string, timezone: string): string =>
-  inJapanese(dayNameOf(dayAt(new Date(moment), timezone)))
+export const orderDayNameOf = (
+  moment: string,
+  timezone: string,
+): LocalizedText => dayNameOf(dayAt(new Date(moment), timezone))
 
 /** The day an order is to be delivered on at the salon: 「2026年11月28日（土）」, or 「未定」. */
 export const deliveryDayNameOf = (
   expectedDelivery: string | null,
   timezone: string,
-): string =>
+): LocalizedText =>
   expectedDelivery === null
-    ? NO_DELIVERY_DAY
+    ? words.notSet
     : orderDayNameOf(expectedDelivery, timezone)
 
 /** How much of what an item orders: 「10 tube」. */
 export const itemQuantityNameOf = ({
   quantity,
   unit,
-}: Pick<ModelsPurchaseOrderItem, 'quantity' | 'unit'>): string =>
-  inJapanese(quantityNameOf(quantity, { unit }))
+}: Pick<ModelsPurchaseOrderItem, 'quantity' | 'unit'>): LocalizedText =>
+  quantityNameOf(quantity, { unit })
 
 /**
  * When something was done to an order, on the clock of the salon, and who
@@ -97,16 +94,20 @@ export const itemQuantityNameOf = ({
  */
 export const doneNameOf = (
   moment: string,
-  doneBy: string | null,
+  doneByWhom: string | null,
   timezone: string,
   staff:
     | readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[]
     | undefined,
-): string => {
-  const who =
-    doneBy === null || staff === undefined
-      ? undefined
-      : (staff.find(({ id }) => id === doneBy)?.displayName ?? UNLISTED_STAFF)
+): LocalizedText => {
+  const when = momentNameAt(moment, timezone)
+  if (doneByWhom === null || staff === undefined) {
+    return when
+  }
 
-  return `${inJapanese(momentNameAt(moment, timezone))}${who === undefined ? '' : `（${who}）`}`
+  return doneBy(
+    when,
+    staff.find(({ id }) => id === doneByWhom)?.displayName ??
+      adminStaffMessages.unlisted,
+  )
 }

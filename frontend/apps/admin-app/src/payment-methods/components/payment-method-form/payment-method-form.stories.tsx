@@ -1,9 +1,13 @@
+import { neededWithin } from '@beauty-salon-frontend/fields'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { card } from '../examples'
 import { PaymentMethodForm } from './payment-method-form'
+
+const { form, words } = adminPaymentMethodMessages
 
 const meta: Meta<typeof PaymentMethodForm> = {
   title: 'Admin/PaymentMethods/PaymentMethodForm',
@@ -40,10 +44,10 @@ export const Recorded: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      method: '種類を選んでください。',
-      displayName: '表示名を、100 文字以内で入力してください。',
-      fee: '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
-      maximumAmount: '上限は、下限と同じか、下限より大きい金額にしてください。',
+      method: form.errors.kind,
+      displayName: neededWithin(words.displayName, 100),
+      fee: form.errors.fee,
+      maximumAmount: form.errors.range,
     },
   },
 }
@@ -53,7 +57,6 @@ export const Refused: Story = {
   args: {
     method: card(),
     submitLabel: '変更を保存する',
-    message:
-      'このサロンの支払い方法は、変えられません。支払い方法を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+    message: form.forbidden,
   },
 }

@@ -18,14 +18,14 @@ import {
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { numberOf } from '../../treatments/utils/treatment-form'
@@ -36,6 +36,11 @@ import type {
 } from '../api/payment-methods-api'
 import { METHOD_KINDS } from './payment-method-format'
 
+const { form, removal, words } = adminPaymentMethodMessages
+const { errors: ERRORS } = form
+
+type Errors = FormErrors<LocalizedText>
+
 /*
  * The form of a payment method: what it sends, and what it says about the
  * answers.
@@ -45,18 +50,8 @@ import { METHOD_KINDS } from './payment-method-format'
 export const LONGEST_NAME = 100
 const LONGEST_FEE = 100
 
-const KIND_ERROR = '種類を選んでください。'
-const NAME_ERROR = neededWithin(writtenInJapanese('表示名'), LONGEST_NAME)
-const PROCESSOR_ERROR = tooLongOf(
-  writtenInJapanese('決済代行会社の名前'),
-  LONGEST_NAME,
-)
-const FEE_ERROR =
-  '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
-const MINIMUM_ERROR = '下限は、1 以上の円の整数で入力してください。'
-const MAXIMUM_ERROR = '上限は、1 以上の円の整数で入力してください。'
-const RANGE_ERROR = '上限は、下限と同じか、下限より大きい金額にしてください。'
-const ORDER_ERROR = '並び順は、0 以上の整数で入力してください。'
+const NAME_ERROR = neededWithin(words.displayName, LONGEST_NAME)
+const PROCESSOR_ERROR = tooLongOf(ERRORS.processorName, LONGEST_NAME)
 
 /** The controls of the form, by the names of the request */
 const CONTROLS: readonly string[] = [
@@ -75,8 +70,8 @@ const CONTROLS: readonly string[] = [
 /** An amount the API takes at once: a whole number of yen from 1. */
 const amountError = (
   amount: number | null | undefined,
-  message: string,
-): string | undefined =>
+  message: LocalizedText,
+): LocalizedText | undefined =>
   amount === undefined || amount === 0 ? message : undefined
 
 /**
@@ -87,7 +82,7 @@ const amountError = (
 const readWhole = (
   values: FormData,
   kept: ModelsPaymentMethodType | undefined,
-): FormRead<ModelsPaymentMethodCreateRequest> => {
+): FormRead<ModelsPaymentMethodCreateRequest, Errors> => {
   const method =
     kept ?? METHOD_KINDS.find((one) => one === textOf(values, 'method'))
   const displayName = textOf(values, 'displayName').trim()
@@ -97,36 +92,36 @@ const readWhole = (
   const maximumAmount = yenOf(textOf(values, 'maximumAmount'))
   const sortOrder = numberOf(textOf(values, 'sortOrder'), 0)
   const errors = Object.fromEntries([
-    ...errorAt('method', method === undefined ? KIND_ERROR : undefined),
+    ...errorAt('method', method === undefined ? ERRORS.kind : undefined),
     ...errorAt(
       'displayName',
-      inJapaneseIfAny(neededError(displayName, LONGEST_NAME, NAME_ERROR)),
+      neededError(displayName, LONGEST_NAME, NAME_ERROR),
     ),
     ...errorAt(
       'processorName',
-      inJapaneseIfAny(
-        tooLongError(processorName, LONGEST_NAME, PROCESSOR_ERROR),
-      ),
+      tooLongError(processorName, LONGEST_NAME, PROCESSOR_ERROR),
     ),
     ...errorAt(
       'fee',
       fee === undefined || (fee !== null && fee > LONGEST_FEE)
-        ? FEE_ERROR
+        ? ERRORS.fee
         : undefined,
     ),
-    ...errorAt('minimumAmount', amountError(minimumAmount, MINIMUM_ERROR)),
+    ...errorAt('minimumAmount', amountError(minimumAmount, ERRORS.minimum)),
     ...errorAt(
       'maximumAmount',
-      amountError(maximumAmount, MAXIMUM_ERROR) ??
+      amountError(maximumAmount, ERRORS.maximum) ??
         (typeof minimumAmount === 'number' &&
         typeof maximumAmount === 'number' &&
         minimumAmount > maximumAmount
-          ? RANGE_ERROR
+          ? ERRORS.range
           : undefined),
     ),
     ...errorAt(
       'sortOrder',
-      sortOrder === null || sortOrder === undefined ? ORDER_ERROR : undefined,
+      sortOrder === null || sortOrder === undefined
+        ? ERRORS.sortOrder
+        : undefined,
     ),
   ])
   if (
@@ -162,11 +157,12 @@ const readWhole = (
 /** A new payment method, as the form holds it. */
 export const readPaymentMethodEntry = (
   values: FormData,
-): FormRead<ModelsPaymentMethodCreateRequest> => readWhole(values, undefined)
+): FormRead<ModelsPaymentMethodCreateRequest, Errors> =>
+  readWhole(values, undefined)
 
 /** What a change of a payment method asks for: nothing, when nothing was changed. */
 type PaymentMethodChange =
-  | FormRead<ModelsPaymentMethodUpdateRequest>
+  | FormRead<ModelsPaymentMethodUpdateRequest, Errors>
   | { type: 'unchanged' }
 /**
  * What was changed in the form: the values that are others than those of
@@ -216,28 +212,22 @@ export const readPaymentMethodChange = (
     : { type: 'valid', value: changes }
 }
 
-/** What is said when the account may not keep the payment methods of the salon */
-const FORBIDDEN_MESSAGE =
-  'このサロンの支払い方法は、変えられません。支払い方法を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
-
 /** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)
-    .with('method', () => KIND_ERROR)
-    .with('displayName', () => inJapanese(NAME_ERROR))
-    .with('processorName', () => inJapanese(PROCESSOR_ERROR))
-    .with('fee', () => FEE_ERROR)
+    .with('method', () => ERRORS.kind)
+    .with('displayName', () => NAME_ERROR)
+    .with('processorName', () => PROCESSOR_ERROR)
+    .with('fee', () => ERRORS.fee)
     // A range the API compared with the amount it keeps: the other was changed meanwhile
     .with('minimumAmount', () =>
-      rule === 'custom'
-        ? '下限は、上限と同じか、上限より小さい金額にしてください。'
-        : MINIMUM_ERROR,
+      rule === 'custom' ? ERRORS.rangeFromBelow : ERRORS.minimum,
     )
     .with('maximumAmount', () =>
-      rule === 'custom' ? RANGE_ERROR : MAXIMUM_ERROR,
+      rule === 'custom' ? ERRORS.range : ERRORS.maximum,
     )
-    .with('sortOrder', () => ORDER_ERROR)
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with('sortOrder', () => ERRORS.sortOrder)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What the form says after the API did not take it. */
 export const afterPaymentMethodWrite = (
@@ -245,30 +235,24 @@ export const afterPaymentMethodWrite = (
     | Extract<PaymentMethodWrite, { type: 'invalid' | 'forbidden' }>
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
       }
     })
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(form.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '支払い方法を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(form.failed))
     .exhaustive()
 
 /**
@@ -278,29 +262,28 @@ export const afterPaymentMethodWrite = (
 export const afterPaymentMethodRemoval = (
   outcome: PaymentMethodRemoval,
   name: string,
-): TreatmentRemovalSays =>
+): TreatmentRemovalSays<LocalizedText> =>
   match(outcome)
-    .returnType<TreatmentRemovalSays>()
+    .returnType<TreatmentRemovalSays<LocalizedText>>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `支払い方法「${name}」を削除しました。`,
+      message: removal.done(name),
     }))
     .with({ type: 'inUse' }, () => ({
       type: 'refused',
-      message: `支払い方法「${name}」で受け取った支払いがあるので、削除できません。使うのをやめるときは、「この支払い方法を使う」の印を外して保存してください。`,
+      message: removal.inUse(name),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: FORBIDDEN_MESSAGE,
+      message: form.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '支払い方法を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()

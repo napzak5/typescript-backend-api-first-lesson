@@ -11,11 +11,15 @@ import {
   FormPart,
   type FormProps,
   FormRow,
-  inJapanese,
   NO_ERRORS,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { type FormEvent, useState } from 'react'
 import {
   productOf,
@@ -30,10 +34,15 @@ import {
 } from '../../utils/order-entry'
 import styles from './order-form.module.css'
 
+const { words } = adminPurchaseOrderMessages
+const WORDS = adminPurchaseOrderMessages.form.entry
+
 export type OrderFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /** The stock rows of the salon, in the order of the codes of their products and their lots; at least one */
   rows: readonly ModelsInventoryResponse[]
   /** The products of the salon, which name the rows and give their prices */
@@ -41,7 +50,7 @@ export type OrderFormProps = Pick<
   /** The rate of tax of the salon, in percent, and its currency */
   salon: { taxRate: number; currency: string }
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** What the form starts with besides the prices: a supplier, and quantities by the IDs of the rows */
   starting?: OrderStart | undefined
 }
@@ -89,10 +98,13 @@ export const OrderForm = ({
   rows,
   products,
   salon,
+  message,
   errors = NO_ERRORS,
   starting = EMPTY,
   ...form
 }: OrderFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   // What was entered when a quantity or a price last changed, and what the
   // form opened with before. The subtotal is worked out from it over the
   // rows there are now: a row removed meanwhile, and read anew, adds
@@ -110,18 +122,18 @@ export const OrderForm = ({
   }
 
   return (
-    <Form {...form} errors={errors}>
+    <Form {...form} message={said.message} errors={errors}>
       <TextField
-        label='仕入先'
+        label={say(words.supplier)}
         name='supplier'
         autoComplete='organization'
         defaultValue={starting.supplier}
-        description='発注を探すときも、この名前で探します。'
-        error={errors['supplier']}
+        description={say(WORDS.supplierDescription)}
+        error={said.errors['supplier']}
       />
       <FormPart
-        label='明細'
-        description='発注する行に、数量を入力します。空のままの行は発注しません。単価のはじめの値は、商品の仕入価格です。数量の小数は 2 桁まで。'
+        label={say(words.items)}
+        description={say(WORDS.itemsDescription)}
         onInput={tally}
       >
         {rows.map((row) => {
@@ -130,77 +142,81 @@ export const OrderForm = ({
           const unitPrice = unitPriceControlOf(row.id)
 
           return (
-            <FormRow
-              key={row.id}
-              label={inJapanese(stockRowNameOf(row, product))}
-            >
+            <FormRow key={row.id} label={say(stockRowNameOf(row, product))}>
               <FieldRow>
                 <TextField
-                  label='数量'
+                  label={say(words.quantity)}
                   name={quantity}
                   inputMode='decimal'
                   autoComplete='off'
                   defaultValue={starting.quantities[row.id]}
-                  description={`在庫数 ${inJapanese(quantityNameOf(row.currentStock, product))}`}
-                  error={errors[quantity]}
+                  description={say(
+                    WORDS.inStock(quantityNameOf(row.currentStock, product)),
+                  )}
+                  error={said.errors[quantity]}
                 />
                 <TextField
-                  label='単価（円）'
+                  label={say(WORDS.unitPrice)}
                   name={unitPrice}
                   inputMode='numeric'
                   autoComplete='off'
                   defaultValue={priceOf(product)}
-                  error={errors[unitPrice]}
+                  error={said.errors[unitPrice]}
                 />
               </FieldRow>
             </FormRow>
           )
         })}
         <p className={styles['subtotal']}>
-          {`小計 ${inJapanese(amountOf(subtotal, salon.currency))}`}
+          {say(WORDS.subtotal(amountOf(subtotal, salon.currency)))}
         </p>
       </FormPart>
       <TextField
         width='short'
-        label='税額（円）'
+        label={say(WORDS.tax)}
         name='taxAmount'
         inputMode='numeric'
         autoComplete='off'
-        description={`仕入先の請求に合わせて入力します。小計の ${salon.taxRate}% は ${inJapanese(amountOf(taxAt(subtotal, salon.taxRate), salon.currency))} です（円未満切り捨て）。`}
-        error={errors['taxAmount']}
+        description={say(
+          WORDS.taxDescription(
+            formats.percentOf(salon.taxRate),
+            amountOf(taxAt(subtotal, salon.taxRate), salon.currency),
+          ),
+        )}
+        error={said.errors['taxAmount']}
       />
       <TextField
         width='short'
-        label='送料（円）'
+        label={say(WORDS.shipping)}
         name='shippingCost'
         inputMode='numeric'
         autoComplete='off'
-        description='任意。送料がかからなければ空のままにします。'
-        error={errors['shippingCost']}
+        description={say(WORDS.shippingDescription)}
+        error={said.errors['shippingCost']}
       />
       <TextField
         width='short'
-        label='納品予定日'
+        label={say(words.expectedDelivery)}
         name='expectedDelivery'
         autoComplete='off'
         type='date'
         min={EARLIEST_DAY}
         max={LATEST_DAY}
-        description='任意。仕入先が約束した日。'
-        error={errors['expectedDelivery']}
+        description={say(words.deliveryDescription)}
+        error={said.errors['expectedDelivery']}
       />
       <TextField
-        label='支払条件'
+        label={say(words.paymentTerms)}
         name='paymentTerms'
         autoComplete='off'
-        description='任意。月末締め翌月末払い、など。'
-        error={errors['paymentTerms']}
+        description={say(WORDS.paymentTermsDescription)}
+        error={said.errors['paymentTerms']}
       />
       <TextArea
-        label='メモ'
+        label={say(words.notes)}
         name='notes'
-        description='任意。仕入先への連絡や、届いたあとのことなど。'
-        error={errors['notes']}
+        description={say(words.notesDescription)}
+        error={said.errors['notes']}
       />
     </Form>
   )

@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as orderChangeFormStories from './order-change-form.stories'
 
 const stories = composeStories(orderChangeFormStories)
@@ -84,5 +85,49 @@ describe('OrderChangeForm', () => {
     expect(
       screen.getByRole('button', { name: '変更を保存する' }),
     ).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('OrderChangeForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Expected delivery'),
+    ).toHaveAccessibleDescription(
+      'Optional. The day the supplier promised. Leave it empty when no day is set.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Delivery notes' }),
+    ).toHaveAccessibleDescription(
+      'Optional. What was agreed with the supplier about the delivery, such as where and when it arrives.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Notes' }),
+    ).toHaveAccessibleDescription(
+      'Optional. Such as what to tell the supplier, or what to do once the goods arrive.',
+    )
+  })
+
+  it('should say what is wrong with the day, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Expected delivery'),
+    ).toHaveAccessibleDescription(expect.stringContaining('Enter a date.'))
   })
 })

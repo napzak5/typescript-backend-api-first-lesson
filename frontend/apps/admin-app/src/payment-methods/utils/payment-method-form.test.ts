@@ -55,15 +55,46 @@ const changeWith = (changes: Values = {}): FormData =>
     ...changes,
   })
 
-const KIND_ERROR = '種類を選んでください。'
-const NAME_ERROR = '表示名を、100 文字以内で入力してください。'
-const PROCESSOR_ERROR = '決済代行会社の名前は、100 文字以内で入力してください。'
-const FEE_ERROR =
-  '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
-const MINIMUM_ERROR = '下限は、1 以上の円の整数で入力してください。'
-const MAXIMUM_ERROR = '上限は、1 以上の円の整数で入力してください。'
-const RANGE_ERROR = '上限は、下限と同じか、下限より大きい金額にしてください。'
-const ORDER_ERROR = '並び順は、0 以上の整数で入力してください。'
+/** A text in every language */
+type Said = { en: string; ja: string }
+
+const KIND_ERROR = { en: 'Choose a type.', ja: '種類を選んでください。' }
+const NAME_ERROR = {
+  en: 'Display name: enter 1 to 100 characters.',
+  ja: '表示名を、100 文字以内で入力してください。',
+}
+const PROCESSOR_ERROR = {
+  en: 'Name of the payment processor: enter up to 100 characters.',
+  ja: '決済代行会社の名前は、100 文字以内で入力してください。',
+}
+const FEE_ERROR = {
+  en: 'Enter the fee rate as a number from 0 to 100, with up to 2 decimal places.',
+  ja: '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
+}
+const MINIMUM_ERROR = {
+  en: 'Enter the smallest amount as a whole number of yen from 1.',
+  ja: '下限は、1 以上の円の整数で入力してください。',
+}
+const MAXIMUM_ERROR = {
+  en: 'Enter the largest amount as a whole number of yen from 1.',
+  ja: '上限は、1 以上の円の整数で入力してください。',
+}
+const RANGE_ERROR = {
+  en: 'Make the largest amount the same as the smallest amount or larger.',
+  ja: '上限は、下限と同じか、下限より大きい金額にしてください。',
+}
+const ORDER_ERROR = {
+  en: 'Enter the sort order as a whole number from 0.',
+  ja: '並び順は、0 以上の整数で入力してください。',
+}
+const FORBIDDEN = {
+  en: 'The payment methods of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its payment methods.',
+  ja: 'このサロンの支払い方法は、変えられません。支払い方法を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+}
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
 
 describe('readPaymentMethodEntry', () => {
   it('should read a whole method, without the spaces around its texts, with its amounts and fee as numbers', () => {
@@ -129,7 +160,7 @@ describe('readPaymentMethodEntry', () => {
     })
   })
 
-  it.each<[string, Values, Record<string, string>]>([
+  it.each<[string, Values, Record<string, Said>]>([
     ['no kind', { method: '' }, { method: KIND_ERROR }],
     [
       'a kind the API does not have',
@@ -303,7 +334,7 @@ describe('readPaymentMethodChange', () => {
 })
 
 describe('afterPaymentMethodWrite', () => {
-  it.each<[string, { field: string; rule: string }[], Record<string, string>]>([
+  it.each<[string, { field: string; rule: string }[], Record<string, Said>]>([
     [
       'a name',
       [{ field: 'displayName', rule: 'too_big' }],
@@ -339,8 +370,10 @@ describe('afterPaymentMethodWrite', () => {
       'a smallest amount beyond the largest kept',
       [{ field: 'minimumAmount', rule: 'custom' }],
       {
-        minimumAmount:
-          '下限は、上限と同じか、上限より小さい金額にしてください。',
+        minimumAmount: {
+          en: 'Make the smallest amount the same as the largest amount or smaller.',
+          ja: '下限は、上限と同じか、上限より小さい金額にしてください。',
+        },
       },
     ],
     [
@@ -352,7 +385,10 @@ describe('afterPaymentMethodWrite', () => {
       'a switch',
       [{ field: 'isActive', rule: 'invalid_type' }],
       {
-        isActive: 'この値は受け付けられませんでした。入力を確かめてください。',
+        isActive: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
       },
     ],
   ])(
@@ -372,26 +408,24 @@ describe('afterPaymentMethodWrite', () => {
         values: [{ field: '', rule: 'unrecognized_keys' }],
       }),
     ).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[string, Parameters<typeof afterPaymentMethodWrite>[0], string]>([
-    [
-      'a refusal of the account',
-      { type: 'forbidden' },
-      'このサロンの支払い方法は、変えられません。支払い方法を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-    ],
-    [
-      'too many requests',
-      { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    ],
+  it.each<[string, Parameters<typeof afterPaymentMethodWrite>[0], Said]>([
+    ['a refusal of the account', { type: 'forbidden' }, FORBIDDEN],
+    ['too many requests', { type: 'tooManyRequests' }, TOO_MANY_REQUESTS],
     [
       'a failure',
       { type: 'failed' },
-      '支払い方法を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Could not save the payment method. Check your connection and try again.',
+        ja: '支払い方法を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form after %s', (_, outcome, message) => {
     expect(afterPaymentMethodWrite(outcome)).toEqual({ message, errors: {} })
@@ -403,14 +437,22 @@ describe('afterPaymentMethodRemoval', () => {
     [
       [
         { type: 'removed' },
-        { type: 'done', message: '支払い方法「現金」を削除しました。' },
+        {
+          type: 'done',
+          message: {
+            en: 'Removed the payment method “現金”.',
+            ja: '支払い方法「現金」を削除しました。',
+          },
+        },
       ],
       [
         { type: 'inUse' },
         {
           type: 'refused',
-          message:
-            '支払い方法「現金」で受け取った支払いがあるので、削除できません。使うのをやめるときは、「この支払い方法を使う」の印を外して保存してください。',
+          message: {
+            en: 'Payments were received by the payment method “現金”, so it cannot be removed. To stop using it, clear “Use this payment method” and save.',
+            ja: '支払い方法「現金」で受け取った支払いがあるので、削除できません。使うのをやめるときは、「この支払い方法を使う」の印を外して保存してください。',
+          },
         },
       ],
       [{ type: 'notFound' }, { type: 'gone' }],
@@ -418,24 +460,24 @@ describe('afterPaymentMethodRemoval', () => {
         { type: 'forbidden' },
         {
           type: 'refused',
-          message:
-            'このサロンの支払い方法は、変えられません。支払い方法を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+          message: FORBIDDEN,
         },
       ],
       [
         { type: 'tooManyRequests' },
         {
           type: 'again',
-          message:
-            'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+          message: TOO_MANY_REQUESTS,
         },
       ],
       [
         { type: 'failed' },
         {
           type: 'again',
-          message:
-            '支払い方法を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+          message: {
+            en: 'Could not remove the payment method. Check your connection and try again.',
+            ja: '支払い方法を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+          },
         },
       ],
     ],

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as orderStatusActionsStories from './order-status-actions.stories'
 
 const stories = composeStories(orderStatusActionsStories)
@@ -277,5 +278,97 @@ describe('OrderStatusActions', () => {
     // Assert
     expect(stories.AskingCancellation.args.onClose).toHaveBeenCalled()
     expect(stories.AskingCancellation.args.onCancel).not.toHaveBeenCalled()
+  })
+})
+
+describe('OrderStatusActions on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the status and the operations of a draft, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Draft.run()
+
+    // Assert
+    const region = screen.getByRole('region', { name: 'Status' })
+    expect(within(region).getByText('Draft')).toBeVisible()
+    expect(
+      within(region)
+        .getAllByRole('button')
+        .map(({ textContent }) => textContent),
+    ).toEqual(['Ask for approval', 'Cancel the order'])
+  })
+
+  it('should tell a stylist who approves and cancels an order, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.PendingForAStylist.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Only the owners and managers of the salon, and administrators, can approve and cancel orders.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should lead to the receipt of an order placed with the supplier, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Ordered.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'Record the receipt' }),
+    ).toBeVisible()
+    expect(
+      screen.getAllByRole('button').map(({ textContent }) => textContent),
+    ).toEqual(['Mark as shipped', 'Cancel the order'])
+  })
+
+  it('should ask for the reason of the cancellation of a shipped order, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.AskingCancellationOfAShippedOrder.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', { name: 'Cancel the order?' })
+    expect(dialog).toHaveAccessibleDescription(
+      'Order PO-2H8R-W4VN will be cancelled. The order was shipped: agree with the supplier on the return of the goods before cancelling it. A cancelled order cannot be restored.',
+    )
+    expect(
+      within(dialog).getByRole('textbox', {
+        name: 'Reason for the cancellation',
+      }),
+    ).toHaveAccessibleDescription(
+      'Such as the supplier being out of stock. The reason stays in the order details.',
+    )
+  })
+
+  it('should say what is wrong with the cancellation, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.CancellationRefused.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog')).getByRole('textbox', {
+        name: 'Reason for the cancellation',
+      }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the reason for the cancellation.'),
+    )
   })
 })

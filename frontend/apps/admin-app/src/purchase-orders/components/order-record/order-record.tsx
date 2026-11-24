@@ -8,11 +8,13 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
-  inJapanese,
   Link,
   Table,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   deliveryDayNameOf,
   doneNameOf,
@@ -21,6 +23,11 @@ import {
   orderStatusToneOf,
 } from '../../utils/order-format'
 import styles from './order-record.module.css'
+
+const { record: WORDS, words } = adminPurchaseOrderMessages
+
+/** How the record is said: `useSay()` of the page */
+type Say = (message: LocalizedText) => string
 
 export type OrderRecordProps = {
   order: ModelsPurchaseOrderResponse
@@ -41,17 +48,15 @@ const eventsOf = (
   order: ModelsPurchaseOrderResponse,
   timezone: string,
   staff: OrderRecordProps['staff'],
+  say: Say,
 ): DescriptionListItem[] => [
   ...(order.approvedAt === null
     ? []
     : [
         {
-          term: '承認',
-          description: doneNameOf(
-            order.approvedAt,
-            order.approvedBy,
-            timezone,
-            staff,
+          term: say(WORDS.approved),
+          description: say(
+            doneNameOf(order.approvedAt, order.approvedBy, timezone, staff),
           ),
         },
       ]),
@@ -59,19 +64,19 @@ const eventsOf = (
     ? []
     : [
         {
-          term: '納品日時',
-          description: inJapanese(momentNameAt(order.actualDelivery, timezone)),
+          term: say(WORDS.deliveredAt),
+          description: say(momentNameAt(order.actualDelivery, timezone)),
         },
       ]),
   ...(order.cancelledAt === null
     ? []
     : [
         {
-          term: '取り消し',
-          description: inJapanese(momentNameAt(order.cancelledAt, timezone)),
+          term: say(WORDS.cancelled),
+          description: say(momentNameAt(order.cancelledAt, timezone)),
         },
         {
-          term: '取り消した理由',
+          term: say(WORDS.cancellationReason),
           description: <WrittenText>{order.cancellationReason}</WrittenText>,
         },
       ]),
@@ -89,128 +94,130 @@ export const OrderRecord = ({
   currency,
   staff,
   rowHref,
-}: OrderRecordProps) => (
-  <div className={styles['record']}>
-    <Card title='発注'>
-      <DescriptionList
-        items={[
-          { term: '発注番号', description: order.orderNumber },
-          {
-            term: 'ステータス',
-            description: (
-              <Badge tone={orderStatusToneOf(order.status)}>
-                {orderStatusNameOf(order.status)}
-              </Badge>
-            ),
-          },
-          { term: '仕入先', description: order.supplier },
-          {
-            term: '発注日時',
-            description: doneNameOf(
-              order.orderDate,
-              order.createdBy,
-              timezone,
-              staff,
-            ),
-          },
-          {
-            term: '納品予定日',
-            description: deliveryDayNameOf(order.expectedDelivery, timezone),
-          },
-          ...eventsOf(order, timezone, staff),
-          {
-            term: '支払条件',
-            description: order.paymentTerms,
-          },
-          {
-            term: 'メモ',
-            description: <WrittenText>{order.notes}</WrittenText>,
-          },
-          {
-            term: '納品のメモ',
-            description: <WrittenText>{order.deliveryNotes}</WrittenText>,
-          },
-        ]}
-      />
-    </Card>
-    <Card title='明細'>
-      <Table
-        caption='明細'
-        captionHidden
-        rowHeader='productName'
-        columns={[
-          {
-            key: 'productCode',
-            header: '商品コード',
-            cell: ({ productCode }) => productCode,
-          },
-          {
-            key: 'productName',
-            header: '商品名',
-            cell: ({ inventoryId, productName }) =>
-              inventoryId === null ? (
-                productName
-              ) : (
-                <Link href={rowHref(inventoryId)}>{productName}</Link>
+}: OrderRecordProps) => {
+  const say = useSay()
+
+  return (
+    <div className={styles['record']}>
+      <Card title={say(words.order)}>
+        <DescriptionList
+          items={[
+            { term: say(words.orderNumber), description: order.orderNumber },
+            {
+              term: say(words.status),
+              description: (
+                <Badge tone={orderStatusToneOf(order.status)}>
+                  {say(orderStatusNameOf(order.status))}
+                </Badge>
               ),
-          },
-          {
-            key: 'quantity',
-            header: '数量',
-            align: 'end',
-            cell: itemQuantityNameOf,
-          },
-          {
-            key: 'unitPrice',
-            header: '単価',
-            align: 'end',
-            cell: ({ unitPrice }) => inJapanese(amountOf(unitPrice, currency)),
-          },
-          {
-            key: 'totalPrice',
-            header: '金額',
-            align: 'end',
-            cell: ({ totalPrice }) =>
-              inJapanese(amountOf(totalPrice, currency)),
-          },
-          {
-            key: 'notes',
-            header: 'メモ',
-            cell: ({ notes }) => notes,
-          },
-        ]}
-        rows={order.items}
-        // An item names its row once; one of a row removed since, by what it ordered
-        rowKey={({ inventoryId, productCode, quantity, unitPrice }) =>
-          inventoryId ?? `${productCode}:${quantity}:${unitPrice}`
-        }
-        emptyMessage='明細はありません'
-      />
-    </Card>
-    <Card title='金額'>
-      <DescriptionList
-        items={[
-          {
-            term: '小計',
-            description: inJapanese(amountOf(order.subtotal, currency)),
-          },
-          {
-            term: '税額',
-            description: inJapanese(amountOf(order.taxAmount, currency)),
-          },
-          {
-            term: '送料',
-            description:
-              order.shippingCost === null
-                ? null
-                : inJapanese(amountOf(order.shippingCost, currency)),
-          },
-          {
-            term: '合計',
-            description: inJapanese(amountOf(order.totalAmount, currency)),
-          },
-        ]}
-      />
-    </Card>
-  </div>
-)
+            },
+            { term: say(words.supplier), description: order.supplier },
+            {
+              term: say(WORDS.orderedAt),
+              description: say(
+                doneNameOf(order.orderDate, order.createdBy, timezone, staff),
+              ),
+            },
+            {
+              term: say(words.expectedDelivery),
+              description: say(
+                deliveryDayNameOf(order.expectedDelivery, timezone),
+              ),
+            },
+            ...eventsOf(order, timezone, staff, say),
+            {
+              term: say(words.paymentTerms),
+              description: order.paymentTerms,
+            },
+            {
+              term: say(words.notes),
+              description: <WrittenText>{order.notes}</WrittenText>,
+            },
+            {
+              term: say(words.deliveryNotes),
+              description: <WrittenText>{order.deliveryNotes}</WrittenText>,
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(words.items)}>
+        <Table
+          caption={say(words.items)}
+          captionHidden
+          rowHeader='productName'
+          columns={[
+            {
+              key: 'productCode',
+              header: say(words.productCode),
+              cell: ({ productCode }) => productCode,
+            },
+            {
+              key: 'productName',
+              header: say(words.productName),
+              cell: ({ inventoryId, productName }) =>
+                inventoryId === null ? (
+                  productName
+                ) : (
+                  <Link href={rowHref(inventoryId)}>{productName}</Link>
+                ),
+            },
+            {
+              key: 'quantity',
+              header: say(words.quantity),
+              align: 'end',
+              cell: (item) => say(itemQuantityNameOf(item)),
+            },
+            {
+              key: 'unitPrice',
+              header: say(WORDS.unitPrice),
+              align: 'end',
+              cell: ({ unitPrice }) => say(amountOf(unitPrice, currency)),
+            },
+            {
+              key: 'totalPrice',
+              header: say(WORDS.amount),
+              align: 'end',
+              cell: ({ totalPrice }) => say(amountOf(totalPrice, currency)),
+            },
+            {
+              key: 'notes',
+              header: say(words.notes),
+              cell: ({ notes }) => notes,
+            },
+          ]}
+          rows={order.items}
+          // An item names its row once; one of a row removed since, by what it ordered
+          rowKey={({ inventoryId, productCode, quantity, unitPrice }) =>
+            inventoryId ?? `${productCode}:${quantity}:${unitPrice}`
+          }
+          emptyMessage={say(WORDS.noItems)}
+        />
+      </Card>
+      <Card title={say(WORDS.amounts)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(WORDS.subtotal),
+              description: say(amountOf(order.subtotal, currency)),
+            },
+            {
+              term: say(WORDS.tax),
+              description: say(amountOf(order.taxAmount, currency)),
+            },
+            {
+              term: say(WORDS.shipping),
+              description:
+                order.shippingCost === null
+                  ? null
+                  : say(amountOf(order.shippingCost, currency)),
+            },
+            {
+              term: say(words.total),
+              description: say(amountOf(order.totalAmount, currency)),
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}

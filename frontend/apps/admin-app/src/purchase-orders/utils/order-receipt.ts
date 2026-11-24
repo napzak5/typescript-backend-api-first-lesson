@@ -11,17 +11,21 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { levelOf } from '../../products/utils/product-form'
 import { hundredthsOf } from '../../products/utils/quantity'
 import type { OrderReceipt } from '../api/purchase-orders-api'
 import { itemQuantityNameOf, orderStatusNameOf } from './order-format'
+
+const { errors: ERRORS, unreceivable } = adminPurchaseOrderMessages.receipt
 
 /*
  * How the form of the goods that came for an order is read, and what it
@@ -54,20 +58,13 @@ export const orderedTextOf = ({
 
 const quantityErrorOf = (
   item: Pick<ModelsPurchaseOrderItem, 'quantity' | 'unit'>,
-): string =>
-  `届いた数量は、0 より大きく、発注した ${itemQuantityNameOf(item)} までの数（小数は 2 桁まで）で入力してください。`
-
-const NONE_RECEIVED =
-  '入荷する明細がありません。届いた明細に、数量を入力してください。'
-
-const NOTES_KEPT =
-  'いまの納品のメモは、入荷では消せません。そのまま残すか、書き換えてください。'
+): LocalizedText => ERRORS.quantity(itemQuantityNameOf(item))
 
 /** What an item of the form holds: nothing when it is not received */
 type ReceivedRow =
   | { type: 'received'; item: ModelsPurchaseOrderReceivedItem }
   | { type: 'notReceived' }
-  | { type: 'wrong'; errors: Record<string, string> }
+  | { type: 'wrong'; errors: Record<string, LocalizedText> }
 
 const receivedRowOf = (values: FormData, item: ReceivableItem): ReceivedRow => {
   const control = receivedControlOf(item.inventoryId)
@@ -94,7 +91,7 @@ const receivedRowOf = (values: FormData, item: ReceivableItem): ReceivedRow => {
 export const readOrderReceipt = (
   values: FormData,
   order: Pick<ModelsPurchaseOrderResponse, 'items' | 'deliveryNotes'>,
-): FormRead<ModelsPurchaseOrderReceiveRequest> => {
+): FormRead<ModelsPurchaseOrderReceiveRequest, FormErrors<LocalizedText>> => {
   const items = receivableItemsOf(order.items)
   const read = items.map((item) => receivedRowOf(values, item))
   const notes = textOrNull(textOf(values, 'deliveryNotes'))
@@ -106,9 +103,13 @@ export const readOrderReceipt = (
       ),
     ),
     ...(read.every((row) => row.type === 'notReceived')
-      ? { [receivedControlOf(items[0]?.inventoryId ?? '')]: NONE_RECEIVED }
+      ? {
+          [receivedControlOf(items[0]?.inventoryId ?? '')]: ERRORS.noneReceived,
+        }
       : {}),
-    ...(notes === null && kept !== null ? { deliveryNotes: NOTES_KEPT } : {}),
+    ...(notes === null && kept !== null
+      ? { deliveryNotes: ERRORS.notesKept }
+      : {}),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
@@ -126,21 +127,20 @@ export const readOrderReceipt = (
 /** The statuses of an order whose goods are not received now */
 type Unreceivable = Exclude<ModelsOrderStatusType, 'ordered' | 'shipped'>
 
-const NOT_PLACED = (status: Unreceivable): string =>
-  `この発注は${orderStatusNameOf(status)}です。入荷は、仕入先に頼んだ発注（発注済みか出荷済み）に記録します。`
+const notPlaced = (status: Unreceivable): LocalizedText =>
+  unreceivable.notPlaced(orderStatusNameOf(status))
 
 /** What the screen of the receipt says of an order whose goods are not received now. */
-export const UNRECEIVABLE: Record<Unreceivable, string> = {
-  draft: NOT_PLACED('draft'),
-  pending: NOT_PLACED('pending'),
-  approved: NOT_PLACED('approved'),
-  delivered: 'この発注は納品済みです。入荷は、記録してあります。',
-  cancelled: 'この発注は取り消しました。取り消した発注は、入荷できません。',
+export const UNRECEIVABLE: Record<Unreceivable, LocalizedText> = {
+  draft: notPlaced('draft'),
+  pending: notPlaced('pending'),
+  approved: notPlaced('approved'),
+  delivered: unreceivable.delivered,
+  cancelled: unreceivable.cancelled,
 }
 
 /** What the screen says of an order none of whose items has its stock row any more */
-export const NO_ROW_LEFT =
-  '明細の在庫の行が、すべて削除されています。この発注は、入荷できません。'
+export const NO_ROW_LEFT = unreceivable.noRowLeft
 
 /**
  * What the form says after the API did not take it. The order is read
@@ -150,33 +150,17 @@ export const NO_ROW_LEFT =
  */
 export const afterOrderReceipt = (
   outcome: Exclude<OrderReceipt, { type: 'received' | 'notFound' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     // The form sends what the API takes: a value it refused says nothing a
     // person could correct
-    .with({ type: 'invalid' }, () =>
-      aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
-    )
-    .with({ type: 'rowsChanged' }, () =>
-      aboutTheAttempt(
-        '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
-      ),
-    )
-    .with({ type: 'conflict' }, () =>
-      aboutTheAttempt(
-        '入荷を記録できませんでした。発注がその間に変わったか、入荷すると在庫数が 99,999,999.99 を超える行があります。発注を読み直しました。',
-      ),
-    )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この発注の入荷を記録できません。'),
-    )
+    .with({ type: 'invalid' }, () => aboutTheAttempt(CHECK_THE_VALUES_MESSAGE))
+    .with({ type: 'rowsChanged' }, () => aboutTheAttempt(ERRORS.rowsChanged))
+    .with({ type: 'conflict' }, () => aboutTheAttempt(ERRORS.conflict))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(ERRORS.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '入荷を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(ERRORS.failed))
     .exhaustive()

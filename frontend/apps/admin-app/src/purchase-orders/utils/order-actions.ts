@@ -4,14 +4,18 @@ import type {
   ModelsPurchaseOrderCancelRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  type FormErrors,
   type FormRead,
-  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { ChangeSays } from '../../bookings/utils/booking-actions'
 import type { OrderStep } from '../api/purchase-orders-api'
+
+const STATUS = adminPurchaseOrderMessages.status
 
 /*
  * What can be done to the status of a purchase order, by whom, and what
@@ -81,62 +85,34 @@ export const orderActionsOf = (
 export const orderActionNoteOf = (
   status: ModelsOrderStatusType,
   approves: boolean,
-): string | undefined =>
+): LocalizedText | undefined =>
   match(status)
-    .with(
-      'delivered',
-      () => 'この発注は納品済みです。ステータスは、もう変わりません。',
-    )
-    .with(
-      'cancelled',
-      () => 'この発注は取り消しました。ステータスは、もう変わりません。',
-    )
+    .with('delivered', () => STATUS.notes.delivered)
+    .with('cancelled', () => STATUS.notes.cancelled)
     .with('pending', () =>
-      approves
-        ? undefined
-        : '発注を承認し、取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+      approves ? undefined : STATUS.notes.approveAndCancel,
     )
     .with('draft', 'approved', 'ordered', 'shipped', () =>
-      approves
-        ? undefined
-        : '発注を取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+      approves ? undefined : STATUS.notes.cancel,
     )
     .exhaustive()
-
-const REASON_MISSING = '取り消す理由を入力してください。'
 
 /** The cancellation of an order, from its form: the reason is asked for. */
 export const readOrderCancellation = (
   values: FormData,
-): FormRead<ModelsPurchaseOrderCancelRequest> => {
+): FormRead<ModelsPurchaseOrderCancelRequest, FormErrors<LocalizedText>> => {
   const reason = textOrNull(textOf(values, 'cancellationReason'))
 
   return reason === null
-    ? { type: 'invalid', errors: { cancellationReason: REASON_MISSING } }
+    ? {
+        type: 'invalid',
+        errors: { cancellationReason: STATUS.cancellation.reasonMissing },
+      }
     : { type: 'valid', value: { cancellationReason: reason } }
 }
 
-/** What an operation did, as the notification says it: 「発注 PO-… を承認」 */
-const DONE: Record<OrderAction, (orderNumber: string) => string> = {
-  submit: (orderNumber) => `発注 ${orderNumber} の承認を依頼`,
-  approve: (orderNumber) => `発注 ${orderNumber} を承認`,
-  order: (orderNumber) => `発注 ${orderNumber} を発注済みに`,
-  ship: (orderNumber) => `発注 ${orderNumber} を出荷済みに`,
-  cancel: (orderNumber) => `発注 ${orderNumber} を取り消`,
-}
-
-/** What could not be done, as a sentence says it */
-const UNDONE: Record<OrderAction, string> = {
-  submit: '承認を依頼できませんでした。',
-  approve: '承認できませんでした。',
-  order: '発注済みにできませんでした。',
-  ship: '出荷済みにできませんでした。',
-  cancel: '発注を取り消せませんでした。',
-}
-
 /** What is said when the order changed elsewhere in the meantime. */
-export const ORDER_CHANGED_ELSEWHERE =
-  '発注のステータスが、ほかの画面か端末で変わっていました。いまの発注を読み込み直しました。'
+export const ORDER_CHANGED_ELSEWHERE = STATUS.changedElsewhere
 
 /** What follows an operation on the status of an order. */
 export const afterOrderStep = (
@@ -148,7 +124,7 @@ export const afterOrderStep = (
     .returnType<ChangeSays>()
     .with({ type: 'changed' }, () => ({
       type: 'done',
-      message: `${DONE[action](orderNumber)}しました。`,
+      message: STATUS.done[action](orderNumber),
     }))
     .with({ type: 'conflict' }, () => ({
       type: 'changed',
@@ -157,10 +133,10 @@ export const afterOrderStep = (
     .with({ type: 'notFound' }, { type: 'forbidden' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: `${UNDONE[action]}通信の状態を確かめて、もう一度お試しください。`,
+      message: STATUS.failed[action],
     }))
     .exhaustive()

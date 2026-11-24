@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -6,7 +7,7 @@ import {
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import type { OrderConditions } from '../../utils/order-search'
 import { OrderFilter, type OrderFilterProps } from './order-filter'
@@ -166,6 +167,57 @@ describe('OrderFilter', () => {
     expect(screen.getByRole('button', { name: '条件（4）' })).toHaveAttribute(
       'aria-haspopup',
       'dialog',
+    )
+  })
+})
+
+describe('OrderFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and offer every status, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Every.run()
+
+    // Assert
+    const status = screen.getByRole('combobox', { name: 'Status' })
+    expect(
+      Array.from(status.querySelectorAll('option'), (option) => option.text),
+    ).toEqual([
+      'All',
+      'Draft',
+      'Awaiting approval',
+      'Approved',
+      'Ordered',
+      'Shipped',
+      'Delivered',
+      'Cancelled',
+    ])
+    expect(
+      screen.getByRole('textbox', { name: 'Supplier' }),
+    ).toHaveAccessibleDescription(
+      'The whole name of the supplier, as the order spells it.',
+    )
+    expect(screen.getByLabelText('Order date (from)')).toBeVisible()
+    expect(screen.getByLabelText('Order date (to)')).toBeVisible()
+  })
+
+  it('should say what is wrong at the control, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Order date (to)'),
+    ).toHaveAccessibleDescription(
+      'Make the last day the same as the first day, or later.',
     )
   })
 })

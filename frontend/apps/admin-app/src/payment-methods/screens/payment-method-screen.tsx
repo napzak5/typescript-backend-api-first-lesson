@@ -6,12 +6,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -29,7 +29,7 @@ import {
   useKeepsPaymentMethods,
 } from './keeps-payment-methods'
 
-const TITLE = '支払い方法の内容'
+const { loading, names, titles, words } = adminPaymentMethodMessages
 
 type PaymentMethodPartProps = {
   salon: ModelsSalonResponse
@@ -44,35 +44,36 @@ const PaymentMethodPart = ({
   salon,
   paymentMethodId,
 }: PaymentMethodPartProps) => {
+  const say = useSay()
   const keeps = useKeepsPaymentMethods()
   const method = useQuery({
     queryKey: paymentMethodKeyOf(paymentMethodId),
     queryFn: () => readPaymentMethod(salon.id, paymentMethodId),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.method)} description={salon.name} />
+  )
 
   return match(method.data)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='支払い方法を読み込んでいます' />
+        <LoadingIndicator label={say(loading.method)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <PaymentMethodNotFound salon={salon} />)
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
+        <OtherSalonNotice what={names.methodsOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('支払い方法'), reason),
-          )}
+          message={say(unreadMessageOf(names.method, reason))}
           onRetry={() => void method.refetch()}
           pending={method.isFetching}
         />
@@ -81,7 +82,7 @@ const PaymentMethodPart = ({
     .with({ type: 'found' }, (found) => (
       <>
         <PageHeader
-          title={TITLE}
+          title={say(titles.method)}
           description={salon.name}
           actions={
             keeps ? (
@@ -89,14 +90,14 @@ const PaymentMethodPart = ({
                 href={paymentMethodChangeHrefOf(salon.id, found.method.id)}
                 variant='primary'
               >
-                支払い方法を直す
+                {say(titles.change)}
               </ButtonLink>
             ) : undefined
           }
         />
         <PaymentMethodRecord method={found.method} currency={salon.currency} />
         <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
-          支払い方法へ
+          {say(words.toMethods)}
         </ButtonLink>
       </>
     ))
@@ -105,10 +106,11 @@ const PaymentMethodPart = ({
 
 /** A payment method of the salon of the address, for everybody who works there and an administrator. */
 export const PaymentMethodScreen = () => {
+  const say = useSay()
   const { salonId = '', paymentMethodId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.method)}>
       {(salon) => (
         <PaymentMethodPart
           key={paymentMethodId}

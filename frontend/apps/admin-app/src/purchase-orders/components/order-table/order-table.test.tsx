@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { pendingOrder } from '../examples'
 import * as orderTableStories from './order-table.stories'
@@ -81,5 +82,61 @@ describe('OrderTable', () => {
       '23 件（2 件を表示しています）',
     )
     expect(screen.getByRole('button', { name: 'さらに表示' })).toBeEnabled()
+  })
+})
+
+describe('OrderTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its columns and write its rows, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Orders.run()
+
+    // Assert
+    const table = screen.getByRole('table')
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Order number',
+      'Order date',
+      'Supplier',
+      'Status',
+      'Total',
+      'Expected delivery',
+    ])
+    expect(rowsOf(table)).toEqual([
+      [
+        'PO-7K3M-Q9TX',
+        'Fri, November 20, 2026',
+        '東京ビューティーサプライ',
+        'Awaiting approval',
+        '¥14,682',
+        'Fri, November 27, 2026',
+      ],
+      [
+        'PO-2H8R-W4VN',
+        'Wed, November 18, 2026',
+        'メディカルサプライ',
+        'Ordered',
+        '¥14,000',
+        'Not set',
+      ],
+      [
+        'PO-9C5D-J3KP',
+        'Mon, November 2, 2026',
+        '東京ビューティーサプライ',
+        'Cancelled',
+        '¥15,840',
+        'Not set',
+      ],
+    ])
+    expect(screen.getByRole('status')).toHaveTextContent('3 items')
   })
 })

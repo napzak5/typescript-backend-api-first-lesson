@@ -217,7 +217,7 @@ const DONE: [StatusAction, LocalizedText][] = [
   ],
 ]
 
-const NOT_DONE: [string, StatusChange, ChangeSays<LocalizedText>][] = [
+const NOT_DONE: [string, StatusChange, ChangeSays][] = [
   [
     'a booking that changed elsewhere',
     { type: 'conflict' },

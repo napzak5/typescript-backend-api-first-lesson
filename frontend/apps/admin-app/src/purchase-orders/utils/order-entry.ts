@@ -9,18 +9,17 @@ import type {
   ModelsPurchaseOrderItemCreateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { isDay, tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
-import { startOfDayAt } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, startOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { levelOf } from '../../products/utils/product-form'
@@ -42,23 +41,16 @@ const MOST_YEN = 2_147_483_647
 /** The longest name of a supplier */
 const LONGEST_SUPPLIER = 255
 
-const SUPPLIER_MISSING = '仕入先を入力してください。'
-const SUPPLIER_TOO_LONG = tooLongOf(
-  writtenInJapanese('仕入先'),
-  LONGEST_SUPPLIER,
-)
-const QUANTITY_ERROR =
-  '数量は、0 より大きく 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。'
-const PRICE_ERROR = '単価は、0 以上の円の整数で入力してください。'
-const NONE_ORDERED =
-  '発注する行がありません。発注する行に、数量を入力してください。'
-const TOO_MANY = `1 件の発注に入れられるのは ${MOST_ITEMS} 行までです。残りの行は、別の発注にしてください。`
-const TAX_MISSING = '税額を入力してください。税がかからなければ 0 にします。'
-const TAX_ERROR = '税額は、0 以上の円の整数で入力してください。'
-const SHIPPING_ERROR = '送料は、0 以上の円の整数で入力してください。'
-export const DAY_ERROR = '日付を入力してください。'
-const TOO_MUCH =
-  '合計が 2,147,483,647 円を超えます。明細を分けて、発注を 2 件以上にしてください。'
+const { form, words } = adminPurchaseOrderMessages
+const ERRORS = form.entry.errors
+
+const SUPPLIER_TOO_LONG = tooLongOf(words.supplier, LONGEST_SUPPLIER)
+const TOO_MANY = ERRORS.tooMany(MOST_ITEMS)
+export const DAY_ERROR = words.dayMissing
+
+/** What is said of amounts larger than one order holds, in the currency of the salon */
+const tooMuchIn = (currency: string): LocalizedText =>
+  ERRORS.tooMuch(amountOf(MOST_YEN, currency))
 
 /** The name of the control of the quantity of a row */
 export const quantityControlOf = (inventoryId: string): string =>
@@ -83,7 +75,9 @@ const largestUnitPriceOf = (quantity: number): bigint =>
 type OrderedRow =
   | { type: 'ordered'; item: ModelsPurchaseOrderItemCreateRequest }
   | { type: 'notOrdered' }
-  | { type: 'wrong'; errors: Record<string, string> }
+  | { type: 'wrong'; errors: Record<string, LocalizedText> }
+  /** An item that comes to more than an amount holds, and the largest unit price it may have at its quantity */
+  | { type: 'tooHigh'; control: string; largest: bigint }
 
 const orderedRowOf = (
   values: FormData,
@@ -96,10 +90,10 @@ const orderedRowOf = (
   const unitPrice = yenOf(textOf(values, unitPriceControlOf(id)))
   const errors = {
     ...(quantity === undefined || quantity === 0
-      ? { [quantityControlOf(id)]: QUANTITY_ERROR }
+      ? { [quantityControlOf(id)]: ERRORS.quantity }
       : {}),
     ...(unitPrice === null || unitPrice === undefined
-      ? { [unitPriceControlOf(id)]: PRICE_ERROR }
+      ? { [unitPriceControlOf(id)]: ERRORS.unitPrice }
       : {}),
   }
   if (
@@ -112,11 +106,9 @@ const orderedRowOf = (
   }
   if (itemTotalOf(quantity, unitPrice) > BigInt(MOST_YEN)) {
     return {
-      type: 'wrong',
-      errors: {
-        [unitPriceControlOf(id)]:
-          `この数量では、単価は ${inJapanese(formats.numberOf(largestUnitPriceOf(quantity)))} 円までです。明細の金額は 2,147,483,647 円までです。`,
-      },
+      type: 'tooHigh',
+      control: unitPriceControlOf(id),
+      largest: largestUnitPriceOf(quantity),
     }
   }
 
@@ -150,26 +142,26 @@ export const taxAt = (subtotal: number, taxRate: number): number =>
 
 /** What the form gives: an order, what is wrong with its fields, or amounts too large for one order */
 export type OrderRead =
-  | FormRead<ModelsPurchaseOrderCreateRequest>
-  | { type: 'tooMuch'; message: string }
+  | FormRead<ModelsPurchaseOrderCreateRequest, FormErrors<LocalizedText>>
+  | { type: 'tooMuch'; message: LocalizedText }
 
 /** The name of the supplier, as the form holds it */
 type Supplier =
   | { type: 'named'; name: string }
-  | { type: 'wrong'; error: string }
+  | { type: 'wrong'; error: LocalizedText }
 
 /**
  * What is wrong with the name of a supplier, `null` for one that was not
  * written: none when nothing is. The list of the orders looks for a
  * supplier by the same rule.
  */
-export const supplierError = (name: string | null): string | undefined =>
-  inJapaneseIfAny(tooLongError(name, LONGEST_SUPPLIER, SUPPLIER_TOO_LONG))
+export const supplierError = (name: string | null): LocalizedText | undefined =>
+  tooLongError(name, LONGEST_SUPPLIER, SUPPLIER_TOO_LONG)
 
 const supplierOf = (text: string): Supplier => {
   const name = textOrNull(text)
   if (name === null) {
-    return { type: 'wrong', error: SUPPLIER_MISSING }
+    return { type: 'wrong', error: ERRORS.supplierMissing }
   }
   const error = supplierError(name)
 
@@ -197,7 +189,7 @@ export const deliveryOf = (
  */
 export const readOrderEntry = (
   values: FormData,
-  salon: { id: string; timezone: string },
+  salon: { id: string; timezone: string; currency: string },
   rows: readonly Pick<ModelsInventoryResponse, 'id'>[],
 ): OrderRead => {
   const read = rows.map((row) => orderedRowOf(values, row))
@@ -216,18 +208,31 @@ export const readOrderEntry = (
     ...(supplier.type === 'wrong' ? { supplier: supplier.error } : {}),
     ...Object.fromEntries(
       read.flatMap((row) =>
-        row.type === 'wrong' ? Object.entries(row.errors) : [],
+        match(row)
+          .returnType<[string, LocalizedText][]>()
+          .with({ type: 'wrong' }, ({ errors }) => Object.entries(errors))
+          .with({ type: 'tooHigh' }, ({ control, largest }) => [
+            [
+              control,
+              ERRORS.unitPriceTooHigh(
+                amountOf(Number(largest), salon.currency),
+                amountOf(MOST_YEN, salon.currency),
+              ),
+            ],
+          ])
+          .with({ type: 'ordered' }, { type: 'notOrdered' }, () => [])
+          .exhaustive(),
       ),
     ),
     ...(read.every((row) => row.type === 'notOrdered')
-      ? { [quantityControlOf(rows[0]?.id ?? '')]: NONE_ORDERED }
+      ? { [quantityControlOf(rows[0]?.id ?? '')]: ERRORS.noneOrdered }
       : {}),
     ...(beyond === undefined
       ? {}
       : { [quantityControlOf(beyond.inventoryId)]: TOO_MANY }),
-    ...(taxAmount === null ? { taxAmount: TAX_MISSING } : {}),
-    ...(taxAmount === undefined ? { taxAmount: TAX_ERROR } : {}),
-    ...(shippingCost === undefined ? { shippingCost: SHIPPING_ERROR } : {}),
+    ...(taxAmount === null ? { taxAmount: ERRORS.taxMissing } : {}),
+    ...(taxAmount === undefined ? { taxAmount: ERRORS.tax } : {}),
+    ...(shippingCost === undefined ? { shippingCost: ERRORS.shipping } : {}),
     ...(expectedDelivery === undefined ? { expectedDelivery: DAY_ERROR } : {}),
   }
   if (
@@ -248,7 +253,7 @@ export const readOrderEntry = (
     subtotal + BigInt(taxAmount) + BigInt(shippingCost ?? 0) >
     BigInt(MOST_YEN)
   ) {
-    return { type: 'tooMuch', message: TOO_MUCH }
+    return { type: 'tooMuch', message: tooMuchIn(salon.currency) }
   }
 
   return {
@@ -267,10 +272,10 @@ export const readOrderEntry = (
 }
 
 /** The errors of the fields of the order itself, by the name of the field and of its control */
-const FIELD_ERRORS: Record<string, string> = {
-  supplier: inJapanese(SUPPLIER_TOO_LONG),
-  taxAmount: TAX_ERROR,
-  shippingCost: SHIPPING_ERROR,
+const FIELD_ERRORS: Record<string, LocalizedText> = {
+  supplier: SUPPLIER_TOO_LONG,
+  taxAmount: ERRORS.tax,
+  shippingCost: ERRORS.shipping,
   expectedDelivery: DAY_ERROR,
 }
 
@@ -278,14 +283,14 @@ const FIELD_ERRORS: Record<string, string> = {
 const saidAt = (
   { field }: RefusedValue,
   request: Pick<ModelsPurchaseOrderCreateRequest, 'items'>,
-): [string, string] | undefined => {
+): [string, LocalizedText] | undefined => {
   const [, place, part] =
     /^items\.(\d+)\.(quantity|unitPrice)$/.exec(field) ?? []
   const item = place === undefined ? undefined : request.items[Number(place)]
   if (item !== undefined) {
     return part === 'quantity'
-      ? [quantityControlOf(item.inventoryId), QUANTITY_ERROR]
-      : [unitPriceControlOf(item.inventoryId), PRICE_ERROR]
+      ? [quantityControlOf(item.inventoryId), ERRORS.quantity]
+      : [unitPriceControlOf(item.inventoryId), ERRORS.unitPrice]
   }
   const error = FIELD_ERRORS[field]
 
@@ -300,9 +305,10 @@ const saidAt = (
 export const afterOrderEntry = (
   outcome: Exclude<OrderEntry, { type: 'made' }>,
   request: Pick<ModelsPurchaseOrderCreateRequest, 'items'>,
-): FormSays =>
+  currency: string,
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap((value) => {
         const at = saidAt(value, request)
@@ -310,27 +316,17 @@ export const afterOrderEntry = (
         return at === undefined ? [] : [at]
       })
       const message = values.some(({ field }) => field === 'items')
-        ? TOO_MUCH
+        ? tooMuchIn(currency)
         : said.length < values.length
-          ? inJapanese(CHECK_THE_VALUES_MESSAGE)
+          ? CHECK_THE_VALUES_MESSAGE
           : undefined
 
       return { message, errors: Object.fromEntries(said) }
     })
-    .with({ type: 'rowsChanged' }, () =>
-      aboutTheAttempt(
-        '発注する在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数量を確かめて、もう一度作ってください。',
-      ),
-    )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、このサロンの発注を作れません。'),
-    )
+    .with({ type: 'rowsChanged' }, () => aboutTheAttempt(ERRORS.rowsChanged))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(ERRORS.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '発注を作れませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(ERRORS.failed))
     .exhaustive()

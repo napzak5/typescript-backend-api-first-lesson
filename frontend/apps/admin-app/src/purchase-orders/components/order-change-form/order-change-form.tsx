@@ -7,13 +7,22 @@ import {
   NO_ERRORS,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { deliveryDayOf } from '../../utils/order-change'
+
+const { form, words } = adminPurchaseOrderMessages
+const WORDS = form.change
 
 export type OrderChangeFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   order: Pick<
     ModelsPurchaseOrderResponse,
     'expectedDelivery' | 'deliveryNotes' | 'notes'
@@ -21,7 +30,7 @@ export type OrderChangeFormProps = Pick<
   /** The time zone of the salon, whose day the delivery is on */
   timezone: string
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 /**
@@ -32,35 +41,41 @@ export type OrderChangeFormProps = Pick<
 export const OrderChangeForm = ({
   order,
   timezone,
+  message,
   errors = NO_ERRORS,
-  ...form
-}: OrderChangeFormProps) => (
-  <Form {...form} errors={errors}>
-    <TextField
-      width='short'
-      label='納品予定日'
-      name='expectedDelivery'
-      autoComplete='off'
-      type='date'
-      min={EARLIEST_DAY}
-      max={LATEST_DAY}
-      defaultValue={deliveryDayOf(order.expectedDelivery, timezone)}
-      description='任意。仕入先が約束した日。空にすると、未定になります。'
-      error={errors['expectedDelivery']}
-    />
-    <TextArea
-      label='納品のメモ'
-      name='deliveryNotes'
-      defaultValue={order.deliveryNotes ?? ''}
-      description='任意。届け先や届く時間など、納品について仕入先と決めたこと。'
-      error={errors['deliveryNotes']}
-    />
-    <TextArea
-      label='メモ'
-      name='notes'
-      defaultValue={order.notes ?? ''}
-      description='任意。仕入先への連絡や、届いたあとのことなど。'
-      error={errors['notes']}
-    />
-  </Form>
-)
+  ...props
+}: OrderChangeFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form {...props} message={said.message} errors={errors}>
+      <TextField
+        width='short'
+        label={say(words.expectedDelivery)}
+        name='expectedDelivery'
+        autoComplete='off'
+        type='date'
+        min={EARLIEST_DAY}
+        max={LATEST_DAY}
+        defaultValue={deliveryDayOf(order.expectedDelivery, timezone)}
+        description={say(WORDS.deliveryDescription)}
+        error={said.errors['expectedDelivery']}
+      />
+      <TextArea
+        label={say(words.deliveryNotes)}
+        name='deliveryNotes'
+        defaultValue={order.deliveryNotes ?? ''}
+        description={say(WORDS.deliveryNotesDescription)}
+        error={said.errors['deliveryNotes']}
+      />
+      <TextArea
+        label={say(words.notes)}
+        name='notes'
+        defaultValue={order.notes ?? ''}
+        description={say(words.notesDescription)}
+        error={said.errors['notes']}
+      />
+    </Form>
+  )
+}

@@ -1,4 +1,5 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
@@ -10,6 +11,8 @@ import {
 import { PRODUCTS_OF_THE_SALON } from '../../../products/components/examples'
 import { quantityControlOf, unitPriceControlOf } from '../../utils/order-entry'
 import { OrderForm } from './order-form'
+
+const { errors } = adminPurchaseOrderMessages.form.entry
 
 const meta: Meta<typeof OrderForm> = {
   title: 'Admin/PurchaseOrders/OrderForm',
@@ -49,12 +52,10 @@ export const FromSuggestions: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      supplier: '仕入先を入力してください。',
-      [quantityControlOf(colourLot.id)]:
-        '数量は、0 より大きく 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
-      [unitPriceControlOf(colourLot.id)]:
-        '単価は、0 以上の円の整数で入力してください。',
-      taxAmount: '税額を入力してください。税がかからなければ 0 にします。',
+      supplier: errors.supplierMissing,
+      [quantityControlOf(colourLot.id)]: errors.quantity,
+      [unitPriceControlOf(colourLot.id)]: errors.unitPrice,
+      taxAmount: errors.taxMissing,
     },
   },
 }
@@ -62,8 +63,7 @@ export const WithErrors: Story = {
 /** A row ordered was removed meanwhile: the rows were read anew */
 export const RowsChanged: Story = {
   args: {
-    message:
-      '発注する在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数量を確かめて、もう一度作ってください。',
+    message: errors.rowsChanged,
   },
 }
 

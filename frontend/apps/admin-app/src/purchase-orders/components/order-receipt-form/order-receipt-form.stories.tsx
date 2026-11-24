@@ -1,10 +1,14 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { colourLot } from '../../../inventory/components/examples'
+import { itemQuantityNameOf } from '../../utils/order-format'
 import { receivedControlOf } from '../../utils/order-receipt'
 import { shippedOrder } from '../examples'
 import { OrderReceiptForm } from './order-receipt-form'
+
+const { errors } = adminPurchaseOrderMessages.receipt
 
 const meta: Meta<typeof OrderReceiptForm> = {
   title: 'Admin/PurchaseOrders/OrderReceiptForm',
@@ -44,10 +48,10 @@ export const WithoutNotes: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      [receivedControlOf(colourLot.id)]:
-        '届いた数量は、0 より大きく、発注した 12 本 までの数（小数は 2 桁まで）で入力してください。',
-      deliveryNotes:
-        'いまの納品のメモは、入荷では消せません。そのまま残すか、書き換えてください。',
+      [receivedControlOf(colourLot.id)]: errors.quantity(
+        itemQuantityNameOf({ quantity: 12, unit: '本' }),
+      ),
+      deliveryNotes: errors.notesKept,
     },
   },
 }
@@ -55,8 +59,7 @@ export const WithErrors: Story = {
 /** A row was removed meanwhile: the order was read anew */
 export const RowsChanged: Story = {
   args: {
-    message:
-      '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
+    message: errors.rowsChanged,
   },
 }
 

@@ -1,6 +1,9 @@
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { OrderStatusActions } from './order-status-actions'
+
+const { cancellation, failed, notes } = adminPurchaseOrderMessages.status
 
 const meta: Meta<typeof OrderStatusActions> = {
   title: 'Admin/PurchaseOrders/OrderStatusActions',
@@ -35,7 +38,7 @@ export const PendingForAStylist: Story = {
   args: {
     order: { status: 'pending', orderNumber: 'PO-7K3M-Q9TX' },
     actions: [],
-    note: '発注を承認し、取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+    note: notes.approveAndCancel,
   },
 }
 
@@ -44,7 +47,7 @@ export const ApprovedForAStylist: Story = {
   args: {
     order: { status: 'approved', orderNumber: 'PO-7K3M-Q9TX' },
     actions: ['order'],
-    note: '発注を取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+    note: notes.cancel,
   },
 }
 
@@ -62,7 +65,7 @@ export const ShippedForAStylist: Story = {
   args: {
     order: { status: 'shipped', orderNumber: 'PO-2H8R-W4VN' },
     actions: [],
-    note: '発注を取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+    note: notes.cancel,
     receiveHref: '/salons/salon/purchase-orders/order/receive',
   },
 }
@@ -77,7 +80,7 @@ export const Delivered: Story = {
   args: {
     order: { status: 'delivered', orderNumber: 'PO-7K3M-Q9TX' },
     actions: [],
-    note: 'この発注は納品済みです。ステータスは、もう変わりません。',
+    note: notes.delivered,
   },
 }
 
@@ -99,9 +102,7 @@ export const AskingCancellationOfAShippedOrder: Story = {
 export const CancellationRefused: Story = {
   args: {
     asking: true,
-    cancellationErrors: {
-      cancellationReason: '取り消す理由を入力してください。',
-    },
+    cancellationErrors: { cancellationReason: cancellation.reasonMissing },
   },
 }
 
@@ -109,8 +110,7 @@ export const CancellationRefused: Story = {
 export const CancellationUnsent: Story = {
   args: {
     asking: true,
-    message:
-      '発注を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: failed.cancel,
   },
 }
 

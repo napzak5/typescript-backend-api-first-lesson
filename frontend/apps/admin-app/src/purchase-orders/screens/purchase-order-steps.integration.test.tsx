@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { dayFromToday, salonIdOf } from '@beauty-salon-frontend/testing/api'
@@ -10,7 +11,6 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -327,7 +327,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
       await screen.findByText('発注 PO-SEED-0001 を直しました。'),
     ).toBeVisible()
     expect(firstSight()[0]).toBe(purchaseOrderHrefOf(salonId, id))
-    expect(termOf('納品予定日')).toBe(inJapanese(dayNameOf(delivery)))
+    expect(termOf('納品予定日')).toBe(dayNameOf(delivery).ja)
     expect(termOf('納品のメモ')).toBe('午前中に、裏口へ。')
     expect(termOf('メモ')).toBe('記録なし')
     expect(await storedOrderOf('PO-SEED-0001')).toMatchObject({
@@ -498,5 +498,140 @@ describe('the status of a purchase order, and what is written down on it', () =>
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the status of a purchase order, and what is written down on it, on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  /** The part of the status of the order */
+  const status = (): HTMLElement =>
+    screen.getByRole('region', { name: 'Status' })
+
+  /** What the order says of a term: 「Approved」 */
+  const termIn = (term: string): string | undefined =>
+    within(screen.getByRole('region', { name: 'Purchase order' }))
+      .getAllByRole('term')
+      .find((each) => each.textContent === term)?.nextElementSibling
+      ?.textContent ?? undefined
+
+  /** Opens an order, and waits for its status. */
+  const openInEnglish = async (
+    orderNumber: string,
+    email: string,
+  ): Promise<void> => {
+    await openAs(await orderAt(orderNumber), email, 'en')
+    await heading(`Purchase order ${orderNumber}`)
+  }
+
+  it('should let a manager approve an order that waits for it, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const manager = await displayNameOf(MANAGER)
+    await openInEnglish('PO-SEED-0001', MANAGER)
+    expect(within(status()).getByText('Awaiting approval')).toBeVisible()
+    expect(
+      within(status())
+        .getAllByRole('button')
+        .map(({ textContent }) => textContent),
+    ).toEqual(['Approve', 'Cancel the order'])
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Approve' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Approved order PO-SEED-0001.'),
+    ).toBeVisible()
+    expect(within(status()).getByText('Approved')).toBeVisible()
+    expect(termIn('Approved')).toMatch(
+      new RegExp(` at \\d{2}:\\d{2} \\(${manager}\\)$`),
+    )
+  })
+
+  it('should ask an owner for the reason of a cancellation, then cancel the order, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const reason = 'The supplier is out of stock.'
+    await openInEnglish('PO-SEED-0002', OWNER)
+    await user.click(screen.getByRole('button', { name: 'Cancel the order' }))
+    const asked = screen.getByRole('dialog', { name: 'Cancel the order?' })
+    expect(asked).toHaveAccessibleDescription(
+      'Order PO-SEED-0002 will be cancelled. A cancelled order cannot be restored.',
+    )
+
+    // Act
+    await user.click(
+      within(asked).getByRole('button', { name: 'Cancel the order' }),
+    )
+
+    // Assert
+    const box = within(asked).getByRole('textbox', {
+      name: 'Reason for the cancellation',
+    })
+    expect(box).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the reason for the cancellation.'),
+    )
+
+    // Act
+    await user.type(box, reason)
+    await user.click(
+      within(asked).getByRole('button', { name: 'Cancel the order' }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText('Cancelled order PO-SEED-0002.'),
+    ).toBeVisible()
+    expect(
+      within(status()).getByText(
+        'This order was cancelled. Its status does not change any more.',
+      ),
+    ).toBeVisible()
+    expect(termIn('Reason for the cancellation')).toBe(reason)
+  })
+
+  it('should let the stylist change the day of the delivery and the notes, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const delivery = await dayFromToday(10)
+    await openInEnglish('PO-SEED-0001', STYLIST)
+    expect(
+      within(status()).getByText(
+        'Only the owners and managers of the salon, and administrators, can approve and cancel orders.',
+      ),
+    ).toBeVisible()
+    await user.click(
+      screen.getByRole('link', {
+        name: 'Edit the delivery date and the notes',
+      }),
+    )
+    await heading('Edit the purchase order')
+    const day = await screen.findByLabelText('Expected delivery')
+
+    // Act
+    await user.type(day, delivery)
+    await user.type(
+      screen.getByRole('textbox', { name: 'Delivery notes' }),
+      'To the back door, in the morning.',
+    )
+    await user.clear(screen.getByRole('textbox', { name: 'Notes' }))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    await heading('Purchase order PO-SEED-0001')
+    expect(await screen.findByText('Saved order PO-SEED-0001.')).toBeVisible()
+    expect(termIn('Expected delivery')).toBe(dayNameOf(delivery).en)
+    expect(termIn('Delivery notes')).toBe('To the back door, in the morning.')
+    expect(termIn('Notes')).toBe('Not recorded')
   })
 })

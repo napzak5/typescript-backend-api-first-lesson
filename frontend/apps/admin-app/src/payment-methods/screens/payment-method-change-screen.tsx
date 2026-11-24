@@ -19,15 +19,16 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -53,7 +54,14 @@ import {
   useKeepsPaymentMethods,
 } from './keeps-payment-methods'
 
-const TITLE = '支払い方法を直す'
+const {
+  change: CHANGE,
+  loading,
+  names,
+  removal: REMOVAL,
+  titles,
+  words,
+} = adminPaymentMethodMessages
 
 type PaymentMethodChangeProps = {
   salon: ModelsSalonResponse
@@ -68,13 +76,14 @@ type PaymentMethodChangeProps = {
  * is told to stop using it instead.
  */
 const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = paymentMethodKeyOf(method.id)
   const page = paymentMethodHrefOf(salon.id, method.id)
 
@@ -99,7 +108,7 @@ const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
           forgetList()
           notify({
             tone: 'success',
-            message: `支払い方法「${changed.displayName}」を直しました。`,
+            message: CHANGE.changed(changed.displayName),
           })
           void navigate(page)
         })
@@ -156,7 +165,7 @@ const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
       <PaymentMethodForm
         method={method}
         sortOrder={method.sortOrder}
-        submitLabel='変更を保存する'
+        submitLabel={say(CHANGE.submit)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -164,10 +173,10 @@ const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
         actions={
           <>
             <ButtonLink href={page} variant='quiet'>
-              やめる
+              {say(words.cancel)}
             </ButtonLink>
             <Button variant='danger' onClick={() => setRemoving(true)}>
-              削除
+              {say(REMOVAL.remove)}
             </Button>
           </>
         }
@@ -175,11 +184,11 @@ const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
       <Dialog
         open={removing}
         onClose={close}
-        title={`支払い方法「${method.displayName}」を削除しますか？`}
-        description='売上の画面で選べなくなります。この支払い方法で受け取った支払いがあれば、削除できません。そのときは、使うのをやめてください。削除した支払い方法は、元に戻せません。'
+        title={say(REMOVAL.title(method.displayName))}
+        description={say(REMOVAL.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(REMOVAL.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -188,12 +197,12 @@ const PaymentMethodChange = ({ salon, method }: PaymentMethodChangeProps) => {
                 removal.mutate()
               }}
             >
-              削除する
+              {say(REMOVAL.submit)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -208,6 +217,7 @@ type ChangePartProps = { salon: ModelsSalonResponse; paymentMethodId: string }
  * compares what is sent with what it was opened with.
  */
 const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
+  const say = useSay()
   const method = useQuery({
     queryKey: paymentMethodKeyOf(paymentMethodId),
     queryFn: () => readPaymentMethod(salon.id, paymentMethodId),
@@ -215,29 +225,29 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.change)} description={salon.name} />
+  )
 
   return match(method.isFetchedAfterMount ? method.data : undefined)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='支払い方法を読み込んでいます' />
+        <LoadingIndicator label={say(loading.method)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <PaymentMethodNotFound salon={salon} />)
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
+        <OtherSalonNotice what={names.methodsOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('支払い方法'), reason),
-          )}
+          message={say(unreadMessageOf(names.method, reason))}
           onRetry={() => void method.refetch()}
           pending={method.isFetching}
         />
@@ -254,11 +264,12 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
 
 /** Changes a payment method of the salon of the address, and removes it, for the owner, a manager and an administrator. */
 export const PaymentMethodChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', paymentMethodId = '' } = useParams()
   const keeps = useKeepsPaymentMethods()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) =>
         keeps ? (
           <ChangePart
@@ -267,7 +278,7 @@ export const PaymentMethodChangeScreen = () => {
             paymentMethodId={paymentMethodId}
           />
         ) : (
-          <PaymentMethodsForbidden salon={salon} title={TITLE} />
+          <PaymentMethodsForbidden salon={salon} title={titles.change} />
         )
       }
     </WithSalon>

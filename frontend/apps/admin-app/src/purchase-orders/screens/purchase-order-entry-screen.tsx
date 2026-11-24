@@ -12,14 +12,15 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -53,7 +54,8 @@ import {
   suggestedQuantitiesOf,
 } from '../utils/order-suggestions'
 
-const TITLE = '発注を作る'
+const { form, loading, names, titles, words } = adminPurchaseOrderMessages
+const WORDS = form.entry
 
 /** What a new order that does not start with suggestions reads of them */
 const NONE_SUGGESTED: EverySuggestion = { type: 'found', items: [] }
@@ -68,10 +70,11 @@ const NONE_SUGGESTED: EverySuggestion = { type: 'found', items: [] }
  * removed meanwhile, the rows are read anew, and what was entered stays.
  */
 const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [searchParams] = useSearchParams()
   const suggested = searchParams.get(SUGGESTED_PARAMETER)
   const rows = useQuery({
@@ -105,7 +108,10 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           })
           notify({
             tone: 'success',
-            message: `発注 ${order.orderNumber} を${orderStatusNameOf(order.status)}として作りました。`,
+            message: WORDS.made(
+              order.orderNumber,
+              orderStatusNameOf(order.status),
+            ),
           })
           void navigate(purchaseOrderHrefOf(salon.id, order.id))
         })
@@ -114,13 +120,14 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             queryKey: everyStockRowKeyOf(salon.id),
             exact: true,
           })
-          setSaid(afterOrderEntry(refused, request))
+          setSaid(afterOrderEntry(refused, request, salon.currency))
         })
         .with(
           {
             type: P.union('invalid', 'forbidden', 'tooManyRequests', 'failed'),
           },
-          (refused) => setSaid(afterOrderEntry(refused, request)),
+          (refused) =>
+            setSaid(afterOrderEntry(refused, request, salon.currency)),
         )
         .exhaustive(),
   })
@@ -144,19 +151,17 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.entry)} description={salon.name} />
       {match([rows.data, products.data])
         .with([undefined, P._], [{ type: 'found' }, undefined], () => (
-          <LoadingIndicator label='在庫の行を読み込んでいます' />
+          <LoadingIndicator label={say(WORDS.loadingRows)} />
         ))
         .with([{ type: 'forbidden' }, P._], () => (
-          <OtherSalonNotice what={writtenInJapanese('発注')} />
+          <OtherSalonNotice what={names.ordersOfTheSalon} />
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
-            )}
+            message={say(unreadMessageOf(names.rows, reason))}
             onRetry={() => void rows.refetch()}
             pending={rows.isFetching}
           />
@@ -169,9 +174,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           ],
           ([, reason]) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -179,26 +182,26 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         )
         .with([{ type: 'found', items: [] }, { type: 'found' }], () => (
           <EmptyState
-            title='発注する在庫の行がありません'
-            description='発注は、在庫の行ごとに作ります。在庫の行は、サロンのオーナーとマネージャーと、管理者が足します。'
+            title={say(WORDS.noRows.title)}
+            description={say(WORDS.noRows.description)}
             actions={
-              <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
+              <ButtonLink href={inventoryHrefOf(salon.id)}>
+                {say(WORDS.noRows.toInventory)}
+              </ButtonLink>
             }
           />
         ))
         .with([{ type: 'found' }, { type: 'found' }], ([read, named]) =>
           match(suggested === null ? NONE_SUGGESTED : suggestions.data)
             .with(undefined, () => (
-              <LoadingIndicator label='発注の提案を読み込んでいます' />
+              <LoadingIndicator label={say(loading.suggestions)} />
             ))
             .with({ type: 'forbidden' }, () => (
-              <OtherSalonNotice what={writtenInJapanese('発注')} />
+              <OtherSalonNotice what={names.ordersOfTheSalon} />
             ))
             .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
-                message={inJapanese(
-                  unreadMessageOf(writtenInJapanese('発注の提案'), reason),
-                )}
+                message={say(unreadMessageOf(names.suggestions, reason))}
                 onRetry={() => void suggestions.refetch()}
                 pending={suggestions.isFetching}
               />
@@ -213,9 +216,11 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 <>
                   {suggested !== null && (
                     <p>
-                      {suggestedNoteOf(
-                        suggested,
-                        Object.keys(quantities).length,
+                      {say(
+                        suggestedNoteOf(
+                          suggested,
+                          Object.keys(quantities).length,
+                        ),
                       )}
                     </p>
                   )}
@@ -224,7 +229,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                     products={named.items}
                     salon={salon}
                     starting={{ supplier: suggested ?? '', quantities }}
-                    submitLabel='発注を作る'
+                    submitLabel={say(WORDS.submit)}
                     message={said.message}
                     errors={said.errors}
                     pending={entry.isPending}
@@ -238,7 +243,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                         }
                         variant='quiet'
                       >
-                        やめる
+                        {say(words.cancel)}
                       </ButtonLink>
                     }
                   />
@@ -254,10 +259,11 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** A new purchase order of the salon of the address, for every member of its staff and an administrator. */
 export const PurchaseOrderEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) => <EntryPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

@@ -3,15 +3,19 @@ import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
-  inJapanese,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminPaymentMethodMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   amountsNameOf,
   feeNameOf,
   placesNameOf,
   usedNameOf,
 } from '../../utils/payment-method-format'
+
+const { words: WORDS } = adminPaymentMethodMessages
 
 export type PaymentMethodRecordProps = {
   method: ModelsPaymentMethodResponse
@@ -26,29 +30,46 @@ export type PaymentMethodRecordProps = {
 export const PaymentMethodRecord = ({
   method,
   currency,
-}: PaymentMethodRecordProps) => (
-  <Card title='支払い方法'>
-    <DescriptionList
-      items={[
-        { term: '表示名', description: method.displayName },
-        {
-          term: '種類',
-          description: inJapanese(methodKindNameOf(method.method)),
-        },
-        {
-          term: '説明',
-          description: <WrittenText>{method.description}</WrittenText>,
-        },
-        { term: '1 回の金額', description: amountsNameOf(method, currency) },
-        { term: '手数料率', description: feeNameOf(method.fee) },
-        {
-          term: '決済代行会社',
-          description: method.processorName,
-        },
-        { term: '使う場所', description: placesNameOf(method) },
-        { term: '状態', description: usedNameOf(method.isActive) },
-        { term: '並び順', description: String(method.sortOrder) },
-      ]}
-    />
-  </Card>
-)
+}: PaymentMethodRecordProps) => {
+  const say = useSay()
+  const fee = feeNameOf(method.fee)
+
+  return (
+    <Card title={say(WORDS.method)}>
+      <DescriptionList
+        items={[
+          { term: say(WORDS.displayName), description: method.displayName },
+          {
+            term: say(WORDS.kind),
+            description: say(methodKindNameOf(method.method)),
+          },
+          {
+            term: say(WORDS.description),
+            description: <WrittenText>{method.description}</WrittenText>,
+          },
+          {
+            term: say(WORDS.amounts),
+            description: say(amountsNameOf(method, currency)),
+          },
+          {
+            term: say(WORDS.fee),
+            description: fee === null ? null : say(fee),
+          },
+          {
+            term: say(WORDS.processor),
+            description: method.processorName,
+          },
+          { term: say(WORDS.places), description: say(placesNameOf(method)) },
+          {
+            term: say(WORDS.status),
+            description: say(usedNameOf(method.isActive)),
+          },
+          {
+            term: say(WORDS.sortOrder),
+            description: say(formats.numberOf(method.sortOrder)),
+          },
+        ]}
+      />
+    </Card>
+  )
+}

@@ -5,7 +5,7 @@ import {
   deliveryDayNameOf,
   doneNameOf,
   itemQuantityNameOf,
-  ORDER_STATUS_OPTIONS,
+  ORDER_STATUS_CHOICES,
   orderStatusIn,
   orderStatusToneOf,
 } from './order-format'
@@ -22,6 +22,7 @@ const STATUSES: ModelsOrderStatusType[] = [
 
 describe('orderStatusIn', () => {
   it('should read the statuses of the contract, and nothing else', () => {
+    // Assert
     expect([...STATUSES, 'lost', ''].map(orderStatusIn)).toEqual([
       ...STATUSES,
       undefined,
@@ -30,20 +31,22 @@ describe('orderStatusIn', () => {
   })
 })
 
-describe('ORDER_STATUS_OPTIONS and orderStatusToneOf', () => {
+describe('ORDER_STATUS_CHOICES and orderStatusToneOf', () => {
   it('should name every status in the order an order goes through them', () => {
-    expect(ORDER_STATUS_OPTIONS).toEqual([
-      { value: 'draft', label: '下書き' },
-      { value: 'pending', label: '承認待ち' },
-      { value: 'approved', label: '承認済み' },
-      { value: 'ordered', label: '発注済み' },
-      { value: 'shipped', label: '出荷済み' },
-      { value: 'delivered', label: '納品済み' },
-      { value: 'cancelled', label: '取り消し' },
+    // Assert
+    expect(ORDER_STATUS_CHOICES).toEqual([
+      { value: 'draft', label: { en: 'Draft', ja: '下書き' } },
+      { value: 'pending', label: { en: 'Awaiting approval', ja: '承認待ち' } },
+      { value: 'approved', label: { en: 'Approved', ja: '承認済み' } },
+      { value: 'ordered', label: { en: 'Ordered', ja: '発注済み' } },
+      { value: 'shipped', label: { en: 'Shipped', ja: '出荷済み' } },
+      { value: 'delivered', label: { en: 'Delivered', ja: '納品済み' } },
+      { value: 'cancelled', label: { en: 'Cancelled', ja: '取り消し' } },
     ])
   })
 
   it('should colour what waits for somebody, what is under way and what was delivered apart', () => {
+    // Assert
     expect(STATUSES.map(orderStatusToneOf)).toEqual([
       'neutral',
       'warning',
@@ -58,38 +61,54 @@ describe('ORDER_STATUS_OPTIONS and orderStatusToneOf', () => {
 
 describe('deliveryDayNameOf', () => {
   it('should say the day of the delivery at the salon, or that none was set', () => {
-    expect(deliveryDayNameOf('2026-11-26T15:00:00.000Z', salon.timezone)).toBe(
-      '2026年11月27日（金）',
-    )
-    expect(deliveryDayNameOf(null, salon.timezone)).toBe('未定')
+    // Assert
+    expect(
+      deliveryDayNameOf('2026-11-26T15:00:00.000Z', salon.timezone),
+    ).toEqual({ en: 'Fri, November 27, 2026', ja: '2026年11月27日（金）' })
+    expect(deliveryDayNameOf(null, salon.timezone)).toEqual({
+      en: 'Not set',
+      ja: '未定',
+    })
   })
 })
 
 describe('itemQuantityNameOf', () => {
   it('should say how much of what an item orders', () => {
-    expect(itemQuantityNameOf({ quantity: 2.5, unit: '本' })).toBe('2.5 本')
+    // Assert
+    expect(itemQuantityNameOf({ quantity: 2.5, unit: '本' })).toEqual({
+      en: '2.5 本',
+      ja: '2.5 本',
+    })
   })
 })
 
 describe('doneNameOf', () => {
   const MOMENT = '2026-11-20T01:00:00.000Z'
+  const AT_TEN = {
+    en: 'Fri, November 20, 2026 at 10:00',
+    ja: '2026年11月20日（金） 10:00',
+  }
 
   it('should say when, on the clock of the salon, and who did it', () => {
-    expect(doneNameOf(MOMENT, staff[1]?.id ?? '', salon.timezone, staff)).toBe(
-      '2026年11月20日（金） 10:00（佐藤 健）',
-    )
+    // Assert
+    expect(
+      doneNameOf(MOMENT, staff[1]?.id ?? '', salon.timezone, staff),
+    ).toEqual({
+      en: 'Fri, November 20, 2026 at 10:00 (佐藤 健)',
+      ja: '2026年11月20日（金） 10:00（佐藤 健）',
+    })
   })
 
   it('should name nobody for an administrator, nor while the staff are read', () => {
-    expect(doneNameOf(MOMENT, null, salon.timezone, staff)).toBe(
-      '2026年11月20日（金） 10:00',
-    )
+    // Assert
+    expect(doneNameOf(MOMENT, null, salon.timezone, staff)).toEqual(AT_TEN)
     expect(
       doneNameOf(MOMENT, staff[1]?.id ?? '', salon.timezone, undefined),
-    ).toBe('2026年11月20日（金） 10:00')
+    ).toEqual(AT_TEN)
   })
 
   it('should say that a member who left is not listed', () => {
+    // Assert
     expect(
       doneNameOf(
         MOMENT,
@@ -97,6 +116,9 @@ describe('doneNameOf', () => {
         salon.timezone,
         staff,
       ),
-    ).toBe('2026年11月20日（金） 10:00（一覧にないスタッフ）')
+    ).toEqual({
+      en: 'Fri, November 20, 2026 at 10:00 (Staff member not listed)',
+      ja: '2026年11月20日（金） 10:00（一覧にないスタッフ）',
+    })
   })
 })

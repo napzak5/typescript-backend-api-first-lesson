@@ -11,15 +11,16 @@ import {
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -40,7 +41,8 @@ import {
 } from '../utils/order-change'
 import { OrderNotFound } from './order-not-found'
 
-const TITLE = '発注を直す'
+const { form, loading, names, titles, words } = adminPurchaseOrderMessages
+const WORDS = form.change
 
 type OrderChangeProps = {
   salon: ModelsSalonResponse
@@ -55,10 +57,11 @@ type OrderChangeProps = {
  * it does not change.
  */
 const OrderChange = ({ salon, order }: OrderChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = purchaseOrderKeyOf(order.id)
   const page = purchaseOrderHrefOf(salon.id, order.id)
 
@@ -75,7 +78,7 @@ const OrderChange = ({ salon, order }: OrderChangeProps) => {
           })
           notify({
             tone: 'success',
-            message: `発注 ${changed.orderNumber} を直しました。`,
+            message: WORDS.changed(changed.orderNumber),
           })
           void navigate(page)
         })
@@ -108,20 +111,18 @@ const OrderChange = ({ salon, order }: OrderChangeProps) => {
 
   return (
     <>
-      <p>
-        発注 {order.orderNumber}（{order.supplier}）
-      </p>
+      <p>{say(words.orderOf(order.orderNumber, order.supplier))}</p>
       <OrderChangeForm
         order={order}
         timezone={salon.timezone}
-        submitLabel='変更を保存する'
+        submitLabel={say(WORDS.submit)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={page} variant='quiet'>
-            やめる
+            {say(words.cancel)}
           </ButtonLink>
         }
       />
@@ -138,6 +139,7 @@ type ChangePartProps = { salon: ModelsSalonResponse; purchaseOrderId: string }
  * what it was opened with.
  */
 const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: purchaseOrderKeyOf(purchaseOrderId),
     queryFn: () => readOrder(purchaseOrderId),
@@ -145,13 +147,15 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.change)} description={salon.name} />
+  )
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='発注を読み込んでいます' />
+        <LoadingIndicator label={say(loading.order)} />
       </>
     ))
     .with({ type: 'notFound' }, () => <OrderNotFound salonId={salon.id} />)
@@ -162,16 +166,14 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what={writtenInJapanese('発注')} />
+        <OtherSalonNotice what={names.ordersOfTheSalon} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('発注'), reason),
-          )}
+          message={say(unreadMessageOf(names.order, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -182,9 +184,9 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
       ({ order }) => (
         <>
           {header}
-          <p>{CLOSED_ORDERS[order.status]}</p>
+          <p>{say(CLOSED_ORDERS[order.status])}</p>
           <ButtonLink href={purchaseOrderHrefOf(salon.id, order.id)}>
-            発注へ戻る
+            {say(words.toOrder)}
           </ButtonLink>
         </>
       ),
@@ -200,10 +202,11 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
 
 /** The day of the delivery and the notes of an order of the salon of the address, for every member of its staff and an administrator. */
 export const PurchaseOrderChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', purchaseOrderId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) => (
         <ChangePart
           key={purchaseOrderId}

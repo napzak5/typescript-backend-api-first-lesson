@@ -7,15 +7,22 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { ORDER_STATUS_OPTIONS } from '../../utils/order-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { ORDER_STATUS_CHOICES } from '../../utils/order-format'
 import { type OrderConditions, orderQueryOf } from '../../utils/order-search'
+
+const { filter: WORDS, words } = adminPurchaseOrderMessages
 
 export type OrderFilterProps = {
   /** The conditions that are shown: those of the address */
   conditions: OrderConditions
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of every order, when the conditions narrow the list */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -46,6 +53,9 @@ export const OrderFilter = ({
   clearHref,
   onSubmit,
 }: OrderFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(undefined, errors)
   const [values, hold] = useFilterValues(
     orderQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -53,7 +63,7 @@ export const OrderFilter = ({
 
   return (
     <FilterForm
-      label='発注を絞り込む'
+      label={say(WORDS.label)}
       purpose='view'
       errors={errors}
       clearHref={clearHref}
@@ -62,42 +72,42 @@ export const OrderFilter = ({
       conditions={
         <>
           <Select
-            label='ステータス'
+            label={say(words.status)}
             name='status'
-            options={ORDER_STATUS_OPTIONS}
-            placeholder='すべて'
+            options={options(ORDER_STATUS_CHOICES)}
+            placeholder={say(WORDS.all)}
             value={values.status}
             onChange={(event) => hold('status', event.target.value)}
           />
           <TextField
-            label='仕入先'
+            label={say(words.supplier)}
             name='supplier'
             autoComplete='off'
-            description='仕入先の名前のすべて。発注に書いたとおりに入力します。'
+            description={say(WORDS.supplierDescription)}
             value={values.supplier}
-            error={errors['supplier']}
+            error={said.errors['supplier']}
             onChange={(event) => hold('supplier', event.target.value)}
           />
           <TextField
-            label='発注日（から）'
+            label={say(WORDS.from)}
             name='from'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.from}
-            error={errors['from']}
+            error={said.errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
           <TextField
-            label='発注日（まで）'
+            label={say(WORDS.to)}
             name='to'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.to}
-            error={errors['to']}
+            error={said.errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
         </>

@@ -2,6 +2,10 @@ import type {
   ModelsInventoryResponse,
   ModelsReorderSuggestionResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
+
+const { suggested } = adminPurchaseOrderMessages.form.entry
 
 /*
  * The reorder suggestions of a salon: which products to order, how many,
@@ -64,12 +68,15 @@ export const suggestedQuantitiesOf = (
   )
 
 /** What a new order that starts with the suggestions of a supplier says above its form, after how many rows it filled in. */
-export const suggestedNoteOf = (supplier: string, filled: number): string => {
+export const suggestedNoteOf = (
+  supplier: string,
+  filled: number,
+): LocalizedText => {
   if (filled === 0) {
-    return 'この仕入先の発注の提案は、いまはありません。発注する行に、数量を入力してください。'
+    return suggested.none
   }
 
   return supplier === ''
-    ? `仕入先の決まっていない商品の、発注の提案の数量を ${filled} 行に入れました。仕入先を入力し、数量と単価を確かめてください。`
-    : `${supplier} の発注の提案の数量を ${filled} 行に入れました。数量と単価を確かめてください。`
+    ? suggested.noSupplier(filled)
+    : suggested.of(supplier, filled)
 }

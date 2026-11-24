@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -56,8 +57,8 @@ const openedForm = async (title: string): Promise<void> => {
 }
 
 /** What the record of a method says, term by term. */
-const terms = (): [string, string][] =>
-  within(screen.getByRole('region', { name: '支払い方法' }))
+const terms = (name = '支払い方法'): [string, string][] =>
+  within(screen.getByRole('region', { name }))
     .getAllByRole('term')
     .map((term) => [
       term.textContent ?? '',
@@ -518,4 +519,182 @@ describe('the payment methods of a salon, against the API', () => {
       expect(await findAccessibilityViolations(container)).toEqual([])
     },
   )
+})
+
+describe('the payment methods of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the methods of the salon and show one, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(paymentMethodsHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await heading('Payment methods')
+    const table = await screen.findByRole('table', { name: 'Payment methods' })
+    expect(rowsOf(table).slice(0, 2)).toEqual([
+      ['Cash', 'Cash', 'No limits', 'No fee', 'In store', 'In use'],
+      [
+        'Credit Card',
+        'Credit card',
+        '¥1,000 or more',
+        '3.6%',
+        'In store, Online',
+        'In use',
+      ],
+    ])
+    expect(
+      screen.getByText(
+        'The means chosen when a payment is recorded on the sales screens. A payment method that is not in use cannot be chosen for new payments.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Add a payment method' }),
+    ).toBeInTheDocument()
+
+    // Act
+    await user.click(within(table).getByRole('link', { name: 'Credit Card' }))
+
+    // Assert
+    await heading('Payment method details')
+    await screen.findByRole('region', { name: 'Payment method' })
+    expect(terms('Payment method')).toEqual([
+      ['Display name', 'Credit Card'],
+      ['Type', 'Credit card'],
+      ['Description', 'Visa, MasterCard, JCB, AMEX accepted'],
+      ['Amount at a time', '¥1,000 or more'],
+      ['Fee rate', '3.6%'],
+      ['Payment processor', 'Stripe'],
+      ['Where used', 'In store, Online'],
+      ['Status', 'In use'],
+      ['Sort order', '2'],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Edit the payment method' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the payment methods' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should say what is wrong with a new method, then add it, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      paymentMethodEntryHrefOf(await salonIdOf(TOKYO)),
+      MANAGER,
+      'en',
+    )
+    await heading('Add a payment method')
+    await screen.findByRole('textbox', { name: /Display name/ })
+    await user.type(text('Smallest amount at a time (yen)'), '2000')
+    await user.type(text('Largest amount at a time (yen)'), '1000')
+    await user.type(text('Fee rate (%)'), '101')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: /Type/ }),
+    ).toHaveAccessibleDescription(expect.stringContaining('Choose a type.'))
+    expect(text(/Display name/)).toHaveAccessibleDescription(
+      expect.stringContaining('Display name: enter 1 to 100 characters.'),
+    )
+    expect(text('Largest amount at a time (yen)')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the largest amount the same as the smallest amount or larger.',
+      ),
+    )
+    expect(text('Fee rate (%)')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Enter the fee rate as a number from 0 to 100, with up to 2 decimal places.',
+      ),
+    )
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /Type/ }),
+      'QR code payment',
+    )
+    await user.type(text(/Display name/), 'PayPay')
+    await user.clear(text('Smallest amount at a time (yen)'))
+    await user.clear(text('Fee rate (%)'))
+    await user.type(text('Fee rate (%)'), '1.98')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Added the payment method “PayPay”.'),
+    ).toBeInTheDocument()
+    await heading('Payment method details')
+    expect(
+      (await screen.findAllByRole('term')).map((term) => [
+        term.textContent,
+        term.nextElementSibling?.textContent,
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        ['Type', 'QR code payment'],
+        ['Amount at a time', 'Up to ¥1,000'],
+        ['Fee rate', '1.98%'],
+        ['Where used', 'In store'],
+      ]),
+    )
+  })
+
+  it('should keep a method a payment was received by meanwhile, and say to stop using it instead, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      paymentMethodChangeHrefOf(
+        await salonIdOf(TOKYO),
+        await methodIdOf(TOKYO, 'Cash'),
+      ),
+      OWNER,
+      'en',
+    )
+    await heading('Edit the payment method')
+    await screen.findByRole('textbox', { name: /Display name/ })
+    await paidMeanwhileBy(TOKYO, 'Cash')
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    const dialog = screen.getByRole('dialog', {
+      name: 'Remove the payment method “Cash”?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Payments were received by the payment method “Cash”, so it cannot be removed. To stop using it, clear “Use this payment method” and save.',
+    )
+  })
+
+  it('should tell the stylist that the methods are kept by others, in English', async () => {
+    // Act
+    await openAs(
+      paymentMethodEntryHrefOf(await salonIdOf(TOKYO)),
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    await heading('Add a payment method')
+    expect(
+      await screen.findByText(
+        'This account cannot change the payment methods. Only the owners and managers of the salon, and administrators, can change payment methods.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the payment methods' }),
+    ).toBeInTheDocument()
+  })
 })

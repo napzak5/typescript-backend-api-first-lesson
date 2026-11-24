@@ -14,13 +14,15 @@ import {
   Alert,
   ButtonLink,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
+  NO_ERRORS,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -62,7 +64,7 @@ import {
 } from '../utils/order-actions'
 import { OrderNotFound, ToTheOrders } from './order-not-found'
 
-const TITLE = '発注'
+const { form, loading, names, titles } = adminPurchaseOrderMessages
 
 /** An operation on the status of an order, with what it sends. */
 type Operation =
@@ -79,7 +81,7 @@ const send = (id: string, operation: Operation): Promise<OrderStep> =>
     .exhaustive()
 
 /** What is said about an attempt, and where: in the open dialog, or where the status is. */
-type Said = { where: 'dialog' | 'page'; message: string }
+type Said = { where: 'dialog' | 'page'; message: LocalizedText }
 
 type OrderDetailsProps = {
   salon: ModelsSalonResponse
@@ -96,6 +98,7 @@ type OrderDetailsProps = {
  * where the status is.
  */
 const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const session = useSession()
@@ -103,7 +106,8 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
     session.type === 'signedIn' && mayApproveOrders(session.user.role)
   const [asking, setAsking] = useState(false)
   const [said, setSaid] = useState<Said>()
-  const [cancellationErrors, setCancellationErrors] = useState<FormErrors>({})
+  const [cancellationErrors, setCancellationErrors] =
+    useState<FormErrors<LocalizedText>>(NO_ERRORS)
   const statusHeading = useRef<HTMLHeadingElement>(null)
   /**
    * When the order was last changed, as the screen showed it when an
@@ -177,7 +181,9 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
 
   return (
     <>
-      {said?.where === 'page' && <Alert tone='danger'>{said.message}</Alert>}
+      {said?.where === 'page' && (
+        <Alert tone='danger'>{say(said.message)}</Alert>
+      )}
       <OrderStatusActions
         order={order}
         actions={orderActionsOf(order.status, approves)}
@@ -196,7 +202,7 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
         onAsk={() => {
           // What was said about an attempt before is said no longer
           setSaid(undefined)
-          setCancellationErrors({})
+          setCancellationErrors(NO_ERRORS)
           setAsking(true)
         }}
         onClose={() => setAsking(false)}
@@ -206,7 +212,7 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
               setCancellationErrors(errors),
             )
             .with({ type: 'valid' }, ({ value }) => {
-              setCancellationErrors({})
+              setCancellationErrors(NO_ERRORS)
               act({ type: 'cancel', request: value })
             })
             .exhaustive()
@@ -239,6 +245,7 @@ type OrderPartProps = {
  * stays on it.
  */
 const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: purchaseOrderKeyOf(purchaseOrderId),
     queryFn: () => readOrder(purchaseOrderId),
@@ -253,8 +260,8 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
     match(read.data)
       .with(undefined, () => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <LoadingIndicator label='発注を読み込んでいます' />
+          <PageHeader title={say(titles.order)} description={salon.name} />
+          <LoadingIndicator label={say(loading.order)} />
         </>
       ))
       .with({ type: 'notFound' }, () => <OrderNotFound salonId={salon.id} />)
@@ -266,17 +273,15 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
       )
       .with({ type: 'forbidden' }, () => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <OtherSalonNotice what={writtenInJapanese('発注')} />
+          <PageHeader title={say(titles.order)} description={salon.name} />
+          <OtherSalonNotice what={names.ordersOfTheSalon} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={say(titles.order)} description={salon.name} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('発注'), reason),
-            )}
+            message={say(unreadMessageOf(names.order, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -285,12 +290,12 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
       .with({ type: 'found' }, ({ order }) => (
         <>
           <PageHeader
-            title={`${TITLE} ${order.orderNumber}`}
+            title={say(titles.numbered(order.orderNumber))}
             description={salon.name}
             actions={
               !isClosedOrder(order.status) && (
                 <ButtonLink href={orderChangeHrefOf(salon.id, order.id)}>
-                  納品予定日とメモを直す
+                  {say(form.change.open)}
                 </ButtonLink>
               )
             }
@@ -311,10 +316,11 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
 
 /** A purchase order of the salon of the address, for every member of its staff and an administrator. */
 export const PurchaseOrderScreen = () => {
+  const say = useSay()
   const { salonId = '', purchaseOrderId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.order)}>
       {(salon) => (
         <OrderPart
           key={purchaseOrderId}

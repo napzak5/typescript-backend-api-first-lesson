@@ -14,13 +14,14 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -41,17 +42,23 @@ import {
   readOrderConditions,
 } from '../utils/order-search'
 
-const TITLE = '発注'
+const { list, loading, names, titles, words } = adminPurchaseOrderMessages
 
 /** What is done from the list: a new order, or the products the salon had better order */
-const OrderLinks = ({ salonId }: { salonId: string }) => (
-  <>
-    <ButtonLink href={purchaseOrderEntryHrefOf(salonId)} variant='primary'>
-      発注を作る
-    </ButtonLink>
-    <ButtonLink href={reorderSuggestionsHrefOf(salonId)}>発注の提案</ButtonLink>
-  </>
-)
+const OrderLinks = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
+
+  return (
+    <>
+      <ButtonLink href={purchaseOrderEntryHrefOf(salonId)} variant='primary'>
+        {say(words.entry)}
+      </ButtonLink>
+      <ButtonLink href={reorderSuggestionsHrefOf(salonId)}>
+        {say(words.suggestions)}
+      </ButtonLink>
+    </>
+  )
+}
 
 /**
  * The purchase orders of a salon that meet the conditions of the address,
@@ -59,8 +66,11 @@ const OrderLinks = ({ salonId }: { salonId: string }) => (
  * were made on at the salon.
  */
 const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = orderConditionsIn(query)
   const asked = orderQueryOf(conditions).toString()
   const narrowed = asked !== ''
@@ -98,8 +108,8 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('発注')} />
+        <PageHeader title={say(titles.orders)} description={salon.name} />
+        <OtherSalonNotice what={names.ordersOfTheSalon} />
       </>
     )
   }
@@ -107,7 +117,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.orders)}
         description={salon.name}
         actions={<OrderLinks salonId={salon.id} />}
       />
@@ -126,14 +136,10 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='発注を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.orders)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('発注'), reason),
-            )}
+            message={say(unreadMessageOf(names.orders, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -141,13 +147,13 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合う発注はありません'
-              description='条件を変えて探してください。仕入先は、発注に書いたとおりの名前で探します。'
+              title={say(list.noneMatching)}
+              description={say(list.noneMatchingDescription)}
             />
           ) : (
             <EmptyState
-              title='発注はありません'
-              description='「発注を作る」から、仕入先に頼む商品を、在庫の行ごとに数量と単価を書いて作ります。'
+              title={say(list.none)}
+              description={say(list.noneDescription)}
             />
           ),
         )
@@ -155,7 +161,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <OrderTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合う発注' : TITLE}
+            caption={say(narrowed ? list.matching : titles.orders)}
             orders={items}
             timezone={salon.timezone}
             currency={salon.currency}
@@ -177,10 +183,11 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The purchase orders of the salon of the address, for every member of its staff and an administrator. */
 export const PurchaseOrdersScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.orders)}>
       {(salon) => <OrdersPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

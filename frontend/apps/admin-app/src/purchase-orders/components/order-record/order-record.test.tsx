@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { colourLot } from '../../../inventory/components/examples'
 import * as orderRecordStories from './order-record.stories'
@@ -107,6 +108,63 @@ describe('OrderRecord', () => {
     expect(termsOf('発注')[3]).toEqual([
       '発注日時',
       '2026年11月20日（金） 10:00',
+    ])
+  })
+})
+
+describe('OrderRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the terms and write the values of an order, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Pending.run()
+
+    // Assert
+    expect(termsOf('Purchase order')).toEqual([
+      ['Order number', 'PO-7K3M-Q9TX'],
+      ['Status', 'Awaiting approval'],
+      ['Supplier', '東京ビューティーサプライ'],
+      ['Ordered', 'Fri, November 20, 2026 at 10:00 (佐藤 健)'],
+      ['Expected delivery', 'Fri, November 27, 2026'],
+      ['Payment terms', '月末締め翌月末払い'],
+      ['Notes', '年末の繁忙期の分。\n届いたら、バックヤードの棚 B-2 へ。'],
+      ['Delivery notes', 'Not recorded'],
+    ])
+    expect(rowsOf('Line items')[0]).toEqual([
+      'COLOR001',
+      'ヘアカラー ナチュラルブラウン',
+      '12 本',
+      '¥800',
+      '¥9,600',
+      'Not recorded',
+    ])
+    expect(termsOf('Amounts')).toEqual([
+      ['Subtotal', '¥13,348'],
+      ['Tax', '¥1,334'],
+      ['Shipping', 'Not recorded'],
+      ['Total', '¥14,682'],
+    ])
+  })
+
+  it('should say when and why an order was cancelled, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Cancelled.run()
+
+    // Assert
+    expect(termsOf('Purchase order').slice(5, 7)).toEqual([
+      ['Cancelled', 'Tue, November 3, 2026 at 09:15'],
+      [
+        'Reason for the cancellation',
+        '仕入先の在庫切れ。別の仕入先に頼み直す。',
+      ],
     ])
   })
 })

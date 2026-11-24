@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
@@ -14,7 +15,6 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -457,7 +457,7 @@ describe('the goods that come for a purchase order, and what to order', () => {
         '30 bottle',
         '50 bottle',
         '25 bottle',
-        inJapanese(dayNameOf(ordered)),
+        dayNameOf(ordered).ja,
       ],
     ])
 
@@ -616,5 +616,92 @@ describe('the goods that come for a purchase order, and what to order', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the goods that come for a purchase order, and what to order, on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the stylist record the goods of an order, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(await receiptAt('PO-SEED-0002'), STYLIST, 'en')
+    await heading('Record the receipt')
+    expect(
+      await screen.findByRole('group', { name: 'Quantities received' }),
+    ).toBeVisible()
+    expect(box(MASK)).toHaveAccessibleDescription('Ordered 12 jar')
+    expect(box('Delivery notes')).toHaveValue('')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record the receipt' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Recorded the receipt of order PO-SEED-0002. Added the 1 line item that arrived to the stock.',
+      ),
+    ).toBeVisible()
+    expect(await heading('Purchase order PO-SEED-0002')).toHaveFocus()
+    expect(
+      within(screen.getByRole('region', { name: 'Status' })).getByText(
+        'Delivered',
+      ),
+    ).toBeVisible()
+    expect(await stockOf('TREAT001')).toBe('32.00')
+  })
+
+  it('should show the suggestions by supplier and start an order from those of one, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await productOrderedAt(TOKYO, 'BLEACH001', { reorderPoint: 25 })
+    await openAs(
+      reorderSuggestionsHrefOf(await salonIdOf(TOKYO)),
+      STYLIST,
+      'en',
+    )
+    await heading('Reorder suggestions')
+    await screen.findByRole('region', { name: 'ColorTech Japan' })
+    expect(suggestedIn('ColorTech Japan')[0]).toEqual([
+      'BLEACH001',
+      'Lightening Powder 500g',
+      '20 box',
+      '0 box',
+      '25 box',
+      '30 box',
+      '10 box',
+      'None',
+    ])
+
+    // Act
+    await user.click(
+      screen.getByRole('link', {
+        name: 'Create an order to ColorTech Japan',
+      }),
+    )
+
+    // Assert
+    await heading('Create a purchase order')
+    expect(
+      await screen.findByText(
+        'Filled in the suggested quantities of ColorTech Japan in 2 rows. Check the quantities and the unit prices.',
+      ),
+    ).toBeVisible()
+    expect(box('Supplier')).toHaveValue('ColorTech Japan')
+    expect(
+      within(
+        screen.getByRole('group', { name: /^Lightening Powder 500g/ }),
+      ).getByRole('textbox', { name: 'Quantity' }),
+    ).toHaveValue('10')
+    expect(screen.getByText('Subtotal ¥76,000')).toBeVisible()
   })
 })

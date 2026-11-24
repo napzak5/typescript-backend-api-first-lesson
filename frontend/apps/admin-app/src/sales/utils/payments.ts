@@ -19,7 +19,10 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import {
+  type AmountLimits,
+  adminSaleMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
@@ -49,22 +52,20 @@ export const takesCard = ({
 }: Pick<ModelsPaymentMethodResponse, 'method'>): boolean =>
   CARD_METHODS.includes(method)
 
-/** What a method takes at once, as the catalogue says it */
-type Limits = Parameters<typeof words.limits>[0]
-
 /**
  * What a method takes at once, in amounts of the currency of the salon:
  * its smallest, its largest, or both; `null` when it takes any amount.
+ * The screens of the payment methods say it too.
  */
-const limitsIn = (
+export const amountLimitsOf = (
   {
     minimumAmount,
     maximumAmount,
   }: Pick<ModelsPaymentMethodResponse, 'minimumAmount' | 'maximumAmount'>,
   currency: string,
-): Limits | null =>
+): AmountLimits | null =>
   match([minimumAmount, maximumAmount])
-    .returnType<Limits | null>()
+    .returnType<AmountLimits | null>()
     .with([null, null], () => null)
     .with([null, P.number], ([, most]) => ({
       least: null,
@@ -81,7 +82,7 @@ export const limitsOf = (
   method: Pick<ModelsPaymentMethodResponse, 'minimumAmount' | 'maximumAmount'>,
   currency: string,
 ): LocalizedText | undefined => {
-  const limits = limitsIn(method, currency)
+  const limits = amountLimitsOf(method, currency)
 
   return limits === null ? undefined : words.limits(limits)
 }
@@ -94,7 +95,7 @@ export const methodLabelOf = (
   >,
   currency: string,
 ): LocalizedText =>
-  words.methodLabel(method.displayName, limitsIn(method, currency))
+  words.methodLabel(method.displayName, amountLimitsOf(method, currency))
 
 /** The longest brand of a card the API takes */
 const LONGEST_BRAND = 50
@@ -117,7 +118,7 @@ const amountErrorOf = (
   if (amount > owed) {
     return wrong.moreThanOwed(amountOf(owed, currency))
   }
-  const limits = method === undefined ? null : limitsIn(method, currency)
+  const limits = method === undefined ? null : amountLimitsOf(method, currency)
   if (method === undefined || limits === null) {
     return undefined
   }

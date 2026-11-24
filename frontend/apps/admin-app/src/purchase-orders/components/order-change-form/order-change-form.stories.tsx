@@ -1,3 +1,4 @@
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { pendingOrder } from '../examples'
@@ -30,7 +31,9 @@ export const Empty: Story = {
 
 /** The day was not one the API takes */
 export const WithErrors: Story = {
-  args: { errors: { expectedDelivery: '日付を入力してください。' } },
+  args: {
+    errors: { expectedDelivery: adminPurchaseOrderMessages.words.dayMissing },
+  },
 }
 
 /** The changes are on their way */

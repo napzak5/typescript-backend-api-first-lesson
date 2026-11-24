@@ -7,11 +7,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import type { OrderListParams } from '../api/purchase-orders-api'
 import { supplierError } from './order-entry'
 import { orderStatusIn } from './order-format'
@@ -66,14 +67,14 @@ export const orderConditionsIn = (query: URLSearchParams): OrderConditions => {
 /** The conditions that were filled in: each may be left empty. */
 export const readOrderConditions = (
   values: FormData,
-): FormRead<OrderConditions> => {
+): FormRead<OrderConditions, FormErrors<LocalizedText>> => {
   const status = orderStatusIn(textOf(values, 'status'))
   const supplier = textOrNull(textOf(values, 'supplier'))
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
     ...Object.fromEntries(errorAt('supplier', supplierError(supplier))),
-    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

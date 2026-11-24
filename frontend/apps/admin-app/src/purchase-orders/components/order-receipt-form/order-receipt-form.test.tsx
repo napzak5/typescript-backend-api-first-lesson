@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { colourLot, shampooRow } from '../../../inventory/components/examples'
 import * as orderReceiptFormStories from './order-receipt-form.stories'
 
@@ -123,5 +124,47 @@ describe('OrderReceiptForm', () => {
     expect(
       screen.getByRole('button', { name: '入荷を記録する' }),
     ).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('OrderReceiptForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and what each item ordered, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Shipped.run()
+
+    // Assert
+    expect(
+      screen.getByRole('group', { name: 'Quantities received' }),
+    ).toBeVisible()
+    expect(box(COLOUR)).toHaveAccessibleDescription('Ordered 12 本')
+    expect(
+      screen.getByRole('textbox', { name: 'Delivery notes' }),
+    ).toHaveAccessibleDescription(
+      'Optional. What happened on arrival (such as missing or damaged goods). Changing it changes the delivery notes of the order.',
+    )
+  })
+
+  it('should say what is wrong under the controls, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Delivery notes' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The delivery notes cannot be cleared when the receipt is recorded. Keep them, or write others.',
+      ),
+    )
   })
 })

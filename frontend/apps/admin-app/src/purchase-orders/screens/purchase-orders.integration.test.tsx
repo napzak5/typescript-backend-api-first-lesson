@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { dayFromToday, salonIdOf } from '@beauty-salon-frontend/testing/api'
@@ -15,7 +16,6 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -104,15 +104,15 @@ const seededRows = async (): Promise<string[][]> => {
   return [
     [
       'PO-SEED-0002',
-      inJapanese(dayNameOf(second.ordered)),
+      dayNameOf(second.ordered).ja,
       'Beauty Supply Tokyo',
       '発注済み',
       '￥27,200',
-      inJapanese(dayNameOf(second.delivery ?? '')),
+      dayNameOf(second.delivery ?? '').ja,
     ],
     [
       'PO-SEED-0001',
-      inJapanese(dayNameOf(first.ordered)),
+      dayNameOf(first.ordered).ja,
       'Beauty Supply Tokyo',
       '承認待ち',
       '￥24,750',
@@ -174,9 +174,7 @@ describe('the screens of the purchase orders', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: '発注 PO-SEED-0001' }),
     ).toHaveFocus()
-    const ordered = inJapanese(
-      dayNameOf((await daysOf('PO-SEED-0001')).ordered),
-    )
+    const ordered = dayNameOf((await daysOf('PO-SEED-0001')).ordered).ja
     const terms = termsOf('発注')
     // An administrator entered it: nobody is named
     expect(terms[3]?.[1]).toMatch(new RegExp(`^${ordered} \\d{2}:\\d{2}$`))
@@ -236,10 +234,10 @@ describe('the screens of the purchase orders', () => {
       '承認',
       '支払条件',
     ])
-    expect(terms[4]?.[1]).toBe(inJapanese(dayNameOf(delivery ?? '')))
+    expect(terms[4]?.[1]).toBe(dayNameOf(delivery ?? '').ja)
     // An administrator approved it when the seed ran
     expect(terms[5]?.[1]).toMatch(
-      new RegExp(`^${inJapanese(dayNameOf(ordered))} \\d{2}:\\d{2}$`),
+      new RegExp(`^${dayNameOf(ordered).ja} \\d{2}:\\d{2}$`),
     )
     expect(rowsOf('明細')).toEqual([
       [
@@ -476,10 +474,7 @@ describe('the screens of the purchase orders', () => {
     await waitFor(() =>
       expect(termsOf('発注')[3]?.[1]).toMatch(new RegExp(`（${stylist}）$`)),
     )
-    expect(termsOf('発注')[4]).toEqual([
-      '納品予定日',
-      inJapanese(dayNameOf(delivery)),
-    ])
+    expect(termsOf('発注')[4]).toEqual(['納品予定日', dayNameOf(delivery).ja])
     expect(rowsOf('明細').map((row) => row.slice(0, 5))).toEqual([
       ['COLOR001', COLOUR, '2.5 tube', '￥800', '￥2,000'],
       ['SHMP001', SHAMPOO, '10 bottle', '￥1,500', '￥15,000'],
@@ -494,7 +489,7 @@ describe('the screens of the purchase orders', () => {
     await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(3))
     expect(rowsOf(ORDERS)[0]?.slice(0, 5)).toEqual([
       number,
-      inJapanese(dayNameOf(await dayFromToday(0))),
+      dayNameOf(await dayFromToday(0)).ja,
       'Tokyo Beauty Supply',
       '下書き',
       '￥19,200',
@@ -553,7 +548,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
-      '合計が 2,147,483,647 円を超えます。明細を分けて、発注を 2 件以上にしてください。',
+      '合計が ￥2,147,483,647 を超えます。明細を分けて、発注を 2 件以上にしてください。',
     )
     expect(await storedOrdersOf(TOKYO)).toHaveLength(2)
   })
@@ -738,5 +733,144 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the screens of the purchase orders on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the orders of the salon and show one, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    const first = await daysOf('PO-SEED-0001')
+    await openAs(purchaseOrdersHrefOf(salonId), STYLIST, 'en')
+    await heading('Purchase orders')
+    const table = await screen.findByRole('table', { name: 'Purchase orders' })
+    expect(rowsOf(table)[1]).toEqual([
+      'PO-SEED-0001',
+      dayNameOf(first.ordered).en,
+      'Beauty Supply Tokyo',
+      'Awaiting approval',
+      '¥24,750',
+      'Not set',
+    ])
+    expect(statuses()).toContain('2 items')
+    expect(
+      screen.getByRole('link', { name: 'Create a purchase order' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Reorder suggestions' }),
+    ).toBeVisible()
+
+    // Act
+    await user.click(within(table).getByRole('link', { name: 'PO-SEED-0001' }))
+
+    // Assert
+    await heading('Purchase order PO-SEED-0001')
+    expect(
+      termsOf('Purchase order').filter(([term]) => term !== 'Ordered'),
+    ).toEqual([
+      ['Order number', 'PO-SEED-0001'],
+      ['Status', 'Awaiting approval'],
+      ['Supplier', 'Beauty Supply Tokyo'],
+      ['Expected delivery', 'Not set'],
+      ['Payment terms', '月末締め翌月末払い'],
+      ['Notes', '定期補充'],
+      ['Delivery notes', 'Not recorded'],
+    ])
+    expect(rowsOf('Line items')[0]).toEqual([
+      'SHMP001',
+      SHAMPOO,
+      '10 bottle',
+      '¥1,500',
+      '¥15,000',
+      'Not recorded',
+    ])
+    expect(termsOf('Amounts')).toEqual([
+      ['Subtotal', '¥22,500'],
+      ['Tax', '¥2,250'],
+      ['Shipping', 'Not recorded'],
+      ['Total', '¥24,750'],
+    ])
+    expect(
+      screen.getByRole('link', {
+        name: 'Edit the delivery date and the notes',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should say what is wrong with a new order, then make it, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(purchaseOrderEntryHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+    await heading('Create a purchase order')
+    await screen.findByRole('group', { name: new RegExp(`^${POWDER} \\(`) })
+    const row = (product: string, label: string): HTMLElement =>
+      within(
+        screen.getByRole('group', { name: new RegExp(`^${product} \\(`) }),
+      ).getByRole('textbox', { name: label })
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Create a purchase order' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Supplier' }),
+    ).toHaveAccessibleDescription(
+      'Orders are also searched for by this name. Enter the supplier.',
+    )
+    expect(row(POWDER, 'Quantity')).toHaveAccessibleDescription(
+      'In stock: 20 box No row is ordered. Enter a quantity in the rows to order.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Tax (yen)' }),
+    ).toHaveAccessibleDescription(
+      /Enter the tax\. Enter 0 when there is none\.$/,
+    )
+
+    // Act: two items, each of ¥1,500,000,000
+    await user.type(screen.getByRole('textbox', { name: 'Supplier' }), 'X')
+    await user.clear(row(SHAMPOO, 'Unit price (yen)'))
+    await user.type(row(SHAMPOO, 'Unit price (yen)'), '1000')
+    await user.type(row(SHAMPOO, 'Quantity'), '1500000')
+    await user.type(row(POWDER, 'Quantity'), '1250000')
+    await user.type(screen.getByRole('textbox', { name: 'Tax (yen)' }), '0')
+    await user.click(
+      screen.getByRole('button', { name: 'Create a purchase order' }),
+    )
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The total would be more than ¥2,147,483,647. Split the line items into two or more orders.',
+    )
+
+    // Act
+    await user.clear(row(SHAMPOO, 'Quantity'))
+    await user.clear(row(POWDER, 'Quantity'))
+    await user.type(row(SHAMPOO, 'Quantity'), '2')
+    await user.click(
+      screen.getByRole('button', { name: 'Create a purchase order' }),
+    )
+
+    // Assert
+    await heading(/^Purchase order PO-/)
+    const number = (await storedOrdersOf(TOKYO))[2]?.orderNumber ?? ''
+    expect(
+      await screen.findByText(
+        `Created order ${number} with the status “Draft”.`,
+      ),
+    ).toBeVisible()
   })
 })

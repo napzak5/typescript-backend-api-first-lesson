@@ -7,13 +7,20 @@ import {
   Card,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   Note,
   TextArea,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminPurchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
 import type { OrderAction } from '../../utils/order-actions'
 import { orderStatusNameOf, orderStatusToneOf } from '../../utils/order-format'
 import styles from './order-status-actions.module.css'
+
+const { status: WORDS, words } = adminPurchaseOrderMessages
 
 /** The operations that are done at once: every one but the cancellation */
 export type OrderMoveAction = Exclude<OrderAction, 'cancel'>
@@ -23,7 +30,7 @@ export type OrderStatusActionsProps = {
   /** The operations the order takes now from the account, in the order of their buttons */
   actions: readonly OrderAction[]
   /** Why an operation is not offered: the order does not change any more, or the account may not */
-  note?: string | undefined
+  note?: LocalizedText | undefined
   /** The screen that records the goods that came, for an order whose goods are received now */
   receiveHref?: string | undefined
   /** The heading of the part: the focus goes there after an operation */
@@ -33,23 +40,15 @@ export type OrderStatusActionsProps = {
   /** Whether the dialog of the cancellation is open */
   asking?: boolean | undefined
   /** What went wrong with the cancellation in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with the reason of the cancellation */
-  cancellationErrors?: FormErrors | undefined
+  cancellationErrors?: FormErrors<LocalizedText> | undefined
   onAct: (action: OrderMoveAction) => void
   /** The button of the cancellation was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
   onClose: () => void
   onCancel: (values: FormData) => void
-}
-
-const LABELS: Record<OrderAction, string> = {
-  submit: '承認を依頼する',
-  approve: '承認する',
-  order: '発注済みにする',
-  ship: '出荷済みにする',
-  cancel: '発注を取り消す',
 }
 
 /**
@@ -67,18 +66,21 @@ export const OrderStatusActions = ({
   pending,
   asking = false,
   message,
-  cancellationErrors = {},
+  cancellationErrors = NO_ERRORS,
   onAct,
   onAsk,
   onClose,
   onCancel,
 }: OrderStatusActionsProps) => {
+  const say = useSay()
+  const cancellation = useSaidForm(message, cancellationErrors)
+
   return (
-    <Card title='状態' headingRef={headingRef}>
+    <Card title={say(WORDS.title)} headingRef={headingRef}>
       <div className={styles['statusActions']}>
         <p>
           <Badge tone={orderStatusToneOf(order.status)}>
-            {orderStatusNameOf(order.status)}
+            {say(orderStatusNameOf(order.status))}
           </Badge>
         </p>
         {(actions.length > 0 || receiveHref !== undefined) && (
@@ -92,47 +94,48 @@ export const OrderStatusActions = ({
                     pending={pending === action}
                     onClick={() => onAct(action)}
                   >
-                    {LABELS[action]}
+                    {say(WORDS.actions[action])}
                   </Button>
                 ),
             )}
             {receiveHref !== undefined && (
               <ButtonLink href={receiveHref} variant='primary'>
-                入荷を記録する
+                {say(words.receive)}
               </ButtonLink>
             )}
             {actions.includes('cancel') && (
               <Button variant='danger' onClick={onAsk}>
-                {LABELS.cancel}
+                {say(WORDS.actions.cancel)}
               </Button>
             )}
           </Actions>
         )}
-        {note !== undefined && <Note>{note}</Note>}
+        {note !== undefined && <Note>{say(note)}</Note>}
       </div>
       <FormDialog
         open={asking}
         onClose={onClose}
-        title='発注を取り消しますか？'
-        description={`発注 ${order.orderNumber} を取り消します。${
-          order.status === 'shipped'
-            ? '出荷済みの発注です。返品の扱いを仕入先と決めてから取り消してください。'
-            : ''
-        }取り消した発注は、元に戻せません。`}
-        submitLabel='取り消す'
+        title={say(WORDS.cancellation.title)}
+        description={say(
+          WORDS.cancellation.description(
+            order.orderNumber,
+            order.status === 'shipped',
+          ),
+        )}
+        submitLabel={say(WORDS.cancellation.submit)}
         submitVariant='danger'
-        message={message}
+        message={cancellation.message}
         errors={cancellationErrors}
         pending={pending === 'cancel'}
         onSubmit={onCancel}
       >
         <TextArea
-          label='取り消す理由'
+          label={say(WORDS.cancellation.reason)}
           name='cancellationReason'
           rows={4}
           required
-          description='仕入先の在庫切れなど。理由は、発注の内容に残ります。'
-          error={cancellationErrors['cancellationReason']}
+          description={say(WORDS.cancellation.reasonDescription)}
+          error={cancellation.errors['cancellationReason']}
         />
       </FormDialog>
     </Card>
