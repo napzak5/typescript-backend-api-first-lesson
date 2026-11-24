@@ -115,10 +115,7 @@ const MovementHistory = ({
     queryFn: ({ pageParam }) =>
       readMovementPage(row.id, conditions, salon.timezone, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'notFound' || page.type === 'forbidden'
-        ? undefined
-        : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     staleTime: 0,
   })
   const pages = read.data?.pages ?? []

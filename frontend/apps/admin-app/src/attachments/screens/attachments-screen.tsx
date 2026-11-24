@@ -138,8 +138,7 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     queryKey: [...attachmentsKeyOf(salon.id), 'list'],
     queryFn: ({ pageParam }) => readAttachmentPage(salon.id, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Every member of the staff uploads and removes files: the list is read whenever it is shown
     staleTime: 0,
   })

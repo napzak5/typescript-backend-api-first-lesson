@@ -37,8 +37,7 @@ const ListedShareLinks = ({ salon, attachment }: ShareLinksOfFileProps) => {
     queryKey: [...shareLinksKeyOf(attachment.id), 'list'],
     queryFn: ({ pageParam }) => readShareLinkPage(attachment.id, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'found' ? cursorAfter(page) : undefined,
+    getNextPageParam: cursorAfter,
     staleTime: 0,
   })
   const listed =

@@ -82,8 +82,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         pageParam,
       ),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Orders move from one status to the next by other hands: the list is read whenever it is shown
     staleTime: 0,
   })
