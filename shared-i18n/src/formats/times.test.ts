@@ -37,6 +37,29 @@ describe('minutesOf', () => {
       expect(written).toEqual(expected)
     },
   )
+
+  it.each<[number, LocalizedText]>([
+    [72.46, { en: '72.5 min', ja: '72.5 分' }],
+    [72, { en: '72 min', ja: '72 分' }],
+    [1234.56, { en: '1,234.6 min', ja: '1,234.6 分' }],
+  ])(
+    'should write %d minutes with at most the decimals it is given',
+    (minutes, expected) => {
+      // Act
+      const written = minutesOf(minutes, { most: 1 })
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+
+  it('should write as many as three decimals when it is given none', () => {
+    // Act
+    const written = minutesOf(72.4567)
+
+    // Assert
+    expect(written).toEqual({ en: '72.457 min', ja: '72.457 分' })
+  })
 })
 
 describe('timeSlotsOf', () => {
