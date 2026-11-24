@@ -622,7 +622,7 @@ TEST_STORAGE_REGION=<リージョン> \
 TEST_STORAGE_BUCKET=<バケット> \
 TEST_STORAGE_ACCESS_KEY_ID=<キー ID> \
 TEST_STORAGE_SECRET_ACCESS_KEY=<シークレット> \
-pnpm exec vitest run --config vitest.integration.config.ts src/storage
+pnpm exec vitest run --project integration src/storage
 ```
 
 本番のストレージを決めたら、このテストをそのストレージに対して実行し、署名付き URL の動き（種類とサイズの違いを拒否すること、`If-None-Match` で 2 回目を拒否すること）が同じであることを確かめてください。ストレージによって違いうるところです。

@@ -130,6 +130,7 @@ See [docs/uniform-implementation-guide.md](docs/uniform-implementation-guide.md)
 - End-to-end coverage of the critical paths: the API integration tests drive the production app over HTTP, the server tests start the real server, and the browser tests (`pnpm test:e2e`) drive the built frontend applications against that app and a real PostgreSQL
 - Frontend code that calls the API is tested against that production app on a real PostgreSQL with the seed data, without a stub (`*.integration.test.tsx`, through the test server of the backend)
 - Minimum 5 error scenarios per endpoint
+- Coverage is measured over the unit and the integration tests of a package together (`pnpm test:coverage`), with 100% as the bar: a package that is there says `full: true` in its `vitest.config.ts`, and CI fails it below
 
 ### Test Structure
 ```typescript
@@ -333,6 +334,7 @@ pnpm typecheck     # Type checking (build first)
 pnpm knip          # Unused files, exports and dependencies
 pnpm check:api-db  # API models agree with the database schema
 pnpm test          # Unit tests
+pnpm test:coverage # Unit and integration tests, and their coverage (needs Docker)
 make ci-check      # The CI checks, in the same order (all but check:db-schema)
 ```
 
@@ -361,6 +363,8 @@ pnpm test:integration # Tests against PostgreSQL, an SMTP server and an object s
                       # PostgreSQL: TEST_DATABASE_URL when set, otherwise testcontainers;
                       # SMTP and the storage: a Mailpit and a SeaweedFS container (testcontainers),
                       # so Docker is needed
+pnpm test:coverage    # Unit and integration tests of every package in one run each, and their
+                      # coverage together; a package with `full: true` fails below 100%
 pnpm test:e2e         # Browser tests (frontend/e2e, *.e2e.test.ts): Playwright on the built frontend
                       # applications, the real API and PostgreSQL; builds the frontend packages first.
                       # `pnpm test:e2e:install` installs its browser, once

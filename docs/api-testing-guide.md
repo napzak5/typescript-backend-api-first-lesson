@@ -14,8 +14,7 @@ for the test instead of sending them.
 
 ```
 backend/packages/api/
-├── vitest.config.ts                 # unit tests: src/**/*.test.ts
-├── vitest.integration.config.ts     # integration tests: src/**/*.integration.test.ts
+├── vitest.config.ts                 # the projects unit (src/**/*.test.ts) and integration (src/**/*.integration.test.ts)
 └── src/
     ├── routes/                      # the tests of the endpoints of a route are in its folder
     │   ├── salon/__tests__/salon.integration.test.ts                        # the Salon endpoints: the reference
@@ -205,8 +204,9 @@ test names ([Attachments](./attachments.md#テスト), Japanese).
 
 ## How a Test Gets Its Database
 
-`vitest.integration.config.ts` names `src/__tests__/_shared/setup.ts` as a
-setup file, so its hooks run around every integration test of the package.
+The project `integration` of `vitest.config.ts` names
+`src/__tests__/_shared/setup.ts` as a setup file, so its hooks run around
+every integration test of the package.
 
 Once per test file, the setup picks the PostgreSQL instance and builds a
 template on it:

@@ -39,11 +39,20 @@ holds the three that are about no single route (`app.integration.test.ts`,
 all the integration tests share (`_shared/`) and the test server
 (`test-server/`).
 
-The unit and the integration tests run on Vitest. They resolve the workspace packages they import from
-source (the export condition `@beauty-salon-backend/source`, or
-`@beauty-salon-frontend/source` in the frontend, in the Vitest configuration),
-so they run on a fresh clone and a change in one package reaches the tests of
-another without a rebuild. The browser tests run on Playwright, on the
+The unit and the integration tests run on Vitest, configured in one place
+for every package: the `vitest.config.ts` of a package calls `backendTests`,
+`frontendTests` or `sharedTests` of `@beauty-salon-shared/config/vitest`
+(`shared-config/vitest/package-tests.ts`) with the tests it has and what is
+its own (the document of its tests, a setup of its own, the files that are
+not measured). Its unit tests and its integration tests are the two projects
+of that configuration, `unit` and `integration`: `pnpm test` runs
+`vitest run --project unit`, `pnpm test:integration`
+`vitest run --project integration`, and `pnpm test:coverage` both in one run
+(see [Coverage](#coverage)). They resolve the workspace packages they import
+from source (the export condition `@beauty-salon-backend/source`, or
+`@beauty-salon-frontend/source` in the frontend), so they run on a fresh
+clone and a change in one package reaches the tests of another without a
+rebuild. The browser tests run on Playwright, on the
 frontend applications as they are built: `pnpm test:e2e` builds the frontend
 packages first.
 
@@ -54,11 +63,8 @@ browser tests drive the built frontend applications against that application
 and a real database. Between them, the integration tests of the frontend call
 the same application from the code of the client.
 
-What the repository does not have:
-
-- A coverage threshold. Coverage is not measured in CI; the requirements below
-  are stated per behaviour instead of as a percentage.
-- A request mocking library, in the backend or the frontend.
+What the repository does not have: a request mocking library, in the
+backend or the frontend.
 
 ## What Must Be Tested
 
@@ -118,17 +124,17 @@ show what the constraints of `services` and `service_options` refuse.
 | The language of the page: where the choice is kept and the language of the browser without one, the choice in the header, the language every request asks the API in, the language of the document, what the shared components say in English, and that a package whose texts are messages writes none in Japanese in its source | Unit, in jsdom; the last reads the sources of the package | `frontend/packages/io/src/libs/language/stored-language.test.ts`, `frontend/packages/ui/src/components/language-choice/language-choice.test.tsx`, `frontend/packages/ui/src/components/app-shell/app-shell.test.tsx`, `frontend/packages/api-client/src/fetcher/fetcher.test.ts`, `frontend/packages/app-frame/src/utils/page-language.test.ts`, `frontend/packages/ui/src/components/not-recorded/not-recorded.test.tsx`, `frontend/packages/ui/src/texts.test.ts` |
 | The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens; the typefaces the theme loads | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts`, `frontend/packages/theme/src/typefaces.test.ts` |
 
-The tests of `config`, of `theme`, of `answers` and of `fields` run in
-Node, the others in jsdom (the session and the language of the page are kept in `localStorage`; the shared setup sets the browser to Japanese, `setBrowserLanguages` to another language). The unit
+The tests of `config`, of `theme`, of `answers`, of `fields` and of `brand`
+run in Node, the others in jsdom (the session and the language of the page are kept in `localStorage`; the shared setup sets the browser to Japanese, `setBrowserLanguages` to another language). The unit
 tests of `admin-app`,
 `portal-app` and `ui` run in the `vmThreads` pool of Vitest: the DOM is set
 up once per worker, and every file still runs in a context of its own. How a component is tested from its
 stories, how accessibility is checked and how code that calls the API is
 tested is the subject of the skill
 [frontend-testing](../.claude/skills/frontend-testing/SKILL.md). Environment
-variables are set with `vi.stubEnv`, or with `test.env` in the Vitest
-configuration of the package when every test of it needs the same value
-(`frontend/packages/api-client`). The browser tests are in `frontend/e2e`;
+variables are set with `vi.stubEnv`; the one that the API client reads, the
+origin of the API (`VITE_BACKEND_BASE_URL`), is set for every unit test of
+the frontend by `frontendTests`. The browser tests are in `frontend/e2e`;
 the same skill says what is tested there and what in jsdom.
 
 The integration tests of the frontend run against the **test server**
@@ -261,6 +267,38 @@ a service.
   scripts, not application code, so a helper may `throw` when its
   precondition is not met.
 
+## Coverage
+
+The coverage of a package is measured over its unit and its integration
+tests together, with the v8 provider of Vitest. The bar is 100% of the
+statements, the branches, the functions and the lines. A package whose tests
+cover all of it says so with `full: true` in its `vitest.config.ts`, and from
+then on a run that covers less fails; until then its coverage is reported,
+and nothing fails.
+
+| Where | How |
+|---|---|
+| One package | `pnpm test:coverage` in the package (`vitest run --coverage`): both projects in one run. A package with integration tests needs Docker, as `pnpm test:integration` does |
+| Every package | `pnpm test:coverage` at the root (`make test-coverage`); `make ci-check` runs it in place of `pnpm test` and `pnpm test:integration` |
+| CI | The job Unit Test and the four parts of Integration Test keep what they covered: Vitest writes a blob report of each package (`.vitest/blob`), and the jobs keep them as the artifacts `coverage-*`. The job Coverage puts them back in the folders of the packages and merges the reports of each package with its `test:coverage` (`vitest run --coverage --merge-reports`): the coverage is that of a single run of both projects, and a package below what its configuration says fails the job. On a pull request it measures the packages whose tests ran |
+
+The report names the files that are not fully covered, with the lines that
+no test reached, and writes a page for every file to `coverage/index.html` in
+the package. Neither `coverage/` nor `.vitest/` is kept in git.
+
+What is measured is the sources of the package: `src`, and `vite` and
+`vitest` in `shared-config`. What is not:
+
+| Not measured | Why |
+|---|---|
+| Tests, stories, `__tests__/`, `__stories__/`, `__fixtures__/`, `components/examples.ts` and declarations (`*.d.ts`) | Test material. A library does not build it either (`NOT_BUILT` in `shared-config/vite/library.ts`) |
+| `src/generated/` of `api-client` | Generated by orval from the contract (`pnpm generate`) |
+| `src/schema.ts` and `src/relations.ts` of `database` | Generated from the database by `pnpm db:introspect` |
+
+Code that no test can run is left out with a comment of v8 in the code,
+which says why (`/* v8 ignore next -- <why> */`), and is listed here with
+the same reason. No code is left out this way yet.
+
 ## Checklist for a New Domain
 
 A new domain follows the Salon tests file by file:
@@ -271,7 +309,7 @@ A new domain follows the Salon tests file by file:
 - [ ] A row for every use case of the domain that names a headline in `use-case-headlines.test.ts`, for its function that reads IDs in `id-headlines.test.ts`, and for every decoder of a query in `query-headlines.test.ts` of the API package: each test fails until it has its rows
 - [ ] Use case tests (`business-logic/<domain>/__tests__/<domain>.usecase.test.ts`; the tests of pure rules beside them): success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
 - [ ] `backend/packages/api/src/routes/<domain>/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
-- [ ] `pnpm test` and `pnpm test:integration` pass
+- [ ] `pnpm test` and `pnpm test:integration` pass, and `pnpm test:coverage` in the packages the domain changes names no file of the domain as not fully covered
 
 ## Running the Tests
 
@@ -280,10 +318,12 @@ pnpm test                # every unit test (backend and frontend)
 pnpm test:backend        # unit tests of the backend packages
 pnpm test:frontend       # unit and component tests of the frontend
 pnpm test:integration    # integration tests, backend and frontend; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
+pnpm test:coverage       # the unit and the integration tests of every package, and the coverage of both together; needs Docker
 pnpm test:e2e            # browser tests; needs the Chromium of `pnpm test:e2e:install` and a PostgreSQL (TEST_DATABASE_URL, or Docker)
 ```
 
-CI runs the unit tests and the integration tests once each. The integration
+CI runs the unit tests and the integration tests once each, and measures
+the coverage of each package over both (see [Coverage](#coverage)). The integration
 tests use a PostgreSQL service through `TEST_DATABASE_URL`, as the browser
 tests do; the mail delivery tests start their Mailpit container and the file
 storage tests their SeaweedFS container through testcontainers. On a
