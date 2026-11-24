@@ -62,6 +62,14 @@ const withoutSeconds = (time: string): string => time.slice(0, 5)
 export const rangeIn = (language: Locale, from: string, to: string): string =>
   language === 'ja' ? `${from}〜${to}` : `${from}–${to}`
 
+/**
+ * From when until when, the times written as they are given: 「09:00〜20:00」,
+ * "09:00–20:00". A screen that keeps the seconds of a time it shows passes
+ * them in.
+ */
+export const timeRangeOf = (from: string, to: string): LocalizedText =>
+  inEachLanguage((language) => rangeIn(language, from, to))
+
 /** The slots of a day, as a sentence lists them: 「10:00〜12:00、14:00〜16:00」, "10:00–12:00, 14:00–16:00". */
 export const timeSlotsOf = (
   slots: readonly { startTime: string; endTime: string }[],

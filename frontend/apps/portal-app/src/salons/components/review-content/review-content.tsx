@@ -8,6 +8,7 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { dayOf, detailRatingsOf } from '../../utils/salon-format'
 import styles from './review-content.module.css'
 
@@ -41,7 +42,7 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
         </time>
         {review.isVerified && (
           <Badge className={styles['verified']} tone='success'>
-            {say(words.verified)}
+            {say(reviewMessages.verified)}
           </Badge>
         )}
       </p>
@@ -53,7 +54,10 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
       )}
       {details !== null && <Note size='small'>{say(details)}</Note>}
       {review.imageUrls.length > 0 && (
-        <ul className={styles['pictures']} aria-label={say(words.pictures)}>
+        <ul
+          className={styles['pictures']}
+          aria-label={say(reviewMessages.pictures)}
+        >
           {review.imageUrls.map((image) => {
             const address = webAddressOf(image)
 
@@ -79,7 +83,7 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
           <p className={styles['responseHead']}>
             {say(
               review.ownerRespondedAt === null
-                ? words.response
+                ? reviewMessages.response
                 : words.responseOn(dayOf(review.ownerRespondedAt, timezone)),
             )}
           </p>

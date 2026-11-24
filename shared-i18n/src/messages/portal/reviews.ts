@@ -297,15 +297,12 @@ export const portalReviewMessages = {
   },
   /** The dialog in which a reader of the page of a salon reports a review to the team that runs the site */
   report: {
-    title: text({ en: 'Report the review', ja: 'レビューを通報する' }),
     /** What the dialog says of the review it reports, named as the page of the salon names it */
     description: (posted: LocalizedText) =>
       text({
         en: `This reports the review ${posted.en} to the team that runs the site. The team checks it, and deletes a review that breaks the rules. Until then, the review stays listed.`,
         ja: `${posted.ja}のレビューを、運営に通報します。運営が内容を確かめ、規則に反するレビューは削除します。確かめが済むまで、レビューは掲載されたままです。`,
       }),
-    reason: text({ en: 'Reason for the report', ja: '通報の理由' }),
-    details: text({ en: 'Details', ja: '詳しい内容' }),
     detailsDescription: (most: number) =>
       text({
         en: `Say what the problem is, in up to ${characters(most).en}. When the reason is “Other”, this is required.`,
@@ -314,14 +311,6 @@ export const portalReviewMessages = {
     reportedBefore: text({
       en: 'You have reported this review already. A review can be reported once.',
       ja: 'このレビューは、すでに通報しています。1 つのレビューを通報できるのは、1 回です。',
-    }),
-    reasonMissing: text({
-      en: 'Choose the reason for the report.',
-      ja: '通報の理由を選んでください。',
-    }),
-    detailsMissing: text({
-      en: 'When you choose “Other”, say what the problem is.',
-      ja: '「その他」を選んだときは、何が問題かを入力してください。',
     }),
     unacceptable: text({
       en: 'This cannot be sent. Enter it again.',

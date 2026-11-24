@@ -8,6 +8,7 @@ import {
   customerMessages,
   fieldMessages,
   preferenceMessages,
+  reviewMessages,
   salonScreenMessages,
   securityMessages,
   sessionMessages,
@@ -51,6 +52,16 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     'customerMessages.pointsOf',
     customerMessages.pointsOf(2500),
     { en: '2,500 points', ja: '2,500 ポイント' },
+  ],
+  [
+    'reviewMessages.ratingOf',
+    reviewMessages.ratingOf(4),
+    { en: '4 stars', ja: '評価 4' },
+  ],
+  [
+    'reviewMessages.countOf',
+    reviewMessages.countOf(12),
+    { en: '12 reviews', ja: '12 件' },
   ],
   [
     'uiMessages.counted.items',
@@ -379,6 +390,17 @@ describe('the messages of the shared parts of the screens', () => {
     },
   )
 
+  it.each<[string, LocalizedText, LocalizedText]>([
+    ['star', reviewMessages.ratingOf(1), { en: '1 star', ja: '評価 1' }],
+    ['review', reviewMessages.countOf(1), { en: '1 review', ja: '1 件' }],
+  ])(
+    'should count one %s of the reviews as one in English, and with the same word in Japanese',
+    (_what, made, expected) => {
+      // Assert
+      expect(made).toEqual(expected)
+    },
+  )
+
   it.each<[number, LocalizedText]>([
     [0, { en: '0 items', ja: '0 件' }],
     [2, { en: '2 items', ja: '2 件' }],
@@ -392,6 +414,11 @@ describe('the messages of the shared parts of the screens', () => {
 
   it.each<[string, LocalizedText, LocalizedText]>([
     ['a count', counted.items(1234), { en: '1,234 items', ja: '1,234 件' }],
+    [
+      'the reviews',
+      reviewMessages.countOf(1234),
+      { en: '1,234 reviews', ja: '1,234 件' },
+    ],
     [
       'a count of what is shown',
       pagedList.shownOf(counted.people(12345), 1234, counted.people(1234)),

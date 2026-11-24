@@ -9,10 +9,8 @@ import {
   useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import {
-  portalReviewMessages,
-  portalSalonMessages,
-} from '@beauty-salon-shared/i18n/messages/portal'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   DETAILS,
   MAX_DETAILS_LENGTH,
@@ -74,9 +72,9 @@ export const ReviewReport = ({
     <FormDialog
       open={open}
       onClose={onClose}
-      title={say(words.title)}
+      title={say(reviewMessages.report.title)}
       description={say(words.description(subject))}
-      submitLabel={say(portalSalonMessages.reviews.report)}
+      submitLabel={say(reviewMessages.report.submit)}
       message={said.message}
       errors={errors}
       pending={pending}
@@ -88,7 +86,7 @@ export const ReviewReport = ({
       }
     >
       <RadioGroup
-        label={say(words.reason)}
+        label={say(reviewMessages.report.reason)}
         name={REASON}
         options={REASONS.map(({ value, label }) => ({
           value,
@@ -98,7 +96,7 @@ export const ReviewReport = ({
         error={said.errors[REASON]}
       />
       <TextArea
-        label={say(words.details)}
+        label={say(reviewMessages.report.details)}
         name={DETAILS}
         rows={4}
         maxLength={MAX_DETAILS_LENGTH}

@@ -1,9 +1,7 @@
 import type { ModelsReviewSummaryResponse } from '@beauty-salon-frontend/api-client'
 import { Rating, useSay } from '@beauty-salon-frontend/ui'
-import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './review-summary.module.css'
-
-const { reviews: words } = portalSalonMessages
 
 export type ReviewSummaryProps = {
   summary: ModelsReviewSummaryResponse
@@ -37,14 +35,14 @@ export const ReviewSummary = ({ summary }: ReviewSummaryProps) => {
       {summary.totalReviews > 0 && (
         <ul
           className={styles['distribution']}
-          aria-label={say(words.distribution)}
+          aria-label={say(reviewMessages.distribution)}
         >
           {RATINGS.map((rating) => {
             const count = summary.ratingDistribution[String(rating)] ?? 0
 
             return (
               <li key={rating} className={styles['rating']}>
-                <span>{say(words.ratingOf(rating))}</span>
+                <span>{say(reviewMessages.ratingOf(rating))}</span>
                 <svg
                   className={styles['share']}
                   viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -63,7 +61,7 @@ export const ReviewSummary = ({ summary }: ReviewSummaryProps) => {
                   />
                 </svg>
                 <span className={styles['count']}>
-                  {say(words.countOf(count))}
+                  {say(reviewMessages.countOf(count))}
                 </span>
               </li>
             )
