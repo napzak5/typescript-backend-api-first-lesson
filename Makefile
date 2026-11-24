@@ -68,7 +68,7 @@ backend-start-%: infra-up ## Start the built backend with the <env> configuratio
 	NODE_ENV=$(NODE_ENV_$*) pnpm start:backend
 
 ## Quality
-.PHONY: lint format format-check typecheck knip test test-integration test-e2e audit api-db-check ci-check
+.PHONY: lint format format-check typecheck knip test test-integration test-coverage test-e2e audit api-db-check ci-check
 lint: ## Lint with Biome
 	pnpm lint
 
@@ -90,6 +90,9 @@ test: ## Run unit tests
 test-integration: ## Run integration tests (needs Docker; PostgreSQL can be given through TEST_DATABASE_URL)
 	pnpm test:integration
 
+test-coverage: ## Run the unit and the integration tests of every package and measure their coverage together (needs Docker)
+	pnpm test:coverage
+
 test-e2e: ## Run the browser tests (needs the browser of `pnpm test:e2e:install`, and Docker or TEST_DATABASE_URL)
 	pnpm test:e2e
 
@@ -109,8 +112,7 @@ ci-check: ## Run the checks of the CI workflow (all but db-check, which recreate
 	pnpm build:prod
 	pnpm typecheck
 	pnpm knip
-	pnpm test
-	pnpm test:integration
+	pnpm test:coverage
 	pnpm test:e2e
 	pnpm audit --audit-level=high
 	@echo "All CI checks passed."
