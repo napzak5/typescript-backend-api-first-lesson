@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authEmailVerificationSendRequestSchema } from '../../schemas/auth.schema'
@@ -20,7 +21,10 @@ export class SendEmailVerificationUseCase {
    * email nobody has, for an address that is verified, and when the last
    * mail went out moments ago.
    */
-  async execute(input: unknown): Promise<Result<null, DomainError>> {
+  async execute(
+    input: unknown,
+    language: Locale,
+  ): Promise<Result<null, DomainError>> {
     const request = parseWith(
       authEmailVerificationSendRequestSchema,
       input,
@@ -65,7 +69,9 @@ export class SendEmailVerificationUseCase {
       return issued
     }
     if (issued.data) {
-      mailer.deliver(emailVerificationMail(email, publicAppUrl, token.token))
+      mailer.deliver(
+        emailVerificationMail(email, language, publicAppUrl, token.token),
+      )
     }
 
     return Result.success(null)

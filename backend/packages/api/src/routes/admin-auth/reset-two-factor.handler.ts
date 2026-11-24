@@ -5,6 +5,7 @@ import {
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
 import type { Authenticated } from '../../shared/authentication'
+import { languageAsked } from '../../shared/language'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import { userLinks } from './_shared/links'
@@ -25,7 +26,11 @@ export const resetTwoFactorHandler = (
   const useCase = new ResetTwoFactorUseCase(dependencies)
 
   return authenticated(async (actor, req, res) => {
-    const result = await useCase.execute(actor, req.params.userId)
+    const result = await useCase.execute(
+      actor,
+      req.params.userId,
+      languageAsked(req),
+    )
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {

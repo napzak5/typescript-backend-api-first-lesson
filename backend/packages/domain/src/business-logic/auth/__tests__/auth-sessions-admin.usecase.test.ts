@@ -34,7 +34,7 @@ import {
 import { type Actor, actorSchema, type DbUser } from '../../../models/auth'
 import type { ISessionRepository } from '../../../repositories/session.repository'
 import type { IUserRepository } from '../../../repositories/user.repository'
-import type { Mail } from '../../../services/mailer'
+import { type WrittenMail, writtenMail } from '../../../services/mailer'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type AuthUseCaseDependencies,
@@ -110,13 +110,13 @@ const withRepositories = (
   sessions: Partial<ISessionRepository> = {},
   overrides: Partial<AuthUseCaseDependencies> = {},
 ) => {
-  const mails: Mail[] = []
+  const mails: WrittenMail[] = []
   const dependencies = authDependencies({
     userRepository: userRepositoryWith(users),
     sessionRepository: sessionRepositoryWith(sessions),
     mailer: {
       deliver: (mail) => {
-        mails.push(mail)
+        mails.push(writtenMail(mail))
       },
     },
     ...overrides,
@@ -127,7 +127,7 @@ const withRepositories = (
 /** No method of either repository was called and no mail was handed over. */
 const expectNothingReadOrChanged = (
   dependencies: AuthUseCaseDependencies,
-  mails: Mail[],
+  mails: WrittenMail[],
 ): void => {
   for (const method of [
     ...Object.values(dependencies.userRepository),
@@ -881,7 +881,7 @@ describe('ResetTwoFactorUseCase', () => {
     dependencies: AuthUseCaseDependencies,
     id: unknown,
     actor: Actor = actors.admin,
-  ) => new ResetTwoFactorUseCase(dependencies).execute(actor, id)
+  ) => new ResetTwoFactorUseCase(dependencies).execute(actor, id, 'ja')
 
   const userWith = (columns: Partial<DbUser>): DbUser =>
     dbUser({
@@ -936,7 +936,34 @@ describe('ResetTwoFactorUseCase', () => {
       updatedAt: '2026-11-14T09:00:00.000Z',
     })
     expect(mails).toEqual([
-      { to: OTHER_EMAIL, subject: RESET_SUBJECT, text: expect.any(String) },
+      {
+        to: OTHER_EMAIL,
+        language: 'ja',
+        subject: RESET_SUBJECT,
+        text: expect.any(String),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English, whoever receives it', async () => {
+    // Arrange
+    const { dependencies, mails } = withRepositories(turningOff())
+
+    // Act
+    await new ResetTwoFactorUseCase(dependencies).execute(
+      actors.admin,
+      OTHER_USER_ID,
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: OTHER_EMAIL,
+        language: 'en',
+        subject: 'Two-factor authentication was turned off by an administrator',
+        text: expect.stringContaining('An administrator turned off'),
+      },
     ])
   })
 
@@ -955,7 +982,12 @@ describe('ResetTwoFactorUseCase', () => {
     await reset(dependencies, OTHER_USER_ID)
 
     const [mail] = mails
-    expect(Object.keys(mail ?? {}).sort()).toEqual(['subject', 'text', 'to'])
+    expect(Object.keys(mail ?? {}).sort()).toEqual([
+      'language',
+      'subject',
+      'text',
+      'to',
+    ])
     const text = mail?.text ?? ''
     expect(text.trim()).not.toBe('')
     expect(text).not.toMatch(/<\/?[a-z][^>]*>/i)
@@ -1152,7 +1184,7 @@ describe('who may administer accounts', () => {
     [
       'reset two-factor authentication',
       (dependencies, actor, id) =>
-        new ResetTwoFactorUseCase(dependencies).execute(actor, id),
+        new ResetTwoFactorUseCase(dependencies).execute(actor, id, 'ja'),
     ],
   ])('to %s', (_operation, execute) => {
     it('lets an admin do it for another user', async () => {

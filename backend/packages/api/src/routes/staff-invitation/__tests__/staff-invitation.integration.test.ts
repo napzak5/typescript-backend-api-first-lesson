@@ -7,9 +7,9 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type DomainError,
-  type Mail,
   salonIdSchema,
   staffIdSchema,
+  type WrittenMail,
 } from '@beauty-salon-backend/domain'
 import { StaffInvitationRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -72,7 +72,7 @@ const SALON_NAME = 'Hair Studio Aoyama'
 const NEW_PASSWORD = 'violet tram under the bridge'
 const OTHER_PASSWORD = 'quiet morning by the river'
 
-const SUBJECT = 'スタッフアカウントへの招待'
+const SUBJECT = 'Invitation to a staff account'
 
 /** 32 random bytes in base64url. */
 const TOKEN = /^[A-Za-z0-9_-]{43}$/
@@ -138,25 +138,25 @@ const escapeForRegExp = (text: string): string =>
 const LINK = `${PUBLIC_APP_URL}/accept-staff-invitation#token=`
 
 /** The tokens in the links of a mail that lead to the page of an invitation. */
-const tokensIn = ({ text }: Mail): string[] =>
+const tokensIn = ({ text }: WrittenMail): string[] =>
   [
     ...text.matchAll(
       new RegExp(`${escapeForRegExp(LINK)}([A-Za-z0-9_-]*)`, 'g'),
     ),
   ].map(([, token]) => token ?? '')
 
-/** The whole text of the mail of an invitation. */
+/** The whole text of the mail of an invitation, in English: no request of these tests asks for another language. */
 const mailTextOf = (salonName: string, token: string): string =>
   [
-    `${salonName} から、スタッフアカウントへの招待が届いています。`,
+    `${salonName} has invited you to a staff account.`,
     '',
-    '招待を受けるには、次のリンクを開いてください。パスワードを設定して、アカウントを作成します。このメールアドレスのスタッフアカウントをすでにお持ちの場合は、ログインして参加します。',
+    'To accept the invitation, open the following link. You set a password and create the account. If you already have a staff account with this email address, you sign in and join.',
     '',
     `${LINK}${token}`,
     '',
-    'このリンクは 7 日間有効で、1 回だけ使えます。新しい招待メールを受け取った場合は、新しいメールのリンクを使ってください。',
+    'The link is valid for 7 days and can be used once. If you receive a new invitation email, use the link in the new one.',
     '',
-    'このメールに心当たりがない場合は、何もせずに破棄してください。リンクを開かなければ、何も変わりません。',
+    'If you did not expect this email, discard it and do nothing. Nothing changes unless the link is opened.',
   ].join('\n')
 
 /** IDs in a path that are not UUIDs. */
@@ -233,7 +233,7 @@ const expectTokenRefused = (response: Response): void => {
 describe('Staff invitation API', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
   /** The Authorization header of a signed-in admin. */
   let asAdmin: string
   /** The salon of the staff member the tests invite. */
@@ -309,7 +309,7 @@ describe('Staff invitation API', () => {
     request(app).post(LOGIN).send(loginBody(email, { password }))
 
   /** The mails of invitations to an address, oldest first. */
-  const invitationMailsTo = (email: string): Mail[] =>
+  const invitationMailsTo = (email: string): WrittenMail[] =>
     mails.filter(({ to, subject }) => to === email && subject === SUBJECT)
 
   /** The token of the last invitation that was mailed to `email`. */
@@ -642,6 +642,7 @@ describe('Staff invitation API', () => {
       expect(mails).toEqual([
         {
           to: INVITED,
+          language: 'en',
           subject: SUBJECT,
           text: mailTextOf(SALON_NAME, token),
         },
@@ -682,6 +683,31 @@ describe('Staff invitation API', () => {
       expect((await storedInvitations()).map((row) => row.role)).toEqual([role])
     })
 
+    it('should mail the invitation in the language of the request of who invites', async () => {
+      // Act
+      const response = await authorized(
+        request(app).post(invitationOf(salonId, staffId)),
+        asAdmin,
+      )
+        .set('Accept-Language', 'ja')
+        .send({ role: 'staff' })
+
+      // Assert
+      expect(response.status).toBe(201)
+      expect(mails).toEqual([
+        {
+          to: INVITED,
+          language: 'ja',
+          subject: 'スタッフアカウントへの招待',
+          text: expect.stringContaining(
+            `${SALON_NAME} から、スタッフアカウントへの招待が届いています。`,
+          ),
+        },
+      ])
+      // The link stands as it is in every language
+      expect(mails.flatMap(tokensIn)).toEqual([expect.stringMatching(TOKEN)])
+    })
+
     it('names the salon of the staff member in the mail, as the salon is called now', async () => {
       const other = await insertSalon(db, { name: 'サロン・ド・渋谷 & Co.' })
       const colleague = await insertStaffRow(other, {
@@ -693,6 +719,7 @@ describe('Staff invitation API', () => {
       expect(invitationMailsTo('shibuya@example.com')).toEqual([
         {
           to: 'shibuya@example.com',
+          language: 'en',
           subject: SUBJECT,
           text: mailTextOf('サロン・ド・渋谷 & Co.', token),
         },
@@ -823,6 +850,7 @@ describe('Staff invitation API', () => {
         expect(invitationMailsTo(INVITED)).toEqual([
           {
             to: INVITED,
+            language: 'en',
             subject: SUBJECT,
             text: mailTextOf(SALON_NAME, tokenMailedTo(INVITED)),
           },

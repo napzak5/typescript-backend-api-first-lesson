@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
@@ -32,6 +33,7 @@ export class GenerateBackupCodesUseCase {
   async execute(
     actor: Actor,
     input: unknown,
+    language: Locale,
   ): Promise<Result<ApiAuthTwoFactorBackupCodesResponse, DomainError>> {
     const request = parseWith(
       authTwoFactorBackupCodesRequestSchema,
@@ -102,7 +104,7 @@ export class GenerateBackupCodesUseCase {
     if (!replaced.data) {
       return notEnabled
     }
-    mailer.deliver(backupCodesRegeneratedMail(user.email))
+    mailer.deliver(backupCodesRegeneratedMail(user.email, language))
 
     return Result.success(UserReadMapper.toApiTwoFactorBackupCodes(backupCodes))
   }

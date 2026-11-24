@@ -7,10 +7,10 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type DomainError,
-  type Mail,
   salonIdSchema,
   staffIdSchema,
   userIdSchema,
+  type WrittenMail,
 } from '@beauty-salon-backend/domain'
 import {
   StaffAccountRepository,
@@ -79,7 +79,7 @@ const JOINER = 'joiner@example.com'
 /** A password that is long enough and on no blocklist. */
 const NEW_PASSWORD = 'violet tram under the bridge'
 
-const SUBJECT = 'スタッフアカウントへの招待'
+const SUBJECT = 'Invitation to a staff account'
 const LINK = `${PUBLIC_APP_URL}/accept-staff-invitation#token=`
 
 const WEEK_SECONDS = 7 * 24 * 60 * 60
@@ -131,7 +131,7 @@ const escapeForRegExp = (text: string): string =>
   text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** The tokens in the links of a mail that lead to the page of an invitation. */
-const tokensIn = ({ text }: Mail): string[] =>
+const tokensIn = ({ text }: WrittenMail): string[] =>
   [
     ...text.matchAll(
       new RegExp(`${escapeForRegExp(LINK)}([A-Za-z0-9_-]*)`, 'g'),
@@ -199,7 +199,7 @@ const pause = (milliseconds: number): Promise<void> =>
 describe('Staff account API', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
   /** The Authorization header of a signed-in admin. */
   let asAdmin: string
   /** The salon of the staff member under test. */

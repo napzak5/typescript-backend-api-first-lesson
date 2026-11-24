@@ -4,6 +4,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
+import { languageAsked } from '../../shared/language'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import type { LoginResponse } from './_shared/types'
@@ -21,10 +22,14 @@ export const loginHandler = (
   const useCase = new LoginUseCase(dependencies)
 
   return async (req, res) => {
-    const result = await useCase.execute(req.body, {
-      ipAddress: req.ip ?? null,
-      userAgent: req.get('user-agent') ?? null,
-    })
+    const result = await useCase.execute(
+      req.body,
+      {
+        ipAddress: req.ip ?? null,
+        userAgent: req.get('user-agent') ?? null,
+      },
+      languageAsked(req),
+    )
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {

@@ -97,6 +97,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     const data = dataOf(result)
@@ -131,6 +132,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ rememberMe: true }),
       client,
+      'ja',
     )
 
     expect(dataOf(result).expiresIn).toBe(900)
@@ -145,7 +147,7 @@ describe('LoginUseCase', () => {
   it('notes when and from where the user signed in and keeps a current hash', async () => {
     const dependencies = authDependencies()
 
-    await new LoginUseCase(dependencies).execute(loginRequest(), client)
+    await new LoginUseCase(dependencies).execute(loginRequest(), client, 'ja')
 
     expect(
       dependencies.userRepository.recordSuccessfulLogin,
@@ -160,10 +162,14 @@ describe('LoginUseCase', () => {
   it('stores null for an address and a user agent the request does not have', async () => {
     const dependencies = authDependencies()
 
-    await new LoginUseCase(dependencies).execute(loginRequest(), {
-      ipAddress: null,
-      userAgent: null,
-    })
+    await new LoginUseCase(dependencies).execute(
+      loginRequest(),
+      {
+        ipAddress: null,
+        userAgent: null,
+      },
+      'ja',
+    )
 
     expect(dependencies.sessionRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ ipAddress: null, userAgent: null }),
@@ -182,6 +188,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ email: 'Hanako@Example.COM' }),
       client,
+      'ja',
     )
 
     expect(result.type).toBe('success')
@@ -196,6 +203,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result.type).toBe('success')
@@ -221,6 +229,7 @@ describe('LoginUseCase', () => {
       const result = await new LoginUseCase(dependencies).execute(
         loginRequest({ password }),
         client,
+        'ja',
       )
 
       expect(result.type).toBe('success')
@@ -239,6 +248,7 @@ describe('LoginUseCase', () => {
     await new LoginUseCase(dependencies).execute(
       loginRequest({ password: 'cafe\u0301 au lait at dawn' }),
       client,
+      'ja',
     )
 
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
@@ -256,6 +266,7 @@ describe('LoginUseCase', () => {
     await new LoginUseCase(dependencies).execute(
       loginRequest({ password: 'cafe\u0301 au lait at dawn' }),
       client,
+      'ja',
     )
 
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
@@ -273,6 +284,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ email: 'nobody@example.com' }),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -289,6 +301,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ password: 'wrong password' }),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -337,6 +350,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ password }),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -357,6 +371,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result.type).toBe('success')
@@ -378,6 +393,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest({ password: 'wrong password' }),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -398,6 +414,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -413,6 +430,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result).toEqual(twoFactorRequired)
@@ -437,6 +455,7 @@ describe('LoginUseCase', () => {
       const result = await new LoginUseCase(dependencies).execute(
         loginRequest({ twoFactorCode }),
         client,
+        'ja',
       )
 
       expect(result.type).toBe('success')
@@ -465,6 +484,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result).toEqual(loginFailed)
@@ -493,6 +513,7 @@ describe('LoginUseCase', () => {
       const result = await new LoginUseCase(dependencies).execute(
         loginRequest(change),
         client,
+        'ja',
       )
 
       expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual(
@@ -586,6 +607,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies()).execute(
       loginRequest({ password }),
       client,
+      'ja',
     )
 
     expect(result).toEqual(databaseDown)
@@ -602,6 +624,7 @@ describe('LoginUseCase', () => {
     const result = await new LoginUseCase(dependencies).execute(
       loginRequest(),
       client,
+      'ja',
     )
 
     expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })

@@ -38,6 +38,10 @@ test.describe('the account of a visitor, in a browser', () => {
     await page.getByRole('button', { name: '登録する' }).click()
     await expect(heading(page, '確認メールを送りました')).toBeFocused()
     await expectSoundPage(page)
+    // The mail is written in the language the page asked the API in
+    expect(
+      (await api.mails()).map(({ language, subject }) => [language, subject]),
+    ).toEqual([['ja', 'メールアドレスの確認']])
 
     // Act: the link of the mail, the button of its page, and the sign-in
     await page.goto(await api.mailedLink(VISITOR))

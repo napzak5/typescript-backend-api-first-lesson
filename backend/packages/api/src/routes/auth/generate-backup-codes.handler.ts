@@ -5,6 +5,7 @@ import {
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
 import type { Authenticated } from '../../shared/authentication'
+import { languageAsked } from '../../shared/language'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import type { GenerateBackupCodesResponse } from './_shared/types'
@@ -23,7 +24,7 @@ export const generateBackupCodesHandler = (
   const useCase = new GenerateBackupCodesUseCase(dependencies)
 
   return authenticated(async (actor, req, res) => {
-    const result = await useCase.execute(actor, req.body)
+    const result = await useCase.execute(actor, req.body, languageAsked(req))
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {

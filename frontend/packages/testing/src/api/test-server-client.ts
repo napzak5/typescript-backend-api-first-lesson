@@ -40,15 +40,20 @@ const rowsSchema = z.object({
 
 const codeSchema = z.object({ code: z.string() })
 
+/** `language` is the one the mail is written in, as the API names it (`en`, `ja`) */
 const mailSchema = z.object({
   to: z.string(),
+  language: z.string(),
   subject: z.string(),
   text: z.string(),
 })
 
 const mailsSchema = z.object({ mails: z.array(mailSchema) })
 
-/** A mail that the API handed to its mailer. Nothing was sent anywhere. */
+/**
+ * A mail that the API handed to its mailer, as its recipient reads it: in
+ * the language of the request that caused it. Nothing was sent anywhere.
+ */
 export type TestMail = z.infer<typeof mailSchema>
 
 /** The first address in a text: a mail of the API carries at most one link */

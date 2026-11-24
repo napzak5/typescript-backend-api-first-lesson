@@ -22,7 +22,7 @@ import {
 } from '../../../__tests__/fixtures/fixtures'
 import type { DbUser } from '../../../models/auth'
 import type { IUserRepository } from '../../../repositories/user.repository'
-import type { Mail } from '../../../services/mailer'
+import { type WrittenMail, writtenMail } from '../../../services/mailer'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type AuthUseCaseDependencies,
@@ -58,12 +58,12 @@ const withRepository = (
   repository: Partial<IUserRepository> = {},
   overrides: Partial<AuthUseCaseDependencies> = {},
 ) => {
-  const mails: Mail[] = []
+  const mails: WrittenMail[] = []
   const dependencies = authDependencies({
     userRepository: userRepositoryWith(repository),
     mailer: {
       deliver: (mail) => {
-        mails.push(mail)
+        mails.push(writtenMail(mail))
       },
     },
     ...overrides,
@@ -97,9 +97,12 @@ describe('ForgotPasswordUseCase', () => {
       findByEmail: vi.fn(async () => Result.success(userAccount())),
     })
 
-    const result = await new ForgotPasswordUseCase(dependencies).execute({
-      email: 'Hanako@Example.COM',
-    })
+    const result = await new ForgotPasswordUseCase(dependencies).execute(
+      {
+        email: 'Hanako@Example.COM',
+      },
+      'ja',
+    )
 
     expect(result).toEqual({ type: 'success', data: null })
     expect(dependencies.userRepository.findByEmail).toHaveBeenCalledWith(EMAIL)
@@ -110,6 +113,7 @@ describe('ForgotPasswordUseCase', () => {
     expect(mails).toEqual([
       {
         to: EMAIL,
+        language: 'ja',
         subject: 'パスワードの再設定',
         text: expect.stringContaining(
           `${PUBLIC_APP_URL}/reset-password#token=token-1`,
@@ -125,13 +129,41 @@ describe('ForgotPasswordUseCase', () => {
     expect(dependencies.sessionRepository.delete).not.toHaveBeenCalled()
   })
 
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withRepository({
+      findByEmail: vi.fn(async () => Result.success(userAccount())),
+    })
+
+    // Act
+    await new ForgotPasswordUseCase(dependencies).execute(
+      { email: EMAIL },
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Reset your password',
+        text: expect.stringContaining(
+          `${PUBLIC_APP_URL}/reset-password#token=token-1`,
+        ),
+      },
+    ])
+  })
+
   it('builds the link from the configured address of the web application', async () => {
     const { dependencies, mails } = withRepository(
       {},
       { publicAppUrl: 'http://localhost:3001' },
     )
 
-    await new ForgotPasswordUseCase(dependencies).execute({ email: EMAIL })
+    await new ForgotPasswordUseCase(dependencies).execute(
+      { email: EMAIL },
+      'ja',
+    )
 
     expect(mails[0]?.text).toContain(
       'http://localhost:3001/reset-password#token=token-1',
@@ -143,7 +175,10 @@ describe('ForgotPasswordUseCase', () => {
       findByEmail: async () => Result.success(userAccount(overrides)),
     })
 
-    await new ForgotPasswordUseCase(dependencies).execute({ email: EMAIL })
+    await new ForgotPasswordUseCase(dependencies).execute(
+      { email: EMAIL },
+      'ja',
+    )
 
     expect(
       dependencies.userRepository.issuePasswordReset,
@@ -158,9 +193,12 @@ describe('ForgotPasswordUseCase', () => {
         findByEmail: async () => Result.success(userAccount(overrides)),
       })
 
-      const result = await new ForgotPasswordUseCase(dependencies).execute({
-        email: EMAIL,
-      })
+      const result = await new ForgotPasswordUseCase(dependencies).execute(
+        {
+          email: EMAIL,
+        },
+        'ja',
+      )
 
       expect(result).toEqual({ type: 'success', data: null })
       expect(
@@ -175,9 +213,12 @@ describe('ForgotPasswordUseCase', () => {
       findByEmail: async () => Result.success(null),
     })
 
-    const result = await new ForgotPasswordUseCase(dependencies).execute({
-      email: 'nobody@example.com',
-    })
+    const result = await new ForgotPasswordUseCase(dependencies).execute(
+      {
+        email: 'nobody@example.com',
+      },
+      'ja',
+    )
 
     expect(result).toEqual({ type: 'success', data: null })
     expect(
@@ -210,9 +251,12 @@ describe('ForgotPasswordUseCase', () => {
           ),
       })
 
-      const result = await new ForgotPasswordUseCase(dependencies).execute({
-        email: EMAIL,
-      })
+      const result = await new ForgotPasswordUseCase(dependencies).execute(
+        {
+          email: EMAIL,
+        },
+        'ja',
+      )
 
       expect(result).toEqual({ type: 'success', data: null })
       expect(mails).toHaveLength(expected)
@@ -227,9 +271,12 @@ describe('ForgotPasswordUseCase', () => {
       issuePasswordReset: async () => Result.success(false),
     })
 
-    const result = await new ForgotPasswordUseCase(dependencies).execute({
-      email: EMAIL,
-    })
+    const result = await new ForgotPasswordUseCase(dependencies).execute(
+      {
+        email: EMAIL,
+      },
+      'ja',
+    )
 
     expect(result).toEqual({ type: 'success', data: null })
     expect(mails).toEqual([])
@@ -257,6 +304,7 @@ describe('ForgotPasswordUseCase', () => {
 
       const result = await new ForgotPasswordUseCase(dependencies).execute(
         input,
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(expected)
@@ -273,9 +321,12 @@ describe('ForgotPasswordUseCase', () => {
     async (_case, repository) => {
       const { dependencies, mails } = withRepository(repository)
 
-      const result = await new ForgotPasswordUseCase(dependencies).execute({
-        email: EMAIL,
-      })
+      const result = await new ForgotPasswordUseCase(dependencies).execute(
+        {
+          email: EMAIL,
+        },
+        'ja',
+      )
 
       expect(result).toEqual(databaseDown)
       expect(mails).toEqual([])
@@ -390,6 +441,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -404,8 +456,29 @@ describe('ResetPasswordUseCase', () => {
     expect(mails).toEqual([
       {
         to: EMAIL,
+        language: 'ja',
         subject: 'パスワードが変更されました',
         text: expect.any(String),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withRepository()
+
+    // Act
+    await new ResetPasswordUseCase(dependencies).execute(resetRequest(), 'en')
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Your password was changed',
+        text: expect.stringContaining(
+          'The password of your account was changed.',
+        ),
       },
     ])
   })
@@ -413,7 +486,7 @@ describe('ResetPasswordUseCase', () => {
   it('mails the notice without a link or a token', async () => {
     const { dependencies, mails } = withRepository()
 
-    await new ResetPasswordUseCase(dependencies).execute(resetRequest())
+    await new ResetPasswordUseCase(dependencies).execute(resetRequest(), 'ja')
 
     const text = mails[0]?.text ?? 'no mail'
     expect(text).not.toMatch(/https?:\/\//)
@@ -426,7 +499,7 @@ describe('ResetPasswordUseCase', () => {
   it('starts no session and issues no token', async () => {
     const { dependencies } = withRepository()
 
-    await new ResetPasswordUseCase(dependencies).execute(resetRequest())
+    await new ResetPasswordUseCase(dependencies).execute(resetRequest(), 'ja')
 
     expect(dependencies.sessionRepository.create).not.toHaveBeenCalled()
     expect(dependencies.tokenIssuer.issue).not.toHaveBeenCalled()
@@ -437,6 +510,7 @@ describe('ResetPasswordUseCase', () => {
 
     await new ResetPasswordUseCase(dependencies).execute(
       resetRequest({ newPassword: 'café au lait at dawn' }),
+      'ja',
     )
 
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
@@ -451,6 +525,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -471,6 +546,7 @@ describe('ResetPasswordUseCase', () => {
 
       const result = await new ResetPasswordUseCase(dependencies).execute(
         resetRequest(),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(['token:invalid_token'])
@@ -487,6 +563,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest(),
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual(['token:invalid_token'])
@@ -506,6 +583,7 @@ describe('ResetPasswordUseCase', () => {
 
       const result = await new ResetPasswordUseCase(dependencies).execute(
         resetRequest({ newPassword }),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(['newPassword:blocklisted'])
@@ -523,6 +601,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest({ newPassword: 'Taro Yamada Salon' }),
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual(['newPassword:blocklisted'])
@@ -535,6 +614,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest({ newPassword: 'hanako@example.com' }),
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual(['token:invalid_token'])
@@ -578,6 +658,7 @@ describe('ResetPasswordUseCase', () => {
 
       const result = await new ResetPasswordUseCase(dependencies).execute(
         resetRequest(change),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(expected)
@@ -602,6 +683,7 @@ describe('ResetPasswordUseCase', () => {
 
       const result = await new ResetPasswordUseCase(dependencies).execute(
         resetRequest(),
+        'ja',
       )
 
       expect(result).toEqual(databaseDown)
@@ -619,6 +701,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest(),
+      'ja',
     )
 
     expect(result).toEqual(databaseDown)
@@ -634,6 +717,7 @@ describe('ResetPasswordUseCase', () => {
 
     const result = await new ResetPasswordUseCase(dependencies).execute(
       resetRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -665,6 +749,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -685,8 +770,33 @@ describe('ChangePasswordUseCase', () => {
     expect(mails).toEqual([
       {
         to: EMAIL,
+        language: 'ja',
         subject: 'パスワードが変更されました',
         text: expect.not.stringMatching(/https?:\/\/|token/),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = withActor()
+
+    // Act
+    await new ChangePasswordUseCase(dependencies).execute(
+      actors.customer,
+      changeRequest(),
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Your password was changed',
+        text: expect.stringContaining(
+          'The password of your account was changed.',
+        ),
       },
     ])
   })
@@ -701,6 +811,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -714,6 +825,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest({ currentPassword: 'café au lait at dawn' }),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -725,6 +837,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest({ currentPassword: 'wrong password' }),
+      'ja',
     )
 
     expect(result).toMatchObject({
@@ -773,6 +886,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest({ currentPassword: current }),
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual(incorrect)
@@ -791,6 +905,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest({ currentPassword: 'wrong password' }),
+      'ja',
     )
 
     expect(rulesOf(result)).toEqual(incorrect)
@@ -821,6 +936,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest({ currentPassword: current, newPassword: next }),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(['newPassword:unchanged'])
@@ -850,6 +966,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest({ newPassword }),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(['newPassword:blocklisted'])
@@ -902,6 +1019,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest(change),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(expected)
@@ -921,6 +1039,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest({ currentPassword: current }),
+        'ja',
       )
 
       expect(result).toEqual({ type: 'success', data: null })
@@ -941,6 +1060,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest(),
+        'ja',
       )
 
       expect(result).toEqual(invalidToken)
@@ -968,6 +1088,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest({ currentPassword: current }),
+        'ja',
       )
 
       expect(result).toEqual(databaseDown)
@@ -998,6 +1119,7 @@ describe('ChangePasswordUseCase', () => {
       const result = await new ChangePasswordUseCase(dependencies).execute(
         actors.customer,
         changeRequest(),
+        'ja',
       )
 
       expect(result).toEqual(databaseDown)
@@ -1015,6 +1137,7 @@ describe('ChangePasswordUseCase', () => {
     const result = await new ChangePasswordUseCase(dependencies).execute(
       actors.customer,
       changeRequest(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })

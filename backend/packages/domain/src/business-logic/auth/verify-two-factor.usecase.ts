@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
@@ -27,6 +28,7 @@ export class VerifyTwoFactorUseCase {
   async execute(
     actor: Actor,
     input: unknown,
+    language: Locale,
   ): Promise<Result<null, DomainError>> {
     const request = parseWith(authTwoFactorVerifyRequestSchema, input, MESSAGE)
     if (request.type === 'error') {
@@ -76,7 +78,7 @@ export class VerifyTwoFactorUseCase {
     if (!enabled.data) {
       return nothingPending
     }
-    mailer.deliver(twoFactorEnabledMail(user.email))
+    mailer.deliver(twoFactorEnabledMail(user.email, language))
 
     return Result.success(null)
   }

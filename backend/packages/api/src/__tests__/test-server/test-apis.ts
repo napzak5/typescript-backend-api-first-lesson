@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import type { IFileStorage, Mail } from '@beauty-salon-backend/domain'
+import {
+  type IFileStorage,
+  type Mail,
+  type WrittenMail,
+  writtenMail,
+} from '@beauty-salon-backend/domain'
 import {
   createLogger,
   TotpAuthenticator,
@@ -43,8 +48,11 @@ type TestApi = {
   server: Server
   database: TestDatabase
   settings: TestApiSettings
-  /** The mails the application handed over since its last reset, oldest first */
-  mails: Mail[]
+  /**
+   * The mails the application handed over since its last reset, oldest
+   * first, as their recipients read them
+   */
+  mails: WrittenMail[]
   app: Express
 }
 
@@ -78,10 +86,10 @@ export type TestApis = {
     values: (string | number | boolean | null)[],
   ) => Promise<QueryOutcome>
   /**
-   * The mails the API handed over since its last reset, oldest first, or
-   * `null` for an API that is not there.
+   * The mails the API handed over since its last reset, oldest first, as
+   * their recipients read them, or `null` for an API that is not there.
    */
-  mails: (id: string) => Mail[] | null
+  mails: (id: string) => WrittenMail[] | null
   remove: (id: string) => Promise<boolean>
   close: () => Promise<void>
 }
@@ -160,7 +168,7 @@ export const openTestApis = (
       }
       // Kept in the list the API has at that moment: a reset starts a new one
       const deliver = (mail: Mail): void => {
-        api.mails.push(mail)
+        api.mails.push(writtenMail(mail))
       }
       const api: TestApi = {
         database,
@@ -197,7 +205,7 @@ export const openTestApis = (
         return false
       }
       const previous = api.database
-      const mails: Mail[] = []
+      const mails: WrittenMail[] = []
       api.database = await databases.create()
       api.mails = mails
       // A mail of a request that the previous application still answers is
@@ -206,7 +214,7 @@ export const openTestApis = (
         api.database,
         api.settings,
         (mail) => {
-          mails.push(mail)
+          mails.push(writtenMail(mail))
         },
         fileStorage,
       )

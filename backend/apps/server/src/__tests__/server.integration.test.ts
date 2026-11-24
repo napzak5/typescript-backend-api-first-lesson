@@ -311,7 +311,8 @@ describe('stop with mail under way', () => {
       expect.objectContaining({
         level: 'error',
         msg: 'Failed to deliver mail',
-        subject: 'メールアドレスの確認',
+        subject: 'Confirm your email address',
+        language: 'en',
         failure: expect.objectContaining({ code: 'ESOCKET', command: 'CONN' }),
       }),
     )

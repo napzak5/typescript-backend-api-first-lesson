@@ -14,7 +14,7 @@ import {
 import { brokenRules } from '../../../__tests__/fixtures/fixtures'
 import type { DbUser, UserAccount } from '../../../models/auth'
 import type { IUserRepository } from '../../../repositories/user.repository'
-import type { Mail } from '../../../services/mailer'
+import { type WrittenMail, writtenMail } from '../../../services/mailer'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type AuthUseCaseDependencies,
@@ -53,7 +53,7 @@ const finding = (
   repository: Partial<IUserRepository> = {},
   overrides: Partial<AuthUseCaseDependencies> = {},
 ) => {
-  const mails: Mail[] = []
+  const mails: WrittenMail[] = []
   const dependencies = authDependencies({
     userRepository: userRepositoryWith({
       findByEmail: vi.fn(async () => Result.success(found)),
@@ -61,7 +61,7 @@ const finding = (
     }),
     mailer: {
       deliver: (mail) => {
-        mails.push(mail)
+        mails.push(writtenMail(mail))
       },
     },
     ...overrides,
@@ -93,6 +93,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -109,7 +110,26 @@ describe('RegisterUseCase', () => {
     expect(mails).toEqual([
       {
         to: EMAIL,
+        language: 'ja',
         subject: 'メールアドレスの確認',
+        text: expect.stringContaining(verificationLink('token-1')),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = finding(null)
+
+    // Act
+    await new RegisterUseCase(dependencies).execute(registration(), 'en')
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Confirm your email address',
         text: expect.stringContaining(verificationLink('token-1')),
       },
     ])
@@ -120,6 +140,7 @@ describe('RegisterUseCase', () => {
 
     await new RegisterUseCase(dependencies).execute(
       registration({ email: 'Hanako@Example.COM' }),
+      'ja',
     )
 
     expect(dependencies.userRepository.findByEmail).toHaveBeenCalledWith(EMAIL)
@@ -135,6 +156,7 @@ describe('RegisterUseCase', () => {
 
     await new RegisterUseCase(dependencies).execute(
       registration({ password: decomposed }),
+      'ja',
     )
 
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
@@ -149,7 +171,7 @@ describe('RegisterUseCase', () => {
       { publicAppUrl: 'https://book.other-salon.example:8443' },
     )
 
-    await new RegisterUseCase(dependencies).execute(registration())
+    await new RegisterUseCase(dependencies).execute(registration(), 'ja')
 
     expect(mails[0]?.text).toContain(
       'https://book.other-salon.example:8443/verify-email#token=token-1',
@@ -177,6 +199,7 @@ describe('RegisterUseCase', () => {
 
       const result = await new RegisterUseCase(dependencies).execute(
         registration(),
+        'ja',
       )
 
       expect(result).toEqual({ type: 'success', data: null })
@@ -195,6 +218,7 @@ describe('RegisterUseCase', () => {
       expect(mails).toEqual([
         {
           to: EMAIL,
+          language: 'ja',
           subject: 'メールアドレスの確認',
           text: expect.stringContaining(verificationLink('token-1')),
         },
@@ -215,6 +239,7 @@ describe('RegisterUseCase', () => {
 
       const result = await new RegisterUseCase(dependencies).execute(
         registration(),
+        'ja',
       )
 
       expect(result).toEqual({ type: 'success', data: null })
@@ -254,6 +279,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -274,7 +300,7 @@ describe('RegisterUseCase', () => {
   ])('hashes the password exactly once for %s', async (_case, found) => {
     const { dependencies } = finding(found)
 
-    await new RegisterUseCase(dependencies).execute(registration())
+    await new RegisterUseCase(dependencies).execute(registration(), 'ja')
 
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledTimes(1)
     expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(NEW_PASSWORD)
@@ -286,9 +312,11 @@ describe('RegisterUseCase', () => {
 
     const forFresh = await new RegisterUseCase(fresh.dependencies).execute(
       registration(),
+      'ja',
     )
     const forTaken = await new RegisterUseCase(taken.dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(forTaken).toEqual(forFresh)
@@ -301,6 +329,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -314,6 +343,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -330,6 +360,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -382,6 +413,7 @@ describe('RegisterUseCase', () => {
 
       const result = await new RegisterUseCase(dependencies).execute(
         registration(change),
+        'ja',
       )
 
       expect(rulesOf(result)).toEqual(expected)
@@ -405,7 +437,7 @@ describe('RegisterUseCase', () => {
   ])('rejects %s as the request', async (_case, input) => {
     const { dependencies } = finding(null)
 
-    const result = await new RegisterUseCase(dependencies).execute(input)
+    const result = await new RegisterUseCase(dependencies).execute(input, 'ja')
 
     expect(rulesOf(result)).toEqual([':invalid_type'])
   })
@@ -429,6 +461,7 @@ describe('RegisterUseCase', () => {
 
       const result = await new RegisterUseCase(dependencies).execute(
         registration(),
+        'ja',
       )
 
       expect(result).toEqual(databaseDown)
@@ -447,6 +480,7 @@ describe('RegisterUseCase', () => {
 
     const result = await new RegisterUseCase(dependencies).execute(
       registration(),
+      'ja',
     )
 
     expect(result).toEqual(databaseDown)
@@ -461,6 +495,7 @@ describe('SendEmailVerificationUseCase', () => {
 
     const result = await new SendEmailVerificationUseCase(dependencies).execute(
       { email: 'Hanako@Example.com' },
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -474,7 +509,29 @@ describe('SendEmailVerificationUseCase', () => {
     expect(mails).toEqual([
       {
         to: EMAIL,
+        language: 'ja',
         subject: 'メールアドレスの確認',
+        text: expect.stringContaining(verificationLink('token-1')),
+      },
+    ])
+  })
+
+  it('should write the mail in English for a request in English', async () => {
+    // Arrange
+    const { dependencies, mails } = finding(unverifiedAccount())
+
+    // Act
+    await new SendEmailVerificationUseCase(dependencies).execute(
+      { email: EMAIL },
+      'en',
+    )
+
+    // Assert
+    expect(mails).toEqual([
+      {
+        to: EMAIL,
+        language: 'en',
+        subject: 'Confirm your email address',
         text: expect.stringContaining(verificationLink('token-1')),
       },
     ])
@@ -493,9 +550,12 @@ describe('SendEmailVerificationUseCase', () => {
   ])('mails %s', async (_case, overrides) => {
     const { dependencies, mails } = finding(unverifiedAccount(overrides))
 
-    await new SendEmailVerificationUseCase(dependencies).execute({
-      email: EMAIL,
-    })
+    await new SendEmailVerificationUseCase(dependencies).execute(
+      {
+        email: EMAIL,
+      },
+      'ja',
+    )
 
     expect(mails).toHaveLength(1)
   })
@@ -521,7 +581,7 @@ describe('SendEmailVerificationUseCase', () => {
 
       const result = await new SendEmailVerificationUseCase(
         dependencies,
-      ).execute({ email: EMAIL })
+      ).execute({ email: EMAIL }, 'ja')
 
       expect(result).toEqual({ type: 'success', data: null })
       expect(
@@ -539,6 +599,7 @@ describe('SendEmailVerificationUseCase', () => {
 
     const result = await new SendEmailVerificationUseCase(dependencies).execute(
       { email: EMAIL },
+      'ja',
     )
 
     expect(result).toEqual({ type: 'success', data: null })
@@ -567,7 +628,7 @@ describe('SendEmailVerificationUseCase', () => {
 
       const result = await new SendEmailVerificationUseCase(
         dependencies,
-      ).execute(input)
+      ).execute(input, 'ja')
 
       expect(rulesOf(result)).toEqual(expected)
       expect(dependencies.userRepository.findByEmail).not.toHaveBeenCalled()
@@ -585,7 +646,7 @@ describe('SendEmailVerificationUseCase', () => {
 
       const result = await new SendEmailVerificationUseCase(
         dependencies,
-      ).execute({ email: EMAIL })
+      ).execute({ email: EMAIL }, 'ja')
 
       expect(result).toEqual(databaseDown)
       expect(mails).toEqual([])

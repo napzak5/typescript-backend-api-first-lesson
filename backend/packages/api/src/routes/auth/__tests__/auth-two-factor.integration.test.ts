@@ -1,9 +1,9 @@
 import { sessions, users } from '@beauty-salon-backend/database'
 import {
   type DomainError,
-  type Mail,
   type UserId,
   userIdSchema,
+  type WrittenMail,
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
@@ -111,10 +111,10 @@ const twoFactorRequired = {
 }
 const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
 
-const ENABLED_SUBJECT = '2 要素認証が有効になりました'
-const DISABLED_SUBJECT = '2 要素認証が無効になりました'
-const REGENERATED_SUBJECT = 'バックアップコードが再発行されました'
-const BACKUP_CODE_USED_SUBJECT = 'バックアップコードでログインしました'
+const ENABLED_SUBJECT = 'Two-factor authentication was turned on'
+const DISABLED_SUBJECT = 'Two-factor authentication was turned off'
+const REGENERATED_SUBJECT = 'Your backup codes were issued again'
+const BACKUP_CODE_USED_SUBJECT = 'You signed in with a backup code'
 
 /** The properties of a user in a response, and nothing else. */
 const USER_PROPERTIES = [
@@ -315,7 +315,7 @@ describe('the codes and the stored form that these tests compute themselves', ()
 describe('Two-factor authentication', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
 
   beforeEach(() => {
     mails = []
@@ -814,7 +814,12 @@ describe('Two-factor authentication', () => {
         updatedAt: expect.any(String),
       })
       expect(mails).toEqual([
-        { to: user.email, subject: ENABLED_SUBJECT, text: expect.any(String) },
+        {
+          to: user.email,
+          language: 'en',
+          subject: ENABLED_SUBJECT,
+          text: expect.any(String),
+        },
       ])
     })
 
@@ -1304,8 +1309,9 @@ describe('Two-factor authentication', () => {
       expect(mails).toEqual([
         {
           to: user.email,
+          language: 'en',
           subject: BACKUP_CODE_USED_SUBJECT,
-          text: expect.stringContaining('残りのバックアップコードは 2 個です'),
+          text: expect.stringContaining('You have 2 backup codes left.'),
         },
       ])
     })
@@ -1356,8 +1362,9 @@ describe('Two-factor authentication', () => {
       expect(mails).toEqual([
         {
           to: user.email,
+          language: 'en',
           subject: BACKUP_CODE_USED_SUBJECT,
-          text: expect.stringContaining('残りのバックアップコードは 0 個です'),
+          text: expect.stringContaining('You have 0 backup codes left.'),
         },
       ])
       expectCodeRequired(await login(user.email, BACKUP_CODES[0]))
@@ -1647,8 +1654,9 @@ describe('Two-factor authentication', () => {
       expect(mails).toEqual([
         {
           to: user.email,
+          language: 'en',
           subject: BACKUP_CODE_USED_SUBJECT,
-          text: expect.stringContaining('残りのバックアップコードは 2 個です'),
+          text: expect.stringContaining('You have 2 backup codes left.'),
         },
       ])
     })
@@ -1674,7 +1682,12 @@ describe('Two-factor authentication', () => {
         updatedAt: expect.any(String),
       })
       expect(mails).toEqual([
-        { to: user.email, subject: DISABLED_SUBJECT, text: expect.any(String) },
+        {
+          to: user.email,
+          language: 'en',
+          subject: DISABLED_SUBJECT,
+          text: expect.any(String),
+        },
       ])
     })
 
@@ -1987,6 +2000,7 @@ describe('Two-factor authentication', () => {
       expect(mails).toEqual([
         {
           to: user.email,
+          language: 'en',
           subject: REGENERATED_SUBJECT,
           text: expect.any(String),
         },
@@ -2445,6 +2459,96 @@ describe('Two-factor authentication', () => {
     })
   })
 
+  describe('the language of the mails', () => {
+    /** A request of a user that asks for Japanese, as a page in Japanese does. */
+    const inJapanese = (path: string, authorization: string, body: object) =>
+      request(app)
+        .post(path)
+        .set('Accept-Language', 'ja')
+        .set('Authorization', authorization)
+        .send(body)
+
+    /** What the mails were, by their language and their subject. */
+    const languagesAndSubjects = (): [string, string][] =>
+      mails.map(({ language, subject }) => [language, subject])
+
+    it('should mail the notice that two-factor authentication is on in Japanese when the request asks for it', async () => {
+      // Arrange
+      const user = await signedInWithTwoFactor('pending')
+
+      // Act
+      const response = await inJapanese(VERIFY, user.authorization, {
+        code: totp(SECRET, stepAt()),
+      })
+
+      // Assert
+      expectNoContent(response)
+      expect(languagesAndSubjects()).toEqual([
+        ['ja', '2 要素認証が有効になりました'],
+      ])
+    })
+
+    it('should mail the notice of a sign-in with a backup code in Japanese when the request asks for it', async () => {
+      // Arrange
+      const user = await insertUser(db, await twoFactorUser('enabled'))
+
+      // Act
+      const response = await request(app)
+        .post(LOGIN)
+        .set('Accept-Language', 'ja')
+        .send(
+          loginBody(user.email, {
+            password: PASSWORD,
+            twoFactorCode: BACKUP_CODES[0],
+          }),
+        )
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(mails).toEqual([
+        {
+          to: user.email,
+          language: 'ja',
+          subject: 'バックアップコードでサインインしました',
+          text: expect.stringContaining('残りのバックアップコードは 2 個です'),
+        },
+      ])
+    })
+
+    it('should mail the notice that two-factor authentication is off in Japanese when the request asks for it', async () => {
+      // Arrange
+      const user = await signedInWithTwoFactor('enabled')
+
+      // Act
+      const response = await inJapanese(DISABLE, user.authorization, {
+        password: PASSWORD,
+        code: totp(SECRET, stepAt()),
+      })
+
+      // Assert
+      expectNoContent(response)
+      expect(languagesAndSubjects()).toEqual([
+        ['ja', '2 要素認証が無効になりました'],
+      ])
+    })
+
+    it('should mail the notice of new backup codes in Japanese when the request asks for it', async () => {
+      // Arrange
+      const user = await signedInWithTwoFactor('enabled')
+
+      // Act
+      const response = await inJapanese(NEW_BACKUP_CODES, user.authorization, {
+        code: totp(SECRET, stepAt()),
+      })
+
+      // Assert
+      expect(response.status).toBe(200)
+      expect(languagesAndSubjects()).toEqual([
+        ['ja', 'バックアップコードが再発行されました'],
+      ])
+    })
+  })
+
   describe('what never shows', () => {
     it.each<['pending' | 'enabled']>([['pending'], ['enabled']])(
       'shows the status %s and nothing else of two-factor authentication through the login, the refresh and GET /me',
@@ -2555,14 +2659,30 @@ describe('Two-factor authentication', () => {
       )
 
       expect(mails).toEqual([
-        { to: EMAIL, subject: ENABLED_SUBJECT, text: expect.any(String) },
         {
           to: EMAIL,
-          subject: BACKUP_CODE_USED_SUBJECT,
-          text: expect.stringContaining('残りのバックアップコードは 9 個です'),
+          language: 'en',
+          subject: ENABLED_SUBJECT,
+          text: expect.any(String),
         },
-        { to: EMAIL, subject: REGENERATED_SUBJECT, text: expect.any(String) },
-        { to: EMAIL, subject: DISABLED_SUBJECT, text: expect.any(String) },
+        {
+          to: EMAIL,
+          language: 'en',
+          subject: BACKUP_CODE_USED_SUBJECT,
+          text: expect.stringContaining('You have 9 backup codes left.'),
+        },
+        {
+          to: EMAIL,
+          language: 'en',
+          subject: REGENERATED_SUBJECT,
+          text: expect.any(String),
+        },
+        {
+          to: EMAIL,
+          language: 'en',
+          subject: DISABLED_SUBJECT,
+          text: expect.any(String),
+        },
       ])
       const written = JSON.stringify(mails)
       for (const secret of [

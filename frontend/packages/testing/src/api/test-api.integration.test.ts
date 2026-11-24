@@ -472,14 +472,15 @@ describe('the mails of an API', () => {
     mails: z.array(z.object({ to: z.string(), text: z.string() })),
   })
 
-  it('are what the application handed to its mailer, by the time it has answered', async () => {
+  it('are what the application handed to its mailer, by the time it has answered, in the language of the request: English, when it asks for none', async () => {
     const answer = await register(testApi().origin, NEW_ADDRESS)
 
     expect(answer.status).toBe(204)
     expect(await testApi().mails()).toEqual([
       {
         to: NEW_ADDRESS,
-        subject: 'メールアドレスの確認',
+        language: 'en',
+        subject: 'Confirm your email address',
         text: expect.stringContaining(
           'https://app.salon.example/verify-email#token=',
         ),
@@ -539,7 +540,7 @@ describe('the mails of an API', () => {
     await register(testApi().origin, NEW_ADDRESS)
 
     await expect(testApi().mailedLink('nobody@example.com')).rejects.toThrow(
-      `No mail with a link to nobody@example.com. The API wrote to: ${NEW_ADDRESS} (メールアドレスの確認)`,
+      `No mail with a link to nobody@example.com. The API wrote to: ${NEW_ADDRESS} (Confirm your email address)`,
     )
   })
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { StaffInvitationReadMapper } from '../../mappers/read/staff-invitation.mapper'
@@ -46,6 +47,7 @@ export class CreateStaffInvitationUseCase {
     salon: unknown,
     id: unknown,
     input: unknown,
+    language: Locale,
   ): Promise<Result<ApiStaffInvitationResponse, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
@@ -123,6 +125,7 @@ export class CreateStaffInvitationUseCase {
         mailer.deliver(
           staffInvitationMail(
             invitation.email,
+            language,
             salonName,
             publicAppUrl,
             token.token,

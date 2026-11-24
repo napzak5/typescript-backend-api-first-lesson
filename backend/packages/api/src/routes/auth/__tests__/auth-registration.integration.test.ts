@@ -1,5 +1,5 @@
 import { sessions, users } from '@beauty-salon-backend/database'
-import type { Mail } from '@beauty-salon-backend/domain'
+import type { WrittenMail } from '@beauty-salon-backend/domain'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response } from 'supertest'
@@ -81,9 +81,9 @@ const twoFactorRequired = {
   type: 'two-factor-required',
 }
 
-const VERIFICATION_SUBJECT = 'メールアドレスの確認'
-const RESET_SUBJECT = 'パスワードの再設定'
-const CHANGED_SUBJECT = 'パスワードが変更されました'
+const VERIFICATION_SUBJECT = 'Confirm your email address'
+const RESET_SUBJECT = 'Reset your password'
+const CHANGED_SUBJECT = 'Your password was changed'
 
 type NewUser = NonNullable<Parameters<typeof insertUser>[1]>
 type MailedPage = 'verify-email' | 'reset-password'
@@ -92,7 +92,7 @@ const escapeForRegExp = (text: string): string =>
   text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** The tokens in the links of a mail that lead to `page` of the web application. */
-const tokensIn = ({ text }: Mail, page: MailedPage): string[] =>
+const tokensIn = ({ text }: WrittenMail, page: MailedPage): string[] =>
   [
     ...text.matchAll(
       new RegExp(
@@ -134,7 +134,7 @@ const expectTokenRefused = (response: Response): void => {
 describe('Registration, email verification and passwords', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
-  let mails: Mail[]
+  let mails: WrittenMail[]
 
   beforeEach(() => {
     mails = []
@@ -162,7 +162,7 @@ describe('Registration, email verification and passwords', () => {
   const me = (authorization: string) =>
     request(app).get(ME).set('Authorization', authorization)
 
-  const mailsTo = (email: string): Mail[] =>
+  const mailsTo = (email: string): WrittenMail[] =>
     mails.filter(({ to }) => to === email)
 
   /** The token of the last mail to `email` that links to `page`. */
@@ -414,6 +414,7 @@ describe('Registration, email verification and passwords', () => {
       expect(mails).toEqual([
         {
           to: EMAIL,
+          language: 'en',
           subject: VERIFICATION_SUBJECT,
           text: expect.stringContaining(
             `${PUBLIC_APP_URL}/verify-email#token=`,
@@ -909,6 +910,7 @@ describe('Registration, email verification and passwords', () => {
       expect(mails).toEqual([
         {
           to: EMAIL,
+          language: 'en',
           subject: RESET_SUBJECT,
           text: expect.stringContaining(
             `${PUBLIC_APP_URL}/reset-password#token=`,
@@ -1423,6 +1425,7 @@ describe('Registration, email verification and passwords', () => {
       expect(mails).toEqual([
         {
           to: EMAIL,
+          language: 'en',
           subject: CHANGED_SUBJECT,
           text: expect.not.stringMatching(/https?:\/\//),
         },
@@ -1720,6 +1723,119 @@ describe('Registration, email verification and passwords', () => {
         expect(mails).toEqual([])
       },
     )
+  })
+
+  describe('the language of the mails', () => {
+    /** A request that asks for Japanese, as a page in Japanese does. */
+    const inJapanese = (path: string, body: object, authorization?: string) => {
+      const sent = request(app).post(path).set('Accept-Language', 'ja')
+      return (
+        authorization === undefined
+          ? sent
+          : sent.set('Authorization', authorization)
+      ).send(body)
+    }
+
+    it('should mail the link of a registration in Japanese when the request asks for it', async () => {
+      // Act
+      const response = await inJapanese(REGISTER, {
+        email: EMAIL,
+        password: NEW_PASSWORD,
+      })
+
+      // Assert
+      expectNoContent(response)
+      expect(mails).toEqual([
+        {
+          to: EMAIL,
+          language: 'ja',
+          subject: 'メールアドレスの確認',
+          text: expect.stringContaining(
+            'メールアドレスを確認するため、次のリンクを開いてください。',
+          ),
+        },
+      ])
+      expectNoContent(await confirm(tokenMailedTo(EMAIL, 'verify-email')))
+    })
+
+    it('should mail a new link of the verification in Japanese when the request asks for it', async () => {
+      // Arrange
+      await insertUser(db, {
+        email: EMAIL,
+        status: 'unverified',
+        emailVerified: false,
+      })
+
+      // Act
+      const response = await inJapanese(SEND_VERIFICATION, { email: EMAIL })
+
+      // Assert
+      expectNoContent(response)
+      expect(mails.map(({ language, subject }) => [language, subject])).toEqual(
+        [['ja', 'メールアドレスの確認']],
+      )
+    })
+
+    it('should mail the link of a reset in Japanese when the request asks for it', async () => {
+      // Arrange
+      await insertUser(db, { email: EMAIL })
+
+      // Act
+      const response = await inJapanese(FORGOT_PASSWORD, { email: EMAIL })
+
+      // Assert
+      expectNoContent(response)
+      expect(mails).toEqual([
+        {
+          to: EMAIL,
+          language: 'ja',
+          subject: 'パスワードの再設定',
+          text: expect.stringContaining('このリンクは 30 分間有効で'),
+        },
+      ])
+    })
+
+    it('should write each mail in the language of the request that caused it: the reset asked in English, the notice of the new password in Japanese', async () => {
+      // Arrange
+      await insertUser(db, { email: EMAIL })
+      expectNoContent(await forgot(EMAIL))
+
+      // Act
+      const response = await inJapanese(RESET_PASSWORD, {
+        token: tokenMailedTo(EMAIL, 'reset-password'),
+        newPassword: NEW_PASSWORD,
+      })
+
+      // Assert
+      expectNoContent(response)
+      expect(mails).toEqual([
+        expect.objectContaining({ language: 'en', subject: RESET_SUBJECT }),
+        {
+          to: EMAIL,
+          language: 'ja',
+          subject: 'パスワードが変更されました',
+          text: expect.stringContaining('サインインの画面から'),
+        },
+      ])
+    })
+
+    it('should mail the notice of a changed password in Japanese when the request asks for it', async () => {
+      // Arrange
+      const signedIn = await signedInWithOtherPassword({ email: EMAIL })
+
+      // Act
+      const response = await inJapanese(
+        CHANGE_PASSWORD,
+        { currentPassword: OTHER_PASSWORD, newPassword: NEW_PASSWORD },
+        signedIn.authorization,
+      )
+
+      // Assert
+      expectNoContent(response)
+      expect(mails.map(({ language, subject }) => [language, subject])).toEqual(
+        [['ja', 'パスワードが変更されました']],
+      )
+    })
   })
 
   describe('what the operations reveal', () => {

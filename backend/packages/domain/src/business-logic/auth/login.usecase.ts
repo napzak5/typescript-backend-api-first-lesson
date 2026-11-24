@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
 import { SessionWriteMapper } from '../../mappers/write/session.mapper'
@@ -55,6 +56,7 @@ export class LoginUseCase {
   async execute(
     input: unknown,
     client: ClientInfo,
+    language: Locale,
   ): Promise<Result<ApiAuthLoginResponse, DomainError>> {
     const request = parseWith(
       authLoginRequestSchema,
@@ -143,7 +145,7 @@ export class LoginUseCase {
       return created
     }
     if (backupCodesLeft !== null) {
-      mailer.deliver(backupCodeUsedMail(user.email, backupCodesLeft))
+      mailer.deliver(backupCodeUsedMail(user.email, language, backupCodesLeft))
     }
 
     return SessionReadMapper.toApiLogin(tokens, signedIn.data)

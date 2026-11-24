@@ -11,7 +11,13 @@ import {
   openInLanguage,
 } from '../support/language'
 import { menu, menuButton } from '../support/main-menu'
-import { ADMIN_START, enterCredentials, heading } from '../support/sign-in'
+import {
+  ADMIN_START,
+  emailField,
+  enterCredentials,
+  heading,
+  passwordField,
+} from '../support/sign-in'
 
 /*
  * The language of a page: the one its visitor chose with the choice in the
@@ -21,6 +27,10 @@ import { ADMIN_START, enterCredentials, heading } from '../support/sign-in'
  * says the language, the frame and the screens say their texts in it, and
  * every request asks the API for it, whatever the browser asks for.
  */
+
+/** An address that has no account, and a password the API takes */
+const VISITOR = 'first.visit@example.com'
+const VISITOR_PASSWORD = 'kirei na kami de dekakeru'
 
 /** The link that every page begins with, which the frame of the applications says */
 const SKIP_LINK: Record<Language, string> = {
@@ -189,6 +199,30 @@ test.describe('a visitor who chose no language, in a browser set to the English 
       language: 'ja',
       body: expect.objectContaining(LOGIN_FAILED.ja),
     })
+  })
+
+  test('should register an account in English, and be mailed its link in English', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    await page.goto(`${PORTAL.origin}/register`)
+    await expectPageIn(page, 'en')
+
+    // Act
+    await emailField(page, 'en').fill(VISITOR)
+    await passwordField(page, 'en').fill(VISITOR_PASSWORD)
+    await page.getByRole('button', { name: 'Register' }).click()
+
+    // Assert
+    await expect(heading(page, 'We sent you a confirmation mail')).toBeFocused()
+    expect(
+      (await api.mails()).map(({ to, language, subject }) => [
+        to,
+        language,
+        subject,
+      ]),
+    ).toEqual([[VISITOR, 'en', 'Confirm your email address']])
   })
 })
 

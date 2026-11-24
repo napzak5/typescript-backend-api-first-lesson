@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordResetConfirmRequestSchema } from '../../schemas/auth.schema'
@@ -20,7 +21,10 @@ export class ResetPasswordUseCase {
    * Nobody is signed in by this, and the user is told by mail that the
    * password changed.
    */
-  async execute(input: unknown): Promise<Result<null, DomainError>> {
+  async execute(
+    input: unknown,
+    language: Locale,
+  ): Promise<Result<null, DomainError>> {
     const request = parseWith(
       authPasswordResetConfirmRequestSchema,
       input,
@@ -66,7 +70,7 @@ export class ResetPasswordUseCase {
     if (reset.data === null) {
       return Result.error(mailedTokenRefused(MESSAGE))
     }
-    mailer.deliver(passwordChangedMail(email))
+    mailer.deliver(passwordChangedMail(email, language))
 
     return Result.success(null)
   }

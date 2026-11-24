@@ -4,6 +4,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
+import { languageAsked } from '../../shared/language'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { sendProblem } from '../../shared/responses'
 
@@ -16,7 +17,7 @@ export const forgotPasswordHandler = (
   const useCase = new ForgotPasswordUseCase(dependencies)
 
   return async (req, res) => {
-    const result = await useCase.execute(req.body)
+    const result = await useCase.execute(req.body, languageAsked(req))
 
     match(result)
       .with({ type: 'success' }, () => {
