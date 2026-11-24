@@ -11,9 +11,11 @@ import {
   Button,
   ButtonLink,
   Dialog,
-  inJapanese,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -36,13 +38,13 @@ import { TreatmentPhotos } from '../components/treatment-photos/treatment-photos
 import { TreatmentRecord } from '../components/treatment-record/treatment-record'
 import {
   afterTreatmentRemoval,
-  customerCalled,
+  customerInASentence,
   mayRemoveTreatments,
 } from '../utils/treatment-format'
 import { afterPhotoRemoval, photoNameOf } from '../utils/treatment-photos'
 import { type TreatmentContext, WithTreatment } from './with-treatment'
 
-const TITLE = '施術記録の内容'
+const { record: WORDS, removal: REMOVAL, titles } = adminTreatmentMessages
 
 type RecordPartProps = TreatmentContext & { salon: ModelsSalonResponse }
 
@@ -64,9 +66,9 @@ const PhotosPart = ({ salon, record }: PhotosPartProps) => {
   const heading = useRef<HTMLHeadingElement>(null)
   const [removing, setRemoving] = useState<ModelsTreatmentPhotoResponse>()
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What changed meanwhile: said under the heading */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   /** How many times the dialog closed on what it changed: the heading takes the focus each time */
   const [moves, setMoves] = useState(0)
   const key = treatmentKeyOf(record.id)
@@ -147,16 +149,17 @@ const RecordPart = ({
   services,
   products,
 }: RecordPartProps) => {
+  const say = useSay()
   const session = useSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const [removing, setRemoving] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   /** What the API refused: said above the record */
-  const [refusal, setRefusal] = useState<string>()
-  const name = customerCalled(customer)
+  const [refusal, setRefusal] = useState<LocalizedText>()
+  const name = customerInASentence(customer)
   const removable =
     session.type === 'signedIn' && mayRemoveTreatments(session.user.role)
 
@@ -190,11 +193,14 @@ const RecordPart = ({
 
   return (
     <>
-      {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
+      {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
       <TreatmentRecord
         record={record}
         timezone={salon.timezone}
-        bookingName={`${booking.bookingNumber}（${inJapanese(dayNameOf(booking.bookingDate))}）`}
+        bookingName={WORDS.bookingOf(
+          booking.bookingNumber,
+          dayNameOf(booking.bookingDate),
+        )}
         bookingHref={bookingHrefOf(salon.id, booking.id)}
         customer={customer}
         customerHref={customerHrefOf(salon.id, record.customerId)}
@@ -204,7 +210,7 @@ const RecordPart = ({
         actions={
           <>
             <ButtonLink href={treatmentChangeHrefOf(salon.id, record.id)}>
-              施術記録を直す
+              {say(WORDS.change)}
             </ButtonLink>
             {removable && (
               <Button
@@ -214,7 +220,7 @@ const RecordPart = ({
                   setRemoving(true)
                 }}
               >
-                削除
+                {say(REMOVAL.open)}
               </Button>
             )}
           </>
@@ -225,11 +231,11 @@ const RecordPart = ({
         <Dialog
           open={removing}
           onClose={close}
-          title={`${name}の施術記録を削除しますか？`}
-          description='間違えて書いた施術記録を、使った商材と写真と一緒に削除します。削除した施術記録は、元に戻せません。'
+          title={say(REMOVAL.title(name))}
+          description={say(REMOVAL.description)}
           actions={
             <>
-              <Button onClick={close}>戻る</Button>
+              <Button onClick={close}>{say(REMOVAL.back)}</Button>
               <Button
                 variant='danger'
                 pending={removal.isPending}
@@ -238,12 +244,12 @@ const RecordPart = ({
                   removal.mutate()
                 }}
               >
-                削除する
+                {say(REMOVAL.submit)}
               </Button>
             </>
           }
         >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+          {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
         </Dialog>
       )}
     </>
@@ -252,16 +258,18 @@ const RecordPart = ({
 
 /** A treatment record of the salon of the address. */
 export const TreatmentScreen = () => {
+  const say = useSay()
   const { salonId = '', treatmentId = '' } = useParams()
+  const title = say(titles.record)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
         <WithTreatment
           key={treatmentId}
           salon={salon}
           treatmentId={treatmentId}
-          title={TITLE}
+          title={title}
           fresh={false}
         >
           {(context) => <RecordPart salon={salon} {...context} />}

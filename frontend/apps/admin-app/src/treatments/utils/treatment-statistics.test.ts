@@ -1,10 +1,7 @@
 import type { Period } from '@beauty-salon-frontend/salon-screens'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import {
-  averageNameOf,
-  countNameOf,
-  statisticsPeriodIn,
-} from './treatment-statistics'
+import { averageNameOf, statisticsPeriodIn } from './treatment-statistics'
 
 const TODAY = '2026-11-20'
 
@@ -47,20 +44,18 @@ describe('statisticsPeriodIn', () => {
   })
 })
 
-describe('countNameOf', () => {
-  it('should say how many records were counted', () => {
-    expect([countNameOf(0), countNameOf(12)]).toEqual(['0 件', '12 件'])
-  })
-})
-
 describe('averageNameOf', () => {
-  it.each<[number | null, string | null]>([
-    [72.5, '72.5 分'],
-    [72.25, '72.3 分'],
-    [80, '80 分'],
-    [1234.5, '1,234.5 分'],
+  it.each<[number | null, LocalizedText | null]>([
+    [72.5, { en: '72.5 min', ja: '72.5 分' }],
+    [72.25, { en: '72.3 min', ja: '72.3 分' }],
+    [80, { en: '80 min', ja: '80 分' }],
+    [1234.5, { en: '1,234.5 min', ja: '1,234.5 分' }],
     [null, null],
   ])('should say the average of %s', (minutes, name) => {
-    expect(averageNameOf(minutes)).toBe(name)
+    // Act
+    const said = averageNameOf(minutes)
+
+    // Assert
+    expect(said).toEqual(name)
   })
 })

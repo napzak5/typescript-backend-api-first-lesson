@@ -1,3 +1,5 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon, staff } from '../../../bookings/components/examples'
@@ -38,7 +40,7 @@ export const Narrowed: Story = {
 export const OfCustomer: Story = {
   args: {
     conditions: { customer: aCustomer().id },
-    customerName: '山田 花子 様',
+    customerName: adminCustomerMessages.naming.honored('山田 花子'),
     withoutCustomerHref: TREATMENTS,
     clearHref: TREATMENTS,
   },
@@ -49,7 +51,7 @@ export const WithErrors: Story = {
   args: {
     conditions: { from: '2026-11-20' },
     errors: {
-      to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+      to: salonScreenMessages.period.endBeforeStart,
     },
     clearHref: TREATMENTS,
   },

@@ -14,13 +14,17 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminBookingMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -43,7 +47,7 @@ import {
   treatmentQueryOf,
 } from '../utils/treatment-search'
 
-const TITLE = '施術記録'
+const { list: LIST, names, titles } = adminTreatmentMessages
 
 type TreatmentListProps = {
   salon: ModelsSalonResponse
@@ -58,7 +62,7 @@ type TreatmentListProps = {
  */
 const useCustomerName = (
   customerId: string | undefined,
-): string | undefined => {
+): LocalizedText | undefined => {
   const read = useQuery({
     queryKey: customerKeyOf(customerId ?? ''),
     queryFn: () => readCustomer(customerId ?? ''),
@@ -66,7 +70,7 @@ const useCustomerName = (
   })
 
   return match(read.data)
-    .returnType<string | undefined>()
+    .returnType<LocalizedText | undefined>()
     .with({ type: 'found' }, ({ customer }) => customerCalled(customer))
     .with({ type: 'notFound' }, () => customerCalled(undefined))
     .otherwise(() => undefined)
@@ -79,8 +83,11 @@ const useCustomerName = (
  * salon. The conditions are in the query of the address.
  */
 const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = treatmentConditionsIn(query)
   const asked = treatmentQueryOf(conditions).toString()
   const narrowed = asked !== ''
@@ -126,14 +133,10 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
         onSubmit={filter}
       />
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))
-        .with(undefined, () => (
-          <LoadingIndicator label='施術記録を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(LIST.loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('施術記録'), reason),
-            )}
+            message={say(unreadMessageOf(names.records, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -141,16 +144,16 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
         .with({ type: 'listed', items: [] }, () =>
           narrowed ? (
             <EmptyState
-              title='条件に合う施術記録はありません'
-              description='条件を変えて探してください。'
+              title={say(LIST.noneMatching)}
+              description={say(LIST.noneMatchingDescription)}
             />
           ) : (
             <EmptyState
-              title='施術記録はありません'
-              description='施術記録は、施術を始めた予約の画面から書きます。'
+              title={say(LIST.none)}
+              description={say(LIST.noneDescription)}
               actions={
                 <ButtonLink href={bookingsHrefOf(salon.id)}>
-                  今日の予約へ
+                  {say(adminBookingMessages.frame.toToday)}
                 </ButtonLink>
               }
             />
@@ -160,7 +163,7 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
           <TreatmentTable
             // Other conditions are another list
             key={asked}
-            caption={narrowed ? '条件に合う施術記録' : '施術記録'}
+            caption={say(narrowed ? LIST.matching : LIST.records)}
             rows={items}
             total={total}
             more={moreOf(rest, {
@@ -184,18 +187,20 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
 
 /** The treatment records of the salon of the address. */
 export const TreatmentsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.list)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
         <>
           <PageHeader
-            title={TITLE}
+            title={title}
             description={salon.name}
             actions={
               <ButtonLink href={treatmentStatisticsHrefOf(salon.id)}>
-                施術の統計
+                {say(adminTreatmentMessages.toStatistics)}
               </ButtonLink>
             }
           />

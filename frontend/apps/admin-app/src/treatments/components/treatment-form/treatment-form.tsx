@@ -16,7 +16,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
-  inJapanese,
+  type NamedChoice,
   NO_ERRORS,
   Note,
   type RepeatedRow,
@@ -24,18 +24,29 @@ import {
   TextArea,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminMenuMessages,
+  adminStaffMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
-import { MOST_MATERIALS, materialControlOf } from '../../utils/treatment-form'
+import { productNameOf } from '../../../inventory/utils/stock-format'
 import {
-  GONE_SERVICE,
-  productNameOf,
-  REMOVED_PRODUCT,
-  SATISFACTION_OPTIONS,
-  UNLISTED_STAFF,
-} from '../../utils/treatment-format'
+  LONGEST_TREATMENT,
+  MOST_IN_A_LIST,
+  MOST_MATERIALS,
+  materialControlOf,
+} from '../../utils/treatment-form'
+import { SATISFACTION_CHOICES } from '../../utils/treatment-format'
 import styles from './treatment-form.module.css'
+
+const { form: WORDS } = adminTreatmentMessages
 
 export type TreatmentFormProps = {
   /** The booking whose treatment is written */
@@ -48,15 +59,16 @@ export type TreatmentFormProps = {
   services: readonly ModelsServiceResponse[]
   /** The products of the salon */
   products: readonly ModelsProductResponse[]
+  /** The label of the button that sends the form, in the language of the page */
   submitLabel: string
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /**
    * What is wrong with the values, under the names of the controls; a
    * material's under `materials.<n>.<name>`. A new object is the answer to
    * another attempt
    */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -78,28 +90,29 @@ const distinct = (ids: readonly string[]): string[] => [...new Set(ids)]
 const serviceOptionsOf = (
   services: readonly ModelsServiceResponse[],
   held: readonly string[],
+  removed: string,
 ): ChoiceOption[] => [
   ...services.map(({ id, name }) => ({ value: id, label: name })),
   ...held
     .filter((id) => !services.some((service) => service.id === id))
-    .map((id) => ({ value: id, label: GONE_SERVICE })),
+    .map((id) => ({ value: id, label: removed })),
 ]
 
 /**
  * The products a row offers: those the salon uses in treatments and still
  * carries, and the one the row holds whatever it is now.
  */
-const productOptionsOf = (
+const productChoicesOf = (
   products: readonly ModelsProductResponse[],
   held: string | undefined,
-): ChoiceOption[] => {
+): NamedChoice[] => {
   const offered = products.filter(
     ({ id, isForTreatment, isActive }) =>
       (isForTreatment && isActive) || id === held,
   )
   const gone =
     held !== undefined && !products.some(({ id }) => id === held)
-      ? [{ value: held, label: REMOVED_PRODUCT }]
+      ? [{ value: held, label: productNameOf(undefined) }]
       : []
 
   return [
@@ -139,7 +152,10 @@ export const TreatmentForm = ({
   actions,
   onSubmit,
 }: TreatmentFormProps) => {
-  const materials = useRepeatedRows<Material>(
+  const say = useSay()
+  const choicesOf = useSaidChoices()
+  const said = useSaidForm(message, errors)
+  const materials = useRepeatedRows<Material, LocalizedText>(
     () =>
       (record?.materials ?? []).map((shown) => ({
         shown,
@@ -148,6 +164,8 @@ export const TreatmentForm = ({
       })),
     errors,
   )
+  const materialErrors = useSaidForm(undefined, materials.errors).errors
+  const removedService = say(adminMenuMessages.removedService)
   const chosenServices =
     record?.services ??
     distinct(booking.services.map(({ serviceId }) => serviceId))
@@ -176,139 +194,143 @@ export const TreatmentForm = ({
   return (
     <Form
       submitLabel={submitLabel}
-      message={message}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={actions}
       onSubmit={onSubmit}
     >
-      <FormPart label='施術'>
+      <FormPart label={say(WORDS.treatment)}>
         {record === undefined ? (
           <Select
-            label='担当'
+            label={say(WORDS.staff)}
             name='staffId'
             options={staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             }))}
-            placeholder='選んでください'
+            placeholder={say(WORDS.choose)}
             required
-            description='施術をしたスタッフ。予約の担当でなくても選べます。'
+            description={say(WORDS.staffDescription)}
             defaultValue={member?.id ?? ''}
-            error={errors['staffId']}
+            error={said.errors['staffId']}
           />
         ) : (
           <p className={styles['fixed']}>
-            <span className={styles['fixedName']}>担当</span>
-            <span>{member?.displayName ?? UNLISTED_STAFF}</span>
+            <span className={styles['fixedName']}>{say(WORDS.staff)}</span>
+            <span>
+              {member?.displayName ?? say(adminStaffMessages.unlisted)}
+            </span>
           </p>
         )}
         <CheckboxGroup
-          label='提供したサービス'
+          label={say(WORDS.services)}
           name='services'
           layout='columns'
-          options={serviceOptionsOf(services, chosenServices)}
+          options={serviceOptionsOf(services, chosenServices, removedService)}
           defaultValue={chosenServices}
-          description='1 件から 20 件まで選びます。'
-          error={errors['services']}
+          description={say(WORDS.servicesDescription(MOST_IN_A_LIST))}
+          error={said.errors['services']}
         />
         <TextField
-          label='技法'
+          label={say(WORDS.techniques)}
           name='techniques'
           autoComplete='off'
-          description='技法の名前を、「、」か「,」で区切って書きます。20 件までです。'
-          defaultValue={inJapanese(tagsTextOf(record?.techniques ?? []))}
-          error={errors['techniques']}
+          description={say(WORDS.techniquesDescription(MOST_IN_A_LIST))}
+          defaultValue={say(tagsTextOf(record?.techniques ?? []))}
+          error={said.errors['techniques']}
         />
         <TextField
-          label='施術時間（分）'
+          label={say(WORDS.processingTime)}
           name='processingTime'
           inputMode='numeric'
           autoComplete='off'
           width='short'
-          description='0 から 1440 までの分。'
+          description={say(WORDS.processingTimeDescription(LONGEST_TREATMENT))}
           defaultValue={
             record?.processingTime === null ||
             record?.processingTime === undefined
               ? undefined
               : String(record.processingTime)
           }
-          error={errors['processingTime']}
+          error={said.errors['processingTime']}
         />
       </FormPart>
-      <FormPart label='カウンセリングと状態'>
+      <FormPart label={say(WORDS.consultation)}>
         <TextArea
-          label='カウンセリングのメモ'
+          label={say(WORDS.consultationNotes)}
           name='consultationNotes'
           defaultValue={record?.consultationNotes ?? undefined}
-          error={errors['consultationNotes']}
+          error={said.errors['consultationNotes']}
         />
         <FieldRow>
           <TextField
-            label='頭皮の状態'
+            label={say(WORDS.scalpCondition)}
             name='scalpCondition'
             autoComplete='off'
             defaultValue={record?.scalpCondition ?? undefined}
-            error={errors['scalpCondition']}
+            error={said.errors['scalpCondition']}
           />
           <TextField
-            label='毛髪の状態'
+            label={say(WORDS.hairCondition)}
             name='hairCondition'
             autoComplete='off'
             defaultValue={record?.hairCondition ?? undefined}
-            error={errors['hairCondition']}
+            error={said.errors['hairCondition']}
           />
         </FieldRow>
         <TextArea
-          label='カラー剤の配合'
+          label={say(WORDS.colorFormula)}
           name='colorFormula'
           rows={2}
-          description='カラーをしない施術では、空のままにします。'
+          description={say(WORDS.colorFormulaDescription)}
           defaultValue={record?.colorFormula ?? undefined}
-          error={errors['colorFormula']}
+          error={said.errors['colorFormula']}
         />
       </FormPart>
       <FormPart
-        label='使った商材'
-        description='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
+        label={say(WORDS.materials)}
+        description={say(WORDS.materialsDescription)}
       >
         {materials.rows.map((row, index) => (
           <FormRow
             key={row.key}
             ref={materials.rowRef(row.key)}
-            label={`${index + 1} 件目の商材`}
+            label={say(WORDS.materialOf(index + 1))}
           >
             <Select
-              label='商品'
+              label={say(WORDS.product)}
               name={materialControlOf(index, 'productId')}
-              options={productOptionsOf(products, row.value.shown?.productId)}
-              placeholder='選んでください'
+              options={choicesOf(
+                productChoicesOf(products, row.value.shown?.productId),
+              )}
+              placeholder={say(WORDS.choose)}
               required
               value={row.value.productId}
               onChange={(event) => choose(row, event.target.value)}
-              error={materials.errors[materialControlOf(index, 'productId')]}
+              error={materialErrors[materialControlOf(index, 'productId')]}
             />
             <FieldRow>
               <TextField
-                label='量'
+                label={say(WORDS.quantity)}
                 name={materialControlOf(index, 'quantity')}
                 inputMode='decimal'
                 autoComplete='off'
                 required
-                description='小数第 2 位まで。'
+                description={say(WORDS.quantityDescription)}
                 defaultValue={
                   row.value.shown === undefined
                     ? undefined
                     : String(row.value.shown.quantity)
                 }
-                error={materials.errors[materialControlOf(index, 'quantity')]}
+                error={materialErrors[materialControlOf(index, 'quantity')]}
               />
               <TextField
-                label='単位'
+                label={say(WORDS.unit)}
                 name={materialControlOf(index, 'unit')}
                 autoComplete='off'
                 required
-                description='商品を選ぶと、商品の単位が入ります。'
+                description={say(WORDS.unitDescription)}
                 value={row.value.unit}
                 onChange={(event) =>
                   materials.change(row.key, {
@@ -316,32 +338,32 @@ export const TreatmentForm = ({
                     unit: event.target.value,
                   })
                 }
-                error={materials.errors[materialControlOf(index, 'unit')]}
+                error={materialErrors[materialControlOf(index, 'unit')]}
               />
             </FieldRow>
             {takesLot(row.value) ? (
               <TextField
-                label='ロット番号'
+                label={say(WORDS.lotNumber)}
                 name={materialControlOf(index, 'lotNumber')}
                 autoComplete='off'
                 required
-                description='ロットで管理している商品です。使った商品のロット番号を書きます。'
+                description={say(WORDS.lotNumberDescription)}
                 defaultValue={row.value.shown?.lotNumber ?? undefined}
-                error={materials.errors[materialControlOf(index, 'lotNumber')]}
+                error={materialErrors[materialControlOf(index, 'lotNumber')]}
               />
             ) : null}
             <TextField
-              label='商材のメモ'
+              label={say(WORDS.materialNotes)}
               name={materialControlOf(index, 'notes')}
               autoComplete='off'
               defaultValue={row.value.shown?.notes ?? undefined}
             />
             <Button
               size='small'
-              aria-label={`${index + 1} 件目の商材を外す`}
+              aria-label={say(WORDS.removeMaterial(index + 1))}
               onClick={() => materials.remove(row.key)}
             >
-              外す
+              {say(WORDS.remove)}
             </Button>
           </FormRow>
         ))}
@@ -352,73 +374,74 @@ export const TreatmentForm = ({
               materials.add({ shown: undefined, productId: '', unit: '' })
             }
           >
-            商材を足す
+            {say(WORDS.addMaterial)}
           </Button>
         ) : (
-          <Note size='small'>
-            {`使った商材は、${MOST_MATERIALS} 件まで書けます。`}
-          </Note>
+          <Note size='small'>{say(WORDS.mostMaterials(MOST_MATERIALS))}</Note>
         )}
       </FormPart>
-      <FormPart label='結果と次回'>
+      <FormPart label={say(WORDS.result)}>
         <TextArea
-          label='結果のメモ'
+          label={say(WORDS.resultNotes)}
           name='resultNotes'
-          description='いつもと違うことがなければ、空のままにします。'
+          description={say(WORDS.resultNotesDescription)}
           defaultValue={record?.resultNotes ?? undefined}
-          error={errors['resultNotes']}
+          error={said.errors['resultNotes']}
         />
         <Select
-          label='お客様の満足度'
+          label={say(WORDS.satisfaction)}
           name='customerSatisfaction'
           width='short'
-          options={SATISFACTION_OPTIONS}
-          placeholder='記録しない'
+          options={choicesOf(SATISFACTION_CHOICES)}
+          placeholder={say(WORDS.notRecorded)}
           defaultValue={
             record?.customerSatisfaction === null ||
             record?.customerSatisfaction === undefined
               ? ''
               : String(record.customerSatisfaction)
           }
-          error={errors['customerSatisfaction']}
+          error={said.errors['customerSatisfaction']}
         />
         <TextField
-          label='次に勧める日'
+          label={say(WORDS.nextRecommendedDate)}
           name='nextRecommendedDate'
           autoComplete='off'
           type='date'
           width='short'
           min={booking.bookingDate}
           max={LATEST_DAY}
-          description='予約の日から後の日。勧めることがなければ、空のままにします。'
+          description={say(WORDS.nextRecommendedDateDescription)}
           defaultValue={record?.nextRecommendedDate ?? undefined}
-          error={errors['nextRecommendedDate']}
+          error={said.errors['nextRecommendedDate']}
         />
         <CheckboxGroup
-          label='次に勧めるサービス'
+          label={say(WORDS.nextRecommendedServices)}
           name='nextRecommendedServices'
           layout='columns'
           options={serviceOptionsOf(
             services,
             record?.nextRecommendedServices ?? [],
+            removedService,
           )}
           defaultValue={record?.nextRecommendedServices ?? []}
-          description='20 件まで選べます。'
-          error={errors['nextRecommendedServices']}
+          description={say(
+            WORDS.nextRecommendedServicesDescription(MOST_IN_A_LIST),
+          )}
+          error={said.errors['nextRecommendedServices']}
         />
         <TextArea
-          label='ホームケアの提案'
+          label={say(WORDS.homeCareSuggestions)}
           name='homeCareSuggestions'
           rows={2}
           defaultValue={record?.homeCareSuggestions ?? undefined}
-          error={errors['homeCareSuggestions']}
+          error={said.errors['homeCareSuggestions']}
         />
         <TextArea
-          label='申し送り'
+          label={say(WORDS.staffEvaluation)}
           name='staffEvaluation'
-          description='施術の振り返りや、次に担当するスタッフへ伝えること。'
+          description={say(WORDS.staffEvaluationDescription)}
           defaultValue={record?.staffEvaluation ?? undefined}
-          error={errors['staffEvaluation']}
+          error={said.errors['staffEvaluation']}
         />
       </FormPart>
     </Form>

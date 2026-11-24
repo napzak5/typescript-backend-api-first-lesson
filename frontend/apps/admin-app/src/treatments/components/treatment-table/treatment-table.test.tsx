@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import * as treatmentTableStories from './treatment-table.stories'
 
@@ -75,5 +76,52 @@ describe('TreatmentTable', () => {
     expect(
       within(table('条件に合う施術記録')).getByText('施術記録はありません'),
     ).toBeInTheDocument()
+  })
+})
+
+describe('TreatmentTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its columns and write its rows, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Found.run()
+
+    // Assert
+    expect(
+      within(table())
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Written at',
+      'Customer',
+      'Staff',
+      'Services',
+      'Treatment time',
+      'Satisfaction',
+    ])
+    expect(rowsOf(table())).toEqual([
+      [
+        'Fri, November 20, 2026 at 12:30',
+        '山田 花子',
+        '田中 美咲',
+        'カット, カラー',
+        '75 min',
+        '5 (Very satisfied)',
+      ],
+      [
+        'Wed, November 18, 2026 at 17:15',
+        'Removed from the ledger',
+        'Staff member not listed',
+        'Removed service',
+        'Not recorded',
+        'Not answered',
+      ],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('2 items')
   })
 })

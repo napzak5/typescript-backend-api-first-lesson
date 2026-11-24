@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
@@ -25,7 +26,7 @@ import {
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, arrangeMany } from '../../bookings/__tests__/arrangements'
 import {
   customerIdOf,
@@ -812,5 +813,181 @@ describe('the treatment records, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the treatment records on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the records of the salon and show one, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(treatmentsHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+    const table = await screen.findByRole('table', {
+      name: 'Treatment records',
+    })
+    expect(recordsOf(table)).toEqual([
+      [
+        VIP.name,
+        'Mika Suzuki',
+        'Full Color, Ladies Cut',
+        '120 min',
+        '4 (Satisfied)',
+      ],
+      [SAKURA.name, 'Yui Watanabe', 'Mens Cut', '45 min', 'Not answered'],
+      [
+        YUKI.name,
+        'Hiroshi Tanaka',
+        'Ladies Cut, Deep Conditioning Treatment',
+        '75 min',
+        '5 (Very satisfied)',
+      ],
+    ])
+    expect(screen.getByText('3 items')).toBeInTheDocument()
+
+    // Act
+    await user.click(
+      within(table).getAllByRole('link', { name: /^\w{3}, / })[0] ??
+        document.body,
+    )
+
+    // Assert
+    expect(await heading('Treatment record details')).toBeVisible()
+    await screen.findByRole('table', { name: 'List of materials used' })
+    expect(
+      termsOf('Treatment').filter(([term]) => term !== 'Written at'),
+    ).toEqual([
+      ['Customer', VIP.name],
+      [
+        'Booking',
+        expect.stringMatching(/^BK-SEED-0004 \(\w{3}, \w+ \d{1,2}, \d{4}\)$/),
+      ],
+      ['Staff', 'Mika Suzuki'],
+      ['Services provided', 'Full ColorLadies Cut'],
+      ['Techniques', 'ワンメイクカラーレイヤーカット'],
+      ['Treatment time', '120 min'],
+    ])
+    expect(rowsOf('List of materials used')).toEqual([
+      [
+        'Hair Color - Natural Brown (COLOR001)',
+        '1 tube',
+        await lotOf('COLOR001'),
+        'Not recorded',
+      ],
+      [
+        'Developer 6% 1000ml (DEVELOPER001)',
+        '0.5 bottle',
+        await lotOf('DEVELOPER001'),
+        '6% を使用',
+      ],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Edit the treatment record' }),
+    ).toBeVisible()
+  })
+
+  it('should say what is wrong, then write the record of a booking from its page, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const bookingId = await arrangeVisit()
+    await openAs(
+      bookingHrefOf(await salonIdOf(TOKYO), bookingId),
+      STYLIST,
+      'en',
+    )
+    const part = await screen.findByRole('region', {
+      name: 'Treatment record',
+    })
+    await user.click(
+      await within(part).findByRole('link', {
+        name: 'Write a treatment record',
+      }),
+    )
+    await screen.findByRole('group', { name: 'Services provided' })
+    expect(screen.getByText(`Customer: ${KENJI.name}`)).toBeVisible()
+    const time = screen.getByRole('textbox', { name: 'Treatment time (min)' })
+    await user.type(time, '1441')
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Write a treatment record' }),
+    )
+
+    // Assert
+    expect(time).toHaveAccessibleDescription(
+      'Minutes from 0 to 1,440. Enter the treatment time as a whole number of minutes from 0 to 1,440.',
+    )
+    expect(time).toHaveFocus()
+
+    // Act
+    await user.clear(time)
+    await user.type(time, '60')
+    await user.click(
+      screen.getByRole('button', { name: 'Write a treatment record' }),
+    )
+
+    // Assert
+    await screen.findByRole('table', { name: 'List of materials used' })
+    expect(notifications()).toContain(
+      `Wrote the treatment record of ${KENJI.name}.`,
+    )
+    expect(
+      termsOf('Treatment').find(([term]) => term === 'Treatment time'),
+    ).toEqual(['Treatment time', '60 min'])
+  })
+
+  it('should say on the page of a booking whose treatment has not begun that its record is written later, in English', async () => {
+    // Arrange
+    const bookingId = await arrangeUpcoming()
+
+    // Act
+    await openAs(bookingHrefOf(await salonIdOf(TOKYO), bookingId), OWNER, 'en')
+
+    // Assert
+    const part = await screen.findByRole('region', {
+      name: 'Treatment record',
+    })
+    expect(
+      within(part).getByText(
+        'A treatment record can be written once the treatment starts.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should remove a record after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const bookingId = await treatedBookingOf(SAKURA.email)
+    await openAs(
+      treatmentHrefOf(
+        await salonIdOf(TOKYO),
+        await treatmentIdOf(SAKURA.email),
+      ),
+      OWNER,
+      'en',
+    )
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: `Remove the treatment record of ${SAKURA.name}?`,
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    await screen.findByRole('table', { name: 'Treatment records' })
+    expect(notifications()).toContain(
+      `Removed the treatment record of ${SAKURA.name}.`,
+    )
+    expect(await storedTreatmentOf(bookingId)).toBeUndefined()
   })
 })

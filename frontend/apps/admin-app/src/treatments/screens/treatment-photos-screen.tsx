@@ -10,7 +10,10 @@ import {
   type FormSays,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -23,17 +26,16 @@ import {
   treatmentKeyOf,
 } from '../api/treatments-api'
 import { PhotoForm } from '../components/photo-form/photo-form'
-import { customerCalled } from '../utils/treatment-format'
+import { customerInASentence } from '../utils/treatment-format'
 import {
   afterPhotosAdded,
   MOST_PHOTOS,
-  photosAddedOf,
   readPhotos,
   roomOf,
 } from '../utils/treatment-photos'
 import { type TreatmentContext, WithTreatment } from './with-treatment'
 
-const TITLE = '施術写真を足す'
+const { frame, photos: PHOTOS, titles } = adminTreatmentMessages
 
 type PhotosEntryProps = TreatmentContext & { salon: ModelsSalonResponse }
 
@@ -48,10 +50,11 @@ const PhotosEntry = ({
   booking,
   customer,
 }: PhotosEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const back = treatmentHrefOf(salon.id, record.id)
   const key = treatmentKeyOf(record.id)
   const room = roomOf(record)
@@ -69,7 +72,7 @@ const PhotosEntry = ({
           queryClient.setQueryData(key, read)
           void queryClient.invalidateQueries({ queryKey: key })
           queryClient.removeQueries({ queryKey: TREATMENT_LISTS })
-          notify({ tone: 'success', message: photosAddedOf(photos.length) })
+          notify({ tone: 'success', message: PHOTOS.added(photos.length) })
           void navigate(back)
         })
         // The record was removed meanwhile
@@ -107,19 +110,21 @@ const PhotosEntry = ({
 
   const quit = (
     <ButtonLink href={back} variant='quiet'>
-      やめる
+      {say(PHOTOS.form.cancel)}
     </ButtonLink>
   )
 
   return (
     <>
-      <p>{`${customerCalled(customer)}の施術記録（予約番号 ${booking.bookingNumber}）`}</p>
+      <p>
+        {say(
+          frame.recordOf(customerInASentence(customer), booking.bookingNumber),
+        )}
+      </p>
       {room === 0 ? (
         <>
-          <Alert tone='warning'>
-            {`この施術記録の写真は、${MOST_PHOTOS} 枚になりました。写真を外してから足してください。`}
-          </Alert>
-          <ButtonLink href={back}>施術記録に戻る</ButtonLink>
+          <Alert tone='warning'>{say(PHOTOS.full(MOST_PHOTOS))}</Alert>
+          <ButtonLink href={back}>{say(PHOTOS.toRecord)}</ButtonLink>
         </>
       ) : (
         <PhotoForm
@@ -137,16 +142,18 @@ const PhotosEntry = ({
 
 /** Adds photos to a treatment record of the salon of the address. */
 export const TreatmentPhotosScreen = () => {
+  const say = useSay()
   const { salonId = '', treatmentId = '' } = useParams()
+  const title = say(titles.photos)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
         <WithTreatment
           key={treatmentId}
           salon={salon}
           treatmentId={treatmentId}
-          title={TITLE}
+          title={title}
           fresh
         >
           {(context) => <PhotosEntry salon={salon} {...context} />}

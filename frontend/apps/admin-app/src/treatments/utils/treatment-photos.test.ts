@@ -3,17 +3,17 @@ import type {
   ModelsTreatmentPhotoResponse,
 } from '@beauty-salon-frontend/api-client'
 import type { FormSays } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { PhotoRemoval, PhotosAdding } from '../api/treatments-api'
 import { aPhoto, aTreatment, photos } from '../components/examples'
 import {
   afterPhotoRemoval,
   afterPhotosAdded,
-  PHOTO_TYPE_OPTIONS,
+  PHOTO_TYPE_CHOICES,
   type PhotoRemovalSays,
   type PhotosRead,
   photoNameOf,
-  photosAddedOf,
   photoUseOf,
   readPhotos,
   roomOf,
@@ -61,36 +61,70 @@ const photosOf = (count: number): ModelsTreatmentPhotoResponse[] =>
   )
 
 describe('photoNameOf', () => {
-  it.each<[string, ModelsTreatmentPhotoResponse, string]>([
-    ['with its angle', aPhoto(), '施術前の写真（側面）'],
+  it.each<[string, ModelsTreatmentPhotoResponse, LocalizedText]>([
+    [
+      'with its angle',
+      aPhoto(),
+      { en: 'Before the treatment (側面)', ja: '施術前の写真（側面）' },
+    ],
     [
       'without an angle',
       aPhoto({ photoType: 'during', angle: null }),
-      '施術中の写真',
+      { en: 'During the treatment', ja: '施術中の写真' },
     ],
   ])('should name a photo %s', (_case, photo, name) => {
-    expect(photoNameOf(photo)).toBe(name)
+    // Act
+    const named = photoNameOf(photo)
+
+    // Assert
+    expect(named).toEqual(name)
   })
 
   it('should offer when a photo was taken, in the order of a treatment', () => {
-    expect(PHOTO_TYPE_OPTIONS).toEqual([
-      { value: 'before', label: '施術前' },
-      { value: 'during', label: '施術中' },
-      { value: 'after', label: '施術後' },
-      { value: 'other', label: 'そのほか' },
+    // Assert
+    expect(PHOTO_TYPE_CHOICES).toEqual([
+      { value: 'before', label: { en: 'Before the treatment', ja: '施術前' } },
+      { value: 'during', label: { en: 'During the treatment', ja: '施術中' } },
+      { value: 'after', label: { en: 'After the treatment', ja: '施術後' } },
+      { value: 'other', label: { en: 'Other', ja: 'そのほか' } },
     ])
   })
 })
 
 describe('photoUseOf', () => {
-  it.each<[boolean, boolean, string]>([
-    [true, true, 'お客様の同意あり。サロンの外にも見せられます。'],
-    [false, true, 'お客様の同意あり。サロンの中だけで使います。'],
-    [false, false, 'お客様の同意なし。サロンの中だけで使います。'],
+  it.each<[boolean, boolean, LocalizedText]>([
+    [
+      true,
+      true,
+      {
+        en: 'The customer agreed. It may be shown outside the salon.',
+        ja: 'お客様の同意あり。サロンの外にも見せられます。',
+      },
+    ],
+    [
+      false,
+      true,
+      {
+        en: 'The customer agreed. It is used inside the salon only.',
+        ja: 'お客様の同意あり。サロンの中だけで使います。',
+      },
+    ],
+    [
+      false,
+      false,
+      {
+        en: 'The customer did not agree. It is used inside the salon only.',
+        ja: 'お客様の同意なし。サロンの中だけで使います。',
+      },
+    ],
   ])(
     'should say how a photo public %s with consent %s may be used',
     (isPublic, customerConsent, use) => {
-      expect(photoUseOf({ isPublic, customerConsent })).toBe(use)
+      // Act
+      const said = photoUseOf({ isPublic, customerConsent })
+
+      // Assert
+      expect(said).toEqual(use)
     },
   )
 })
@@ -168,78 +202,114 @@ describe('readPhotos', () => {
     })
   })
 
-  it.each<[string, Row, string, string]>([
+  it.each<[string, Row, string, LocalizedText]>([
     [
       'no time it was taken',
       { photoType: '' },
       'photoType',
-      '写真の区分を選んでください。',
+      {
+        en: 'Choose the kind of the photo.',
+        ja: '写真の区分を選んでください。',
+      },
     ],
     [
       'a time that is none',
       { photoType: 'later' },
       'photoType',
-      '写真の区分を選んでください。',
+      {
+        en: 'Choose the kind of the photo.',
+        ja: '写真の区分を選んでください。',
+      },
     ],
     [
       'no address',
       { photoUrl: ' ' },
       'photoUrl',
-      '写真の URL を入力してください。',
+      {
+        en: 'Enter the URL of the photo.',
+        ja: '写真の URL を入力してください。',
+      },
     ],
     [
       'an address that is no web address',
       { photoUrl: 'ftp://photos.example.com/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an address that is not one',
       { photoUrl: 'photos.example.com/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an address longer than the API keeps',
       { photoUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an address of a machine by its number',
       { photoUrl: 'http://127.0.0.1:4100/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an address of this machine',
       { photoUrl: 'http://localhost/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'a smaller photo at an address that is not one',
       { thumbnailUrl: 'small.jpg' },
       'thumbnailUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'an angle longer than the API keeps',
       { angle: 'あ'.repeat(51) },
       'angle',
-      '撮った向きは、50 文字以内で入力してください。',
+      {
+        en: 'Angle: enter up to 50 characters.',
+        ja: '撮った向きは、50 文字以内で入力してください。',
+      },
     ],
     [
       'a photo shown outside without the consent of the customer',
       { isPublic: true },
       'isPublic',
-      'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
+      {
+        en: 'A photo the customer did not agree to cannot be shown outside the salon. Check that the customer agrees, or clear this check box.',
+        ja: 'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
+      },
     ],
     [
       'the address of a photo the record holds',
       { photoUrl: 'https://photos.example.com/treatments/before-side.jpg' },
       'photoUrl',
-      'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+      {
+        en: 'This treatment record has a photo with the same URL. Enter the URL of another photo, or remove the fields of this photo.',
+        ja: 'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+      },
     ],
   ])('should refuse %s', (_case, row, control, message) => {
     // Act
@@ -281,22 +351,30 @@ describe('readPhotos', () => {
     expect(read).toEqual<PhotosRead>({
       type: 'invalid',
       errors: {
-        'photos.2.photoUrl':
-          '1 枚目と同じ URL です。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+        'photos.2.photoUrl': {
+          en: 'This is the same URL as photo 1. Enter the URL of another photo, or remove the fields of this photo.',
+          ja: '1 枚目と同じ URL です。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+        },
       },
     })
   })
 
-  it.each<[number, number, string]>([
+  it.each<[number, number, LocalizedText]>([
     [
       18,
       3,
-      'この施術記録には、あと 2 枚まで足せます。写真の欄を減らしてください。',
+      {
+        en: 'Up to 2 more photos can be added to this treatment record. Remove some of the fields of the photos.',
+        ja: 'この施術記録には、あと 2 枚まで足せます。写真の欄を減らしてください。',
+      },
     ],
     [
       20,
       1,
-      'この施術記録の写真は、20 枚になりました。写真を外してから足してください。',
+      {
+        en: 'This treatment record has 20 photos. Remove a photo before adding one.',
+        ja: 'この施術記録の写真は、20 枚になりました。写真を外してから足してください。',
+      },
     ],
   ])(
     'should add nothing to a record of %i photos that has no room for %i',
@@ -356,15 +434,25 @@ describe('afterPhotosAdded', () => {
     )
 
     // Assert
-    expect(said).toEqual<FormSays>({
+    expect(said).toEqual<FormSays<LocalizedText>>({
       message: undefined,
       errors: {
-        'photos.1.photoUrl':
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-        'photos.0.isPublic':
-          'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
-        'photos.0.photoType': '写真の区分を選んでください。',
-        'photos.0.angle': '撮った向きは、50 文字以内で入力してください。',
+        'photos.1.photoUrl': {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
+        'photos.0.isPublic': {
+          en: 'A photo the customer did not agree to cannot be shown outside the salon. Check that the customer agrees, or clear this check box.',
+          ja: 'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
+        },
+        'photos.0.photoType': {
+          en: 'Choose the kind of the photo.',
+          ja: '写真の区分を選んでください。',
+        },
+        'photos.0.angle': {
+          en: 'Angle: enter up to 50 characters.',
+          ja: '撮った向きは、50 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -380,8 +468,11 @@ describe('afterPhotosAdded', () => {
     )
 
     // Assert
-    expect(said).toEqual<FormSays>({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+    expect(said).toEqual<FormSays<LocalizedText>>({
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
@@ -399,11 +490,13 @@ describe('afterPhotosAdded', () => {
     )
 
     // Assert
-    expect(said).toEqual<FormSays>({
+    expect(said).toEqual<FormSays<LocalizedText>>({
       message: undefined,
       errors: {
-        'photos.1.photoUrl':
-          'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+        'photos.1.photoUrl': {
+          en: 'This treatment record has a photo with the same URL. Enter the URL of another photo, or remove the fields of this photo.',
+          ja: 'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。',
+        },
       },
     })
   })
@@ -416,9 +509,11 @@ describe('afterPhotosAdded', () => {
     )
 
     // Assert
-    expect(said).toEqual<FormSays>({
-      message:
-        'この施術記録には、あと 1 枚まで足せます。写真の欄を減らしてください。',
+    expect(said).toEqual<FormSays<LocalizedText>>({
+      message: {
+        en: 'Up to 1 more photo can be added to this treatment record. Remove some of the fields of the photos.',
+        ja: 'この施術記録には、あと 1 枚まで足せます。写真の欄を減らしてください。',
+      },
       errors: {},
     })
   })
@@ -427,33 +522,39 @@ describe('afterPhotosAdded', () => {
     [
       string,
       PhotosAdding & { type: 'forbidden' | 'tooManyRequests' | 'failed' },
-      string,
+      LocalizedText,
     ]
   >([
     [
       'a refusal of the role',
       { type: 'forbidden' },
-      'このアカウントでは、施術写真を足せません。',
+      {
+        en: 'This account cannot add treatment photos.',
+        ja: 'このアカウントでは、施術写真を足せません。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'a failure',
       { type: 'failed' },
-      '施術写真を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The treatment photos could not be added. Check your connection and try again.',
+        ja: '施術写真を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %s', (_case, outcome, message) => {
-    expect(afterPhotosAdded(outcome, request)).toEqual<FormSays>({
-      message,
-      errors: {},
-    })
-  })
+    // Act
+    const says = afterPhotosAdded(outcome, request)
 
-  it('should say how many photos were added', () => {
-    expect(photosAddedOf(2)).toBe('施術写真を 2 枚足しました。')
+    // Assert
+    expect(says).toEqual<FormSays<LocalizedText>>({ message, errors: {} })
   })
 })
 
@@ -462,19 +563,34 @@ describe('afterPhotoRemoval', () => {
     [
       'a removal',
       { type: 'removed' },
-      { type: 'done', message: '施術前の写真（側面）を外しました。' },
+      {
+        type: 'done',
+        message: {
+          en: 'Removed the photo “Before the treatment (側面)”.',
+          ja: '施術前の写真（側面）を外しました。',
+        },
+      },
     ],
     [
       'a photo taken away meanwhile',
       { type: 'notFound' },
-      { type: 'refused', message: 'この写真は、その間に外されていました。' },
+      {
+        type: 'refused',
+        message: {
+          en: 'This photo was removed meanwhile.',
+          ja: 'この写真は、その間に外されていました。',
+        },
+      },
     ],
     [
       'a refusal of the role',
       { type: 'forbidden' },
       {
         type: 'refused',
-        message: 'このアカウントでは、施術写真を外せません。',
+        message: {
+          en: 'This account cannot remove treatment photos.',
+          ja: 'このアカウントでは、施術写真を外せません。',
+        },
       },
     ],
     [
@@ -482,8 +598,10 @@ describe('afterPhotoRemoval', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
@@ -491,11 +609,20 @@ describe('afterPhotoRemoval', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '施術写真を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The treatment photo could not be removed. Check your connection and try again.',
+          ja: '施術写真を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what came of %s', (_case, outcome, says) => {
-    expect(afterPhotoRemoval(outcome, '施術前の写真（側面）')).toEqual(says)
+    // Act
+    const said = afterPhotoRemoval(outcome, {
+      en: 'Before the treatment (側面)',
+      ja: '施術前の写真（側面）',
+    })
+
+    // Assert
+    expect(said).toEqual(says)
   })
 })

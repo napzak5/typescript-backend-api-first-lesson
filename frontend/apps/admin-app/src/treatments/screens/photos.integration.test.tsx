@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { periodNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -10,6 +11,7 @@ import {
   heading,
   notifications,
   rowsOf,
+  termsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   OWNER,
@@ -23,7 +25,7 @@ import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import {
   treatmentHrefOf,
   treatmentPhotosHrefOf,
@@ -587,5 +589,149 @@ describe('the photos and the statistics of the treatment records, against the AP
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the photos and the statistics of the treatment records on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  /** The photos of the record in English */
+  const photosInEnglish = (): Promise<HTMLElement> =>
+    screen.findByRole('region', { name: 'Treatment photos' })
+
+  it('should add a photo to a record, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const treatmentId = await treatmentIdOf(SAKURA.email)
+    await openAs(
+      treatmentPhotosHrefOf(await salonIdOf(TOKYO), treatmentId),
+      OWNER,
+      'en',
+    )
+    const row = await screen.findByRole('group', { name: 'Photo 1' })
+    await user.selectOptions(
+      within(row).getByRole('combobox', { name: 'Kind' }),
+      'After the treatment',
+    )
+    await user.type(
+      within(row).getByRole('textbox', { name: 'Photo URL' }),
+      'https://images.example.com/treatments/new/after-front.jpg',
+    )
+    await user.type(within(row).getByRole('textbox', { name: 'Angle' }), '正面')
+    await user.click(
+      within(row).getByRole('checkbox', {
+        name: 'May be shown outside the salon (on the page of the salon, for example)',
+      }),
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add photos' }))
+
+    // Assert: a photo the customer did not agree to is not shown outside
+    expect(
+      within(row).getByRole('checkbox', {
+        name: 'May be shown outside the salon (on the page of the salon, for example)',
+      }),
+    ).toHaveAccessibleDescription(
+      'Only photos the customer agreed to can be shown outside the salon. A photo the customer did not agree to cannot be shown outside the salon. Check that the customer agrees, or clear this check box.',
+    )
+
+    // Act
+    await user.click(
+      within(row).getByRole('checkbox', {
+        name: 'The customer agrees to the photo being taken and used',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add photos' }))
+
+    // Assert
+    expect(
+      await within(await photosInEnglish()).findAllByRole('figure'),
+    ).toHaveLength(1)
+    expect(notifications()).toContain('Added 1 treatment photo.')
+    expect(
+      within(await photosInEnglish()).getByRole('figure').textContent,
+    ).toBe(
+      'Photo 1: After the treatment (正面)The customer agreed. It may be shown outside the salon.',
+    )
+  })
+
+  it('should take a photo away after the dialog asked, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const treatmentId = await treatmentIdOf(VIP.email)
+    await openAs(
+      treatmentHrefOf(await salonIdOf(TOKYO), treatmentId),
+      OWNER,
+      'en',
+    )
+    await user.click(
+      within(await photosInEnglish()).getByRole('button', {
+        name: 'Remove photo 1',
+      }),
+    )
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove “Photo 1: Before the treatment (側面)”?',
+    })
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Removed the photo “Before the treatment (側面)”.',
+      ),
+    ).toBeVisible()
+    expect(
+      (await storedPhotosOf(treatmentId)).map(({ photoUrl }) => photoUrl),
+    ).toEqual([seedPhotoOf(treatmentId, 'after-side.jpg')])
+  })
+
+  it('should count the records of the month up to today, in English', async () => {
+    // Arrange
+    const today = await dayFromToday(0)
+    const first = `${today.slice(0, 8)}01`
+
+    // Act
+    await openAs(treatmentStatisticsHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+
+    // Assert
+    expect(await heading('Treatment statistics')).toBeVisible()
+    expect(await screen.findByLabelText('Period to count (from)')).toHaveValue(
+      first,
+    )
+    expect(
+      screen.getByText(
+        `Treatment records for ${periodNameOf({ from: first, to: today }).en}`,
+      ),
+    ).toBeVisible()
+    await screen.findByRole('region', { name: 'Number of treatment records' })
+    expect(termsOf('Number of treatment records')).toEqual([
+      ['Treatment records', '3 records'],
+      ['Average treatment time', '80 min'],
+    ])
+    expect(rowsOf('Treatment records by menu category')).toEqual([
+      ['Cut', '3 records'],
+      ['Color', '1 record'],
+      ['Treatment', '1 record'],
+    ])
+    expect(rowsOf('Services with the most treatment records')[0]).toEqual([
+      '1st',
+      'Ladies Cut',
+      '2 records',
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Go to the treatment records' }),
+    ).toBeVisible()
   })
 })

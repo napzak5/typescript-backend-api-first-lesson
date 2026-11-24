@@ -8,14 +8,21 @@ import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
-  inJapanese,
   Note,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminMenuMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { serviceNameOf } from '../../../bookings/utils/day-bookings'
-import { GONE_SERVICE } from '../../utils/treatment-format'
-import { averageNameOf, countNameOf } from '../../utils/treatment-statistics'
+import { averageNameOf } from '../../utils/treatment-statistics'
 import styles from './treatment-statistics.module.css'
+
+const { recordsOf } = adminTreatmentMessages
+const { byCategory, count, topServices } = adminTreatmentMessages.statistics
 
 export type TreatmentStatisticsProps = {
   statistics: ModelsTreatmentStatisticsResponse
@@ -36,82 +43,85 @@ type Ranked = { rank: number; counted: ModelsTreatmentsByServiceResponse }
 export const TreatmentStatistics = ({
   statistics,
   services,
-}: TreatmentStatisticsProps) => (
-  <div className={styles['statistics']}>
-    <Card title='施術記録の数'>
-      <DescriptionList
-        items={[
-          {
-            term: '施術記録',
-            description: countNameOf(statistics.totalTreatments),
-          },
-          {
-            term: '施術時間の平均',
-            description: averageNameOf(statistics.averageProcessingTime),
-          },
-        ]}
-      />
-    </Card>
-    <Card title='メニューの区分ごと'>
-      <div className={styles['part']}>
-        <Table<ModelsTreatmentsByCategoryResponse>
-          caption='メニューの区分ごとの施術記録'
+}: TreatmentStatisticsProps) => {
+  const say = useSay()
+  const average = averageNameOf(statistics.averageProcessingTime)
+
+  return (
+    <div className={styles['statistics']}>
+      <Card title={say(count.title)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(count.records),
+              description: say(recordsOf(statistics.totalTreatments)),
+            },
+            {
+              term: say(count.average),
+              description: average === null ? null : say(average),
+            },
+          ]}
+        />
+      </Card>
+      <Card title={say(byCategory.title)}>
+        <div className={styles['part']}>
+          <Table<ModelsTreatmentsByCategoryResponse>
+            caption={say(byCategory.caption)}
+            captionHidden
+            columns={[
+              {
+                key: 'category',
+                header: say(byCategory.category),
+                cell: ({ category }) => say(categoryNameOf(category)),
+              },
+              {
+                key: 'count',
+                header: say(byCategory.records),
+                align: 'end',
+                cell: (counted) => say(recordsOf(counted.count)),
+              },
+            ]}
+            rows={statistics.treatmentsByCategory}
+            rowKey={({ category }) => category}
+            emptyMessage={say(byCategory.none)}
+          />
+          <Note>{say(byCategory.note)}</Note>
+        </div>
+      </Card>
+      <Card title={say(topServices.title)}>
+        <Table<Ranked>
+          caption={say(topServices.title)}
           captionHidden
           columns={[
             {
-              key: 'category',
-              header: 'メニューの区分',
-              cell: ({ category }) => inJapanese(categoryNameOf(category)),
+              key: 'rank',
+              header: say(topServices.rank),
+              align: 'end',
+              cell: ({ rank }) => say(formats.placeOf(rank)),
+            },
+            {
+              key: 'service',
+              header: say(topServices.service),
+              cell: ({ counted }) =>
+                serviceNameOf(counted.serviceId, services) ??
+                say(adminMenuMessages.removedService),
             },
             {
               key: 'count',
-              header: '施術記録',
+              header: say(topServices.records),
               align: 'end',
-              cell: ({ count }) => countNameOf(count),
+              cell: ({ counted }) => say(recordsOf(counted.count)),
             },
           ]}
-          rows={statistics.treatmentsByCategory}
-          rowKey={({ category }) => category}
-          emptyMessage='施術記録はありません'
+          rowHeader='service'
+          rows={statistics.topServices.map((counted, index) => ({
+            rank: index + 1,
+            counted,
+          }))}
+          rowKey={({ counted }) => counted.serviceId}
+          emptyMessage={say(topServices.none)}
         />
-        <Note>
-          いくつもの区分のサービスをした施術記録は、区分ごとに 1
-          件と数えます。合わせた数は、施術記録の数より多いことがあります。
-        </Note>
-      </div>
-    </Card>
-    <Card title='施術記録の多いサービス'>
-      <Table<Ranked>
-        caption='施術記録の多いサービス'
-        captionHidden
-        columns={[
-          {
-            key: 'rank',
-            header: '順位',
-            align: 'end',
-            cell: ({ rank }) => `${rank} 位`,
-          },
-          {
-            key: 'service',
-            header: 'サービス',
-            cell: ({ counted }) =>
-              serviceNameOf(counted.serviceId, services) ?? GONE_SERVICE,
-          },
-          {
-            key: 'count',
-            header: '施術記録',
-            align: 'end',
-            cell: ({ counted }) => countNameOf(counted.count),
-          },
-        ]}
-        rowHeader='service'
-        rows={statistics.topServices.map((counted, index) => ({
-          rank: index + 1,
-          counted,
-        }))}
-        rowKey={({ counted }) => counted.serviceId}
-        emptyMessage='施術記録はありません'
-      />
-    </Card>
-  </div>
-)
+      </Card>
+    </div>
+  )
+}

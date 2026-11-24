@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as treatmentFormStories from './treatment-form.stories'
 
 const stories = composeStories(treatmentFormStories)
@@ -241,7 +242,7 @@ describe('TreatmentForm', () => {
       within(material(1)).getByLabelText('量'),
     ).not.toHaveAccessibleDescription(expect.stringContaining('0 より大きい数'))
     expect(screen.getByLabelText('次に勧める日')).toHaveAccessibleDescription(
-      expect.stringContaining('予約の日（2026-11-20）から後の日'),
+      expect.stringContaining('予約の日（2026年11月20日（金））から後の日'),
     )
   })
 
@@ -259,7 +260,7 @@ describe('TreatmentForm', () => {
       within(material(1)).getByLabelText('量'),
     ).not.toHaveAccessibleDescription(expect.stringContaining('0 より大きい数'))
     expect(screen.getByLabelText('次に勧める日')).toHaveAccessibleDescription(
-      expect.stringContaining('予約の日（2026-11-20）から後の日'),
+      expect.stringContaining('予約の日（2026年11月20日（金））から後の日'),
     )
   })
 
@@ -271,7 +272,7 @@ describe('TreatmentForm', () => {
     expect(checkedIn('提供したサービス')).toEqual(['削除されたメニュー'])
     expect(
       within(material(1)).getByRole('combobox', { name: '商品' }),
-    ).toHaveDisplayValue('削除された商品')
+    ).toHaveDisplayValue('削除した商品')
     expect(materialOf(1)).toEqual([
       '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
       '2',
@@ -305,5 +306,104 @@ describe('TreatmentForm', () => {
         '施術記録を書けませんでした。通信の状態を確かめて、もう一度お試しください。',
       ),
     ).toBeInTheDocument()
+  })
+})
+
+describe('TreatmentForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and say what they take, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: 'Staff' }),
+    ).toHaveAccessibleDescription(
+      'The staff member who did the treatment. It need not be the staff member of the booking.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Techniques' }),
+    ).toHaveAccessibleDescription(
+      'Separate the names of the techniques with commas. Up to 20.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Treatment time (min)' }),
+    ).toHaveAccessibleDescription('Minutes from 0 to 1,440.')
+    expect(checkedIn('Services provided')).toEqual(['カット'])
+    expect(
+      optionsOf(
+        screen.getByRole('combobox', { name: 'Customer satisfaction' }),
+      ),
+    ).toEqual([
+      'Not recorded',
+      '5 (Very satisfied)',
+      '4 (Satisfied)',
+      '3 (Neutral)',
+      '2 (Dissatisfied)',
+      '1 (Very dissatisfied)',
+    ])
+    expect(screen.getByRole('button', { name: 'Add a material' })).toBeVisible()
+  })
+
+  it('should name a material and say what is wrong with it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    const second = screen.getByRole('group', { name: 'Material 2' })
+    expect(
+      within(second).getByLabelText('Quantity'),
+    ).toHaveAccessibleDescription(
+      'Up to two decimal places. Enter a quantity greater than 0, with up to two decimal places.',
+    )
+    expect(
+      screen.getByLabelText('Next recommended date'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the next recommended date the day of the booking (Fri, November 20, 2026) or a later one.',
+      ),
+    )
+    expect(
+      screen.getByRole('button', { name: 'Remove material 1' }),
+    ).toHaveTextContent('Remove')
+  })
+
+  it('should say that no more material can be recorded, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Full.run()
+
+    // Assert
+    expect(
+      screen.getByText('Up to 50 materials can be recorded.'),
+    ).toBeVisible()
+  })
+
+  it('should name a service and a product the salon removed, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithRemoved.run()
+
+    // Assert
+    expect(checkedIn('Services provided')).toEqual(['Removed service'])
+    expect(
+      within(screen.getByRole('group', { name: 'Material 1' })).getByRole(
+        'combobox',
+        { name: 'Product' },
+      ),
+    ).toHaveDisplayValue('Removed product')
   })
 })

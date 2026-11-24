@@ -1,20 +1,23 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { aTreatment, photos } from '../examples'
 import * as treatmentPhotosStories from './treatment-photos.stories'
 
 const stories = composeStories(treatmentPhotosStories)
 
-const part = (): HTMLElement => screen.getByRole('region', { name: '施術写真' })
+/** The part of the photos, by its heading in the language of the page */
+const part = (name = '施術写真'): HTMLElement =>
+  screen.getByRole('region', { name })
 
 const dialog = (): HTMLElement => screen.getByRole('dialog')
 
 /** What the list shows of each photo: its caption, its image and the address it opens */
-const shown = (): [string, string | null, string | null][] =>
-  within(part())
+const shown = (name?: string): [string, string | null, string | null][] =>
+  within(part(name))
     .getAllByRole('listitem')
     .map((item) => [
       within(item).getByRole('figure').textContent ?? '',
@@ -161,5 +164,74 @@ describe('TreatmentPhotos', () => {
       'この写真は、その間に外されていました。',
     )
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('TreatmentPhotos on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the photos and what can be done with them, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Photos.run()
+
+    // Assert
+    expect(shown('Treatment photos').map(([caption]) => caption)).toEqual([
+      'Photo 1: Before the treatment (側面)毛先の色落ちThe customer agreed. It is used inside the salon only.',
+      'Photo 2: After the treatment (正面)The customer agreed. It may be shown outside the salon.',
+      'Photo 3: OtherThe customer did not agree. It is used inside the salon only.',
+    ])
+    expect(
+      within(part('Treatment photos'))
+        .getAllByRole('link', { name: /^Open photo/ })
+        .map((link) => [link.getAttribute('aria-label'), link.textContent]),
+    ).toEqual([
+      ['Open photo 1', 'Open the photo'],
+      ['Open photo 2', 'Open the photo'],
+      ['Open photo 3', 'Open the photo'],
+    ])
+    expect(
+      within(part('Treatment photos')).getByRole('button', {
+        name: 'Remove photo 2',
+      }),
+    ).toHaveTextContent('Remove')
+    expect(
+      within(part('Treatment photos')).getByRole('link', {
+        name: 'Add photos',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should ask before a photo is taken away, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(
+      screen.getByRole('dialog', {
+        name: 'Remove “Photo 2: After the treatment (正面)”?',
+      }),
+    ).toHaveAccessibleDescription(
+      'The photo is removed from the treatment record. A removed photo cannot be brought back. The file of the photo stays where it is kept.',
+    )
+    expect(within(dialog()).getByRole('button', { name: 'Back' })).toBeVisible()
+  })
+
+  it('should say that a record without photos has none, and that a full one takes none, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoPhotos.run()
+
+    // Assert
+    expect(screen.getByText('No treatment photos.')).toBeVisible()
   })
 })

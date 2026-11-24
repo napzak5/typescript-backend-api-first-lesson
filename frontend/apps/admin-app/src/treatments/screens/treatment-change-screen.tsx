@@ -10,7 +10,10 @@ import {
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -28,10 +31,11 @@ import {
   readTreatmentChange,
   treatmentWrittenOf,
 } from '../utils/treatment-form'
-import { customerCalled } from '../utils/treatment-format'
+import { customerInASentence } from '../utils/treatment-format'
 import { type TreatmentContext, WithTreatment } from './with-treatment'
 
-const TITLE = '施術記録を直す'
+const { form, frame, titles } = adminTreatmentMessages
+const { change: CHANGE } = form
 
 type TreatmentChangeProps = TreatmentContext & { salon: ModelsSalonResponse }
 
@@ -50,10 +54,12 @@ const TreatmentChange = ({
   services,
   products,
 }: TreatmentChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const customerName = customerInASentence(customer)
   const back = treatmentHrefOf(salon.id, record.id)
   const context = { products, bookingDay: booking.bookingDate }
   const change = useMutation({
@@ -67,7 +73,7 @@ const TreatmentChange = ({
           queryClient.removeQueries({ queryKey: TREATMENT_LISTS })
           notify({
             tone: 'success',
-            message: treatmentWrittenOf(customerCalled(customer), 'change'),
+            message: treatmentWrittenOf(customerName, 'change'),
           })
           void navigate(back)
         })
@@ -105,21 +111,21 @@ const TreatmentChange = ({
 
   return (
     <>
-      <p>{`${customerCalled(customer)}の施術記録（予約番号 ${booking.bookingNumber}）`}</p>
+      <p>{say(frame.recordOf(customerName, booking.bookingNumber))}</p>
       <TreatmentForm
         booking={booking}
         record={record}
         staff={staff}
         services={services}
         products={products}
-        submitLabel='変更を保存する'
+        submitLabel={say(CHANGE.submit)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={back} variant='quiet'>
-            やめる
+            {say(CHANGE.cancel)}
           </ButtonLink>
         }
       />
@@ -129,16 +135,18 @@ const TreatmentChange = ({
 
 /** Changes a treatment record of the salon of the address. */
 export const TreatmentChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', treatmentId = '' } = useParams()
+  const title = say(titles.change)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
         <WithTreatment
           key={treatmentId}
           salon={salon}
           treatmentId={treatmentId}
-          title={TITLE}
+          title={title}
           fresh
         >
           {(context) => <TreatmentChange salon={salon} {...context} />}

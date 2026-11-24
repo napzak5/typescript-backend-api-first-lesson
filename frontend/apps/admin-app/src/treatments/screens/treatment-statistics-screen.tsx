@@ -16,13 +16,13 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -36,7 +36,7 @@ import {
 import { TreatmentStatistics } from '../components/treatment-statistics/treatment-statistics'
 import { statisticsPeriodIn } from '../utils/treatment-statistics'
 
-const TITLE = '施術の統計'
+const { names, statistics: WORDS, titles } = adminTreatmentMessages
 
 type StatisticsPartProps = {
   salon: ModelsSalonResponse
@@ -51,6 +51,7 @@ type StatisticsPartProps = {
  * written at every visit.
  */
 const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
     undefined,
@@ -82,19 +83,17 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
     <>
       <StatisticsPeriod
         period={period}
-        description='施術記録を書いた日（サロンの日付）で数えます。'
+        description={say(WORDS.periodDescription)}
         errors={errors}
         onSubmit={count}
       />
-      <p>{`${inJapanese(periodNameOf(period))}に書いた施術記録`}</p>
+      <p>{say(WORDS.of(periodNameOf(period)))}</p>
       {match(read.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='施術記録を集計しています' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(WORDS.counting)} />)
         .with({ type: 'found', statistics: { totalTreatments: 0 } }, () => (
           <EmptyState
-            title='この期間に書いた施術記録はありません'
-            description='期間を変えて集計してください。'
+            title={say(WORDS.none)}
+            description={say(WORDS.noneDescription)}
           />
         ))
         .with({ type: 'found' }, ({ statistics }) => (
@@ -102,9 +101,7 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('施術の統計'), reason),
-            )}
+            message={say(unreadMessageOf(names.statistics, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -116,18 +113,20 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
 
 /** The statistics of the treatment records of the salon of the address. */
 export const TreatmentStatisticsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.statistics)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
         <>
           <PageHeader
-            title={TITLE}
+            title={title}
             description={salon.name}
             actions={
               <ButtonLink href={treatmentsHrefOf(salon.id)}>
-                施術記録の一覧へ
+                {say(WORDS.toList)}
               </ButtonLink>
             }
           />

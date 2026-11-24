@@ -7,8 +7,11 @@ import {
   Dialog,
   EmptyState,
   Note,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
 import {
   MOST_PHOTOS,
@@ -18,13 +21,15 @@ import {
 } from '../../utils/treatment-photos'
 import styles from './treatment-photos.module.css'
 
+const { list: LIST, removal: REMOVAL } = adminTreatmentMessages.photos
+
 export type TreatmentPhotosProps = {
   /** The photos of the record, in their order */
   photos: readonly ModelsTreatmentPhotoResponse[]
   /** The address of the screen that adds photos to the record */
   addHref: string
   /** What changed meanwhile, or what the API refused: said under the heading */
-  refusal?: string | undefined
+  refusal?: LocalizedText | undefined
   /** The heading, which takes the focus when the dialog closes on what it changed */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** The photo the dialog asks about taking away; `undefined` while the dialog is closed */
@@ -37,7 +42,7 @@ export type TreatmentPhotosProps = {
    */
   onClose: () => void
   /** What went wrong with the attempt, and may be tried again; it is said in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The removal is on its way */
   pending: boolean
   /** The removal was confirmed */
@@ -48,8 +53,11 @@ export type TreatmentPhotosProps = {
 const photoCalled = (
   photo: ModelsTreatmentPhotoResponse,
   photos: readonly ModelsTreatmentPhotoResponse[],
-): string =>
-  `${photos.findIndex(({ id }) => id === photo.id) + 1} 枚目：${photoNameOf(photo)}`
+): LocalizedText =>
+  LIST.photoAt(
+    photos.findIndex(({ id }) => id === photo.id) + 1,
+    photoNameOf(photo),
+  )
 
 /**
  * The photos of a treatment record, in their order: each its image (the
@@ -71,82 +79,88 @@ export const TreatmentPhotos = ({
   message,
   pending,
   onRemove,
-}: TreatmentPhotosProps) => (
-  <Card
-    title='施術写真'
-    headingRef={headingRef}
-    actions={
-      roomOf({ photos }) > 0 ? (
-        <ButtonLink href={addHref}>写真を足す</ButtonLink>
-      ) : undefined
-    }
-  >
-    <div className={styles['part']}>
-      {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
-      {photos.length === 0 ? (
-        <EmptyState kind='part' title='施術写真はありません。' />
-      ) : (
-        <ul className={styles['photos']} aria-label='施術写真の一覧'>
-          {photos.map((photo, index) => (
-            <li key={photo.id} className={styles['photo']}>
-              <figure className={styles['figure']}>
-                <img
-                  className={styles['image']}
-                  src={photo.thumbnailUrl ?? photo.photoUrl}
-                  alt=''
-                  loading='lazy'
-                />
-                <figcaption className={styles['caption']}>
-                  <span className={styles['name']}>
-                    {photoCalled(photo, photos)}
-                  </span>
-                  {photo.description !== null && (
-                    <WrittenText>{photo.description}</WrittenText>
-                  )}
-                  <span className={styles['use']}>{photoUseOf(photo)}</span>
-                </figcaption>
-              </figure>
-              <div className={styles['actions']}>
-                <a
-                  href={photo.photoUrl}
-                  rel='noreferrer'
-                  aria-label={`${index + 1} 枚目の写真を開く`}
-                >
-                  写真を開く
-                </a>
-                <Button
-                  size='small'
-                  aria-label={`${index + 1} 枚目の写真を外す`}
-                  onClick={() => onOpen(photo)}
-                >
-                  外す
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {roomOf({ photos }) === 0 && (
-        <Note>
-          {`施術写真は、${MOST_PHOTOS} 枚まで記録できます。足すときは、写真を外してから足してください。`}
-        </Note>
-      )}
-    </div>
-    <Dialog
-      open={removing !== undefined}
-      onClose={onClose}
-      title={`${removing === undefined ? '' : photoCalled(removing, photos)}を外しますか？`}
-      description='施術記録から写真を外します。外した写真は、元に戻せません。写真のファイルは、置いてある場所に残ります。'
+}: TreatmentPhotosProps) => {
+  const say = useSay()
+
+  return (
+    <Card
+      title={say(LIST.title)}
+      headingRef={headingRef}
       actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='danger' pending={pending} onClick={onRemove}>
-            外す
-          </Button>
-        </>
+        roomOf({ photos }) > 0 ? (
+          <ButtonLink href={addHref}>{say(LIST.add)}</ButtonLink>
+        ) : undefined
       }
     >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </Card>
-)
+      <div className={styles['part']}>
+        {refusal !== undefined && <Alert tone='warning'>{say(refusal)}</Alert>}
+        {photos.length === 0 ? (
+          <EmptyState kind='part' title={say(LIST.none)} />
+        ) : (
+          <ul className={styles['photos']} aria-label={say(LIST.label)}>
+            {photos.map((photo, index) => (
+              <li key={photo.id} className={styles['photo']}>
+                <figure className={styles['figure']}>
+                  <img
+                    className={styles['image']}
+                    src={photo.thumbnailUrl ?? photo.photoUrl}
+                    alt=''
+                    loading='lazy'
+                  />
+                  <figcaption className={styles['caption']}>
+                    <span className={styles['name']}>
+                      {say(photoCalled(photo, photos))}
+                    </span>
+                    {photo.description !== null && (
+                      <WrittenText>{photo.description}</WrittenText>
+                    )}
+                    <span className={styles['use']}>
+                      {say(photoUseOf(photo))}
+                    </span>
+                  </figcaption>
+                </figure>
+                <div className={styles['actions']}>
+                  <a
+                    href={photo.photoUrl}
+                    rel='noreferrer'
+                    aria-label={say(LIST.openOf(index + 1))}
+                  >
+                    {say(LIST.open)}
+                  </a>
+                  <Button
+                    size='small'
+                    aria-label={say(LIST.removeOf(index + 1))}
+                    onClick={() => onOpen(photo)}
+                  >
+                    {say(LIST.remove)}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {roomOf({ photos }) === 0 && <Note>{say(LIST.full(MOST_PHOTOS))}</Note>}
+      </div>
+      <Dialog
+        open={removing !== undefined}
+        onClose={onClose}
+        title={
+          removing === undefined
+            ? ''
+            : say(REMOVAL.title(photoCalled(removing, photos)))
+        }
+        description={say(REMOVAL.description)}
+        actions={
+          <>
+            <Button onClick={onClose}>{say(REMOVAL.back)}</Button>
+            <Button variant='danger' pending={pending} onClick={onRemove}>
+              {say(REMOVAL.submit)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </Card>
+  )
+}

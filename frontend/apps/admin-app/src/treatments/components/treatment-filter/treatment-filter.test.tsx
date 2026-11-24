@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -6,7 +7,7 @@ import {
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aCustomer, salon, staff } from '../../../bookings/components/examples'
 import type { TreatmentConditions } from '../../api/treatments-api'
 import { TreatmentFilter, type TreatmentFilterProps } from './treatment-filter'
@@ -152,5 +153,44 @@ describe('TreatmentFilter', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('TreatmentFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the customer of the list and the way to every customer, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfCustomer.run()
+
+    // Assert
+    expect(screen.getByText('Customer: 山田 花子')).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Show all customers' }),
+    ).toHaveAttribute('href', `/salons/${salon.id}/treatments`)
+    expect(screen.getByRole('combobox', { name: 'Staff' })).toHaveDisplayValue(
+      'All',
+    )
+  })
+
+  it('should say what is wrong with the days, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Written on (to)'),
+    ).toHaveAccessibleDescription(
+      'Make the last day the same as the first day, or later.',
+    )
+    expect(screen.getByLabelText('Written on (from)')).toBeVisible()
   })
 })

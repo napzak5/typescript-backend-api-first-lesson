@@ -6,10 +6,16 @@ import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminMenuMessages,
+  adminStaffMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import {
   serviceNameOf,
   staffNameOf,
@@ -17,15 +23,13 @@ import {
 import type { FoundTreatment } from '../../api/treatments-api'
 import {
   customerCalled,
-  GONE_SERVICE,
-  minutesNameOf,
-  NOT_ANSWERED,
   satisfactionNameOf,
-  UNLISTED_STAFF,
 } from '../../utils/treatment-format'
 
+const { table: WORDS } = adminTreatmentMessages
+
 export type TreatmentTableProps = {
-  /** What the table lists: 「施術記録」, or 「条件に合う施術記録」 */
+  /** What the table lists, in the language of the page: 「施術記録」, or 「条件に合う施術記録」 */
   caption: string
   /** The records that were read so far, the latest written first; at least one */
   rows: readonly FoundTreatment[]
@@ -63,70 +67,81 @@ export const TreatmentTable = ({
   services,
   treatmentHref,
   customerHref,
-}: TreatmentTableProps) => (
-  <PagedTable
-    caption={caption}
-    columns={[
-      {
-        key: 'createdAt',
-        header: '書いた日時',
-        cell: ({ record }) => (
-          <Link href={treatmentHref(record.id)}>
-            {inJapanese(momentNameAt(record.createdAt, timezone))}
-          </Link>
-        ),
-      },
-      {
-        key: 'customer',
-        header: 'お客様',
-        cell: ({ record, customer }) =>
-          customer === undefined ? (
-            customerCalled(customer)
-          ) : (
-            <Link href={customerHref(record.customerId)}>
-              {customerCalled(customer)}
+}: TreatmentTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={caption}
+      columns={[
+        {
+          key: 'createdAt',
+          header: say(WORDS.writtenAt),
+          cell: ({ record }) => (
+            <Link href={treatmentHref(record.id)}>
+              {say(momentNameAt(record.createdAt, timezone))}
             </Link>
           ),
-      },
-      {
-        key: 'staff',
-        header: '担当',
-        cell: ({ record }) =>
-          staffNameOf(record.staffId, staff) ?? UNLISTED_STAFF,
-      },
-      {
-        key: 'services',
-        header: 'サービス',
-        wrap: 'words',
-        cell: ({ record }) =>
-          record.services
-            .map(
-              (serviceId) => serviceNameOf(serviceId, services) ?? GONE_SERVICE,
-            )
-            .join('、'),
-      },
-      {
-        key: 'processingTime',
-        header: '施術時間',
-        cell: ({ record }) =>
-          record.processingTime === null
-            ? null
-            : minutesNameOf(record.processingTime),
-      },
-      {
-        key: 'customerSatisfaction',
-        header: '満足度',
-        cell: ({ record }) =>
-          record.customerSatisfaction === null
-            ? NOT_ANSWERED
-            : satisfactionNameOf(record.customerSatisfaction),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ record }) => record.id}
-    emptyMessage='施術記録はありません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+        },
+        {
+          key: 'customer',
+          header: say(WORDS.customer),
+          cell: ({ record, customer }) =>
+            customer === undefined ? (
+              say(customerCalled(customer))
+            ) : (
+              <Link href={customerHref(record.customerId)}>
+                {say(customerCalled(customer))}
+              </Link>
+            ),
+        },
+        {
+          key: 'staff',
+          header: say(WORDS.staff),
+          cell: ({ record }) =>
+            staffNameOf(record.staffId, staff) ??
+            say(adminStaffMessages.unlisted),
+        },
+        {
+          key: 'services',
+          header: say(WORDS.services),
+          wrap: 'words',
+          cell: ({ record }) =>
+            say(
+              WORDS.servicesOf(
+                record.services.map(
+                  (serviceId) =>
+                    serviceNameOf(serviceId, services) ??
+                    say(adminMenuMessages.removedService),
+                ),
+              ),
+            ),
+        },
+        {
+          key: 'processingTime',
+          header: say(WORDS.processingTime),
+          cell: ({ record }) =>
+            record.processingTime === null
+              ? null
+              : say(formats.minutesOf(record.processingTime)),
+        },
+        {
+          key: 'customerSatisfaction',
+          header: say(WORDS.satisfaction),
+          cell: ({ record }) =>
+            say(
+              record.customerSatisfaction === null
+                ? WORDS.notAnswered
+                : satisfactionNameOf(record.customerSatisfaction),
+            ),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ record }) => record.id}
+      emptyMessage={say(WORDS.none)}
+      count={say(countOf(total, rows.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}
