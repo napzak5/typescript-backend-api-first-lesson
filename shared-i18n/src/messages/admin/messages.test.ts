@@ -3,7 +3,7 @@ import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import { termMessages } from '../ui/terms'
 import * as catalogues from './index'
-import { adminCustomerMessages, adminStaffMessages } from './index'
+import { adminCustomerMessages } from './index'
 
 const FOUND = messagesOf(catalogues, '')
 
@@ -76,11 +76,6 @@ const MISSING_EMAIL = {
 
 /** Every message that is made from a value, with the value and what it says */
 const MADE: [string, LocalizedText, LocalizedText][] = [
-  [
-    'adminStaffMessages.named',
-    adminStaffMessages.named('田中 美咲'),
-    { en: '田中 美咲', ja: '田中 美咲' },
-  ],
   [
     'adminCustomerMessages.naming.honored',
     naming.honored(NAME),
@@ -791,9 +786,10 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
-/** The catalogues whose messages that are made from a value are tested in a file of their own (`bookings.test.ts`, `inventory.test.ts`, `menu.test.ts`, `payment-methods.test.ts`, `products.test.ts`, `purchase-orders.test.ts`, `sales.test.ts`, `settings.test.ts`, `treatments.test.ts`) */
+/** The catalogues whose messages that are made from a value are tested in a file of their own (`bookings.test.ts`, `charts.test.ts`, `inventory.test.ts`, `menu.test.ts`, `payment-methods.test.ts`, `products.test.ts`, `purchase-orders.test.ts`, `sales.test.ts`, `settings.test.ts`, `staff.test.ts`, `treatments.test.ts`) */
 const TESTED_APART = [
   'adminBookingMessages',
+  'adminChartMessages',
   'adminInventoryMessages',
   'adminMenuMessages',
   'adminPaymentMethodMessages',
@@ -801,6 +797,7 @@ const TESTED_APART = [
   'adminPurchaseOrderMessages',
   'adminSaleMessages',
   'adminSettingsMessages',
+  'adminStaffMessages',
   'adminTreatmentMessages',
 ]
 
