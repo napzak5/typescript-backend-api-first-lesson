@@ -138,6 +138,17 @@ export const staffRemovedMeanwhile = (displayName: string): Promise<unknown> =>
     [displayName],
   )
 
+/** Lets a member of the staff have moved to another salon meanwhile. */
+export const staffMovedMeanwhile = (
+  displayName: string,
+  salon: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update staff set "salonId" = s.id from salons s
+     where s.name = $2 and staff."displayName" = $1`,
+    [displayName, salon],
+  )
+
 /** The ID of a member of the staff, by their name. */
 export const staffIdOf = async (displayName: string): Promise<string> =>
   idOf('select id::text from staff where "displayName" = $1', [displayName])
