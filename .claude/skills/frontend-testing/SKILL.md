@@ -20,7 +20,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/utils/salon-format.test.ts` |
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/screens/app-frame.test.tsx` |
 | The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/screens/start-application.test.tsx` |
-| The entry of an application (`src/main.tsx`): that it starts this application | Imported inside `act` into a document with the element `root` of `index.html`; nothing ends it, and the document of the file goes with it; no API | `frontend/apps/dashboard-app/src/main.test.tsx` |
+| The entry of an application (`src/main.tsx`): that it starts this application | Imported inside `act` into a document with the element `root` of `index.html`, at an address whose screen asks the API nothing (the portal opens at `/sign-in`: its root searches); nothing ends it, and the document of the file goes with it; no API | `frontend/apps/dashboard-app/src/main.test.tsx`, `frontend/apps/portal-app/src/main.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
@@ -390,6 +390,12 @@ an `it.each`: `UNREAD` (the answers that say nothing, with what a read
 makes of them), `UNWRITTEN` (the same after the bodies the API does not
 take, 413 and 415) and `OUTSIDE_THE_CONTRACT` (the statuses of what stands
 in front of the API).
+
+An answer whose body breaks off while it is read, as when the connection
+ends half way, is a `Response` whose `arrayBuffer` rejects (`CutShort` in
+`frontend/apps/portal-app/src/share/api/share-api.test.ts`). The jsdom of
+the tests has no `ReadableStream`: an answer built from one throws as it
+is made, and the test meets a request that got no answer instead.
 
 What a function asked for is read from that stand-in with two readers:
 
@@ -876,6 +882,14 @@ is tested for what it must leave alone as well:
   when the test releases it). The API still answers everything; only
   when is fixed, so the test fails every time the screen shows the old
   value, not once in a while.
+- **A change that falls between two reads is made when the second is
+  asked for.** The API answers a review while its salon is there, so the
+  screen that changes a review meets a removed salon only when the salon
+  goes after the review was read. The test makes the change in the
+  database the moment the screen asks for the salon, and sends the
+  request to the real API then (`removeTheSalonWhenAskedFor` in
+  `own-reviews.integration.test.tsx`). The answers are those of the API;
+  the test fixes only when the database changes.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from
   the ledger has `deletedAt`, and the account no longer names it:
@@ -1727,8 +1741,8 @@ so is `@testing-library/user-event` when its tests work a screen.
 
 `full: true` says that the tests of the package cover all of it; from then
 on `pnpm test:coverage` and the job Coverage of CI fail below 100%. Every
-shared package and the dashboard say so; the portal and the admin
-application do not yet. What is measured and
+shared package, the dashboard and the portal say so; the admin
+application does not yet. What is measured and
 what is not, and what is done about what no test reached, is in
 [Coverage](../../../docs/testing-requirements.md#coverage) of the testing
 requirements.

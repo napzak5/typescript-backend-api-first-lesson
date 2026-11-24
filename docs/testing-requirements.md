@@ -280,9 +280,9 @@ cover all of it says so with `full: true` in its `vitest.config.ts`, and from
 then on a run that covers less fails; until then its coverage is reported,
 and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
-(`frontend/apps/dashboard-app`) and the `utility` package of the backend
-say so; the portal, the admin application and the other packages of the
-backend do not yet.
+(`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`)
+and the `utility` package of the backend say so; the admin application and
+the other packages of the backend do not yet.
 
 | Where | How |
 |---|---|
@@ -310,8 +310,8 @@ reach is reached, or is not written:
 
 | What no test reached | What is done |
 |---|---|
-| A path that a user, the API or another tab can take | A test that takes it. A failure of the API that a screen meets is arranged in the database (`refuse`, `takeAway`, `unreadable` of `@beauty-salon-frontend/testing/api`), never in the answer |
-| A branch that the types allow and that never happens: a fallback for a part that a format always gives, a value a pattern always holds, the item of an array that the API answers as long as another, a row that always has its header | It is not written. The code says in a comment why it needs none, and optional chaining, which is no branch, stands where the types say a value may be missing |
+| A path that a user, the API or another tab can take | A test that takes it. A failure of the API that a screen meets is arranged in the database (`refuse`, `takeAway`, `unreadable` of `@beauty-salon-frontend/testing/api`), never in the answer. A change that falls between two reads of a screen is made in the database when the second is asked for, and the real API answers it |
+| A branch that the types allow and that never happens: a fallback for a part that a format always gives, a value a pattern always holds, the item of an array that the API answers as long as another, a row that always has its header, the first line of a booking (a booking keeps one at least), the moment of a response (the database keeps the two together), the option that a choice of a `select` names | It is not written. The code says in a comment why it needs none, and optional chaining, which is no branch, stands where the types say a value may be missing |
 | Code that only the main process of Vitest runs: the global setup that starts the test server | A function of what it starts (`globalSetupOf`, `startTestServer` of a `TestServerProgram`), which a test runs with a program of Node.js that stands in for the server |
 | Code of a package that only the tests of another package run | A test in its own package: the screens of `salon-screens` have integration tests of their own |
 | The entry of an application (`src/main.tsx`), which the page runs as it loads | A test that loads it as the page does (`src/main.test.tsx`): the element `root` of `index.html` in the document, the entry imported inside `act`, and the application drawn in that element. `startApplication`, which it calls, is tested in `app-frame` |
