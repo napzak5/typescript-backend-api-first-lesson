@@ -608,7 +608,9 @@ it('should show the screen that was asked for after signing in', async () => {
   with a client whose queries do not retry (`queryClientOfATest()`),
   `NotificationProvider`, and `AppShell` when the title of the document or
   the focus is asserted. An application is rendered whole, `App` in a
-  `MemoryRouter`: `renderAt(path)` of its `src/__tests__/screens.tsx`.
+  `MemoryRouter`: `renderAt(path)` of its `src/__tests__/screens.tsx`,
+  which also holds what every list of the application says of a page
+  after the first that did not come (`REST_UNREAD`).
 - **What the tests of screens share is one module**,
   `@beauty-salon-frontend/testing/screens`. A test file does not write
   these again:
@@ -913,7 +915,10 @@ is tested for what it must leave alone as well:
   member whose record of the staff was removed meanwhile
   (`staffRemovedMeanwhile('Hiroshi Tanaka')` of the customers): the API
   answers it 403 for the bookings of every salon, and 404 for a booking
-  of another salon to a member of one.
+  of another salon to a member of one. A member who moved to another
+  salon meanwhile is `staffMovedMeanwhile('Hiroshi Tanaka', OSAKA)`: a
+  purchase order is found within the reach of the account, so one of the
+  salon it left is not found (404).
 - **A file the browser reads late, or cannot read**, is a `File` with an
   `arrayBuffer` of its own:
   `Object.assign(fileOf(rows), { arrayBuffer: () => held.then(() => bytes) })`,
@@ -1238,7 +1243,8 @@ their requests meet when they fail or something changes meanwhile:
   `openedStockEntry`, `openedChange`, `openedHistory`,
   `openedMovementEntry`, `openedCount`, `openedValue`, `openedAlerts`:
   the heading first, then what comes once the screen read its parts),
-  and what the screens say alike is one constant there (`NOT_THEIRS`,
+  and what the screens say alike is one constant there (`NOT_THEIRS`;
+  what a list says of a page that did not come is the application's
   `REST_UNREAD`).
 - **The stock a test needs is a statement** of
   `inventory/__tests__/arrangements.ts`: a row more (`anotherRow`), a
@@ -1262,6 +1268,46 @@ their requests meet when they fail or something changes meanwhile:
   staff of the history of a row come when the test lets them
   (`whenAskedFor('GET /staff-profiles', () => staff.promise)` with
   `Promise.withResolvers()`); the answer is that of the API.
+
+The products and the purchase orders of a salon
+(`frontend/apps/admin-app/src/products/screens/`: `products` for the
+ledger, a product, its form and its removal, and beside it
+`ledger-failures` and `product-failures`;
+`frontend/apps/admin-app/src/purchase-orders/screens/`: `purchase-orders`
+for the list and a new order, `purchase-order-steps`,
+`purchase-order-receipt`, and beside them `orders-failures` for the list,
+a new order and the suggestions, and `order-failures` for one order, its
+change and its receipt) add:
+
+- **The tests of the products and of the orders wait for a screen alike**
+  (`products/__tests__/screens.ts`: `openedLedger`, `openedProduct`,
+  `openedForm`, with `NOT_THEIRS` and `PRODUCTS_UNREAD`, which the screens
+  of the stock and of the orders say as well;
+  `purchase-orders/__tests__/screens.ts`: `openedOrders`, `openedEntry`,
+  `ofRow`, `orderAt`, `openOrderAs`, `receiptAt`, `openReceiptAs`, with
+  the words the screens say alike: `ORDER_UNREAD`, `NOT_THEIRS`).
+- **A salon without products is a statement** (`everyProductRemoved`:
+  every product removed as the API removes one): the ledger leads a
+  keeper to add one, and tells the others who adds them.
+- **A page after the first fails where its order puts the failure**, as
+  with the stock: the ledger is in the order of the codes, so the product
+  of the last code is made unreadable (the wax, after `padsOf(TOKYO, 20)`).
+  The orders are the latest first by the day of the order, not by the
+  moment of their row: the oldest of `padOrdersOf` is made unreadable by
+  its `createdAt`, and stays last.
+- **The suggestions are read apart from the rows and the products**: what
+  breaks them alone is the table of the items of the orders
+  (`takeAway('purchase_order_items')`).
+- **A read the screen sends together with others is held until the
+  others are shown**: a new order of suggestions asks for its rows, its
+  products and the suggestions at once, and the account leaves the staff
+  once the screen says that it reads the suggestions
+  (`whenAskedFor('GET /purchase-orders/reorder-suggestions', async () => { await screen.findByText('発注の提案を読み込んでいます'); await staffRemovedMeanwhile(stylist) })`):
+  the rows and the products were answered before.
+- **What cannot be arranged between two reads is a unit test**: the
+  screens that read every product read them together with something
+  else, so the salon removed between the two is the 404 of `readProducts`
+  in `products-api.test.ts`.
 
 The ledger of the customers
 (`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)
