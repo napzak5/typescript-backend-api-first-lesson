@@ -4,6 +4,7 @@ import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
+  refuse,
   salonIdOf,
   signInAs,
   testApi,
@@ -27,7 +28,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, refuse } from '../../bookings/__tests__/arrangements'
+import { arrange } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
   paySale,

@@ -1,7 +1,12 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  salonIdOf,
+  takeAway,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -24,7 +29,6 @@ import {
   closeDay,
   DAYS_AHEAD,
   dayAhead,
-  giveBack,
   HIROSHI,
   LADIES_CUT,
   MIKA,
@@ -37,7 +41,6 @@ import {
   serviceId,
   signedInAs,
   staffId,
-  takeAway,
 } from '../__tests__/arrangements'
 
 const TITLE = applications.portal.name

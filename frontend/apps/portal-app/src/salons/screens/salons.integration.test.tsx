@@ -1,7 +1,12 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  salonIdOf,
+  takeAway,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import { address, heading } from '@beauty-salon-frontend/testing/screens'
 import { OSAKA, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
@@ -31,16 +36,6 @@ const addSalons = (count: number) =>
      from generate_series(1, $1::int) n`,
     [count],
   )
-
-/**
- * Takes a table away from the API, which then answers 500 where it reads
- * it, and gives it back: an answer that went wrong, without a stub.
- */
-const takeAway = (table: string) =>
-  testApi().query(`alter table ${table} rename to ${table}_away`)
-
-const giveBack = (table: string) =>
-  testApi().query(`alter table ${table}_away rename to ${table}`)
 
 // --- The search
 

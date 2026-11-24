@@ -135,16 +135,6 @@ export const closeDay = async (): Promise<string> => {
 export const momentAt = (date: string, time: string): string =>
   new Date(`${date}T${time}:00+09:00`).toISOString()
 
-/**
- * Takes a table away from the API, which then answers 500 where it reads
- * it, and gives it back: an answer that went wrong, without a stub.
- */
-export const takeAway = (table: string) =>
-  testApi().query(`alter table ${table} rename to ${table}_away`)
-
-export const giveBack = (table: string) =>
-  testApi().query(`alter table ${table}_away rename to ${table}`)
-
 // --- What the tests ask of the API, as a client that is no screen does
 
 export const ask = (

@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import { refuse, salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   columnsOf,
@@ -18,7 +18,6 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../../__tests__/screens'
-import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   arrangeChart,
   arrangePoints,

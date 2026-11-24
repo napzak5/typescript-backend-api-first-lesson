@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf } from '@beauty-salon-frontend/testing/api'
+import { refuse, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   heading,
@@ -22,7 +22,6 @@ import {
   arrangeFile,
   fileRemovedMeanwhile,
 } from '../../attachments/__tests__/arrangements'
-import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   attachmentHrefOf,
   shareLinkEntryHrefOf,

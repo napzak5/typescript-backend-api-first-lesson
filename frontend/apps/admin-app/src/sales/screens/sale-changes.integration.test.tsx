@@ -3,6 +3,7 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  refuse,
   salonIdOf,
   signInAs,
 } from '@beauty-salon-frontend/testing/api'
@@ -18,7 +19,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, refuse } from '../../bookings/__tests__/arrangements'
+import { arrange } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
   paySale,
