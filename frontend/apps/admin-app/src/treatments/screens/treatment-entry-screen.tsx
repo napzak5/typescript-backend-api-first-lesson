@@ -17,14 +17,15 @@ import {
   Alert,
   ButtonLink,
   type FormSays,
-  inJapanese,
   Link,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -50,13 +51,16 @@ import { TreatmentForm } from '../components/treatment-form/treatment-form'
 import {
   afterTreatmentWrite,
   readTreatmentEntry,
-  TREATMENT_EXISTS,
-  TREATMENT_NOT_BEGUN,
   treatmentWrittenOf,
 } from '../utils/treatment-form'
-import { customerCalled, isTreated } from '../utils/treatment-format'
+import {
+  customerCalled,
+  customerInASentence,
+  isTreated,
+} from '../utils/treatment-format'
 
-const TITLE = '施術記録を書く'
+const { form, frame, names, titles } = adminTreatmentMessages
+const { entry: ENTRY } = form
 
 type EntryProps = {
   salon: ModelsSalonResponse
@@ -87,10 +91,11 @@ const TreatmentEntry = ({
   services,
   products,
 }: EntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [refusal, setRefusal] = useState<Refusal>()
   const alert = useRef<HTMLDivElement>(null)
   const back = bookingHrefOf(salon.id, booking.id)
@@ -113,7 +118,7 @@ const TreatmentEntry = ({
           queryClient.removeQueries({ queryKey: TREATMENT_LISTS })
           notify({
             tone: 'success',
-            message: treatmentWrittenOf(customerCalled(customer), 'entry'),
+            message: treatmentWrittenOf(customerInASentence(customer), 'entry'),
           })
           void navigate(treatmentHrefOf(salon.id, record.id))
         })
@@ -159,20 +164,20 @@ const TreatmentEntry = ({
 
   return (
     <>
-      <p>{`お客様：${customerCalled(customer)}`}</p>
+      <p>{say(frame.customerOf(customerCalled(customer)))}</p>
       {refusal !== undefined && (
         <div ref={alert} tabIndex={-1}>
           {match(refusal)
             .with({ type: 'exists' }, ({ treatmentId }) => (
               <Alert tone='danger'>
-                {TREATMENT_EXISTS}
+                {say(ENTRY.exists)}
                 <Link href={treatmentHrefOf(salon.id, treatmentId)}>
-                  書かれていた施術記録を見る
+                  {say(ENTRY.viewExisting)}
                 </Link>
               </Alert>
             ))
             .with({ type: 'notBegun' }, () => (
-              <Alert tone='danger'>{TREATMENT_NOT_BEGUN}</Alert>
+              <Alert tone='danger'>{say(ENTRY.notBegun)}</Alert>
             ))
             .exhaustive()}
         </div>
@@ -182,14 +187,14 @@ const TreatmentEntry = ({
         staff={staff}
         services={services}
         products={products}
-        submitLabel='施術記録を書く'
+        submitLabel={say(ENTRY.submit)}
         message={said.message}
         errors={said.errors}
         pending={creation.isPending}
         onSubmit={submit}
         actions={
           <ButtonLink href={back} variant='quiet'>
-            やめる
+            {say(ENTRY.cancel)}
           </ButtonLink>
         }
       />
@@ -209,6 +214,7 @@ type BookingPartProps = {
  * begun is not written of.
  */
 const BookingPart = ({ salon, booking }: BookingPartProps) => {
+  const say = useSay()
   const back = bookingHrefOf(salon.id, booking.id)
   const treated = isTreated(booking)
   const customer = useQuery({
@@ -237,9 +243,7 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
   })
 
   if (!treated) {
-    return (
-      <Unchangeable why={writtenInJapanese(TREATMENT_NOT_BEGUN)} back={back} />
-    )
+    return <Unchangeable why={ENTRY.notBegun} back={back} />
   }
 
   return match([customer.data, existing.data, products.data])
@@ -247,7 +251,7 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       [undefined, P._, P._],
       [P._, undefined, P._],
       [P._, P._, undefined],
-      () => <LoadingIndicator label='施術記録を書く準備をしています' />,
+      () => <LoadingIndicator label={say(ENTRY.preparing)} />,
     )
     .with(
       [
@@ -257,9 +261,9 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       ],
       ([, { record }]) => (
         <>
-          <p>この予約の施術記録は、書いてあります。</p>
+          <p>{say(ENTRY.written)}</p>
           <ButtonLink href={treatmentHrefOf(salon.id, record.id)}>
-            施術記録を見る
+            {say(ENTRY.view)}
           </ButtonLink>
         </>
       ),
@@ -293,11 +297,8 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(
-              writtenInJapanese('お客様と商品'),
-              whyUnread(reads),
-            ),
+          message={say(
+            unreadMessageOf(names.customerAndProducts, whyUnread(reads)),
           )}
           onRetry={() => {
             void customer.refetch()
@@ -315,12 +316,14 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
 
 /** Writes the treatment record of a booking of the salon of the address. */
 export const TreatmentEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.entry)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking salon={salon} title={TITLE}>
+        <WithBooking salon={salon} title={title}>
           {(booking) => (
             <BookingPart key={booking.id} salon={salon} booking={booking} />
           )}

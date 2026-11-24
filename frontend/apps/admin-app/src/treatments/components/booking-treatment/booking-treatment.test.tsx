@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aBooking, salon } from '../../../bookings/components/examples'
 import { aTreatment } from '../examples'
 import * as bookingTreatmentStories from './booking-treatment.stories'
@@ -97,5 +98,78 @@ describe('BookingTreatment', () => {
 
     // Assert
     expect(onRetry).toHaveBeenCalledOnce()
+  })
+})
+
+describe('BookingTreatment on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say a record was written and lead to it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Written.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'A treatment record was written on Fri, November 20, 2026 at 12:30.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'View the treatment record' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('region', { name: 'Treatment record' }),
+    ).toBeVisible()
+  })
+
+  it('should lead to the form of a record not written yet, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unwritten.run()
+
+    // Assert
+    expect(
+      screen.getByText('No treatment record has been written yet.'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Write a treatment record' }),
+    ).toBeVisible()
+  })
+
+  it('should say when a record can be written, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Upcoming.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'A treatment record can be written once the treatment starts.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say that a booking not treated has no record, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Cancelled.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'A booking whose treatment did not take place has no treatment record.',
+      ),
+    ).toBeVisible()
   })
 })

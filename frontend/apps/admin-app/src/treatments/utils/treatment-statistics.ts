@@ -1,6 +1,6 @@
 import { isDay } from '@beauty-salon-frontend/fields'
 import { monthUntil, type Period } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 
 /*
@@ -25,11 +25,6 @@ export const statisticsPeriodIn = (
     : monthUntil(today)
 }
 
-/** How many records were counted: 「12 件」. */
-export const countNameOf = (count: number): string => `${count} 件`
-
 /** How long the treatments took on average: 「72.5 分」, or `null` when no time was recorded. */
-export const averageNameOf = (minutes: number | null): string | null =>
-  minutes === null
-    ? null
-    : `${inJapanese(formats.numberOf(minutes, { most: 1 }))} 分`
+export const averageNameOf = (minutes: number | null): LocalizedText | null =>
+  minutes === null ? null : formats.minutesOf(minutes, { most: 1 })

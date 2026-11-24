@@ -426,8 +426,10 @@ In an area of an application that is done, the same rules hold, and:
   (`adminBookingMessages`, the bookings of a day, the page of a booking,
   the entry of one, and its move and its lines in files of their own, with
   the frame of a screen of a booking that the checkout and the treatments
-  open in) and the words a screen names a member of the staff with
-  (`adminStaffMessages`).
+  open in), the words a screen names a member of the staff with
+  (`adminStaffMessages`) and the treatment records
+  (`adminTreatmentMessages`, its form, its photos and its statistics in
+  files of their own).
   How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
@@ -464,24 +466,20 @@ In an area of an application that is done, the same rules hold, and:
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
   area is and its name takes their place (`'bookings'`, `'customers'`,
-  `'inventory'`, `'menu'` and `'sales'` of the admin application).
+  `'inventory'`, `'menu'`, `'sales'` and `'treatments'` of the admin
+  application).
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese` (the purchase orders say
   `quantityNameOf` and `stockRowNameOf` of the inventory and the name of a
-  member not listed so, and the treatments the names of a member not
-  listed and of a removed service, `UNLISTED_STAFF` and `GONE_SERVICE` of
-  `treatment-format.ts`), and makes a message of a string it hands to an
-  area that is done with `writtenInJapanese` (the sentence of a booking
-  whose treatment has not begun, which the treatments hand to
-  `Unchangeable` of the bookings). An area that is done hands on the
-  strings of one that is not as they are. A type of an area that is not
-  done takes the type of its texts as a parameter where one that is done
-  uses it (`TreatmentRemovalSays<Text = string>` of the treatments, which
-  the removal of a stock row and of a category or a service of the menu
-  use as `TreatmentRemovalSays<LocalizedText>`), and a type of an area that
-  is done that one that is not uses takes it with strings for the default
-  (`ChangeSays<Text = string>` of the operations of the state of a booking,
-  which the operations of a purchase order use with strings). The portal
+  member not listed so). An area that is done hands on the strings of one
+  that is not as they are. A type of an area that is done that one that
+  is not uses takes the type of its texts as a parameter, with strings for
+  the default (`ChangeSays<Text = string>` of the operations of the state
+  of a booking, which the operations of a purchase order use with strings;
+  `TreatmentRemovalSays<Text = string>` of the treatments, which the
+  removal of a stock row and of a category or a service of the menu use as
+  `TreatmentRemovalSays<LocalizedText>`, and the removal of a product, of a
+  payment method and of a member of the staff with strings). The portal
   and the dashboard have none of these any more.
 - An area that is done in two parts splits a file of both, so that the
   file of the part that is done holds none of the texts of the other (the

@@ -17,21 +17,28 @@ import {
   lengthOf,
   tooLongOf,
 } from '@beauty-salon-frontend/fields'
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import type { TreatmentWrite } from '../api/treatments-api'
+
+const { form: FORM } = adminTreatmentMessages
+const { errors: ERRORS } = FORM
+
+/** What is wrong with the values of the form, under the names of its controls */
+type Errors = FormErrors<LocalizedText>
 
 /*
  * The form of a treatment record: what it reads, what it says is wrong,
@@ -48,56 +55,28 @@ export const materialControlOf = (
 ): string => `materials.${index}.${name}`
 
 /** The most services, techniques and services recommended a record holds */
-const MOST_IN_A_LIST = 20
+export const MOST_IN_A_LIST = 20
 /** The most materials a record holds: the form offers no more rows */
 export const MOST_MATERIALS = 50
 /** The longest treatment, in minutes: a day */
-const LONGEST_TREATMENT = 1440
+export const LONGEST_TREATMENT = 1440
 const LONGEST_TECHNIQUE = 100
 const LONGEST_UNIT = 20
 const LONGEST_LOT_NUMBER = 100
 /** The most of a material, as the API keeps it */
 const MOST_QUANTITY = 99_999_999.99
 
-const STAFF_MISSING = '担当を選んでください。'
-const SERVICES_MISSING = '提供したサービスを選んでください。'
-const TOO_MANY_SERVICES = `提供したサービスは、${MOST_IN_A_LIST} 件までにしてください。`
-const TECHNIQUE_TOO_LONG = eachTooLongOf(
-  writtenInJapanese('技法の名前'),
-  LONGEST_TECHNIQUE,
-)
-const TOO_MANY_TECHNIQUES = `技法は、${MOST_IN_A_LIST} 件までで入力してください。`
-const TIME_ERROR = `施術時間は、0 から ${LONGEST_TREATMENT} までの分の整数で入力してください。`
-const DATE_ERROR = '次に勧める日を、日付で入力してください。'
-const TOO_MANY_NEXT_SERVICES = `次に勧めるサービスは、${MOST_IN_A_LIST} 件までにしてください。`
-const SATISFACTION_ERROR = '満足度を選び直してください。'
-const PRODUCT_MISSING = '商品を選んでください。'
-const PRODUCT_GONE =
-  'この商品は、その間に削除されました。ほかの商品を選ぶか、この商材を外してください。'
-const QUANTITY_ERROR =
-  '量は、0 より大きい数で、小数第 2 位まで入力してください。'
-const UNIT_MISSING = '単位を入力してください。'
-const UNIT_TOO_LONG = tooLongOf(writtenInJapanese('単位'), LONGEST_UNIT)
-const LOT_MISSING =
-  'この商品は、ロットで管理しています。ロット番号を入力してください。'
-const LOT_TOO_LONG = tooLongOf(
-  writtenInJapanese('ロット番号'),
-  LONGEST_LOT_NUMBER,
-)
-const LOT_NOT_TAKEN =
-  'この商品は、ロットで管理していません。ロット番号を消してください。'
-const LOT_CHANGED =
-  'その間に、この商品のロットの管理が変わりました。画面を開き直して、書き直してください。'
-const STAFF_GONE =
-  'このスタッフは、その間に削除されたか、ほかのサロンに移りました。ほかのスタッフを選んでください。'
-const SERVICE_GONE =
-  'その間に削除されたサービスがあります。選び直してください。'
-const CUSTOMER_GONE =
-  'このお客様は、その間に台帳から削除されました。施術記録は書けません。'
+const TOO_MANY_SERVICES = ERRORS.tooManyServices(MOST_IN_A_LIST)
+const TECHNIQUE_TOO_LONG = eachTooLongOf(FORM.techniqueName, LONGEST_TECHNIQUE)
+const TOO_MANY_TECHNIQUES = ERRORS.tooManyTechniques(MOST_IN_A_LIST)
+const TIME_ERROR = ERRORS.processingTime(LONGEST_TREATMENT)
+const TOO_MANY_NEXT_SERVICES = ERRORS.tooManyNextServices(MOST_IN_A_LIST)
+const UNIT_TOO_LONG = tooLongOf(FORM.unit, LONGEST_UNIT)
+const LOT_TOO_LONG = tooLongOf(FORM.lotNumber, LONGEST_LOT_NUMBER)
 
-/** What the day of the next visit is said to be when it is before the booking */
-const nextDateTooEarlyOf = (bookingDay: string): string =>
-  `次に勧める日は、予約の日（${bookingDay}）から後の日にしてください。`
+/** What the day of the next visit is said to be when it is before the booking: the day as the screens write it */
+const nextDateTooEarlyOf = (bookingDay: string): LocalizedText =>
+  ERRORS.nextRecommendedDateTooEarly(dayNameOf(bookingDay))
 /**
  * A number as a person types it: digits of full width count. Nothing is no
  * number; what is not written as one is `undefined`.
@@ -153,23 +132,23 @@ const materialsIn = (values: FormData, index: number): FilledMaterial[] => {
 const lotErrorOf = (
   product: ModelsProductResponse | undefined,
   lotNumber: string | null,
-): string | undefined => {
+): LocalizedText | undefined => {
   if (lotNumber !== null && lengthOf(lotNumber) > LONGEST_LOT_NUMBER) {
-    return inJapanese(LOT_TOO_LONG)
+    return LOT_TOO_LONG
   }
   if (product === undefined) {
     return undefined
   }
   if (product.requiresLotTracking) {
-    return lotNumber === null ? LOT_MISSING : undefined
+    return lotNumber === null ? ERRORS.lotNumber : undefined
   }
 
-  return lotNumber === null ? undefined : LOT_NOT_TAKEN
+  return lotNumber === null ? undefined : ERRORS.lotNumberNotTaken
 }
 
 type MaterialRead =
   | { type: 'valid'; material: ModelsTreatmentMaterial }
-  | { type: 'invalid'; errors: [string, string][] }
+  | { type: 'invalid'; errors: [string, LocalizedText][] }
 
 const readMaterial = (
   index: number,
@@ -184,7 +163,7 @@ const readMaterial = (
   const errors = [
     ...errorAt(
       materialControlOf(index, 'productId'),
-      productId === '' ? PRODUCT_MISSING : undefined,
+      productId === '' ? ERRORS.product : undefined,
     ),
     ...errorAt(
       materialControlOf(index, 'quantity'),
@@ -192,16 +171,16 @@ const readMaterial = (
         quantity === undefined ||
         quantity <= 0 ||
         quantity > MOST_QUANTITY
-        ? QUANTITY_ERROR
+        ? ERRORS.quantity
         : undefined,
     ),
     ...errorAt(
       materialControlOf(index, 'unit'),
       unit === ''
-        ? UNIT_MISSING
-        : inJapaneseIfAny(
-            lengthOf(unit) > LONGEST_UNIT ? UNIT_TOO_LONG : undefined,
-          ),
+        ? ERRORS.unit
+        : lengthOf(unit) > LONGEST_UNIT
+          ? UNIT_TOO_LONG
+          : undefined,
     ),
     ...errorAt(
       materialControlOf(index, 'lotNumber'),
@@ -236,9 +215,9 @@ const chosenIn = (values: FormData, name: string): string[] => [
 /** What is wrong with the techniques, if anything. */
 const techniquesErrorOf = (
   techniques: readonly string[],
-): string | undefined => {
+): LocalizedText | undefined => {
   if (techniques.some((name) => lengthOf(name) > LONGEST_TECHNIQUE)) {
-    return inJapanese(TECHNIQUE_TOO_LONG)
+    return TECHNIQUE_TOO_LONG
   }
 
   return techniques.length > MOST_IN_A_LIST ? TOO_MANY_TECHNIQUES : undefined
@@ -273,12 +252,15 @@ export type TreatmentContext = {
 }
 
 /** What is wrong with the day of the next visit, if anything. */
-const dateErrorOf = (date: string, bookingDay: string): string | undefined => {
+const dateErrorOf = (
+  date: string,
+  bookingDay: string,
+): LocalizedText | undefined => {
   if (date === '') {
     return undefined
   }
   if (!isDay(date)) {
-    return DATE_ERROR
+    return ERRORS.nextRecommendedDate
   }
 
   return date < bookingDay ? nextDateTooEarlyOf(bookingDay) : undefined
@@ -288,7 +270,7 @@ const dateErrorOf = (date: string, bookingDay: string): string | undefined => {
 const readWhole = (
   values: FormData,
   { products, bookingDay }: TreatmentContext,
-): FormRead<TreatmentWhole> => {
+): FormRead<TreatmentWhole, Errors> => {
   const services = chosenIn(values, 'services')
   const techniques = tagsIn(textOf(values, 'techniques'))
   const processingTime = numberOf(textOf(values, 'processingTime'), 0)
@@ -301,11 +283,11 @@ const readWhole = (
   const materials = filled.map((material, index) =>
     readMaterial(index, material, products),
   )
-  const errors: Record<string, string> = Object.fromEntries([
+  const errors: Record<string, LocalizedText> = Object.fromEntries([
     ...errorAt(
       'services',
       services.length === 0
-        ? SERVICES_MISSING
+        ? ERRORS.services
         : services.length > MOST_IN_A_LIST
           ? TOO_MANY_SERVICES
           : undefined,
@@ -330,7 +312,7 @@ const readWhole = (
     ),
     ...errorAt(
       'customerSatisfaction',
-      customerSatisfaction === undefined ? SATISFACTION_ERROR : undefined,
+      customerSatisfaction === undefined ? ERRORS.satisfaction : undefined,
     ),
     ...materials.flatMap((material) =>
       material.type === 'invalid' ? material.errors : [],
@@ -373,12 +355,12 @@ export const readTreatmentEntry = (
   values: FormData,
   booking: Pick<ModelsBookingResponse, 'id' | 'customerId'>,
   context: TreatmentContext,
-): FormRead<ModelsTreatmentRecordCreateRequest> => {
+): FormRead<ModelsTreatmentRecordCreateRequest, Errors> => {
   const staffId = textOf(values, 'staffId').trim()
   const read = readWhole(values, context)
   const staffErrors = errorAt(
     'staffId',
-    staffId === '' ? STAFF_MISSING : undefined,
+    staffId === '' ? ERRORS.staff : undefined,
   )
   if (read.type === 'invalid' || staffErrors.length > 0) {
     return {
@@ -427,7 +409,7 @@ const shownMaterialsOf = (
 
 /** What a change of a record asks for: nothing, when nothing was changed. */
 export type TreatmentChange =
-  | FormRead<ModelsTreatmentRecordUpdateRequest>
+  | FormRead<ModelsTreatmentRecordUpdateRequest, Errors>
   | { type: 'unchanged' }
 
 /** Whether a text of the form is that of the record: what the record holds is read as the form reads it. */
@@ -511,39 +493,35 @@ const LIST_FIELD = /^(services|techniques|nextRecommendedServices)(\.\d+)?$/
  * the form. A lot number the form held to its product is refused when the
  * salon changed meanwhile whether the product is kept by lots.
  */
-const materialSaidOf = (name: string, rule: string): string =>
+const materialSaidOf = (name: string, rule: string): LocalizedText =>
   match(name)
-    .returnType<string>()
+    .returnType<LocalizedText>()
     .with('productId', () =>
-      rule === 'not_found' ? PRODUCT_GONE : PRODUCT_MISSING,
+      rule === 'not_found' ? ERRORS.productGone : ERRORS.product,
     )
-    .with('quantity', () => QUANTITY_ERROR)
-    .with('unit', () =>
-      rule === 'too_big' ? inJapanese(UNIT_TOO_LONG) : UNIT_MISSING,
-    )
-    .otherwise(() =>
-      rule === 'too_big' ? inJapanese(LOT_TOO_LONG) : LOT_CHANGED,
-    )
+    .with('quantity', () => ERRORS.quantity)
+    .with('unit', () => (rule === 'too_big' ? UNIT_TOO_LONG : ERRORS.unit))
+    .otherwise(() => (rule === 'too_big' ? LOT_TOO_LONG : ERRORS.lotsChanged))
 
 /** What the API says is wrong with a list, in the words of the form. */
 const listSaidOf = (
   name: string,
   item: string | undefined,
   rule: string,
-): string =>
+): LocalizedText =>
   match(name)
-    .returnType<string>()
+    .returnType<LocalizedText>()
     .with('techniques', () =>
-      item === undefined ? TOO_MANY_TECHNIQUES : inJapanese(TECHNIQUE_TOO_LONG),
+      item === undefined ? TOO_MANY_TECHNIQUES : TECHNIQUE_TOO_LONG,
     )
     .with('nextRecommendedServices', () =>
-      item === undefined ? TOO_MANY_NEXT_SERVICES : SERVICE_GONE,
+      item === undefined ? TOO_MANY_NEXT_SERVICES : ERRORS.serviceGone,
     )
     .otherwise(() =>
       item !== undefined || rule === 'not_found'
-        ? SERVICE_GONE
+        ? ERRORS.serviceGone
         : rule === 'too_small'
-          ? SERVICES_MISSING
+          ? ERRORS.services
           : TOO_MANY_SERVICES,
     )
 
@@ -554,7 +532,7 @@ const listSaidOf = (
 const saidOf = (
   { field, rule }: RefusedValue,
   bookingDay: string,
-): [string, string] | undefined => {
+): [string, LocalizedText] | undefined => {
   const material = MATERIAL_FIELD.exec(field)
   if (material?.[2] !== undefined) {
     return [field, materialSaidOf(material[2], rule)]
@@ -566,26 +544,21 @@ const saidOf = (
   }
 
   return match(field)
-    .returnType<[string, string] | undefined>()
-    .with('staffId', () => [field, STAFF_GONE])
+    .returnType<[string, LocalizedText] | undefined>()
+    .with('staffId', () => [field, ERRORS.staffGone])
     .with('processingTime', () => [field, TIME_ERROR])
     .with('nextRecommendedDate', () => [
       field,
-      rule === 'too_small' ? nextDateTooEarlyOf(bookingDay) : DATE_ERROR,
+      rule === 'too_small'
+        ? nextDateTooEarlyOf(bookingDay)
+        : ERRORS.nextRecommendedDate,
     ])
-    .with('customerSatisfaction', () => [field, SATISFACTION_ERROR])
+    .with('customerSatisfaction', () => [field, ERRORS.satisfaction])
     .otherwise(() => undefined)
 }
 
 /** Which write a form makes: the words of its failure differ. */
 export type TreatmentWriteKind = 'entry' | 'change'
-
-const FAILED_WRITES: Record<TreatmentWriteKind, string> = {
-  entry:
-    '施術記録を書けませんでした。通信の状態を確かめて、もう一度お試しください。',
-  change:
-    '施術記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-}
 
 /** What the form says after the API refused it, or after nothing came of it. */
 export const afterTreatmentWrite = (
@@ -595,9 +568,9 @@ export const afterTreatmentWrite = (
   >,
   write: TreatmentWriteKind,
   bookingDay: string,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap((value) => {
         const at = saidOf(value, bookingDay)
@@ -608,41 +581,27 @@ export const afterTreatmentWrite = (
       return {
         // The customer of a record is that of its booking, and no control
         message: values.some(({ field }) => field === 'customerId')
-          ? CUSTOMER_GONE
-          : inJapaneseIfAny(
-              said.length < values.length
-                ? CHECK_THE_VALUES_MESSAGE
-                : undefined,
-            ),
+          ? ERRORS.customerGone
+          : said.length < values.length
+            ? CHECK_THE_VALUES_MESSAGE
+            : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、施術記録を書けません。'),
-    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORM.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
+    .with({ type: 'failed' }, () => aboutTheAttempt(FORM.failed[write]))
     .exhaustive()
 
 /**
  * What is said when the record was written or changed: 「田中 由紀 様の
- * 施術記録を書きました。」. The customer is named as `customerCalled` names them.
+ * 施術記録を書きました。」. The customer is named as a sentence names them
+ * (`customerInASentence`).
  */
 export const treatmentWrittenOf = (
-  name: string,
+  customer: LocalizedText,
   write: TreatmentWriteKind,
-): string =>
-  write === 'entry'
-    ? `${name}の施術記録を書きました。`
-    : `${name}の施術記録を直しました。`
-
-/** What is said when another account wrote the record of the booking meanwhile */
-export const TREATMENT_EXISTS =
-  'その間に、ほかのアカウントがこの予約の施術記録を書いていました。書いた内容は、その施術記録を直して書き足してください。'
-
-/** What is said when the booking was cancelled meanwhile, or is not begun */
-export const TREATMENT_NOT_BEGUN =
-  'この予約は、施術中でも完了でもありません。施術を始めた予約に、施術記録を書けます。'
+): LocalizedText => FORM.written[write](customer)

@@ -1,10 +1,11 @@
 import { isDay } from '@beauty-salon-frontend/fields'
 import { daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
 import {
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as z from 'zod'
 import type { TreatmentConditions } from '../api/treatments-api'
 
@@ -54,14 +55,12 @@ export const treatmentConditionsIn = (
  */
 export const readTreatmentConditions = (
   values: FormData,
-): FormRead<TreatmentConditions> => {
+): FormRead<TreatmentConditions, FormErrors<LocalizedText>> => {
   const staff = textOf(values, 'staff')
   const customer = textOf(values, 'customer')
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
-  const errors = {
-    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
-  }
+  const errors = daysErrorsOf(from, to, 'optional')
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }

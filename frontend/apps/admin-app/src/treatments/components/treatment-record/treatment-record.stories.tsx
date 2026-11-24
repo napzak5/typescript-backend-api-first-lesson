@@ -1,4 +1,6 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Button, ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import {
   aBooking,
@@ -16,7 +18,10 @@ const meta: Meta<typeof TreatmentRecord> = {
   args: {
     record: aTreatment(),
     timezone: salon.timezone,
-    bookingName: 'BK-4F7H-2KQM（2026年11月20日（金））',
+    bookingName: adminTreatmentMessages.record.bookingOf(
+      'BK-4F7H-2KQM',
+      dayNameOf('2026-11-20'),
+    ),
     bookingHref: `/salons/${salon.id}/bookings/${aBooking().id}`,
     customer: aCustomer(),
     customerHref: `/salons/${salon.id}/customers/${aCustomer().id}`,

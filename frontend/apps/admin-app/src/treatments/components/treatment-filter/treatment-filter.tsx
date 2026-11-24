@@ -9,7 +9,11 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { TreatmentConditions } from '../../api/treatments-api'
 import { treatmentQueryOf } from '../../utils/treatment-search'
 import styles from './treatment-filter.module.css'
@@ -23,11 +27,11 @@ export type TreatmentFilterProps = {
    * The customer of the conditions, by name: 「山田 花子 様」; 「このお客様」
    * while the name is not known. The list was opened from the ledger for them
    */
-  customerName?: string | undefined
+  customerName?: LocalizedText | undefined
   /** The address of the same conditions without the customer */
   withoutCustomerHref?: string | undefined
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of every record, when the conditions narrow the list */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -46,6 +50,8 @@ const valuesOf = ({ staff, from, to }: TreatmentConditions): Values => ({
 /** The conditions of the sheet that narrow the list: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['staff', 'from', 'to']
 
+const { filter: WORDS, frame } = adminTreatmentMessages
+
 /**
  * Which treatment records the list shows: the member of the staff who did
  * the treatment, and the days the record was written on. The customer is
@@ -62,6 +68,8 @@ export const TreatmentFilter = ({
   clearHref,
   onSubmit,
 }: TreatmentFilterProps) => {
+  const say = useSay()
+  const said = useSaidForm(undefined, errors)
   const [values, hold] = useFilterValues(
     treatmentQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -69,7 +77,7 @@ export const TreatmentFilter = ({
 
   return (
     <FilterForm
-      label='施術記録を絞り込む'
+      label={say(WORDS.label)}
       purpose='view'
       errors={errors}
       clearHref={clearHref}
@@ -78,36 +86,36 @@ export const TreatmentFilter = ({
       conditions={
         <>
           <Select
-            label='担当'
+            label={say(WORDS.staff)}
             name='staff'
             options={staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             }))}
-            placeholder='すべて'
+            placeholder={say(WORDS.all)}
             value={values.staff}
             onChange={(event) => hold('staff', event.target.value)}
           />
           <TextField
-            label='書いた日（から）'
+            label={say(WORDS.from)}
             name='from'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.from}
-            error={errors['from']}
+            error={said.errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
           <TextField
-            label='書いた日（まで）'
+            label={say(WORDS.to)}
             name='to'
             autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
             value={values.to}
-            error={errors['to']}
+            error={said.errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
         </>
@@ -115,9 +123,11 @@ export const TreatmentFilter = ({
     >
       {conditions.customer === undefined ? undefined : (
         <p className={styles['customer']}>
-          <span>{`お客様：${customerName ?? 'このお客様'}`}</span>
+          <span>
+            {say(frame.customerOf(customerName ?? WORDS.thisCustomer))}
+          </span>
           {withoutCustomerHref === undefined ? null : (
-            <Link href={withoutCustomerHref}>すべてのお客様にする</Link>
+            <Link href={withoutCustomerHref}>{say(WORDS.allCustomers)}</Link>
           )}
           <input type='hidden' name='customer' value={conditions.customer} />
         </p>

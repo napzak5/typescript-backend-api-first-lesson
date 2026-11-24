@@ -6,33 +6,39 @@ import {
   Form,
   type FormErrors,
   FormRow,
-  inJapanese,
   NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import {
   LONGEST_ANGLE,
-  PHOTO_TYPE_OPTIONS,
+  PHOTO_TYPE_CHOICES,
   photoControlOf,
 } from '../../utils/treatment-photos'
 import styles from './photo-form.module.css'
+
+const WORDS = adminTreatmentMessages.photos.form
 
 export type PhotoFormProps = {
   /** How many photos the record can still take: the form offers no more rows */
   room: number
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /**
    * What is wrong with the values, under the names of the controls: a
    * photo's under `photos.<n>.<name>`. A new object is the answer to
    * another attempt
    */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -61,98 +67,98 @@ export const PhotoForm = ({
   actions,
   onSubmit,
 }: PhotoFormProps) => {
+  const say = useSay()
+  const choicesOf = useSaidChoices()
+  const said = useSaidForm(message, errors)
   // A row of a photo holds nothing but its controls
-  const photos = useRepeatedRows<null>(() => [null], errors)
+  const photos = useRepeatedRows<null, LocalizedText>(() => [null], errors)
+  const rowErrors = useSaidForm(undefined, photos.errors).errors
+
   return (
     <Form
-      submitLabel='写真を足す'
-      message={message}
+      submitLabel={say(WORDS.submit)}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={actions}
       onSubmit={onSubmit}
     >
-      <Note size='small'>
-        写真は、サロンが写真を置いている場所（写真の保存サービスなど）に置いてから、その
-        URL を書きます。施術記録は、写真のファイルを預かりません。
-      </Note>
+      <Note size='small'>{say(WORDS.note)}</Note>
       {photos.rows.map(({ key }, index) => (
         <FormRow
           key={key}
           ref={photos.rowRef(key)}
-          label={`${index + 1} 枚目の写真`}
+          label={say(WORDS.photoOf(index + 1))}
         >
           <FieldRow>
             <Select
-              label='区分'
+              label={say(WORDS.type)}
               name={photoControlOf(index, 'photoType')}
-              options={PHOTO_TYPE_OPTIONS}
-              placeholder='選んでください'
+              options={choicesOf(PHOTO_TYPE_CHOICES)}
+              placeholder={say(WORDS.choose)}
               required
               defaultValue=''
-              error={photos.errors[photoControlOf(index, 'photoType')]}
+              error={rowErrors[photoControlOf(index, 'photoType')]}
             />
             <TextField
-              label='撮った向き'
+              label={say(WORDS.angle)}
               name={photoControlOf(index, 'angle')}
               autoComplete='off'
-              description={`正面、側面、後ろなど。${inJapanese(upTo(LONGEST_ANGLE))}`}
-              error={photos.errors[photoControlOf(index, 'angle')]}
+              description={say(WORDS.angleDescription(upTo(LONGEST_ANGLE)))}
+              error={rowErrors[photoControlOf(index, 'angle')]}
             />
           </FieldRow>
           <TextField
-            label='写真の URL'
+            label={say(WORDS.photoUrl)}
             name={photoControlOf(index, 'photoUrl')}
             type='url'
             autoComplete='off'
             required
-            description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
-            error={photos.errors[photoControlOf(index, 'photoUrl')]}
+            description={say(WEB_ADDRESS_DESCRIPTION)}
+            error={rowErrors[photoControlOf(index, 'photoUrl')]}
           />
           <TextField
-            label='縮小した写真の URL'
+            label={say(WORDS.thumbnailUrl)}
             name={photoControlOf(index, 'thumbnailUrl')}
             type='url'
             autoComplete='off'
-            description='小さくした写真があれば、その URL。施術記録の写真の一覧に出します。'
-            error={photos.errors[photoControlOf(index, 'thumbnailUrl')]}
+            description={say(WORDS.thumbnailUrlDescription)}
+            error={rowErrors[photoControlOf(index, 'thumbnailUrl')]}
           />
           <TextArea
-            label='写真の説明'
+            label={say(WORDS.description)}
             name={photoControlOf(index, 'description')}
             rows={2}
           />
           <div className={styles['choices']}>
             <Checkbox
-              label='お客様が、写真の撮影と利用に同意している'
+              label={say(WORDS.consent)}
               name={photoControlOf(index, 'customerConsent')}
             />
             <Checkbox
-              label='サロンの外（サロンのページなど）に見せてよい'
+              label={say(WORDS.public)}
               name={photoControlOf(index, 'isPublic')}
-              description='お客様の同意がある写真だけ、サロンの外に見せられます。'
-              error={photos.errors[photoControlOf(index, 'isPublic')]}
+              description={say(WORDS.publicDescription)}
+              error={rowErrors[photoControlOf(index, 'isPublic')]}
             />
           </div>
           {photos.rows.length > 1 && (
             <Button
               size='small'
-              aria-label={`${index + 1} 枚目の写真の欄を外す`}
+              aria-label={say(WORDS.removeRow(index + 1))}
               onClick={() => photos.remove(key)}
             >
-              外す
+              {say(WORDS.remove)}
             </Button>
           )}
         </FormRow>
       ))}
       {photos.rows.length < room ? (
         <Button ref={photos.addRef} onClick={() => photos.add(null)}>
-          写真の欄を足す
+          {say(WORDS.addRow)}
         </Button>
       ) : (
-        <Note size='small'>
-          {`この施術記録に足せる写真は、あと ${room} 枚です。`}
-        </Note>
+        <Note size='small'>{say(WORDS.room(room))}</Note>
       )}
     </Form>
   )

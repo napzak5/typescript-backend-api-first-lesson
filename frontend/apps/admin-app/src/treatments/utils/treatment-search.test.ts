@@ -70,8 +70,8 @@ describe('readTreatmentConditions', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        from: '日付を入力してください。',
-        to: '日付を入力してください。',
+        from: { en: 'Enter a date.', ja: '日付を入力してください。' },
+        to: { en: 'Enter a date.', ja: '日付を入力してください。' },
       },
     })
   })
@@ -82,7 +82,10 @@ describe('readTreatmentConditions', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        to: {
+          en: 'Make the last day the same as the first day, or later.',
+          ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        },
       },
     })
   })

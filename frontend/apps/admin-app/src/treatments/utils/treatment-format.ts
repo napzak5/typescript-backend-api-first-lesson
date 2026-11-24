@@ -2,85 +2,52 @@ import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
-  ModelsProductResponse,
-  ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
+import type { NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import {
-  adminMenuMessages,
-  adminStaffMessages,
+  adminCustomerMessages,
+  adminTreatmentMessages,
 } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../../customers/api/customers-api'
-import { quantityOf } from '../../products/utils/quantity'
 import type { TreatmentRemoval } from '../api/treatments-api'
 
-/** What is said of a member of the staff the salon no longer shows. */
-export const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
-
-/** What is said of a service that was removed. */
-export const GONE_SERVICE = inJapanese(adminMenuMessages.removedService)
+const { satisfactions, rated, names, removal } = adminTreatmentMessages
+const { naming } = adminCustomerMessages
 
 /*
- * How a treatment record is said: its satisfaction, its time, its
- * materials and the products they are of.
+ * How a treatment record is said: its satisfaction, its customer, and what
+ * is said after it was to be removed.
  */
 
-const SATISFACTIONS: readonly (readonly [number, string])[] = [
-  [5, 'とても満足'],
-  [4, '満足'],
-  [3, 'ふつう'],
-  [2, '不満'],
-  [1, 'とても不満'],
-]
+/** How satisfied a customer was, as a record holds it */
+type Satisfaction = keyof typeof satisfactions
+
+/** The satisfactions, the highest first */
+const SATISFACTIONS: readonly Satisfaction[] = [5, 4, 3, 2, 1]
 
 /** How satisfied the customer was: 「5（とても満足）」. */
-export const satisfactionNameOf = (satisfaction: number): string => {
-  const name = SATISFACTIONS.find(([value]) => value === satisfaction)?.[1]
+export const satisfactionNameOf = (satisfaction: number): LocalizedText => {
+  const known = SATISFACTIONS.find((value) => value === satisfaction)
 
-  return name === undefined
-    ? String(satisfaction)
-    : `${satisfaction}（${name}）`
+  return known === undefined
+    ? formats.numberOf(satisfaction)
+    : rated(known, satisfactions[known])
 }
 
 /** The satisfactions a form offers, the highest first */
-export const SATISFACTION_OPTIONS: readonly ChoiceOption[] = SATISFACTIONS.map(
-  ([value]) => ({ value: String(value), label: satisfactionNameOf(value) }),
+export const SATISFACTION_CHOICES: readonly NamedChoice[] = SATISFACTIONS.map(
+  (value) => ({ value: String(value), label: satisfactionNameOf(value) }),
 )
-
-/** What is said of a satisfaction the customer did not give */
-export const NOT_ANSWERED = '未回答'
-
-/** How long a treatment took: 「75 分」. */
-export const minutesNameOf = (minutes: number): string => `${minutes} 分`
-
-/** How much of a product was used: 「0.5 bottle」. */
-export const quantityNameOf = ({
-  quantity,
-  unit,
-}: Pick<ModelsTreatmentMaterial, 'quantity' | 'unit'>): string =>
-  `${inJapanese(quantityOf(quantity))} ${unit}`
-
-/** A product as the screens name it: 「Developer 6% 1000ml（DEVELOPER001）」. */
-export const productNameOf = ({
-  name,
-  productCode,
-}: Pick<ModelsProductResponse, 'name' | 'productCode'>): string =>
-  `${name}（${productCode}）`
-
-/** What a product of a record that the salon no longer has is called */
-export const REMOVED_PRODUCT = '削除された商品'
 
 /** Who may remove a treatment record: a member of the staff changes it instead */
 const REMOVERS: readonly string[] = ['owner', 'manager', 'admin']
 
 export const mayRemoveTreatments = (role: string): boolean =>
   REMOVERS.includes(role)
-
-/** Who removes a record, as an account that may not is told */
-const REMOVED_BY_OTHERS =
-  '間違えて書いた施術記録の削除は、オーナーとマネージャーができます。'
 
 /** Whether the record was changed after it was written */
 export const wasChanged = ({
@@ -89,13 +56,22 @@ export const wasChanged = ({
 }: Pick<ModelsTreatmentRecordResponse, 'createdAt' | 'updatedAt'>): boolean =>
   createdAt !== updatedAt
 
-/** A customer as a record names them: 「山田 花子 様」, or that they left the ledger. */
-export const customerCalled = (
-  customer: Pick<ModelsCustomerResponse, 'lastName' | 'firstName'> | undefined,
-): string =>
+/** The customer a record names: `undefined` for one who left the ledger */
+type Customer =
+  | Pick<ModelsCustomerResponse, 'lastName' | 'firstName'>
+  | undefined
+
+/** A customer as a cell, a term and a line name them: 「山田 花子 様」, or that they left the ledger. */
+export const customerCalled = (customer: Customer): LocalizedText =>
   customer === undefined
-    ? '台帳から削除されたお客様'
-    : `${customerNameOf(customer)} 様`
+    ? adminTreatmentMessages.removedCustomer
+    : naming.honored(customerNameOf(customer))
+
+/** The same, as a sentence names them. */
+export const customerInASentence = (customer: Customer): LocalizedText =>
+  customer === undefined
+    ? names.removedCustomer
+    : naming.honored(customerNameOf(customer))
 
 /**
  * What a removal comes to on the screen. An area whose texts are messages
@@ -111,31 +87,30 @@ export type TreatmentRemovalSays<Text = string> =
   /** The record was removed meanwhile: the screen says it is not found */
   | { type: 'gone' }
 
-/** What is said after a record was to be removed; the customer is named as `customerCalled` names them. */
+/** What is said after a record was to be removed; the customer is named as a sentence names them. */
 export const afterTreatmentRemoval = (
   outcome: TreatmentRemoval,
-  name: string,
-): TreatmentRemovalSays =>
+  customer: LocalizedText,
+): TreatmentRemovalSays<LocalizedText> =>
   match(outcome)
-    .returnType<TreatmentRemovalSays>()
+    .returnType<TreatmentRemovalSays<LocalizedText>>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `${name}の施術記録を削除しました。`,
+      message: removal.done(customer),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     // The role of the account changed meanwhile
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、施術記録を削除できません。${REMOVED_BY_OTHERS}`,
+      message: removal.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '施術記録を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: removal.failed,
     }))
     .exhaustive()
 

@@ -1,4 +1,6 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import {
@@ -8,6 +10,8 @@ import {
 } from '../../../bookings/components/examples'
 import { aTreatment, products } from '../examples'
 import { TreatmentForm } from './treatment-form'
+
+const { errors, failed } = adminTreatmentMessages.form
 
 const meta: Meta<typeof TreatmentForm> = {
   title: 'Admin/Treatments/TreatmentForm',
@@ -64,10 +68,10 @@ export const WithErrors: Story = {
     record: aTreatment(),
     submitLabel: '変更を保存する',
     errors: {
-      'materials.1.quantity':
-        '量は、0 より大きい数で、小数第 2 位まで入力してください。',
-      nextRecommendedDate:
-        '次に勧める日は、予約の日（2026-11-20）から後の日にしてください。',
+      'materials.1.quantity': errors.quantity,
+      nextRecommendedDate: errors.nextRecommendedDateTooEarly(
+        dayNameOf('2026-11-20'),
+      ),
     },
   },
 }
@@ -96,7 +100,6 @@ export const Sending: Story = {
 /** The record could not be sent */
 export const NotSent: Story = {
   args: {
-    message:
-      '施術記録を書けませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: failed.entry,
   },
 }

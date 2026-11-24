@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as photoFormStories from './photo-form.stories'
 
 const stories = composeStories(photoFormStories)
@@ -200,5 +201,75 @@ describe('PhotoForm', () => {
     expect(
       screen.getByRole('textbox', { name: label }),
     ).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('PhotoForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and say what they take, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    const photo = screen.getByRole('group', { name: 'Photo 1' })
+    expect(
+      optionsOf(within(photo).getByRole('combobox', { name: 'Kind' })),
+    ).toEqual([
+      'Choose',
+      'Before the treatment',
+      'During the treatment',
+      'After the treatment',
+      'Other',
+    ])
+    expect(
+      within(photo).getByRole('textbox', { name: 'Angle' }),
+    ).toHaveAccessibleDescription(
+      'Front, side, back and so on. Up to 50 characters.',
+    )
+    expect(
+      within(photo).getByRole('checkbox', {
+        name: 'The customer agrees to the photo being taken and used',
+      }),
+    ).not.toBeChecked()
+    expect(
+      screen.getByRole('button', { name: 'Add fields for a photo' }),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Add photos' })).toBeVisible()
+  })
+
+  it('should say how many more photos the record takes, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.LastOne.run()
+
+    // Assert
+    expect(
+      screen.getByText('This treatment record can take 1 more photo.'),
+    ).toBeVisible()
+  })
+
+  it('should say what is wrong with a photo and with the attempt, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Photo URL' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'This treatment record has a photo with the same URL.',
+      ),
+    )
   })
 })

@@ -18,18 +18,21 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
-  type ChoiceOption,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
+  type NamedChoice,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { PhotoRemoval, PhotosAdding } from '../api/treatments-api'
+
+const { photos: PHOTOS } = adminTreatmentMessages
+const { errors: ERRORS } = PHOTOS
 
 /*
  * The photos of a treatment record: how they are named, the form that adds
@@ -44,15 +47,14 @@ export const MOST_PHOTOS = 20
 /** The longest direction a photo was taken from, as the API takes it */
 export const LONGEST_ANGLE = 50
 
-const PHOTO_TYPE_NAMES: Record<ModelsTreatmentPhotoType, string> = {
-  before: '施術前',
-  during: '施術中',
-  after: '施術後',
-  other: 'そのほか',
-}
+/** What is wrong with the values of the form of the photos, under the names of its controls */
+type Errors = FormErrors<LocalizedText>
+
+const PHOTO_TYPE_NAMES: Record<ModelsTreatmentPhotoType, LocalizedText> =
+  PHOTOS.types
 
 /** When a photo may have been taken, in the order of a treatment */
-export const PHOTO_TYPE_OPTIONS: readonly ChoiceOption[] = Object.values(
+export const PHOTO_TYPE_CHOICES: readonly NamedChoice[] = Object.values(
   ModelsTreatmentPhotoType,
 ).map((photoType) => ({ value: photoType, label: PHOTO_TYPE_NAMES[photoType] }))
 
@@ -60,10 +62,8 @@ export const PHOTO_TYPE_OPTIONS: readonly ChoiceOption[] = Object.values(
 export const photoNameOf = ({
   photoType,
   angle,
-}: Pick<ModelsTreatmentPhotoResponse, 'photoType' | 'angle'>): string =>
-  angle === null
-    ? `${PHOTO_TYPE_NAMES[photoType]}の写真`
-    : `${PHOTO_TYPE_NAMES[photoType]}の写真（${angle}）`
+}: Pick<ModelsTreatmentPhotoResponse, 'photoType' | 'angle'>): LocalizedText =>
+  PHOTOS.photoOf(PHOTO_TYPE_NAMES[photoType], angle)
 
 /** How a photo may be used, as the customer agreed. */
 export const photoUseOf = ({
@@ -72,12 +72,12 @@ export const photoUseOf = ({
 }: Pick<
   ModelsTreatmentPhotoResponse,
   'isPublic' | 'customerConsent'
->): string =>
+>): LocalizedText =>
   isPublic
-    ? 'お客様の同意あり。サロンの外にも見せられます。'
+    ? PHOTOS.use.public
     : customerConsent
-      ? 'お客様の同意あり。サロンの中だけで使います。'
-      : 'お客様の同意なし。サロンの中だけで使います。'
+      ? PHOTOS.use.inside
+      : PHOTOS.use.withoutConsent
 
 /** How many photos a record can still take. */
 export const roomOf = ({
@@ -92,23 +92,11 @@ export const photoControlOf = (
   name: keyof ModelsTreatmentPhotoCreateRequest,
 ): string => `photos.${index}.${name}`
 
-const TYPE_MISSING = '写真の区分を選んでください。'
-const URL_MISSING = '写真の URL を入力してください。'
-const ANGLE_TOO_LONG = tooLongOf(writtenInJapanese('撮った向き'), LONGEST_ANGLE)
-const NO_CONSENT =
-  'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。'
-const URL_HELD =
-  'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。'
-
-/** What is said of the address of a photo that an earlier row of the form holds */
-const repeatedUrlOf = (row: number): string =>
-  `${row} 枚目と同じ URL です。ほかの写真の URL を入力するか、この写真の欄を外してください。`
+const ANGLE_TOO_LONG = tooLongOf(PHOTOS.form.angle, LONGEST_ANGLE)
 
 /** What is said when the record has no room for the photos of the form */
-const noRoomOf = (room: number): string =>
-  room === 0
-    ? `この施術記録の写真は、${MOST_PHOTOS} 枚になりました。写真を外してから足してください。`
-    : `この施術記録には、あと ${room} 枚まで足せます。写真の欄を減らしてください。`
+const noRoomOf = (room: number): LocalizedText =>
+  ERRORS.noRoom(room, MOST_PHOTOS)
 /** A photo as it was filled in */
 type FilledPhoto = {
   photoType: string
@@ -151,7 +139,7 @@ const photoErrorsOf = (
   filled: FilledPhoto,
   earlier: readonly FilledPhoto[],
   held: readonly ModelsTreatmentPhotoResponse[],
-): [string, string][] => {
+): [string, LocalizedText][] => {
   const angle = textOrNull(filled.angle)
   const repeated = earlier.findIndex(
     ({ photoUrl }) => photoUrl === filled.photoUrl,
@@ -160,39 +148,41 @@ const photoErrorsOf = (
   return [
     ...errorAt(
       photoControlOf(index, 'photoType'),
-      photoTypeOf(filled.photoType) === undefined ? TYPE_MISSING : undefined,
+      photoTypeOf(filled.photoType) === undefined ? ERRORS.type : undefined,
     ),
     ...errorAt(
       photoControlOf(index, 'photoUrl'),
       filled.photoUrl === ''
-        ? URL_MISSING
+        ? ERRORS.photoUrl
         : webAddressError(filled.photoUrl) !== undefined
-          ? inJapanese(WEB_ADDRESS_ERROR)
+          ? WEB_ADDRESS_ERROR
           : repeated !== -1
-            ? repeatedUrlOf(repeated + 1)
+            ? ERRORS.repeated(repeated + 1)
             : held.some(({ photoUrl }) => photoUrl === filled.photoUrl)
-              ? URL_HELD
+              ? ERRORS.held
               : undefined,
     ),
     ...errorAt(
       photoControlOf(index, 'thumbnailUrl'),
-      inJapaneseIfAny(webAddressError(textOrNull(filled.thumbnailUrl))),
+      webAddressError(textOrNull(filled.thumbnailUrl)),
     ),
     ...errorAt(
       photoControlOf(index, 'angle'),
-      inJapaneseIfAny(tooLongError(angle, LONGEST_ANGLE, ANGLE_TOO_LONG)),
+      tooLongError(angle, LONGEST_ANGLE, ANGLE_TOO_LONG),
     ),
     ...errorAt(
       photoControlOf(index, 'isPublic'),
-      filled.isPublic && !filled.customerConsent ? NO_CONSENT : undefined,
+      filled.isPublic && !filled.customerConsent
+        ? ERRORS.withoutConsent
+        : undefined,
     ),
   ]
 }
 
 /** The photos that were filled in, or what is wrong with them; and none, when the record has no room for them. */
 export type PhotosRead =
-  | FormRead<ModelsTreatmentPhotoBulkCreateRequest>
-  | { type: 'noRoom'; message: string }
+  | FormRead<ModelsTreatmentPhotoBulkCreateRequest, Errors>
+  | { type: 'noRoom'; message: LocalizedText }
 
 /**
  * The photos that were filled in, to be added to a record. They follow the
@@ -245,13 +235,13 @@ const PHOTO_FIELD =
   /^photos\.(\d+)\.(photoType|photoUrl|thumbnailUrl|angle|isPublic)$/
 
 /** What the API says is wrong with a control of a photo, in the words of the form. */
-const photoSaidOf = (name: string): string =>
+const photoSaidOf = (name: string): LocalizedText =>
   match(name)
-    .returnType<string>()
-    .with('photoType', () => TYPE_MISSING)
-    .with('angle', () => inJapanese(ANGLE_TOO_LONG))
-    .with('isPublic', () => NO_CONSENT)
-    .otherwise(() => inJapanese(WEB_ADDRESS_ERROR))
+    .returnType<LocalizedText>()
+    .with('photoType', () => ERRORS.type)
+    .with('angle', () => ANGLE_TOO_LONG)
+    .with('isPublic', () => ERRORS.withoutConsent)
+    .otherwise(() => WEB_ADDRESS_ERROR)
 
 /**
  * What the form says after the API refused the photos, or after nothing
@@ -264,12 +254,12 @@ export const afterPhotosAdded = (
     { type: 'invalid' | 'held' | 'forbidden' | 'tooManyRequests' | 'failed' }
   >,
   request: ModelsTreatmentPhotoBulkCreateRequest,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap(
-        ({ field }: RefusedValue): [string, string][] => {
+        ({ field }: RefusedValue): [string, LocalizedText][] => {
           const photo = PHOTO_FIELD.exec(field)
 
           return photo?.[2] === undefined
@@ -279,17 +269,16 @@ export const afterPhotosAdded = (
       )
 
       return {
-        message: inJapaneseIfAny(
+        message:
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
         errors: Object.fromEntries(said.toReversed()),
       }
     })
     .with({ type: 'held' }, ({ record }) => {
       const errors = request.photos.flatMap(
-        ({ photoUrl }, index): [string, string][] =>
+        ({ photoUrl }, index): [string, LocalizedText][] =>
           record.photos.some((photo) => photo.photoUrl === photoUrl)
-            ? [[photoControlOf(index, 'photoUrl'), URL_HELD]]
+            ? [[photoControlOf(index, 'photoUrl'), ERRORS.held]]
             : [],
       )
 
@@ -297,59 +286,48 @@ export const afterPhotosAdded = (
         ? { message: undefined, errors: Object.fromEntries(errors) }
         : aboutTheAttempt(noRoomOf(roomOf(record)))
     })
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、施術写真を足せません。'),
-    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(PHOTOS.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '施術写真を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(PHOTOS.failed))
     .exhaustive()
-
-/** What is said when photos were added: 「施術写真を 2 枚足しました。」. */
-export const photosAddedOf = (count: number): string =>
-  `施術写真を ${count} 枚足しました。`
 
 /** What is said after a photo was to be taken away. */
 export type PhotoRemovalSays =
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: LocalizedText }
   /** What can be tried again: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** What changed meanwhile: said above the photos, which are read again */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
-/** What is said after a photo was to be taken away. */
+/** What is said after a photo was to be taken away; the photo is named as its image is. */
 export const afterPhotoRemoval = (
   outcome: PhotoRemoval,
-  name: string,
+  photo: LocalizedText,
 ): PhotoRemovalSays =>
   match(outcome)
     .returnType<PhotoRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `${name}を外しました。`,
+      message: PHOTOS.removal.done(photo),
     }))
     // The photo, or the record, was taken away meanwhile
     .with({ type: 'notFound' }, () => ({
       type: 'refused',
-      message: 'この写真は、その間に外されていました。',
+      message: PHOTOS.removal.gone,
     }))
     // The role of the account changed meanwhile
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: 'このアカウントでは、施術写真を外せません。',
+      message: PHOTOS.removal.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '施術写真を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: PHOTOS.removal.failed,
     }))
     .exhaustive()

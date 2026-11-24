@@ -2,6 +2,7 @@ import type { Locale } from '../languages/locale'
 import type { LocalizedText } from '../languages/localized-text'
 import { numberFormatIn } from './formatters'
 import { inEachLanguage } from './in-each-language'
+import type { Decimals } from './numbers'
 
 /*
  * A length of time (how long a service takes, in hours and minutes or in
@@ -13,11 +14,18 @@ const unitIn = (
   language: Locale,
   value: number,
   unit: 'hour' | 'minute',
+  decimals?: Decimals,
 ): string =>
   numberFormatIn(language, {
     style: 'unit',
     unit,
     unitDisplay: 'short',
+    ...(decimals === undefined
+      ? {}
+      : {
+          maximumFractionDigits: decimals.most,
+          minimumFractionDigits: decimals.least ?? 0,
+        }),
   }).format(value)
 
 /**
@@ -38,10 +46,14 @@ export const durationOf = (minutes: number): LocalizedText =>
 
 /**
  * How long something takes, in minutes alone, as a form that takes minutes
- * writes it back: 「90 分」, "90 min".
+ * writes it back: 「90 分」, "90 min". An average is written with the
+ * decimals it is given (「72.5 分」); without them, as many as three.
  */
-export const minutesOf = (minutes: number): LocalizedText =>
-  inEachLanguage((language) => unitIn(language, minutes, 'minute'))
+export const minutesOf = (
+  minutes: number,
+  decimals?: Decimals,
+): LocalizedText =>
+  inEachLanguage((language) => unitIn(language, minutes, 'minute', decimals))
 
 /** A time of a day without its seconds: `10:00` of `10:00:00`. */
 const withoutSeconds = (time: string): string => time.slice(0, 5)

@@ -1,8 +1,11 @@
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { aPhoto, aTreatment, photos } from '../examples'
 import { TreatmentPhotos } from './treatment-photos'
+
+const { removal } = adminTreatmentMessages.photos
 
 const meta: Meta<typeof TreatmentPhotos> = {
   title: 'Admin/Treatments/TreatmentPhotos',
@@ -61,12 +64,11 @@ export const Removing: Story = {
 export const RemovalFailed: Story = {
   args: {
     removing: photos[1],
-    message:
-      '施術写真を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: removal.failed,
   },
 }
 
 /** Another account took the photo away meanwhile */
 export const Gone: Story = {
-  args: { refusal: 'この写真は、その間に外されていました。' },
+  args: { refusal: removal.gone },
 }

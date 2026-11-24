@@ -5,14 +5,16 @@ import {
   ButtonLink,
   Card,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import type { TreatmentOfBookingRead } from '../../api/treatments-api'
 import styles from './booking-treatment.module.css'
+
+const { booking: WORDS, names } = adminTreatmentMessages
 
 export type BookingTreatmentProps = {
   booking: Pick<ModelsBookingResponse, 'status'>
@@ -45,52 +47,56 @@ export const BookingTreatment = ({
   entryHref,
   onRetry,
   retrying,
-}: BookingTreatmentProps) => (
-  <Card title='施術記録'>
-    {match(booking.status)
-      .with(P.union('in_progress', 'completed'), () =>
-        match(found)
-          .with(undefined, () => (
-            <LoadingIndicator label='施術記録を読み込んでいます' />
-          ))
-          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
-            <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('施術記録'), reason),
-              )}
-              onRetry={onRetry}
-              pending={retrying}
-            />
-          ))
-          .with({ type: 'found', record: null }, () => (
-            <EmptyState
-              kind='part'
-              title='まだ施術記録を書いていません。'
-              actions={
-                <ButtonLink href={entryHref} variant='primary'>
-                  施術記録を書く
+}: BookingTreatmentProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(WORDS.title)}>
+      {match(booking.status)
+        .with(P.union('in_progress', 'completed'), () =>
+          match(found)
+            .with(undefined, () => (
+              <LoadingIndicator label={say(WORDS.loading)} />
+            ))
+            .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
+              <UnreadNotice
+                message={say(unreadMessageOf(names.record, reason))}
+                onRetry={onRetry}
+                pending={retrying}
+              />
+            ))
+            .with({ type: 'found', record: null }, () => (
+              <EmptyState
+                kind='part'
+                title={say(WORDS.none)}
+                actions={
+                  <ButtonLink href={entryHref} variant='primary'>
+                    {say(WORDS.write)}
+                  </ButtonLink>
+                }
+              />
+            ))
+            .with({ type: 'found', record: P.nonNullable }, ({ record }) => (
+              <div className={styles['part']}>
+                <p>
+                  {say(
+                    WORDS.writtenAt(momentNameAt(record.createdAt, timezone)),
+                  )}
+                </p>
+                <ButtonLink href={treatmentHref(record.id)}>
+                  {say(WORDS.view)}
                 </ButtonLink>
-              }
-            />
-          ))
-          .with({ type: 'found', record: P.nonNullable }, ({ record }) => (
-            <div className={styles['part']}>
-              <p>
-                {`${inJapanese(momentNameAt(record.createdAt, timezone))}に書いた施術記録があります。`}
-              </p>
-              <ButtonLink href={treatmentHref(record.id)}>
-                施術記録を見る
-              </ButtonLink>
-            </div>
-          ))
-          .exhaustive(),
-      )
-      .with(P.union('draft', 'pending', 'confirmed'), () => (
-        <p>施術を始めると、施術記録を書けます。</p>
-      ))
-      .with(P.union('cancelled', 'no_show'), () => (
-        <p>施術をしなかった予約には、施術記録はありません。</p>
-      ))
-      .exhaustive()}
-  </Card>
-)
+              </div>
+            ))
+            .exhaustive(),
+        )
+        .with(P.union('draft', 'pending', 'confirmed'), () => (
+          <p>{say(WORDS.notBegun)}</p>
+        ))
+        .with(P.union('cancelled', 'no_show'), () => (
+          <p>{say(WORDS.notTreated)}</p>
+        ))
+        .exhaustive()}
+    </Card>
+  )
+}

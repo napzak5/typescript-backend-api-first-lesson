@@ -10,37 +10,42 @@ import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
-  inJapanese,
   Link,
   Table,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminInventoryMessages,
+  adminMenuMessages,
+  adminStaffMessages,
+  adminTreatmentMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import {
   serviceNameOf,
   staffNameOf,
 } from '../../../bookings/utils/day-bookings'
+import { productNameOf } from '../../../inventory/utils/stock-format'
+import { quantityOf } from '../../../products/utils/quantity'
 import {
   customerCalled,
-  GONE_SERVICE,
-  minutesNameOf,
-  NOT_ANSWERED,
-  productNameOf,
-  quantityNameOf,
-  REMOVED_PRODUCT,
   satisfactionNameOf,
-  UNLISTED_STAFF,
   wasChanged,
 } from '../../utils/treatment-format'
 import styles from './treatment-record.module.css'
+
+const { record: WORDS } = adminTreatmentMessages
 
 export type TreatmentRecordProps = {
   record: ModelsTreatmentRecordResponse
   /** The time zone of the salon, which the moments are shown in */
   timezone: string
   /** The booking, as the record names it: 「BK-4F7H-2KQM（2026年11月20日（金））」 */
-  bookingName: string
+  bookingName: LocalizedText
   bookingHref: string
   /** The customer; `undefined` for one who left the ledger */
   customer: Pick<ModelsCustomerResponse, 'lastName' | 'firstName'> | undefined
@@ -80,121 +85,128 @@ export const TreatmentRecord = ({
   products,
   actions,
 }: TreatmentRecordProps) => {
+  const say = useSay()
   const servicesOf = (ids: readonly string[]): string[] =>
-    ids.map((id) => serviceNameOf(id, services) ?? GONE_SERVICE)
+    ids.map(
+      (id) =>
+        serviceNameOf(id, services) ?? say(adminMenuMessages.removedService),
+    )
 
   return (
     <div className={styles['record']}>
-      <Card title='施術' actions={actions}>
+      <Card title={say(WORDS.treatment)} actions={actions}>
         <DescriptionList
           items={[
             {
-              term: 'お客様',
+              term: say(WORDS.customer),
               description:
                 customer === undefined ? (
-                  customerCalled(customer)
+                  say(customerCalled(customer))
                 ) : (
-                  <Link href={customerHref}>{customerCalled(customer)}</Link>
+                  <Link href={customerHref}>
+                    {say(customerCalled(customer))}
+                  </Link>
                 ),
             },
             {
-              term: '予約',
-              description: <Link href={bookingHref}>{bookingName}</Link>,
+              term: say(WORDS.booking),
+              description: <Link href={bookingHref}>{say(bookingName)}</Link>,
             },
             {
-              term: '担当',
-              description: staffNameOf(record.staffId, staff) ?? UNLISTED_STAFF,
+              term: say(WORDS.staff),
+              description:
+                staffNameOf(record.staffId, staff) ??
+                say(adminStaffMessages.unlisted),
             },
             {
-              term: '提供したサービス',
+              term: say(WORDS.services),
               description: (
                 <TagList
-                  label='提供したサービス'
+                  label={say(WORDS.services)}
                   items={servicesOf(record.services)}
                 />
               ),
             },
             {
-              term: '技法',
-              description: <TagList label={'技法'} items={record.techniques} />,
+              term: say(WORDS.techniques),
+              description: (
+                <TagList
+                  label={say(WORDS.techniques)}
+                  items={record.techniques}
+                />
+              ),
             },
             {
-              term: '施術時間',
+              term: say(WORDS.processingTime),
               description:
                 record.processingTime === null
                   ? null
-                  : minutesNameOf(record.processingTime),
+                  : say(formats.minutesOf(record.processingTime)),
             },
             {
-              term: '書いた日時',
-              description: inJapanese(momentNameAt(record.createdAt, timezone)),
+              term: say(WORDS.writtenAt),
+              description: say(momentNameAt(record.createdAt, timezone)),
             },
             ...(wasChanged(record)
               ? [
                   {
-                    term: '最後に直した日時',
-                    description: inJapanese(
-                      momentNameAt(record.updatedAt, timezone),
-                    ),
+                    term: say(WORDS.changedAt),
+                    description: say(momentNameAt(record.updatedAt, timezone)),
                   },
                 ]
               : []),
           ]}
         />
       </Card>
-      <Card title='カウンセリングと状態'>
+      <Card title={say(WORDS.consultation)}>
         <DescriptionList
           items={[
             {
-              term: 'カウンセリングのメモ',
+              term: say(WORDS.consultationNotes),
               description: (
                 <WrittenText>{record.consultationNotes}</WrittenText>
               ),
             },
             {
-              term: '頭皮の状態',
+              term: say(WORDS.scalpCondition),
               description: <WrittenText>{record.scalpCondition}</WrittenText>,
             },
             {
-              term: '毛髪の状態',
+              term: say(WORDS.hairCondition),
               description: <WrittenText>{record.hairCondition}</WrittenText>,
             },
             {
-              term: 'カラー剤の配合',
+              term: say(WORDS.colorFormula),
               description: <WrittenText>{record.colorFormula}</WrittenText>,
             },
           ]}
         />
       </Card>
-      <Card title='使った商材'>
+      <Card title={say(WORDS.materials)}>
         <Table<Row>
-          caption='使った商材の一覧'
+          caption={say(WORDS.materialList)}
           captionHidden
           columns={[
             {
               key: 'product',
-              header: '商品',
-              cell: ({ material: { productId } }) => {
-                const product = products.find(({ id }) => id === productId)
-
-                return product === undefined
-                  ? REMOVED_PRODUCT
-                  : productNameOf(product)
-              },
+              header: say(WORDS.product),
+              cell: ({ material: { productId } }) =>
+                say(productNameOf(products.find(({ id }) => id === productId))),
             },
             {
               key: 'quantity',
-              header: '量',
-              cell: ({ material }) => quantityNameOf(material),
+              header: say(WORDS.quantity),
+              cell: ({ material: { quantity, unit } }) =>
+                say(adminInventoryMessages.inUnit(quantityOf(quantity), unit)),
             },
             {
               key: 'lotNumber',
-              header: 'ロット番号',
+              header: say(WORDS.lotNumber),
               cell: ({ material: { lotNumber } }) => lotNumber,
             },
             {
               key: 'notes',
-              header: 'メモ',
+              header: say(WORDS.notes),
               wrap: 'lines',
               cell: ({ material: { notes } }) => notes,
             },
@@ -205,47 +217,48 @@ export const TreatmentRecord = ({
           }))}
           // The materials have no IDs: a row is its place in the list
           rowKey={({ place }) => String(place)}
-          emptyMessage='使った商材はありません'
+          emptyMessage={say(WORDS.noMaterials)}
         />
       </Card>
-      <Card title='結果と次回'>
+      <Card title={say(WORDS.result)}>
         <DescriptionList
           items={[
             {
-              term: '結果のメモ',
+              term: say(WORDS.resultNotes),
               description: <WrittenText>{record.resultNotes}</WrittenText>,
             },
             {
-              term: 'お客様の満足度',
-              description:
+              term: say(WORDS.satisfaction),
+              description: say(
                 record.customerSatisfaction === null
-                  ? NOT_ANSWERED
+                  ? WORDS.notAnswered
                   : satisfactionNameOf(record.customerSatisfaction),
+              ),
             },
             {
-              term: '次に勧める日',
+              term: say(WORDS.nextRecommendedDate),
               description:
                 record.nextRecommendedDate === null
                   ? null
-                  : inJapanese(dayNameOf(record.nextRecommendedDate)),
+                  : say(dayNameOf(record.nextRecommendedDate)),
             },
             {
-              term: '次に勧めるサービス',
+              term: say(WORDS.nextRecommendedServices),
               description: (
                 <TagList
-                  label={'次に勧めるサービス'}
+                  label={say(WORDS.nextRecommendedServices)}
                   items={servicesOf(record.nextRecommendedServices)}
                 />
               ),
             },
             {
-              term: 'ホームケアの提案',
+              term: say(WORDS.homeCareSuggestions),
               description: (
                 <WrittenText>{record.homeCareSuggestions}</WrittenText>
               ),
             },
             {
-              term: '申し送り',
+              term: say(WORDS.staffEvaluation),
               description: <WrittenText>{record.staffEvaluation}</WrittenText>,
             },
           ]}

@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   aBooking,
   aCustomer,
@@ -111,7 +112,7 @@ describe('TreatmentRecord', () => {
       '記録なし',
     ])
     expect(rowsOf('使った商材の一覧')).toEqual([
-      ['削除された商品', '2 本', '記録なし', '記録なし'],
+      ['削除した商品', '2 本', '記録なし', '記録なし'],
     ])
   })
 
@@ -121,5 +122,80 @@ describe('TreatmentRecord', () => {
 
     // Assert
     expect(screen.getByText('使った商材はありません')).toBeInTheDocument()
+  })
+})
+
+describe('TreatmentRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the terms and write the values of a record, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Written.run()
+
+    // Assert
+    expect(termsOf('Treatment')).toEqual([
+      ['Customer', '山田 花子'],
+      ['Booking', 'BK-4F7H-2KQM (Fri, November 20, 2026)'],
+      ['Staff', '田中 美咲'],
+      ['Services provided', 'カットカラー'],
+      ['Techniques', 'ローライトレイヤーカット'],
+      ['Treatment time', '75 min'],
+      ['Written at', 'Fri, November 20, 2026 at 12:30'],
+    ])
+    expect(
+      termsOf('Result and next visit').filter(([term]) =>
+        ['Customer satisfaction', 'Next recommended date'].includes(term),
+      ),
+    ).toEqual([
+      ['Customer satisfaction', '5 (Very satisfied)'],
+      ['Next recommended date', 'Fri, December 18, 2026'],
+    ])
+    expect(rowsOf('List of materials used')).toEqual([
+      ['カラー剤 6N (COLOR-6N)', '1 本', 'LOT-2026-031', 'Not recorded'],
+      ['オキシ 6% (OX-6)', '80.5 ml', 'Not recorded', '根元に多めに使った。'],
+    ])
+  })
+
+  it('should say what was not recorded and what the salon removed, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Sparse.run()
+
+    // Assert
+    expect(termsOf('Treatment')).toEqual([
+      ['Customer', 'Removed from the ledger'],
+      ['Booking', 'BK-4F7H-2KQM (Fri, November 20, 2026)'],
+      ['Staff', '田中 美咲'],
+      ['Services provided', 'Removed service'],
+      ['Techniques', 'None'],
+      ['Treatment time', 'Not recorded'],
+      ['Written at', 'Fri, November 20, 2026 at 12:30'],
+      ['Last edited at', 'Sat, November 21, 2026 at 10:00'],
+    ])
+    expect(termsOf('Result and next visit')[1]).toEqual([
+      'Customer satisfaction',
+      'Not answered',
+    ])
+    expect(rowsOf('List of materials used')).toEqual([
+      ['Removed product', '2 本', 'Not recorded', 'Not recorded'],
+    ])
+  })
+
+  it('should say that no material was used, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutMaterials.run()
+
+    // Assert
+    expect(screen.getByText('No materials used')).toBeInTheDocument()
   })
 })

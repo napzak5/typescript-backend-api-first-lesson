@@ -14,12 +14,12 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
@@ -29,6 +29,8 @@ import { customerKeyOf, readCustomer } from '../../customers/api/customers-api'
 import { treatmentsHrefOf } from '../../navigation'
 import { productsKeyOf, readProducts } from '../../products/api/products-api'
 import { readTreatment, treatmentKeyOf } from '../api/treatments-api'
+
+const { frame: FRAME, names } = adminTreatmentMessages
 
 /** What a screen of a record names and offers, read with the record */
 export type TreatmentContext = {
@@ -44,7 +46,7 @@ export type TreatmentContext = {
 type WithTreatmentProps = {
   salon: ModelsSalonResponse
   treatmentId: string
-  /** The title of the screen */
+  /** The title of the screen, in the language of the page */
   title: string
   /**
    * Whether the record is shown only once it was read anew: a screen that
@@ -57,15 +59,21 @@ type WithTreatmentProps = {
 }
 
 /** What is said of a record that is not found: the way to the list */
-const TreatmentNotFound = ({ salonId }: { salonId: string }) => (
-  <>
-    <PageHeader
-      title='施術記録が見つかりません'
-      description='アドレスが正しいか、お確かめください。削除された施術記録は、表示できません。'
-    />
-    <ButtonLink href={treatmentsHrefOf(salonId)}>施術記録の一覧へ</ButtonLink>
-  </>
-)
+const TreatmentNotFound = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(FRAME.notFound)}
+        description={say(FRAME.notFoundDescription)}
+      />
+      <ButtonLink href={treatmentsHrefOf(salonId)}>
+        {say(FRAME.toList)}
+      </ButtonLink>
+    </>
+  )
+}
 
 /**
  * A screen of a treatment record of the salon of the address, with what
@@ -84,6 +92,7 @@ export const WithTreatment = ({
   fresh,
   children,
 }: WithTreatmentProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: treatmentKeyOf(treatmentId),
     queryFn: () => readTreatment(treatmentId),
@@ -112,7 +121,7 @@ export const WithTreatment = ({
   const loading = (
     <>
       {header}
-      <LoadingIndicator label='施術記録を読み込んでいます' />
+      <LoadingIndicator label={say(FRAME.loading)} />
     </>
   )
 
@@ -126,9 +135,7 @@ export const WithTreatment = ({
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('施術記録'), reason),
-            )}
+            message={say(unreadMessageOf(names.record, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -197,12 +204,7 @@ export const WithTreatment = ({
           <>
             {header}
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(
-                  writtenInJapanese('施術記録'),
-                  whyUnread(reads),
-                ),
-              )}
+              message={say(unreadMessageOf(names.record, whyUnread(reads)))}
               onRetry={() => {
                 void booking.refetch()
                 void customer.refetch()

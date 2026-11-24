@@ -2,6 +2,7 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aBooking, services, staff } from '../../bookings/components/examples'
 import type { TreatmentWrite } from '../api/treatments-api'
@@ -220,19 +221,37 @@ describe('readTreatmentEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        staffId: '担当を選んでください。',
-        services: '提供したサービスを選んでください。',
-        techniques: '技法の名前は、1 つ 100 文字以内で入力してください。',
-        processingTime:
-          '施術時間は、0 から 1440 までの分の整数で入力してください。',
-        nextRecommendedDate:
-          '次に勧める日は、予約の日（2026-11-20）から後の日にしてください。',
-        customerSatisfaction: '満足度を選び直してください。',
+        staffId: {
+          en: 'Choose the staff member.',
+          ja: '担当を選んでください。',
+        },
+        services: {
+          en: 'Choose the services provided.',
+          ja: '提供したサービスを選んでください。',
+        },
+        techniques: {
+          en: 'Name of a technique: enter up to 100 characters for each entry.',
+          ja: '技法の名前は、1 つ 100 文字以内で入力してください。',
+        },
+        processingTime: {
+          en: 'Enter the treatment time as a whole number of minutes from 0 to 1,440.',
+          ja: '施術時間は、0 から 1,440 までの分の整数で入力してください。',
+        },
+        nextRecommendedDate: {
+          en: 'Make the next recommended date the day of the booking (Fri, November 20, 2026) or a later one.',
+          ja: '次に勧める日は、予約の日（2026年11月20日（金））から後の日にしてください。',
+        },
+        customerSatisfaction: {
+          en: 'Choose the satisfaction again.',
+          ja: '満足度を選び直してください。',
+        },
       },
     })
   })
 
-  it.each<[string, Record<string, string | string[]>, Record<string, string>]>([
+  it.each<
+    [string, Record<string, string | string[]>, Record<string, LocalizedText>]
+  >([
     [
       'more than twenty techniques',
       {
@@ -241,7 +260,12 @@ describe('readTreatmentEntry', () => {
           (_, index) => `技法${index}`,
         ).join('、'),
       },
-      { techniques: '技法は、20 件までで入力してください。' },
+      {
+        techniques: {
+          en: 'Enter up to 20 techniques.',
+          ja: '技法は、20 件までで入力してください。',
+        },
+      },
     ],
     [
       'more than twenty services',
@@ -251,7 +275,12 @@ describe('readTreatmentEntry', () => {
           (_, index) => `${CUT.slice(0, -2)}${String(index).padStart(2, '0')}`,
         ),
       },
-      { services: '提供したサービスは、20 件までにしてください。' },
+      {
+        services: {
+          en: 'Choose up to 20 services provided.',
+          ja: '提供したサービスは、20 件までにしてください。',
+        },
+      },
     ],
     [
       'more than twenty services to recommend',
@@ -262,22 +291,31 @@ describe('readTreatmentEntry', () => {
         ),
       },
       {
-        nextRecommendedServices:
-          '次に勧めるサービスは、20 件までにしてください。',
+        nextRecommendedServices: {
+          en: 'Choose up to 20 next recommended services.',
+          ja: '次に勧めるサービスは、20 件までにしてください。',
+        },
       },
     ],
     [
       'minutes that are not whole',
       { processingTime: '7.5' },
       {
-        processingTime:
-          '施術時間は、0 から 1440 までの分の整数で入力してください。',
+        processingTime: {
+          en: 'Enter the treatment time as a whole number of minutes from 0 to 1,440.',
+          ja: '施術時間は、0 から 1,440 までの分の整数で入力してください。',
+        },
       },
     ],
     [
       'a day that is none',
       { nextRecommendedDate: '2026-12-32' },
-      { nextRecommendedDate: '次に勧める日を、日付で入力してください。' },
+      {
+        nextRecommendedDate: {
+          en: 'Enter the next recommended date as a date.',
+          ja: '次に勧める日を、日付で入力してください。',
+        },
+      },
     ],
   ])('should refuse %s', (_case, fields, errors) => {
     expect(
@@ -360,18 +398,34 @@ describe('the materials of the form', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        [materialControlOf(1, 'quantity')]:
-          '量は、0 より大きい数で、小数第 2 位まで入力してください。',
-        [materialControlOf(1, 'unit')]: '単位を入力してください。',
-        [materialControlOf(1, 'lotNumber')]:
-          'この商品は、ロットで管理しています。ロット番号を入力してください。',
-        [materialControlOf(2, 'productId')]: '商品を選んでください。',
-        [materialControlOf(2, 'quantity')]:
-          '量は、0 より大きい数で、小数第 2 位まで入力してください。',
-        [materialControlOf(2, 'unit')]:
-          '単位は、20 文字以内で入力してください。',
-        [materialControlOf(3, 'lotNumber')]:
-          'この商品は、ロットで管理していません。ロット番号を消してください。',
+        [materialControlOf(1, 'quantity')]: {
+          en: 'Enter a quantity greater than 0, with up to two decimal places.',
+          ja: '量は、0 より大きい数で、小数第 2 位まで入力してください。',
+        },
+        [materialControlOf(1, 'unit')]: {
+          en: 'Enter the unit.',
+          ja: '単位を入力してください。',
+        },
+        [materialControlOf(1, 'lotNumber')]: {
+          en: 'This product is kept by lots. Enter the lot number.',
+          ja: 'この商品は、ロットで管理しています。ロット番号を入力してください。',
+        },
+        [materialControlOf(2, 'productId')]: {
+          en: 'Choose a product.',
+          ja: '商品を選んでください。',
+        },
+        [materialControlOf(2, 'quantity')]: {
+          en: 'Enter a quantity greater than 0, with up to two decimal places.',
+          ja: '量は、0 より大きい数で、小数第 2 位まで入力してください。',
+        },
+        [materialControlOf(2, 'unit')]: {
+          en: 'Unit: enter up to 20 characters.',
+          ja: '単位は、20 文字以内で入力してください。',
+        },
+        [materialControlOf(3, 'lotNumber')]: {
+          en: 'This product is not kept by lots. Clear the lot number.',
+          ja: 'この商品は、ロットで管理していません。ロット番号を消してください。',
+        },
       },
     })
   })
@@ -414,8 +468,10 @@ describe('the materials of the form', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        [materialControlOf(0, 'lotNumber')]:
-          'ロット番号は、100 文字以内で入力してください。',
+        [materialControlOf(0, 'lotNumber')]: {
+          en: 'Lot number: enter up to 100 characters.',
+          ja: 'ロット番号は、100 文字以内で入力してください。',
+        },
       },
     })
   })
@@ -572,7 +628,12 @@ describe('readTreatmentChange', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { services: '提供したサービスを選んでください。' },
+      errors: {
+        services: {
+          en: 'Choose the services provided.',
+          ja: '提供したサービスを選んでください。',
+        },
+      },
     })
   })
 })
@@ -603,20 +664,83 @@ describe('afterTreatmentWrite', () => {
     expect(says).toEqual({
       message: undefined,
       errors: {
-        staffId:
-          'このスタッフは、その間に削除されたか、ほかのサロンに移りました。ほかのスタッフを選んでください。',
-        services: 'その間に削除されたサービスがあります。選び直してください。',
-        nextRecommendedDate:
-          '次に勧める日は、予約の日（2026-11-20）から後の日にしてください。',
-        nextRecommendedServices:
-          'その間に削除されたサービスがあります。選び直してください。',
-        'materials.0.productId':
-          'この商品は、その間に削除されました。ほかの商品を選ぶか、この商材を外してください。',
-        'materials.1.lotNumber':
-          'その間に、この商品のロットの管理が変わりました。画面を開き直して、書き直してください。',
+        staffId: {
+          en: 'This staff member was removed or moved to another salon meanwhile. Choose another staff member.',
+          ja: 'このスタッフは、その間に削除されたか、ほかのサロンに移りました。ほかのスタッフを選んでください。',
+        },
+        services: {
+          en: 'A service was removed meanwhile. Choose again.',
+          ja: 'その間に削除されたサービスがあります。選び直してください。',
+        },
+        nextRecommendedDate: {
+          en: 'Make the next recommended date the day of the booking (Fri, November 20, 2026) or a later one.',
+          ja: '次に勧める日は、予約の日（2026年11月20日（金））から後の日にしてください。',
+        },
+        nextRecommendedServices: {
+          en: 'A service was removed meanwhile. Choose again.',
+          ja: 'その間に削除されたサービスがあります。選び直してください。',
+        },
+        'materials.0.productId': {
+          en: 'This product was removed meanwhile. Choose another product, or remove this material.',
+          ja: 'この商品は、その間に削除されました。ほかの商品を選ぶか、この商材を外してください。',
+        },
+        'materials.1.lotNumber': {
+          en: 'Meanwhile the salon changed whether this product is kept by lots. Open the screen again and write the material again.',
+          ja: 'その間に、この商品のロットの管理が変わりました。画面を開き直して、書き直してください。',
+        },
       },
     })
   })
+
+  it.each<[string, string, LocalizedText]>([
+    [
+      'materials.0.productId',
+      'too_small',
+      { en: 'Choose a product.', ja: '商品を選んでください。' },
+    ],
+    [
+      'materials.0.quantity',
+      'too_small',
+      {
+        en: 'Enter a quantity greater than 0, with up to two decimal places.',
+        ja: '量は、0 より大きい数で、小数第 2 位まで入力してください。',
+      },
+    ],
+    [
+      'materials.0.unit',
+      'too_big',
+      {
+        en: 'Unit: enter up to 20 characters.',
+        ja: '単位は、20 文字以内で入力してください。',
+      },
+    ],
+    [
+      'materials.0.unit',
+      'too_small',
+      { en: 'Enter the unit.', ja: '単位を入力してください。' },
+    ],
+    [
+      'materials.0.lotNumber',
+      'too_big',
+      {
+        en: 'Lot number: enter up to 100 characters.',
+        ja: 'ロット番号は、100 文字以内で入力してください。',
+      },
+    ],
+  ])(
+    'should say beside the control of a material what the API refused of it: %s, %s',
+    (field, rule, said) => {
+      // Act
+      const says = afterTreatmentWrite(
+        { type: 'invalid', values: [{ field, rule }] },
+        'entry',
+        booking.bookingDate,
+      )
+
+      // Assert
+      expect(says).toEqual({ message: undefined, errors: { [field]: said } })
+    },
+  )
 
   it('should say the first thing the API says of a control, and ask to check the values it has no control of', () => {
     // Arrange
@@ -635,11 +759,19 @@ describe('afterTreatmentWrite', () => {
 
     // Assert
     expect(says).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {
-        services: 'その間に削除されたサービスがあります。選び直してください。',
-        processingTime:
-          '施術時間は、0 から 1440 までの分の整数で入力してください。',
+        services: {
+          en: 'A service was removed meanwhile. Choose again.',
+          ja: 'その間に削除されたサービスがあります。選び直してください。',
+        },
+        processingTime: {
+          en: 'Enter the treatment time as a whole number of minutes from 0 to 1,440.',
+          ja: '施術時間は、0 から 1,440 までの分の整数で入力してください。',
+        },
       },
     })
   })
@@ -656,44 +788,86 @@ describe('afterTreatmentWrite', () => {
 
     // Assert
     expect(says).toEqual({
-      message:
-        'このお客様は、その間に台帳から削除されました。施術記録は書けません。',
+      message: {
+        en: 'This customer was removed from the ledger meanwhile. No treatment record can be written.',
+        ja: 'このお客様は、その間に台帳から削除されました。施術記録は書けません。',
+      },
       errors: {},
     })
   })
 
   it.each<
-    ['forbidden' | 'tooManyRequests' | 'failed', 'entry' | 'change', string]
+    [
+      'forbidden' | 'tooManyRequests' | 'failed',
+      'entry' | 'change',
+      LocalizedText,
+    ]
   >([
-    ['forbidden', 'entry', 'このアカウントでは、施術記録を書けません。'],
+    [
+      'forbidden',
+      'entry',
+      {
+        en: 'This account cannot write treatment records.',
+        ja: 'このアカウントでは、施術記録を書けません。',
+      },
+    ],
     [
       'tooManyRequests',
       'change',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'failed',
       'entry',
-      '施術記録を書けませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The treatment record could not be written. Check your connection and try again.',
+        ja: '施術記録を書けませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'failed',
       'change',
-      '施術記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The treatment record could not be changed. Check your connection and try again.',
+        ja: '施術記録を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %s in the %s', (type, write, message) => {
-    expect(afterTreatmentWrite({ type }, write, booking.bookingDate)).toEqual({
-      message,
-      errors: {},
-    })
+    // Act
+    const says = afterTreatmentWrite({ type }, write, booking.bookingDate)
+
+    // Assert
+    expect(says).toEqual({ message, errors: {} })
   })
 })
 
 describe('treatmentWrittenOf', () => {
-  it.each<['entry' | 'change', string]>([
-    ['entry', '山田 花子 様の施術記録を書きました。'],
-    ['change', '山田 花子 様の施術記録を直しました。'],
+  it.each<['entry' | 'change', LocalizedText]>([
+    [
+      'entry',
+      {
+        en: 'Wrote the treatment record of 山田 花子.',
+        ja: '山田 花子 様の施術記録を書きました。',
+      },
+    ],
+    [
+      'change',
+      {
+        en: 'Saved the treatment record of 山田 花子.',
+        ja: '山田 花子 様の施術記録を直しました。',
+      },
+    ],
   ])('should say what the %s did', (write, said) => {
-    expect(treatmentWrittenOf('山田 花子 様', write)).toBe(said)
+    // Act
+    const written = treatmentWrittenOf(
+      { en: '山田 花子', ja: '山田 花子 様' },
+      write,
+    )
+
+    // Assert
+    expect(written).toEqual(said)
   })
 })
