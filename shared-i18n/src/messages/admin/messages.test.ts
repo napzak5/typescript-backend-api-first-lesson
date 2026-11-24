@@ -786,12 +786,14 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
-/** The catalogues whose messages that are made from a value are tested in a file of their own (`bookings.test.ts`, `charts.test.ts`, `inventory.test.ts`, `menu.test.ts`, `payment-methods.test.ts`, `products.test.ts`, `purchase-orders.test.ts`, `sales.test.ts`, `settings.test.ts`, `staff.test.ts`, `treatments.test.ts`) */
+/** The catalogues whose messages that are made from a value are tested in a file of their own, beside the catalogue (`bookings.test.ts`, `share-links.test.ts`) */
 const TESTED_APART = [
+  'adminAttachmentMessages',
   'adminBookingMessages',
   'adminChartMessages',
   'adminInventoryMessages',
   'adminMenuMessages',
+  'adminOperationMessages',
   'adminPaymentMethodMessages',
   'adminProductMessages',
   'adminPurchaseOrderMessages',
@@ -799,9 +801,12 @@ const TESTED_APART = [
   'adminReviewReportMessages',
   'adminSaleMessages',
   'adminSettingsMessages',
+  'adminShareLinkMessages',
   'adminShiftMessages',
+  'adminStaffAccountMessages',
   'adminStaffMessages',
   'adminTreatmentMessages',
+  'adminUserAccountMessages',
 ]
 
 /** A name that stands inside a sentence: it begins as it stands there */
