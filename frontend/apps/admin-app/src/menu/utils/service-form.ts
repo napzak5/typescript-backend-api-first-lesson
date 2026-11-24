@@ -29,6 +29,7 @@ import {
   same,
   textOf,
   textOrNull,
+  textsOf,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
@@ -327,7 +328,7 @@ const readWhole = (
   ) {
     return { type: 'invalid', errors }
   }
-  const chosenRequirements = values.getAll('bookingRequirements')
+  const chosenRequirements = textsOf(values, 'bookingRequirements')
 
   return {
     type: 'valid',

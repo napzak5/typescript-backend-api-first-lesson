@@ -6,7 +6,7 @@ import { saidOnThePage } from '../../__stories__/said'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { PageHeader } from '../page-header/page-header'
-import { AppShell } from './app-shell'
+import { AppShell, useInMenu } from './app-shell'
 import { useScreenHeadingFocus } from './screens'
 
 const items = [
@@ -16,6 +16,30 @@ const items = [
   { href: '/staff', label: 'スタッフ' },
 ]
 
+const signOut = fn()
+
+/**
+ * The account, as an application puts it: in the header, with a small
+ * button; in the menu of a narrow screen, with a button of the size of the
+ * links there.
+ */
+const Account = () => {
+  const inMenu = useInMenu()
+
+  return (
+    <>
+      <span>佐藤 美咲</span>
+      <Button
+        variant='quiet'
+        size={inMenu ? 'medium' : 'small'}
+        onClick={signOut}
+      >
+        サインアウト
+      </Button>
+    </>
+  )
+}
+
 const meta: Meta<typeof AppShell> = {
   title: 'Components/AppShell',
   component: AppShell,
@@ -23,14 +47,7 @@ const meta: Meta<typeof AppShell> = {
   args: {
     title: 'Kushi Admin',
     navigation: items,
-    account: (
-      <>
-        <span>佐藤 美咲</span>
-        <Button variant='quiet' size='small' onClick={fn()}>
-          サインアウト
-        </Button>
-      </>
-    ),
+    account: <Account />,
     children: (
       <>
         <PageHeader

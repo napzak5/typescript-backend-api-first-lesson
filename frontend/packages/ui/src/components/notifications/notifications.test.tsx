@@ -15,6 +15,15 @@ describe('Notifications', () => {
     localStorage.clear()
   })
 
+  it('should show nothing that a screen without the frame of an application notifies', async () => {
+    // Act
+    await stories.Alone.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    expect(screen.queryByText('予約を確定しました。')).toBeNull()
+  })
+
   it('should have an empty status region before anything is notified', async () => {
     // Act
     await stories.NothingToSay.run()

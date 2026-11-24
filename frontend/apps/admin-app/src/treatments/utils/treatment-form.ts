@@ -27,6 +27,7 @@ import {
   same,
   textOf,
   textOrNull,
+  textsOf,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminTreatmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
@@ -205,11 +206,7 @@ const readMaterial = (
 
 /** The IDs chosen under a name, each once. */
 const chosenIn = (values: FormData, name: string): string[] => [
-  ...new Set(
-    values
-      .getAll(name)
-      .flatMap((value) => (typeof value === 'string' ? [value] : [])),
-  ),
+  ...new Set(textsOf(values, name)),
 ]
 
 /** What is wrong with the techniques, if anything. */

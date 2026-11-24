@@ -1,4 +1,4 @@
-import { type ReactNode, useId, useRef } from 'react'
+import { type ReactNode, useId } from 'react'
 import { classNames } from '../../utils/class-names'
 import { NotRecorded } from '../not-recorded/not-recorded'
 import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
@@ -82,8 +82,7 @@ export const Table = <Row,>({
 }: TableProps<Row>) => {
   const captionId = useId()
   const header = rowHeader ?? columns[0]?.key
-  const frame = useRef<HTMLElement>(null)
-  const scrolls = useScrollsSideways(frame)
+  const [scrolls, frame] = useScrollsSideways()
 
   return (
     <section

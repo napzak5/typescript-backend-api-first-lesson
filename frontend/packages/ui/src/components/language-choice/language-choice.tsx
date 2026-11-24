@@ -37,10 +37,12 @@ export const LanguageChoice = ({
   const say = useSay()
   const name = say(uiMessages.appShell.language)
 
+  // The language whose code the chosen option holds: the options are the languages
   const chosen = (event: ChangeEvent<HTMLSelectElement>): void => {
-    const next = LOCALES.find((locale) => locale === event.target.value)
-    if (next !== undefined) {
-      onChoose(next)
+    for (const locale of LOCALES) {
+      if (locale === event.target.value) {
+        onChoose(locale)
+      }
     }
   }
 
