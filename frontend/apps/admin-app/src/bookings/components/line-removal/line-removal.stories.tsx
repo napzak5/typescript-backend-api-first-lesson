@@ -1,7 +1,12 @@
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn } from 'storybook/test'
+import { moment, salon } from '../examples'
 import { LineRemoval } from './line-removal'
+
+const { removal: REMOVAL } = adminBookingMessages.moves
 
 const meta: Meta<typeof LineRemoval> = {
   title: 'Admin/Bookings/LineRemoval',
@@ -12,7 +17,10 @@ const meta: Meta<typeof LineRemoval> = {
   },
   args: {
     why: undefined,
-    what: 'カット（10:00〜11:00）',
+    what: REMOVAL.lineOf(
+      'カット',
+      formats.timeRangeAt(moment(0), moment(60), salon.timezone),
+    ),
     open: false,
     onOpen: fn(),
     onClose: fn(),
@@ -41,15 +49,14 @@ export const Removing: Story = {
 export const Unremoved: Story = {
   args: {
     open: true,
-    message:
-      '施術明細を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: REMOVAL.failed,
   },
 }
 
 /** The last line of a booking stays */
 export const Last: Story = {
   args: {
-    why: '予約に残る最後の明細は、外せません。行われない来店は、予約をキャンセルしてください。',
+    why: REMOVAL.last,
   },
 }
 

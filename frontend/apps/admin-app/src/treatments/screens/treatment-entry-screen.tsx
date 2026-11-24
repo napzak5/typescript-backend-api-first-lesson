@@ -237,7 +237,9 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
   })
 
   if (!treated) {
-    return <Unchangeable why={TREATMENT_NOT_BEGUN} back={back} />
+    return (
+      <Unchangeable why={writtenInJapanese(TREATMENT_NOT_BEGUN)} back={back} />
+    )
   }
 
   return match([customer.data, existing.data, products.data])

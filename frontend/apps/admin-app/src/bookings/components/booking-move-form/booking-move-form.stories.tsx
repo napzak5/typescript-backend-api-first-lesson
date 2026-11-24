@@ -1,8 +1,10 @@
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { MOVE_TAKEN } from '../../utils/booking-moves'
 import { aBooking, moment, salon, services, staff } from '../examples'
 import { BookingMoveForm } from './booking-move-form'
+
+const { errors } = adminBookingMessages.entry
 
 const [cut, color] = services
 const [misaki] = staff
@@ -78,8 +80,8 @@ export const WithErrors: Story = {
   args: {
     moved: undefined,
     errors: {
-      staffId: '担当スタッフを選んでください。',
-      startTime: '開始の時刻を入力してください。',
+      staffId: errors.staff,
+      startTime: errors.startTime,
     },
   },
 }
@@ -87,7 +89,7 @@ export const WithErrors: Story = {
 /** The API refused the move: the member of the first line is taken where it would be */
 export const Refused: Story = {
   args: {
-    message: MOVE_TAKEN,
+    message: adminBookingMessages.moves.move.taken,
     checks: [
       {
         type: 'taken',

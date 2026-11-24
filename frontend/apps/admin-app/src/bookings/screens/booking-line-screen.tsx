@@ -10,12 +10,16 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminBookingMessages,
+  adminMenuMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -37,7 +41,8 @@ import { afterLineRemoval, whyLineStays } from '../utils/booking-moves'
 import { serviceNameOf } from '../utils/day-bookings'
 import { WithBooking, WithStaffAndServices } from './with-booking'
 
-const TITLE = '施術明細の内容'
+const { titles, names, frame } = adminBookingMessages
+const { line: LINE, removal: REMOVAL } = adminBookingMessages.moves
 
 type LineProps = {
   salon: ModelsSalonResponse
@@ -52,11 +57,14 @@ type LineProps = {
  * that stays after all is said so from the booking as it is now.
  */
 const Line = ({ salon, booking, line }: LineProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const [removing, setRemoving] = useState(false)
-  const [removalSaid, setRemovalSaid] = useState<string | undefined>(undefined)
+  const [removalSaid, setRemovalSaid] = useState<LocalizedText | undefined>(
+    undefined,
+  )
   const bookingKey = bookingKeyOf(booking.id)
   const back = bookingHrefOf(salon.id, booking.id)
   const removal = useMutation({
@@ -66,7 +74,7 @@ const Line = ({ salon, booking, line }: LineProps) => {
         .with({ type: 'done' }, () => {
           queryClient.removeQueries({ queryKey: bookingKey, exact: true })
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
-          notify({ tone: 'success', message: '施術明細を外しました。' })
+          notify({ tone: 'success', message: REMOVAL.done })
           void navigate(back)
         })
         .with({ type: 'again' }, ({ message }) => setRemovalSaid(message))
@@ -97,7 +105,11 @@ const Line = ({ salon, booking, line }: LineProps) => {
           />
           <LineRemoval
             why={whyLineStays(booking)}
-            what={`${serviceNameOf(line.serviceId, services)}（${hoursOf(line, salon.timezone)}）`}
+            what={REMOVAL.lineOf(
+              serviceNameOf(line.serviceId, services) ??
+                say(adminMenuMessages.removedService),
+              hoursOf(line, salon.timezone),
+            )}
             open={removing}
             onOpen={() => {
               setRemovalSaid(undefined)
@@ -124,6 +136,7 @@ type LineOfBookingProps = {
 
 /** The line of the address, read whenever the screen opens, as the booking is. */
 const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
+  const say = useSay()
   const { lineId = '' } = useParams()
   const read = useQuery({
     queryKey: lineKeyOf(booking.id, lineId),
@@ -136,14 +149,12 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
     : undefined
   const back = (
     <ButtonLink href={bookingHrefOf(salon.id, booking.id)}>
-      予約の内容へ
+      {say(frame.toBooking)}
     </ButtonLink>
   )
 
   return match(shown)
-    .with(undefined, () => (
-      <LoadingIndicator label='施術明細を読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(LINE.loading)} />)
     .with({ type: 'found' }, ({ line }) => (
       <>
         <Line salon={salon} booking={booking} line={line} />
@@ -152,18 +163,14 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
     ))
     .with({ type: 'notFound' }, () => (
       <>
-        <p>
-          施術明細が見つかりません。予約から外されたか、アドレスが正しくありません。
-        </p>
+        <p>{say(LINE.notFound)}</p>
         {back}
       </>
     ))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice />)
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('施術明細'), reason),
-        )}
+        message={say(unreadMessageOf(names.line, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -173,12 +180,14 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
 
 /** A line of a booking of the salon of the address, and its removal. */
 export const BookingLineScreen = () => {
+  const say = useSay()
+  const title = say(titles.line)
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+        <WithBooking key={salon.id} salon={salon} title={title}>
           {(booking) => <LineOfBooking salon={salon} booking={booking} />}
         </WithBooking>
       )}

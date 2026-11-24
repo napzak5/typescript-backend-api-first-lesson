@@ -20,6 +20,7 @@ import {
   UnreadNotice,
   useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
@@ -36,6 +37,27 @@ import {
 import { bookingKeyOf, readBooking } from '../api/bookings-api'
 
 const { frame, names } = adminBookingMessages
+
+/**
+ * The screen of a booking that the salon of the address does not have: it
+ * was removed, it is of another salon, or the address is wrong. The way
+ * goes to the bookings of today.
+ */
+export const BookingNotFound = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(frame.notFound)}
+        description={say(frame.notFoundDescription)}
+      />
+      <ButtonLink href={bookingsHrefOf(salonId)}>
+        {say(frame.toToday)}
+      </ButtonLink>
+    </>
+  )
+}
 
 export type WithBookingProps = {
   salon: ModelsSalonResponse
@@ -98,15 +120,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
       )
       // A booking of another salon is not one of this salon's
       .with({ type: P.union('found', 'notFound') }, () => (
-        <>
-          <PageHeader
-            title={say(frame.notFound)}
-            description={say(frame.notFoundDescription)}
-          />
-          <ButtonLink href={bookingsHrefOf(salon.id)}>
-            {say(frame.toToday)}
-          </ButtonLink>
-        </>
+        <BookingNotFound salonId={salon.id} />
       ))
       .with({ type: 'forbidden' }, () => (
         <>
@@ -132,12 +146,18 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
  * What a screen that changes a booking says when the booking is not changed
  * so: why, in the language of the page, and the way back.
  */
-export const Unchangeable = ({ why, back }: { why: string; back: string }) => {
+export const Unchangeable = ({
+  why,
+  back,
+}: {
+  why: LocalizedText
+  back: string
+}) => {
   const say = useSay()
 
   return (
     <>
-      <p>{why}</p>
+      <p>{say(why)}</p>
       <ButtonLink href={back}>{say(frame.toBooking)}</ButtonLink>
     </>
   )

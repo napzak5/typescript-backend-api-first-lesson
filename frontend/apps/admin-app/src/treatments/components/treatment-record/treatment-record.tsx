@@ -17,19 +17,20 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { UNLISTED_STAFF } from '../../../bookings/utils/booking-format'
 import {
   serviceNameOf,
   staffNameOf,
 } from '../../../bookings/utils/day-bookings'
 import {
   customerCalled,
+  GONE_SERVICE,
   minutesNameOf,
   NOT_ANSWERED,
   productNameOf,
   quantityNameOf,
   REMOVED_PRODUCT,
   satisfactionNameOf,
+  UNLISTED_STAFF,
   wasChanged,
 } from '../../utils/treatment-format'
 import styles from './treatment-record.module.css'
@@ -80,7 +81,7 @@ export const TreatmentRecord = ({
   actions,
 }: TreatmentRecordProps) => {
   const servicesOf = (ids: readonly string[]): string[] =>
-    ids.map((id) => serviceNameOf(id, services))
+    ids.map((id) => serviceNameOf(id, services) ?? GONE_SERVICE)
 
   return (
     <div className={styles['record']}>

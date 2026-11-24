@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as bookingLineFormStories from './booking-line-form.stories'
 
 const stories = composeStories(bookingLineFormStories)
@@ -110,5 +111,54 @@ describe('BookingLineForm', () => {
       '担当の時間が、ほかの予約と重なっているため、施術明細を足せませんでした。',
     )
     expect(screen.getByText('BK-9QWE-3RTY 11:00〜12:00')).toBeVisible()
+  })
+})
+
+describe('BookingLineForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the services and the members, and name the day of the time, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(optionsOf(combobox('Service'))).toEqual([
+      'Choose',
+      'カット (60 min)',
+      'カラー (60 min)',
+    ])
+    expect(optionsOf(combobox('Staff'))).toEqual([
+      'Same as the booking',
+      '田中 美咲',
+      '佐藤 健',
+      'Not decided',
+    ])
+    expect(combobox('Staff')).toHaveAccessibleDescription(
+      'A line whose staff is “Not decided” takes nobody’s time.',
+    )
+    expect(screen.getByLabelText('Start time')).toHaveAccessibleDescription(
+      'A time on the clock of the salon, on the day of the visit (Fri, November 20, 2026).',
+    )
+    expect(screen.getByRole('button', { name: 'Add a line' })).toBeVisible()
+  })
+
+  it('should say what the API refused, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The line could not be added: the time of its staff member overlaps another booking. The other bookings that overlap the line were checked.',
+      ),
+    ).toBeVisible()
   })
 })

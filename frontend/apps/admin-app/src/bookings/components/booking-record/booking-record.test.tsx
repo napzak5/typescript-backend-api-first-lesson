@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingRecordStories from './booking-record.stories'
 
 const stories = composeStories(bookingRecordStories)
@@ -119,6 +120,55 @@ describe('BookingRecord', () => {
     expect(terms.slice(-2)).toEqual([
       ['キャンセルした日時', '2026年11月19日（木） 15:30'],
       ['キャンセルの理由', '体調不良のため'],
+    ])
+  })
+})
+
+describe('BookingRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say who comes when, the lines and the amounts, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Completed.run()
+
+    // Assert
+    const termsIn = (name: string) =>
+      within(screen.getByRole('region', { name }))
+        .getAllByRole('term')
+        .map((term) => [term.textContent, term.nextElementSibling?.textContent])
+    expect(termsIn('Booking').slice(0, 3)).toEqual([
+      ['Booking number', 'BK-4F7H-2KQM'],
+      ['Date of visit', 'Fri, November 20, 2026'],
+      ['Time', '10:00–12:30'],
+    ])
+    expect(termsIn('Booking').slice(-6)).toEqual([
+      ['Notes for the salon', '次回はトリートメントを提案する。'],
+      ['How it was booked', 'Phone'],
+      ['Deposit', '¥2,000'],
+      ['Actual start', 'Fri, November 20, 2026 at 10:05'],
+      ['Actual end', 'Fri, November 20, 2026 at 12:40'],
+      ['Completion recorded at', 'Fri, November 20, 2026 at 12:45'],
+    ])
+    expect(rowsOf('Service lines')).toEqual([
+      ['カット', '田中 美咲', '10:00–11:00', '¥5,500 (tax included)', 'Done'],
+      [
+        'カラー',
+        'Unassigned',
+        '11:00–12:30',
+        '¥7,800 (¥1,000 off) (tax included)',
+        'Done',
+      ],
+    ])
+    expect(termsIn('Amounts').map(([term]) => term)).toEqual([
+      'Subtotal',
+      'Discount',
+      'Tax',
+      'Total',
     ])
   })
 })

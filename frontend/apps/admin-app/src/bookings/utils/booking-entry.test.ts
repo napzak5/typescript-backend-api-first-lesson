@@ -1,4 +1,5 @@
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type {
   BookingCreation,
@@ -12,7 +13,6 @@ import {
   afterNotesChange,
   afterRemoval,
   checkedSaysOf,
-  DEPOSIT_ERROR,
   entryChoiceIn,
   entryQueryOf,
   type Notes,
@@ -22,7 +22,6 @@ import {
   readNotes,
   readNotesChange,
   sourceNameOf,
-  TAKEN,
 } from './booking-entry'
 
 const TODAY = '2026-11-20'
@@ -202,10 +201,22 @@ describe('readLines', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        staffId: '担当スタッフを選んでください。',
-        date: '来店日を入力してください。',
-        'services.1.serviceId': 'メニューを選んでください。',
-        'services.1.startTime': '開始の時刻を入力してください。',
+        staffId: {
+          en: 'Choose the staff member.',
+          ja: '担当スタッフを選んでください。',
+        },
+        date: {
+          en: 'Enter the date of the visit.',
+          ja: '来店日を入力してください。',
+        },
+        'services.1.serviceId': {
+          en: 'Choose a service.',
+          ja: 'メニューを選んでください。',
+        },
+        'services.1.startTime': {
+          en: 'Enter the start time.',
+          ja: '開始の時刻を入力してください。',
+        },
       },
     })
   })
@@ -223,8 +234,10 @@ describe('readLines', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        'services.0.startTime':
-          'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。',
+        'services.0.startTime': {
+          en: 'The clock of the salon skips this time on this day (daylight saving time begins). Enter another time.',
+          ja: 'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。',
+        },
       },
     })
   })
@@ -282,7 +295,12 @@ describe('readNotes', () => {
     // Assert
     expect(read).toEqual({
       type: 'invalid',
-      errors: { depositAmount: DEPOSIT_ERROR },
+      errors: {
+        depositAmount: {
+          en: 'Enter the deposit as a whole number of yen, 0 or more.',
+          ja: '予約金は、0 以上の円の整数で入力してください。',
+        },
+      },
     })
   })
 
@@ -359,8 +377,14 @@ describe('readEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        'services.0.startTime': '開始の時刻を入力してください。',
-        depositAmount: DEPOSIT_ERROR,
+        'services.0.startTime': {
+          en: 'Enter the start time.',
+          ja: '開始の時刻を入力してください。',
+        },
+        depositAmount: {
+          en: 'Enter the deposit as a whole number of yen, 0 or more.',
+          ja: '予約金は、0 以上の円の整数で入力してください。',
+        },
       },
     })
   })
@@ -443,25 +467,30 @@ describe('readNotesChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'invalid',
-      errors: { depositAmount: DEPOSIT_ERROR },
+      errors: {
+        depositAmount: {
+          en: 'Enter the deposit as a whole number of yen, 0 or more.',
+          ja: '予約金は、0 以上の円の整数で入力してください。',
+        },
+      },
     })
   })
 })
 
 describe('sourceNameOf', () => {
   it.each([
-    ['phone', '電話'],
-    ['walk_in', '店頭'],
-    ['email', 'メール'],
-    ['other', 'その他'],
-    ['online', 'オンライン'],
-    ['fax', 'fax'],
+    ['phone', { en: 'Phone', ja: '電話' }],
+    ['walk_in', { en: 'Walk-in', ja: '店頭' }],
+    ['email', { en: 'Email', ja: 'メール' }],
+    ['other', { en: 'Other', ja: 'その他' }],
+    ['online', { en: 'Online', ja: 'オンライン' }],
+    ['fax', { en: 'fax', ja: 'fax' }],
   ])('should name the way %s', (source, name) => {
     // Act
     const named = sourceNameOf(source)
 
     // Assert
-    expect(named).toBe(name)
+    expect(named).toEqual(name)
   })
 })
 
@@ -482,16 +511,27 @@ describe('afterEntry', () => {
 
     // Assert
     expect(says).toEqual({
-      message:
-        'このお客様は、台帳から削除されていました。お客様を選び直してください。',
+      message: {
+        en: 'This customer was removed from the ledger. Choose the customer again.',
+        ja: 'このお客様は、台帳から削除されていました。お客様を選び直してください。',
+      },
       errors: {
-        'services.0.serviceId':
-          'このメニューは、もう選べません。選び直してください。',
-        'services.1.staffId':
-          'このスタッフは、もう選べません。選び直してください。',
-        depositAmount: DEPOSIT_ERROR,
-        internalNotes:
-          'この値は受け付けられませんでした。入力を確かめてください。',
+        'services.0.serviceId': {
+          en: 'This service cannot be chosen any more. Choose again.',
+          ja: 'このメニューは、もう選べません。選び直してください。',
+        },
+        'services.1.staffId': {
+          en: 'This staff member cannot be chosen any more. Choose again.',
+          ja: 'このスタッフは、もう選べません。選び直してください。',
+        },
+        depositAmount: {
+          en: 'Enter the deposit as a whole number of yen, 0 or more.',
+          ja: '予約金は、0 以上の円の整数で入力してください。',
+        },
+        internalNotes: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
       },
     })
   })
@@ -505,8 +545,10 @@ describe('afterEntry', () => {
 
     // Assert
     expect(says).toEqual({
-      message:
-        '金額の合計が、1 件の予約で扱える上限を超えます。明細を減らしてください。',
+      message: {
+        en: 'The total goes beyond what one booking can hold. Take some lines off.',
+        ja: '金額の合計が、1 件の予約で扱える上限を超えます。明細を減らしてください。',
+      },
       errors: {},
     })
   })
@@ -520,21 +562,44 @@ describe('afterEntry', () => {
 
     // Assert
     expect(says).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[Exclude<BookingCreation['type'], 'created' | 'invalid'>, string]>([
-    ['conflict', TAKEN],
-    ['forbidden', 'このアカウントでは、このサロンの予約を入れられません。'],
+  it.each<
+    [Exclude<BookingCreation['type'], 'created' | 'invalid'>, LocalizedText]
+  >([
+    [
+      'conflict',
+      {
+        en: 'The booking could not be made: the time of a staff member overlaps another booking. Each line was checked again for whether its staff member is free.',
+        ja: '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。',
+      },
+    ],
+    [
+      'forbidden',
+      {
+        en: 'This account cannot make bookings for this salon.',
+        ja: 'このアカウントでは、このサロンの予約を入れられません。',
+      },
+    ],
     [
       'tooManyRequests',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'failed',
-      '予約を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The booking could not be made. Check your connection and try again.',
+        ja: '予約を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what a refusal of %s is', (type, message) => {
     // Act
@@ -560,23 +625,40 @@ describe('afterNotesChange', () => {
     expect(says).toEqual({
       message: undefined,
       errors: {
-        customerRequest:
-          'この値は受け付けられませんでした。入力を確かめてください。',
+        customerRequest: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
       },
     })
   })
 
   it.each<
-    [Exclude<BookingUpdate['type'], 'updated' | 'notFound' | 'invalid'>, string]
+    [
+      Exclude<BookingUpdate['type'], 'updated' | 'notFound' | 'invalid'>,
+      LocalizedText,
+    ]
   >([
-    ['forbidden', 'このアカウントでは、この予約を変えられません。'],
+    [
+      'forbidden',
+      {
+        en: 'This account cannot change this booking.',
+        ja: 'このアカウントでは、この予約を変えられません。',
+      },
+    ],
     [
       'tooManyRequests',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'failed',
-      '予約の記録を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The record of the booking could not be changed. Check your connection and try again.',
+        ja: '予約の記録を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what a refusal of %s is', (type, message) => {
     // Act
@@ -595,32 +677,40 @@ describe('afterRemoval', () => {
       { type: 'referred' },
       {
         type: 'refused',
-        message:
-          'この予約は、売上、施術記録、レビューのどれかが指しているため、削除できません。行われた来店の記録として残ります。',
+        message: {
+          en: 'This booking cannot be removed: a sale, a treatment record or a review refers to it. It stays as the record of a visit that took place.',
+          ja: 'この予約は、売上、施術記録、レビューのどれかが指しているため、削除できません。行われた来店の記録として残ります。',
+        },
       },
     ],
     [
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このアカウントでは、予約を削除できません。行われない予約は、キャンセルしてください。',
+        message: {
+          en: 'This account cannot remove bookings. Cancel a booking that will not take place.',
+          ja: 'このアカウントでは、予約を削除できません。行われない予約は、キャンセルしてください。',
+        },
       },
     ],
     [
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '予約を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The booking could not be removed. Check your connection and try again.',
+          ja: '予約を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should follow %o with %o', (outcome, says) => {
@@ -637,37 +727,52 @@ describe('checkedSaysOf', () => {
   const TAKEN_LINE: LineCheck = { type: 'taken', overlapping: [aBooking()] }
   const UNASSIGNED: LineCheck = { type: 'unassigned' }
 
-  it.each<[string, LineCheck[], string]>([
+  it.each<[string, LineCheck[], LocalizedText]>([
     [
       'every member is free',
       [FREE, UNASSIGNED],
-      '担当の空きを確かめました。重なる予約はありません。',
+      {
+        en: 'Checked whether the staff are free. No booking overlaps.',
+        ja: '担当の空きを確かめました。重なる予約はありません。',
+      },
     ],
     [
       'members are taken',
       [TAKEN_LINE, FREE, TAKEN_LINE],
-      '明細 1、3 の担当に、重なる予約があります。担当の前後の空け時間も、重なりに数えます。担当か開始の時刻を変えてください。',
+      {
+        en: 'The staff of lines 1, 3 have an overlapping booking. The time a staff member keeps free before and after a booking counts as well. Change the staff member or the start time.',
+        ja: '明細 1、3 の担当に、重なる予約があります。担当の前後の空け時間も、重なりに数えます。担当か開始の時刻を変えてください。',
+      },
     ],
     [
       'no line has a member',
       [UNASSIGNED, UNASSIGNED],
-      '担当を決めた明細がありません。担当を決めない明細は、誰の時間も占有しません。',
+      {
+        en: 'No line has a staff member. A line without a staff member takes nobody’s time.',
+        ja: '担当を決めた明細がありません。担当を決めない明細は、誰の時間も占有しません。',
+      },
     ],
     [
       'a member could not be checked',
       [TAKEN_LINE, { type: 'failed' }],
-      '明細 2 の担当の空きを確かめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'Whether the staff of line 2 are free could not be checked. Check your connection and try again.',
+        ja: '明細 2 の担当の空きを確かめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       'the API was asked too often',
       [{ type: 'failed' }, { type: 'tooManyRequests' }],
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
   ])('should say so when %s', (_, checks, said) => {
     // Act
     const says = checkedSaysOf(checks)
 
     // Assert
-    expect(says).toBe(said)
+    expect(says).toEqual(said)
   })
 })

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as statusActionsStories from './status-actions.stories'
 
 const stories = composeStories(statusActionsStories)
@@ -264,5 +265,76 @@ describe('StatusActions', () => {
     // Assert
     expect(stories.AskingNoShow.args.onClose).toHaveBeenCalledTimes(1)
     expect(stories.AskingNoShow.args.onNoShow).not.toHaveBeenCalled()
+  })
+})
+
+describe('StatusActions on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the state and the operations, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Pending.run()
+
+    // Assert
+    const part = screen.getByRole('region', { name: 'Status' })
+    expect(within(part).getByText('Awaiting confirmation')).toBeVisible()
+    expect(
+      within(part)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Confirm the booking', 'Cancel the booking'])
+  })
+
+  it('should ask for the end of a treatment that began, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.CompletionRefused.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Complete the booking?' })
+    expect(asking).toHaveAccessibleDescription(
+      'The booking of Fri, November 20, 2026, 10:00–11:00 will be completed. A completed booking cannot be undone.',
+    )
+    expect(
+      within(asking).getByLabelText('Actual start'),
+    ).toHaveAccessibleDescription(
+      'A date and time on the clock of the salon. Left empty, it stays as recorded when the treatment started (Fri, November 20, 2026 at 10:05).',
+    )
+    expect(
+      within(asking).getByLabelText('Actual end'),
+    ).toHaveAccessibleDescription(
+      'A date and time on the clock of the salon. Left empty, nothing is recorded. Make the end later than the start.',
+    )
+  })
+
+  it('should ask before a booking is cancelled, and say what came of it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.CancellationUnsent.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Cancel the booking?' })
+    expect(
+      within(asking).getByText(
+        'The booking could not be cancelled. Check your connection and try again.',
+      ),
+    ).toBeVisible()
+    expect(
+      within(asking).getByLabelText('Reason for cancelling'),
+    ).toHaveAccessibleDescription(
+      'What the customer said, for example. The booking can be cancelled with this left empty.',
+    )
+    expect(
+      within(asking).getByRole('button', { name: 'Confirm the cancellation' }),
+    ).toBeVisible()
   })
 })

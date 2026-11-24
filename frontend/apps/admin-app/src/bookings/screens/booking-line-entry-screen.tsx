@@ -10,10 +10,12 @@ import { dayNameOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -34,7 +36,8 @@ import {
 } from '../utils/booking-moves'
 import { Unchangeable, WithBooking, WithStaffAndServices } from './with-booking'
 
-const TITLE = '施術明細を追加する'
+const { titles } = adminBookingMessages
+const { addition: ADDITION } = adminBookingMessages.moves
 
 type AdditionProps = {
   salon: ModelsSalonResponse
@@ -54,10 +57,11 @@ type AdditionProps = {
  * shown as it is now, and the screen says why.
  */
 const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [check, setCheck] = useState<LineCheck | undefined>(undefined)
   const key = bookingKeyOf(booking.id)
   const back = bookingHrefOf(salon.id, booking.id)
@@ -69,7 +73,7 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
         .with({ type: 'added' }, () => {
           queryClient.removeQueries({ queryKey: key, exact: true })
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
-          notify({ tone: 'success', message: '施術明細を追加しました。' })
+          notify({ tone: 'success', message: ADDITION.done })
           void navigate(back)
         })
         // The booking changed meanwhile: the screen shows it as it is now
@@ -116,7 +120,7 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
     <BookingLineForm
       staff={staff}
       services={services}
-      day={inJapanese(dayNameOf(booking.bookingDate))}
+      day={dayNameOf(booking.bookingDate)}
       timezone={salon.timezone}
       check={check}
       onValuesChange={() => setCheck(undefined)}
@@ -126,7 +130,7 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(ADDITION.cancel)}
         </ButtonLink>
       }
     />
@@ -135,15 +139,17 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
 
 /** Adds a line to a booking of the salon of the address. */
 export const BookingLineEntryScreen = () => {
+  const say = useSay()
+  const title = say(titles.lineEntry)
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+        <WithBooking key={salon.id} salon={salon} title={title}>
           {(booking) =>
             match(whyNoLineAdded(booking))
-              .with(P.string, (why) => (
+              .with(P.nonNullable, (why) => (
                 <Unchangeable
                   why={why}
                   back={bookingHrefOf(salon.id, booking.id)}

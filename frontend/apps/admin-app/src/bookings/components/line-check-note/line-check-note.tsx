@@ -1,8 +1,16 @@
-import { Badge, BulletList, classNames } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  BulletList,
+  classNames,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { LineCheck } from '../../api/bookings-api'
 import { hoursOf } from '../../utils/booking-format'
 import styles from './line-check-note.module.css'
+
+const { check: WORDS } = adminBookingMessages.moves
 
 export type LineCheckNoteProps = {
   check: LineCheck
@@ -22,35 +30,42 @@ export const LineCheckNote = ({
   check,
   timezone,
   className,
-}: LineCheckNoteProps) =>
-  match(check)
+}: LineCheckNoteProps) => {
+  const say = useSay()
+
+  return match(check)
     .with({ type: 'unassigned' }, () => (
       <p className={classNames(styles['note'], className)}>
-        担当を決めない明細は、誰の時間も占有しません。
+        {say(WORDS.unassigned)}
       </p>
     ))
     .with({ type: 'tooManyRequests' }, { type: 'failed' }, () => (
       <p className={classNames(styles['note'], className)}>
-        <Badge tone='warning'>空きを確かめられませんでした</Badge>
+        <Badge tone='warning'>{say(WORDS.unread)}</Badge>
       </p>
     ))
     .with({ type: 'free' }, { type: 'taken' }, ({ type, overlapping }) => (
       <div className={classNames(styles['note'], className)}>
         <p>
           {type === 'taken' ? (
-            <Badge tone='danger'>重なる予約があります</Badge>
+            <Badge tone='danger'>{say(WORDS.taken)}</Badge>
           ) : (
-            <Badge tone='success'>空いています</Badge>
+            <Badge tone='success'>{say(WORDS.free)}</Badge>
           )}
           {type === 'free' &&
             overlapping.length > 0 &&
-            '（同時に受けられる数の内で、重なる予約があります）'}
+            say(WORDS.withinCapacity)}
         </p>
         {overlapping.length > 0 && (
           <BulletList>
             {overlapping.map((booking) => (
               <li key={booking.id}>
-                {`${booking.bookingNumber} ${hoursOf(booking, timezone)}`}
+                {say(
+                  WORDS.overlapping(
+                    booking.bookingNumber,
+                    hoursOf(booking, timezone),
+                  ),
+                )}
               </li>
             ))}
           </BulletList>
@@ -58,3 +73,4 @@ export const LineCheckNote = ({
       </div>
     ))
     .exhaustive()
+}

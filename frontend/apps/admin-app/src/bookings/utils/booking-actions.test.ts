@@ -1,5 +1,6 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { StatusChange } from '../api/bookings-api'
 import { aBooking } from '../components/examples'
@@ -100,7 +101,12 @@ describe('readCompletion', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { actualEndTime: '終了は、開始より後の時刻にしてください。' },
+      errors: {
+        actualEndTime: {
+          en: 'Make the end later than the start.',
+          ja: '終了は、開始より後の時刻にしてください。',
+        },
+      },
     })
   })
 
@@ -113,7 +119,10 @@ describe('readCompletion', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        actualEndTime: '終了は、記録した開始より後の時刻にしてください。',
+        actualEndTime: {
+          en: 'Make the end later than the recorded start.',
+          ja: '終了は、記録した開始より後の時刻にしてください。',
+        },
       },
     })
   })
@@ -153,10 +162,14 @@ describe('readCompletion', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        actualStartTime:
-          '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。',
-        actualEndTime:
-          '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。',
+        actualStartTime: {
+          en: 'Enter a date and a time. On some days the clock of the salon skips a time (daylight saving time begins).',
+          ja: '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。',
+        },
+        actualEndTime: {
+          en: 'Enter a date and a time. On some days the clock of the salon skips a time (daylight saving time begins).',
+          ja: '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。',
+        },
       },
     })
   })
@@ -184,15 +197,27 @@ describe('readCancellation', () => {
   })
 })
 
-const DONE: [StatusAction, string][] = [
-  ['confirm', '予約を確定しました。'],
-  ['start', '施術の開始を記録しました。'],
-  ['complete', '予約を完了にしました。'],
-  ['cancel', '予約をキャンセルしました。'],
-  ['noShow', '無断キャンセルを記録しました。'],
+const DONE: [StatusAction, LocalizedText][] = [
+  ['confirm', { en: 'Confirmed the booking.', ja: '予約を確定しました。' }],
+  [
+    'start',
+    {
+      en: 'Recorded the start of the treatment.',
+      ja: '施術の開始を記録しました。',
+    },
+  ],
+  ['complete', { en: 'Completed the booking.', ja: '予約を完了にしました。' }],
+  [
+    'cancel',
+    { en: 'Cancelled the booking.', ja: '予約をキャンセルしました。' },
+  ],
+  [
+    'noShow',
+    { en: 'Recorded a no-show.', ja: '無断キャンセルを記録しました。' },
+  ],
 ]
 
-const NOT_DONE: [string, StatusChange, ChangeSays][] = [
+const NOT_DONE: [string, StatusChange, ChangeSays<LocalizedText>][] = [
   [
     'a booking that changed elsewhere',
     { type: 'conflict' },
@@ -205,8 +230,10 @@ const NOT_DONE: [string, StatusChange, ChangeSays][] = [
     { type: 'tooManyRequests' },
     {
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     },
   ],
   [
@@ -214,8 +241,10 @@ const NOT_DONE: [string, StatusChange, ChangeSays][] = [
     { type: 'failed' },
     {
       type: 'again',
-      message:
-        '予約をキャンセルできませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: {
+        en: 'The booking could not be cancelled. Check your connection and try again.',
+        ja: '予約をキャンセルできませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     },
   ],
 ]

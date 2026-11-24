@@ -1,3 +1,4 @@
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { BookingNotesFields } from './booking-notes-fields'
 
@@ -30,7 +31,7 @@ export const Stored: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      depositAmount: '予約金は、0 以上の円の整数で入力してください。',
+      depositAmount: adminBookingMessages.entry.errors.deposit,
     },
   },
 }

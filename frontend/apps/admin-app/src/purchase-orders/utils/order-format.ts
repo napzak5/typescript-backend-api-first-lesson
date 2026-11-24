@@ -10,8 +10,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
 import { inJapanese } from '@beauty-salon-frontend/ui'
-import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { quantityNameOf } from '../../inventory/utils/stock-format'
+
+/** What is said of a member of the staff the salon no longer shows. */
+const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
 
 /*
  * The statuses of the purchase orders, and how an order is named on the

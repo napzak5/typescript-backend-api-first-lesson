@@ -5,13 +5,20 @@ import {
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, inJapanese } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  adminBookingMessages,
+  adminMenuMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { hoursOf } from '../../utils/booking-format'
 import {
   memberNameOf,
   type Names,
   serviceNameOf,
 } from '../../utils/day-bookings'
+
+const { line: WORDS } = adminBookingMessages.moves
 
 export type BookingLineRecordProps = {
   line: ModelsBookingServiceResponse
@@ -35,43 +42,66 @@ export const BookingLineRecord = ({
   services,
   timezone,
   currency,
-}: BookingLineRecordProps) => (
-  <Card title='施術明細'>
-    <DescriptionList
-      items={[
-        {
-          term: 'メニュー',
-          description: serviceNameOf(line.serviceId, services),
-        },
-        {
-          term: '担当',
-          description: inJapanese(memberNameOf(line.staffId, staff)),
-        },
-        {
-          term: '時刻',
-          description: `${inJapanese(dayNameOf(dayAt(new Date(line.startTime), timezone)))} ${hoursOf(line, timezone)}`,
-        },
-        { term: '所要時間', description: `${line.duration} 分` },
-        {
-          term: '料金',
-          description: inJapanese(amountOf(line.price, currency)),
-        },
-        {
-          term: '割引',
-          description: inJapanese(amountOf(line.discountAmount, currency)),
-        },
-        {
-          term: '支払う額',
-          description: `${inJapanese(amountOf(line.finalPrice, currency))}${line.taxIncluded ? '（税込）' : '（税別）'}`,
-        },
-        {
-          term: '完了',
-          description: line.isCompleted
-            ? `済み${line.completedAt === null ? '' : `（${inJapanese(momentNameAt(line.completedAt, timezone))}）`}`
-            : '未',
-        },
-        { term: 'メモ', description: line.notes },
-      ]}
-    />
-  </Card>
-)
+}: BookingLineRecordProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(WORDS.line)}>
+      <DescriptionList
+        items={[
+          {
+            term: say(WORDS.service),
+            description:
+              serviceNameOf(line.serviceId, services) ??
+              say(adminMenuMessages.removedService),
+          },
+          {
+            term: say(WORDS.staff),
+            description: say(memberNameOf(line.staffId, staff)),
+          },
+          {
+            term: say(WORDS.hours),
+            description: say(
+              WORDS.when(
+                dayNameOf(dayAt(new Date(line.startTime), timezone)),
+                hoursOf(line, timezone),
+              ),
+            ),
+          },
+          {
+            term: say(WORDS.duration),
+            description: say(formats.minutesOf(line.duration)),
+          },
+          {
+            term: say(WORDS.price),
+            description: say(amountOf(line.price, currency)),
+          },
+          {
+            term: say(WORDS.discount),
+            description: say(amountOf(line.discountAmount, currency)),
+          },
+          {
+            term: say(WORDS.finalPrice),
+            description: say(
+              WORDS.finalPriceOf(
+                amountOf(line.finalPrice, currency),
+                line.taxIncluded,
+              ),
+            ),
+          },
+          {
+            term: say(WORDS.completed),
+            description: say(
+              line.isCompleted
+                ? line.completedAt === null
+                  ? WORDS.done
+                  : WORDS.doneAt(momentNameAt(line.completedAt, timezone))
+                : WORDS.notDone,
+            ),
+          },
+          { term: say(WORDS.notes), description: line.notes },
+        ]}
+      />
+    </Card>
+  )
+}

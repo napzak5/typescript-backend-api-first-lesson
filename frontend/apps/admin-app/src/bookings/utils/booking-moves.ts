@@ -13,11 +13,14 @@ import { isDay } from '@beauty-salon-frontend/fields'
 import { momentOf } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { LineCheck } from '../api/bookings-api'
 import {
@@ -27,6 +30,14 @@ import {
   readLine,
 } from './booking-entry'
 import { statusNameOf } from './booking-format'
+
+const {
+  moves: { move: MOVE, addition: ADDITION, removal: REMOVAL },
+  entry: { errors: ERRORS },
+} = adminBookingMessages
+
+/** What is wrong with the values of a form of a booking, under the names of its controls */
+type Errors = FormErrors<LocalizedText>
 
 /*
  * Moving a booking to another time or another member of the staff, and
@@ -64,31 +75,34 @@ export const mayRemoveLine = ({ status, services }: WithLines): boolean =>
   UNFINISHED.includes(status) && services.length > 1
 
 /** Why a booking is not moved, in a sentence; `undefined` for one that is. */
-export const whyUnmovable = (booking: WithStatus): string | undefined =>
+export const whyUnmovable = (booking: WithStatus): LocalizedText | undefined =>
   isMovable(booking)
     ? undefined
-    : `この予約は${statusNameOf(booking.status)}のため、日時と担当を変えられません。日時と担当を変えられるのは、下書き、確定待ち、確定の予約です。`
+    : MOVE.unmovable(statusNameOf(booking.status), MOVABLE.map(statusNameOf))
 
 /** Why no line is added to a booking, in a sentence; `undefined` when one is. */
-export const whyNoLineAdded = (booking: WithLines): string | undefined => {
+export const whyNoLineAdded = (
+  booking: WithLines,
+): LocalizedText | undefined => {
   if (!UNFINISHED.includes(booking.status)) {
-    return `この予約は${statusNameOf(booking.status)}のため、施術明細を足せません。施術明細を変えられるのは、下書き、確定待ち、確定、施術中の予約です。`
+    return ADDITION.closed(
+      statusNameOf(booking.status),
+      UNFINISHED.map(statusNameOf),
+    )
   }
 
   return booking.services.length < MOST_LINES
     ? undefined
-    : `施術明細は ${MOST_LINES} 件までです。この予約には、もう足せません。`
+    : ADDITION.full(formats.numberOf(MOST_LINES))
 }
 
 /** Why a line stays on a booking, in a sentence; `undefined` when it is taken away. */
-export const whyLineStays = (booking: WithLines): string | undefined => {
+export const whyLineStays = (booking: WithLines): LocalizedText | undefined => {
   if (!UNFINISHED.includes(booking.status)) {
-    return `この予約は${statusNameOf(booking.status)}のため、施術明細を外せません。`
+    return REMOVAL.closed(statusNameOf(booking.status))
   }
 
-  return booking.services.length > 1
-    ? undefined
-    : '予約に残る最後の明細は、外せません。行われない来店は、予約をキャンセルしてください。'
+  return booking.services.length > 1 ? undefined : REMOVAL.last
 }
 
 const byOrder = (
@@ -139,7 +153,7 @@ export const lineRequestOf = ({
 export const readMove = (
   values: FormData,
   timezone: string,
-): FormRead<ModelsBookingRescheduleRequest> => {
+): FormRead<ModelsBookingRescheduleRequest, Errors> => {
   const staffId = textOf(values, 'staffId')
   const date = textOf(values, 'date')
   const time = textOf(values, 'startTime')
@@ -147,10 +161,10 @@ export const readMove = (
     isDay(date) && time !== ''
       ? momentOf(`${date}T${time}`, timezone)
       : undefined
-  const errors: Record<string, string> = {
-    ...(staffId === '' ? { staffId: '担当スタッフを選んでください。' } : {}),
-    ...(isDay(date) ? {} : { date: '来店日を入力してください。' }),
-    ...(time === '' ? { startTime: '開始の時刻を入力してください。' } : {}),
+  const errors: Errors = {
+    ...(staffId === '' ? { staffId: ERRORS.staff } : {}),
+    ...(isDay(date) ? {} : { date: ERRORS.date }),
+    ...(time === '' ? { startTime: ERRORS.startTime } : {}),
     ...(isDay(date) && time !== '' && startTime === undefined
       ? { startTime: NOT_ON_THE_CLOCK }
       : {}),
@@ -169,9 +183,6 @@ export const readMove = (
  */
 const A_DAY = 24 * 60 * 60 * 1000
 
-const BEYOND_THE_DAY =
-  'すべての明細は、最も早い明細の開始から 24 時間以内に始まります。開始の時刻を確かめてください。'
-
 /**
  * The line that is added to a booking, from the form that adds it. It
  * begins on the day of the visit; with the lines the booking has, every
@@ -186,7 +197,7 @@ export const readAddition = (
     booking: Pick<ModelsBookingResponse, 'bookingDate' | 'staffId' | 'services'>
     timezone: string
   },
-): FormRead<ModelsBookingServiceCreateRequest> => {
+): FormRead<ModelsBookingServiceCreateRequest, Errors> => {
   const read = readLine(values, (part) => part, {
     date: booking.bookingDate,
     staffId: booking.staffId,
@@ -202,7 +213,7 @@ export const readAddition = (
 
   return Math.max(...starts) - Math.min(...starts) <= A_DAY
     ? read
-    : { type: 'invalid', errors: { startTime: BEYOND_THE_DAY } }
+    : { type: 'invalid', errors: { startTime: ADDITION.beyondTheDay } }
 }
 
 /** What came of an attempt to move a booking, with why the API refused it when it did. */
@@ -255,38 +266,24 @@ const LINE_CONTROLS: readonly string[] = [
   'notes',
 ]
 
-/** What is said when a member of the staff is taken at a time the booking would have. */
-export const MOVE_TAKEN =
-  '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。'
-
-/** What is said when the member of the line is taken at its time. */
-export const ADDITION_TAKEN =
-  '担当の時間が、ほかの予約と重なっているため、施術明細を足せませんでした。足す明細に重なる、ほかの予約を確かめました。'
-
 /** What the form that moves a booking says after the API did not move it. */
 export const afterMove = (
   outcome: Exclude<
     MoveAttempt,
     { type: 'moved' } | { type: 'unmovable' } | { type: 'notFound' }
   >,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, isMoveControl),
     )
-    .with({ type: 'taken' }, () => aboutTheAttempt(MOVE_TAKEN))
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
-    )
+    .with({ type: 'taken' }, () => aboutTheAttempt(MOVE.taken))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(MOVE.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '予約の日時と担当を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(MOVE.failed))
     .exhaustive()
 
 /** What the form that adds a line says after the API did not add it. */
@@ -295,29 +292,19 @@ export const afterAddition = (
     AdditionAttempt,
     { type: 'added' } | { type: 'unaddable' } | { type: 'notFound' }
   >,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, (field) => LINE_CONTROLS.includes(field)),
     )
-    .with({ type: 'taken' }, () => aboutTheAttempt(ADDITION_TAKEN))
-    .with({ type: 'tooMuch' }, () =>
-      aboutTheAttempt(
-        '金額の合計が、1 件の予約で扱える上限を超えるため、施術明細を足せませんでした。',
-      ),
-    )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
-    )
+    .with({ type: 'taken' }, () => aboutTheAttempt(ADDITION.taken))
+    .with({ type: 'tooMuch' }, () => aboutTheAttempt(ADDITION.tooMuch))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(ADDITION.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '施術明細を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(ADDITION.failed))
     .exhaustive()
 
 /** What follows an attempt to take a line away. */
@@ -325,7 +312,7 @@ export type LineRemovalSays =
   /** The line is gone: the screen leads to the booking */
   | { type: 'done' }
   /** Nothing was done: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** The line stays, and will: the dialog closes, and the page says why from the booking as it is now */
   | { type: 'stays'; booking: ModelsBookingResponse }
   /** The line, or its booking, was gone already: it is read again, and the screen says so */
@@ -340,21 +327,19 @@ export const afterLineRemoval = (
     .with({ type: 'refused' }, ({ booking }) => ({ type: 'stays', booking }))
     .with({ type: 'unsummed' }, () => ({
       type: 'again',
-      message:
-        '施術明細を外せませんでした。この明細を外すと、予約の金額を算出し直せません。',
+      message: REMOVAL.unsummed,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: 'このアカウントでは、この予約を変えられません。',
+      message: REMOVAL.forbidden,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '施術明細を外せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: REMOVAL.failed,
     }))
     .exhaustive()

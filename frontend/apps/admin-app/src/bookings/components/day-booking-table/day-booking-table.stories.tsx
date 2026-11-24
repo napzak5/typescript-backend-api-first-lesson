@@ -1,7 +1,9 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import type { BookingRow } from '../../utils/day-bookings'
-import { aBooking, customers, moment, salon } from '../examples'
+import { aBooking, customers, DAY, moment, salon } from '../examples'
 
 import { DayBookingTable } from './day-booking-table'
 
@@ -30,7 +32,7 @@ const meta: Meta<typeof DayBookingTable> = {
   title: 'Admin/Bookings/DayBookingTable',
   component: DayBookingTable,
   args: {
-    caption: '2026年11月20日（金）の予約',
+    caption: adminBookingMessages.ledger.bookingsOn(dayNameOf(DAY)),
     rows: ROWS,
     total: 2,
     timezone: salon.timezone,

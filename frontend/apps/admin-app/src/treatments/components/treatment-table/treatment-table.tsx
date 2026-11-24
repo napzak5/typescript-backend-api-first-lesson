@@ -10,7 +10,6 @@ import {
   Link,
   type More,
 } from '@beauty-salon-frontend/ui'
-import { UNLISTED_STAFF } from '../../../bookings/utils/booking-format'
 import {
   serviceNameOf,
   staffNameOf,
@@ -18,9 +17,11 @@ import {
 import type { FoundTreatment } from '../../api/treatments-api'
 import {
   customerCalled,
+  GONE_SERVICE,
   minutesNameOf,
   NOT_ANSWERED,
   satisfactionNameOf,
+  UNLISTED_STAFF,
 } from '../../utils/treatment-format'
 
 export type TreatmentTableProps = {
@@ -99,7 +100,9 @@ export const TreatmentTable = ({
         wrap: 'words',
         cell: ({ record }) =>
           record.services
-            .map((serviceId) => serviceNameOf(serviceId, services))
+            .map(
+              (serviceId) => serviceNameOf(serviceId, services) ?? GONE_SERVICE,
+            )
             .join('、'),
       },
       {

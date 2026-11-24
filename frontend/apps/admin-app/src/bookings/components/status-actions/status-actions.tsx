@@ -8,10 +8,15 @@ import {
   Dialog,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   Note,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
 import type { StatusAction } from '../../utils/booking-actions'
 import { statusNameOf, statusToneOf } from '../../utils/booking-format'
@@ -28,19 +33,19 @@ export type StatusActionsProps = {
   /** The operations the booking can take now, in the order of their buttons */
   actions: readonly StatusAction[]
   /** When the booking is, as the dialogs name it: 「2026年11月20日（金） 10:00〜11:00」 */
-  when: string
+  when: LocalizedText
   /** The heading of the part: the focus goes there after an operation */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** The operation that is on its way */
   pending?: StatusAction | undefined
   /** The dialog that is open */
   asking?: AskedAction | undefined
-  /** What went wrong with the attempt in the dialog that is open */
-  message?: string | undefined
-  /** What is wrong with the fields of the completion */
-  completionErrors?: FormErrors | undefined
+  /** What went wrong with the attempt in the dialog that is open, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the fields of the completion. A new object is the answer to another attempt */
+  completionErrors?: FormErrors<LocalizedText> | undefined
   /** When the treatment began, as it was recorded; `undefined` when it was not */
-  recordedStart?: string | undefined
+  recordedStart?: LocalizedText | undefined
   onAct: (action: DirectAction) => void
   onAsk: (action: AskedAction) => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -50,13 +55,8 @@ export type StatusActionsProps = {
   onNoShow: () => void
 }
 
-const LABELS: Record<StatusAction, string> = {
-  confirm: '予約を確定する',
-  start: '施術を始める',
-  complete: '完了にする',
-  noShow: '無断キャンセルを記録する',
-  cancel: '予約をキャンセルする',
-}
+const WORDS = adminBookingMessages.details.status
+const LABELS: Record<StatusAction, LocalizedText> = WORDS.actions
 
 /**
  * The state of a booking, and what can be done to it. Confirming it and
@@ -71,7 +71,7 @@ export const StatusActions = ({
   pending,
   asking,
   message,
-  completionErrors = {},
+  completionErrors = NO_ERRORS,
   recordedStart,
   onAct,
   onAsk,
@@ -80,18 +80,20 @@ export const StatusActions = ({
   onCancel,
   onNoShow,
 }: StatusActionsProps) => {
-  const said = message !== undefined && <Alert tone='danger'>{message}</Alert>
+  const say = useSay()
+  const completion = useSaidForm(message, completionErrors)
+  const said = message !== undefined && (
+    <Alert tone='danger'>{say(message)}</Alert>
+  )
 
   return (
-    <Card title='状態' headingRef={headingRef}>
+    <Card title={say(WORDS.title)} headingRef={headingRef}>
       <div className={styles['statusActions']}>
         <p>
-          <Badge tone={statusToneOf(status)}>{statusNameOf(status)}</Badge>
+          <Badge tone={statusToneOf(status)}>{say(statusNameOf(status))}</Badge>
         </p>
         {actions.length === 0 ? (
-          <Note>
-            この予約の状態は、もう変えられません。誤って記録したときは、予約を削除して入れ直してください。
-          </Note>
+          <Note>{say(WORDS.closed)}</Note>
         ) : (
           <Actions>
             {actions.map((action) =>
@@ -102,7 +104,7 @@ export const StatusActions = ({
                   pending={pending === action}
                   onClick={() => onAct(action)}
                 >
-                  {LABELS[action]}
+                  {say(LABELS[action])}
                 </Button>
               ) : (
                 <Button
@@ -110,7 +112,7 @@ export const StatusActions = ({
                   variant={action === 'complete' ? 'secondary' : 'danger'}
                   onClick={() => onAsk(action)}
                 >
-                  {LABELS[action]}
+                  {say(LABELS[action])}
                 </Button>
               ),
             )}
@@ -120,67 +122,67 @@ export const StatusActions = ({
       <FormDialog
         open={asking === 'complete'}
         onClose={onClose}
-        title='予約を完了にしますか？'
-        description={`${when}の予約を完了にします。完了にした予約は、元に戻せません。`}
-        submitLabel='完了にする'
-        message={message}
+        title={say(WORDS.completion.title)}
+        description={say(WORDS.completion.description(when))}
+        submitLabel={say(WORDS.completion.submit)}
+        message={completion.message}
         errors={completionErrors}
         pending={pending === 'complete'}
         onSubmit={onComplete}
       >
         <TextField
-          label='実際の開始'
+          label={say(WORDS.completion.actualStart)}
           name='actualStartTime'
           autoComplete='off'
           type='datetime-local'
-          description={
+          description={say(
             recordedStart === undefined
-              ? 'サロンの時計の日時。空欄のときは、記録しません。'
-              : `サロンの時計の日時。空欄のときは、施術を始めたときに記録した日時（${recordedStart}）のままです。`
-          }
-          error={completionErrors['actualStartTime']}
+              ? WORDS.completion.notRecorded
+              : WORDS.completion.recordedStart(recordedStart),
+          )}
+          error={completion.errors['actualStartTime']}
         />
         <TextField
-          label='実際の終了'
+          label={say(WORDS.completion.actualEnd)}
           name='actualEndTime'
           autoComplete='off'
           type='datetime-local'
-          description='サロンの時計の日時。空欄のときは、記録しません。'
-          error={completionErrors['actualEndTime']}
+          description={say(WORDS.completion.notRecorded)}
+          error={completion.errors['actualEndTime']}
         />
       </FormDialog>
       <FormDialog
         open={asking === 'cancel'}
         onClose={onClose}
-        title='予約をキャンセルしますか？'
-        description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
-        submitLabel='キャンセルを確定する'
+        title={say(WORDS.cancellation.title)}
+        description={say(WORDS.cancellation.description(when))}
+        submitLabel={say(WORDS.cancellation.submit)}
         submitVariant='danger'
-        message={message}
+        message={completion.message}
         pending={pending === 'cancel'}
         onSubmit={onCancel}
       >
         <TextArea
-          label='キャンセルの理由'
+          label={say(WORDS.cancellation.reason)}
           name='cancellationReason'
           rows={4}
-          description='お客様からの連絡の内容など。空欄のままでも、キャンセルできます。'
+          description={say(WORDS.cancellation.reasonDescription)}
         />
       </FormDialog>
       <Dialog
         open={asking === 'noShow'}
         onClose={onClose}
-        title='無断キャンセルを記録しますか？'
-        description={`${when}の予約に、お客様が来店しなかったことを記録します。記録した予約は、元に戻せません。`}
+        title={say(WORDS.noShow.title)}
+        description={say(WORDS.noShow.description(when))}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(WORDS.noShow.back)}</Button>
             <Button
               variant='danger'
               pending={pending === 'noShow'}
               onClick={onNoShow}
             >
-              記録する
+              {say(WORDS.noShow.submit)}
             </Button>
           </>
         }

@@ -1,23 +1,24 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
 import type { BadgeTone } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { hoursOf, statusNameOf, statusToneOf } from './booking-format'
 
-type StatusCase = [ModelsBookingStatusType, string, BadgeTone]
+type StatusCase = [ModelsBookingStatusType, LocalizedText, BadgeTone]
 
 const STATUSES: StatusCase[] = [
-  ['draft', '下書き', 'neutral'],
-  ['pending', '確定待ち', 'warning'],
-  ['confirmed', '確定', 'success'],
-  ['in_progress', '施術中', 'info'],
-  ['completed', '完了', 'neutral'],
-  ['cancelled', 'キャンセル', 'neutral'],
-  ['no_show', '無断キャンセル', 'danger'],
+  ['draft', { en: 'Draft', ja: '下書き' }, 'neutral'],
+  ['pending', { en: 'Awaiting confirmation', ja: '確定待ち' }, 'warning'],
+  ['confirmed', { en: 'Confirmed', ja: '確定' }, 'success'],
+  ['in_progress', { en: 'In progress', ja: '施術中' }, 'info'],
+  ['completed', { en: 'Completed', ja: '完了' }, 'neutral'],
+  ['cancelled', { en: 'Cancelled', ja: 'キャンセル' }, 'neutral'],
+  ['no_show', { en: 'No-show', ja: '無断キャンセル' }, 'danger'],
 ]
 
 describe('statusNameOf and statusToneOf', () => {
   it.each(STATUSES)('should name the state %s', (status, name, tone) => {
-    expect(statusNameOf(status)).toBe(name)
+    expect(statusNameOf(status)).toEqual(name)
     expect(statusToneOf(status)).toBe(tone)
   })
 })
@@ -32,6 +33,6 @@ describe('hoursOf', () => {
         },
         'Asia/Tokyo',
       ),
-    ).toBe('10:00〜11:30')
+    ).toEqual({ en: '10:00–11:30', ja: '10:00〜11:30' })
   })
 })

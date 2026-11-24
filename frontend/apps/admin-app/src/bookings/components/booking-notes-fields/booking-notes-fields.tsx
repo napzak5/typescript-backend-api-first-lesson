@@ -2,12 +2,20 @@ import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
 import {
   FieldRow,
   type FormErrors,
+  type NamedChoice,
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { SOURCES, sourceNameOf } from '../../utils/booking-entry'
 import styles from './booking-notes-fields.module.css'
+
+const { notes: WORDS } = adminBookingMessages.entry
 
 export type BookingNotesFieldsProps = {
   /** What the booking has written down: the controls open with it. Nothing for a new booking */
@@ -17,12 +25,12 @@ export type BookingNotesFieldsProps = {
         'depositAmount' | 'customerRequest' | 'internalNotes' | 'source'
       >
     | undefined
-  /** What is wrong with a value, under the name of its control */
-  errors: FormErrors
+  /** What is wrong with a value, under the name of its control. A new object is the answer to another attempt */
+  errors: FormErrors<LocalizedText>
 }
 
 /** The ways the form offers, and a stored one it does not (a booking of the portal: `online`) */
-const sourceOptionsOf = (stored: string | null) => [
+const sourceOptionsOf = (stored: string | null): NamedChoice[] => [
   ...SOURCES,
   ...(stored === null || SOURCES.some(({ value }) => value === stored)
     ? []
@@ -38,41 +46,47 @@ const sourceOptionsOf = (stored: string | null) => [
 export const BookingNotesFields = ({
   notes,
   errors,
-}: BookingNotesFieldsProps) => (
-  <div className={styles['fields']}>
-    <FieldRow>
-      <Select
-        label='受付の経路'
-        name='source'
-        options={sourceOptionsOf(notes?.source ?? null)}
-        placeholder='記録しない'
-        defaultValue={notes?.source ?? ''}
-        error={errors['source']}
+}: BookingNotesFieldsProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(undefined, errors)
+
+  return (
+    <div className={styles['fields']}>
+      <FieldRow>
+        <Select
+          label={say(WORDS.source)}
+          name='source'
+          options={options(sourceOptionsOf(notes?.source ?? null))}
+          placeholder={say(WORDS.noSource)}
+          defaultValue={notes?.source ?? ''}
+          error={said.errors['source']}
+        />
+        <TextField
+          label={say(WORDS.deposit)}
+          name='depositAmount'
+          inputMode='numeric'
+          autoComplete='off'
+          defaultValue={notes?.depositAmount?.toString() ?? ''}
+          description={say(WORDS.depositDescription)}
+          error={said.errors['depositAmount']}
+        />
+      </FieldRow>
+      <TextArea
+        label={say(WORDS.customerRequest)}
+        name='customerRequest'
+        rows={4}
+        defaultValue={notes?.customerRequest ?? ''}
+        error={said.errors['customerRequest']}
       />
-      <TextField
-        label='予約金'
-        name='depositAmount'
-        inputMode='numeric'
-        autoComplete='off'
-        defaultValue={notes?.depositAmount?.toString() ?? ''}
-        description='お預かりした円の金額。お預かりしていなければ空欄です。'
-        error={errors['depositAmount']}
+      <TextArea
+        label={say(WORDS.internalNotes)}
+        name='internalNotes'
+        rows={4}
+        defaultValue={notes?.internalNotes ?? ''}
+        description={say(WORDS.internalNotesDescription)}
+        error={said.errors['internalNotes']}
       />
-    </FieldRow>
-    <TextArea
-      label='お客様の要望'
-      name='customerRequest'
-      rows={4}
-      defaultValue={notes?.customerRequest ?? ''}
-      error={errors['customerRequest']}
-    />
-    <TextArea
-      label='サロン内のメモ'
-      name='internalNotes'
-      rows={4}
-      defaultValue={notes?.internalNotes ?? ''}
-      description='お客様には見えません。'
-      error={errors['internalNotes']}
-    />
-  </div>
-)
+    </div>
+  )
+}

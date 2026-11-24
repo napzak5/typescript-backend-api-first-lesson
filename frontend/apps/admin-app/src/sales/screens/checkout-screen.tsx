@@ -283,7 +283,7 @@ export const CheckoutScreen = () => {
             match(whyNoCheckout(booking))
               .with(P.nonNullable, (why) => (
                 <Unchangeable
-                  why={say(why)}
+                  why={why}
                   back={bookingHrefOf(salon.id, booking.id)}
                 />
               ))

@@ -13,6 +13,7 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import { serviceNameOf } from '../../../bookings/utils/day-bookings'
+import { GONE_SERVICE } from '../../utils/treatment-format'
 import { averageNameOf, countNameOf } from '../../utils/treatment-statistics'
 import styles from './treatment-statistics.module.css'
 
@@ -93,7 +94,8 @@ export const TreatmentStatistics = ({
           {
             key: 'service',
             header: 'サービス',
-            cell: ({ counted }) => serviceNameOf(counted.serviceId, services),
+            cell: ({ counted }) =>
+              serviceNameOf(counted.serviceId, services) ?? GONE_SERVICE,
           },
           {
             key: 'count',

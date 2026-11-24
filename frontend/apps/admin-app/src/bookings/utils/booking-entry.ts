@@ -13,12 +13,14 @@ import { isDay } from '@beauty-salon-frontend/fields'
 import { keywordIn, momentOf } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
+  type NamedChoice,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type {
@@ -27,6 +29,13 @@ import type {
   BookingUpdate,
   LineCheck,
 } from '../api/bookings-api'
+
+const { entry: ENTRY } = adminBookingMessages
+const { errors: ERRORS, refused: REFUSED, checked: CHECKED } = ENTRY
+const { removal: REMOVAL } = adminBookingMessages.details.changes
+
+/** What is wrong with the values of a form of a booking, under the names of its controls */
+type Errors = FormErrors<LocalizedText>
 
 /*
  * Putting a booking into the ledger, changing what the salon wrote down on
@@ -112,8 +121,6 @@ export const yenOf = (text: string): number | null | undefined => {
   return amount <= MOST_YEN ? amount : undefined
 }
 
-export const DEPOSIT_ERROR = '予約金は、0 以上の円の整数で入力してください。'
-
 /** What the salon writes down on a booking, beside who comes when for what. */
 export type Notes = Pick<
   ModelsBookingCreateRequest,
@@ -121,10 +128,10 @@ export type Notes = Pick<
 >
 
 /** What the salon wrote down, from the controls of `BookingNotesFields`. */
-export const readNotes = (values: FormData): FormRead<Notes> => {
+export const readNotes = (values: FormData): FormRead<Notes, Errors> => {
   const depositAmount = yenOf(textOf(values, 'depositAmount'))
   if (depositAmount === undefined) {
-    return { type: 'invalid', errors: { depositAmount: DEPOSIT_ERROR } }
+    return { type: 'invalid', errors: { depositAmount: ERRORS.deposit } }
   }
 
   return {
@@ -141,7 +148,7 @@ export const readNotes = (values: FormData): FormRead<Notes> => {
 /** Who a booking is for and when, as the form has it: the member of the booking and the lines. */
 export type Lines = Pick<ModelsBookingCreateRequest, 'staffId' | 'services'>
 
-export const NOT_ON_THE_CLOCK = inJapanese(adminBookingMessages.notOnTheClock)
+export const NOT_ON_THE_CLOCK = adminBookingMessages.notOnTheClock
 
 /** The day of the visit, the member of the booking, and the clock the times are read on. */
 export type LineDay = {
@@ -161,7 +168,7 @@ export const readLine = (
   values: FormData,
   control: (part: keyof ModelsBookingServiceCreateRequest) => string,
   { date, staffId, timezone }: LineDay,
-): FormRead<ModelsBookingServiceCreateRequest> => {
+): FormRead<ModelsBookingServiceCreateRequest, Errors> => {
   const serviceId = textOf(values, control('serviceId'))
   const time = textOf(values, control('startTime'))
   const member = textOf(values, control('staffId'))
@@ -169,13 +176,9 @@ export const readLine = (
     date === undefined || time === ''
       ? undefined
       : momentOf(`${date}T${time}`, timezone)
-  const errors: Record<string, string> = {
-    ...(serviceId === ''
-      ? { [control('serviceId')]: 'メニューを選んでください。' }
-      : {}),
-    ...(time === ''
-      ? { [control('startTime')]: '開始の時刻を入力してください。' }
-      : {}),
+  const errors: Errors = {
+    ...(serviceId === '' ? { [control('serviceId')]: ERRORS.service } : {}),
+    ...(time === '' ? { [control('startTime')]: ERRORS.startTime } : {}),
     ...(date !== undefined && time !== '' && startTime === undefined
       ? { [control('startTime')]: NOT_ON_THE_CLOCK }
       : {}),
@@ -206,7 +209,7 @@ export const readLine = (
 export const readLines = (
   values: FormData,
   timezone: string,
-): FormRead<Lines> => {
+): FormRead<Lines, Errors> => {
   const staffId = textOf(values, 'staffId')
   const day = textOf(values, 'date')
   const date = isDay(day) ? day : undefined
@@ -220,10 +223,10 @@ export const readLines = (
       timezone,
     }),
   )
-  const errors: Record<string, string> = Object.assign(
+  const errors: Errors = Object.assign(
     {
-      ...(staffId === '' ? { staffId: '担当スタッフを選んでください。' } : {}),
-      ...(date === undefined ? { date: '来店日を入力してください。' } : {}),
+      ...(staffId === '' ? { staffId: ERRORS.staff } : {}),
+      ...(date === undefined ? { date: ERRORS.date } : {}),
     },
     ...lines.map((line) => (line.type === 'invalid' ? line.errors : {})),
   )
@@ -250,7 +253,7 @@ export const readEntry = (
     customerId,
     timezone,
   }: { salonId: string; customerId: string; timezone: string },
-): FormRead<ModelsBookingCreateRequest> => {
+): FormRead<ModelsBookingCreateRequest, Errors> => {
   const lines = readLines(values, timezone)
   const notes = readNotes(values)
   if (lines.type === 'invalid' || notes.type === 'invalid') {
@@ -271,7 +274,7 @@ export const readEntry = (
 
 /** What a change of the notes of a booking asks for: nothing, when nothing was changed. */
 export type NotesChange =
-  | FormRead<ModelsBookingUpdateRequest>
+  | FormRead<ModelsBookingUpdateRequest, Errors>
   | { type: 'unchanged' }
 
 /**
@@ -303,47 +306,48 @@ export const readNotesChange = (
     : { type: 'valid', value: changes }
 }
 
+const { sources: SOURCE_NAMES } = ENTRY
+
 /** How a booking reached the salon, as the form offers it. */
-export const SOURCES: readonly { value: string; label: string }[] = [
-  { value: 'phone', label: '電話' },
-  { value: 'walk_in', label: '店頭' },
-  { value: 'email', label: 'メール' },
-  { value: 'other', label: 'その他' },
+export const SOURCES: readonly NamedChoice[] = [
+  { value: 'phone', label: SOURCE_NAMES.phone },
+  { value: 'walk_in', label: SOURCE_NAMES.walk_in },
+  { value: 'email', label: SOURCE_NAMES.email },
+  { value: 'other', label: SOURCE_NAMES.other },
 ]
 
-/** A booking a customer made in the portal */
-const SOURCE_NAMES: Record<string, string> = {
-  online: 'オンライン',
+/** The ways a booking reaches the salon, by the values the API keeps: a booking a customer made in the portal too */
+const SOURCE_NAMED: Record<string, LocalizedText> = {
+  online: SOURCE_NAMES.online,
   ...Object.fromEntries(SOURCES.map(({ value, label }) => [value, label])),
 }
 
 /** How a booking reached the salon, in words: a value of another kind, as it is. */
-export const sourceNameOf = (source: string): string =>
-  SOURCE_NAMES[source] ?? source
+export const sourceNameOf = (source: string): LocalizedText =>
+  SOURCE_NAMED[source] ?? ENTRY.storedSource(source)
+
 /** What is said about a value the API refused at its control. */
-const messageAt = ({ field, rule }: RefusedValue): string =>
+const messageAt = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
     .when(
       ([refused, broken]) =>
         broken === 'not_found' && refused.endsWith('serviceId'),
-      () => 'このメニューは、もう選べません。選び直してください。',
+      () => ERRORS.serviceGone,
     )
     .when(
       ([, broken]) => broken === 'not_found',
-      () => 'このスタッフは、もう選べません。選び直してください。',
+      () => ERRORS.staffGone,
     )
     .when(
       ([refused]) => refused === 'depositAmount',
-      () => DEPOSIT_ERROR,
+      () => ERRORS.deposit,
     )
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What is said about a value the API refused that the form has no control for. */
-const ATTEMPT_MESSAGES: Record<string, string> = {
-  customerId:
-    'このお客様は、台帳から削除されていました。お客様を選び直してください。',
-  services:
-    '金額の合計が、1 件の予約で扱える上限を超えます。明細を減らしてください。',
+const ATTEMPT_MESSAGES: Record<string, LocalizedText> = {
+  customerId: ERRORS.customerGone,
+  services: ERRORS.tooMuch,
 }
 
 /**
@@ -353,7 +357,7 @@ const ATTEMPT_MESSAGES: Record<string, string> = {
 export const afterRefusal = (
   values: readonly RefusedValue[],
   hasControl: (field: string) => boolean,
-): FormSays => {
+): FormSays<LocalizedText> => {
   const atControls = values.filter(({ field }) => hasControl(field))
   const aboutAttempt = values.flatMap(({ field }) => {
     const message = ATTEMPT_MESSAGES[field]
@@ -361,7 +365,7 @@ export const afterRefusal = (
     return hasControl(field) || message === undefined ? [] : [message]
   })
   if (atControls.length === 0 && aboutAttempt.length === 0) {
-    return aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+    return aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
   }
 
   return {
@@ -386,31 +390,21 @@ const isEntryControl = (field: string): boolean =>
   NOTES_CONTROLS.includes(field) ||
   LINE_CONTROL.test(field)
 
-/** What is said when a member of the staff is taken at a time of the booking. */
-export const TAKEN =
-  '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'
-
 /** What the form that puts a booking in says after the API did not create it. */
 export const afterEntry = (
   outcome: Exclude<BookingCreation, { type: 'created' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, isEntryControl),
     )
-    .with({ type: 'conflict' }, () => aboutTheAttempt(TAKEN))
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、このサロンの予約を入れられません。'),
-    )
+    .with({ type: 'conflict' }, () => aboutTheAttempt(REFUSED.taken))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(REFUSED.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '予約を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(REFUSED.failed))
     .exhaustive()
 
 /**
@@ -419,23 +413,19 @@ export const afterEntry = (
  */
 export const afterNotesChange = (
   outcome: Exclude<BookingUpdate, { type: 'updated' } | { type: 'notFound' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, (field) => NOTES_CONTROLS.includes(field)),
     )
     .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
+      aboutTheAttempt(ENTRY.notesChange.forbidden),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '予約の記録を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(ENTRY.notesChange.failed))
     .exhaustive()
 
 /** What follows an attempt to remove a booking. */
@@ -443,9 +433,9 @@ export type RemovalSays =
   /** The booking is gone from the ledger: the screen leads to the day of it */
   | { type: 'done' }
   /** Nothing was done, and nothing is known to have changed: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** The booking stays, and will: the dialog closes, and the page says why */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
   /** The booking was gone already: it is read again, and the screen says so */
   | { type: 'gone' }
 
@@ -455,48 +445,42 @@ export const afterRemoval = (outcome: BookingRemoval): RemovalSays =>
     .with({ type: 'deleted' }, () => ({ type: 'done' }))
     .with({ type: 'referred' }, () => ({
       type: 'refused',
-      message:
-        'この予約は、売上、施術記録、レビューのどれかが指しているため、削除できません。行われた来店の記録として残ります。',
+      message: REMOVAL.referred,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message:
-        'このアカウントでは、予約を削除できません。行われない予約は、キャンセルしてください。',
+      message: REMOVAL.forbidden,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '予約を削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: REMOVAL.failed,
     }))
     .exhaustive()
 
-/** The numbers of lines, as a sentence lists them: 「明細 1、3」. */
-const linesNamed = (indices: readonly number[]): string =>
-  `明細 ${indices.map((index) => index + 1).join('、')}`
-
 /** What a check of the members of the lines found, in a sentence. */
-export const checkedSaysOf = (checks: readonly LineCheck[]): string => {
-  const indicesOf = (type: LineCheck['type']): number[] =>
-    checks.flatMap((check, index) => (check.type === type ? [index] : []))
-  const unread = indicesOf('failed')
-  const taken = indicesOf('taken')
-  if (indicesOf('tooManyRequests').length > 0) {
-    return inJapanese(TOO_MANY_REQUESTS_MESSAGE)
+export const checkedSaysOf = (checks: readonly LineCheck[]): LocalizedText => {
+  /** The lines of a kind, by their numbers counted from 1 */
+  const numbersOf = (type: LineCheck['type']): number[] =>
+    checks.flatMap((check, index) => (check.type === type ? [index + 1] : []))
+  const unread = numbersOf('failed')
+  const taken = numbersOf('taken')
+  if (numbersOf('tooManyRequests').length > 0) {
+    return TOO_MANY_REQUESTS_MESSAGE
   }
   if (unread.length > 0) {
-    return `${linesNamed(unread)} の担当の空きを確かめられませんでした。通信の状態を確かめて、もう一度お試しください。`
+    return CHECKED.unread(unread)
   }
   if (taken.length > 0) {
-    return `${linesNamed(taken)} の担当に、重なる予約があります。担当の前後の空け時間も、重なりに数えます。担当か開始の時刻を変えてください。`
+    return CHECKED.taken(taken)
   }
-  if (indicesOf('unassigned').length === checks.length) {
-    return '担当を決めた明細がありません。担当を決めない明細は、誰の時間も占有しません。'
+  if (numbersOf('unassigned').length === checks.length) {
+    return CHECKED.unassigned
   }
 
-  return '担当の空きを確かめました。重なる予約はありません。'
+  return CHECKED.free
 }

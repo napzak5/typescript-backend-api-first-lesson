@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as lineRemovalStories from './line-removal.stories'
 
 const stories = composeStories(lineRemovalStories)
@@ -112,5 +113,55 @@ describe('LineRemoval', () => {
 
     // Assert
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('LineRemoval on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should ask before the line is taken off, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unremoved.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The staff member and the start time of a line cannot be changed. Add a new line, then take this one off.',
+      ),
+    ).toBeVisible()
+    const asking = screen.getByRole('dialog', { name: 'Take the line off?' })
+    expect(asking).toHaveAccessibleDescription(
+      'カット (10:00–11:00) will be taken off the booking. The time and the amounts of the booking are worked out again from the lines that stay. A line taken off cannot be put back.',
+    )
+    expect(
+      within(asking).getByText(
+        'The line could not be taken off. Check your connection and try again.',
+      ),
+    ).toBeVisible()
+    expect(within(asking).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(
+      within(asking).getByRole('button', { name: 'Take off' }),
+    ).toBeVisible()
+  })
+
+  it('should say why the last line stays, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Last.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The last line of a booking cannot be taken off. Cancel the booking of a visit that will not take place.',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 })

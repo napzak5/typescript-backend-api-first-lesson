@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingNotesFieldsStories from './booking-notes-fields.stories'
 
 const stories = composeStories(bookingNotesFieldsStories)
@@ -69,5 +70,31 @@ describe('BookingNotesFields', () => {
     ).toHaveAccessibleDescription(
       expect.stringContaining('予約金は、0 以上の円の整数で入力してください。'),
     )
+  })
+})
+
+describe('BookingNotesFields on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the controls and the ways a booking comes, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'How it was booked' })),
+    ).toEqual(['Not recorded', 'Phone', 'Walk-in', 'Email', 'Other'])
+    expect(screen.getByLabelText('Deposit')).toHaveAccessibleDescription(
+      'The amount in yen taken in advance. Leave it empty if none was. Enter the deposit as a whole number of yen, 0 or more.',
+    )
+    expect(screen.getByLabelText('Customer’s requests')).toBeVisible()
+    expect(
+      screen.getByLabelText('Notes for the salon'),
+    ).toHaveAccessibleDescription('Customers do not see it.')
   })
 })

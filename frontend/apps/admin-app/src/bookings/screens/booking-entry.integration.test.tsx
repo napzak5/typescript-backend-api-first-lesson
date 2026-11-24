@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
@@ -33,7 +34,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, refuse } from '../__tests__/arrangements'
 
 const TAKEN =
@@ -818,5 +819,149 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       ).toBeVisible()
       expect(await storedIds(id)).toHaveLength(1)
     })
+  })
+})
+
+describe('the bookings a salon puts in, changes and removes, on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  /** Opens the form of a booking for Yamamoto Kenji in English, from the bookings of the day. */
+  const toTheFormInEnglish = async (
+    user: ReturnType<typeof userEvent.setup>,
+  ) => {
+    const tokyo = await salonIdOf(TOKYO)
+    const date = await dayFromToday(DAY)
+    await openAs(`/salons/${tokyo}/bookings?date=${date}`, OWNER, 'en')
+    await user.click(
+      await screen.findByRole('link', { name: 'Make a booking' }),
+    )
+    await user.type(
+      await screen.findByRole('searchbox', { name: 'Keyword' }),
+      'yamamoto{Enter}',
+    )
+    await user.click(await screen.findByRole('link', { name: KENJI.name }))
+    await screen.findByRole('combobox', { name: 'Staff member' })
+
+    return { tokyo, date }
+  }
+
+  it('should put a booking in as the form has it, and show it on its page, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const { date } = await toTheFormInEnglish(user)
+    await user.selectOptions(combobox('Staff member'), 'Mika Suzuki')
+    await user.selectOptions(
+      combobox('Service of line 1'),
+      'Ladies Cut (60 min)',
+    )
+    await user.selectOptions(combobox('Staff of line 1'), 'Same as the booking')
+    await user.type(field('Start of line 1'), '10:00')
+    await user.selectOptions(combobox('How it was booked'), 'Phone')
+    await user.type(field('Deposit'), '1000')
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Make a booking' }))
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(notifications()).toContain('Made the booking.')
+    expect(
+      within(screen.getByRole('region', { name: 'Booking' }))
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual(
+      expect.arrayContaining([
+        ['Customer', KENJI.name],
+        ['Staff', 'Mika Suzuki'],
+        ['Time', '10:00–11:00'],
+        ['How it was booked', 'Phone'],
+        ['Deposit', '¥1,000'],
+      ]),
+    )
+    expect(await storedBooking(shownBookingId())).toMatchObject({
+      staffCode: 'STF002',
+      bookingDate: date,
+      source: 'phone',
+      depositAmount: 1000,
+    })
+  })
+
+  it('should say in English at the controls what is missing or wrong, and send nothing', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await toTheFormInEnglish(user)
+    await user.type(field('Deposit'), '1.5')
+    const fetched: MockInstance<typeof fetch> = vi.spyOn(globalThis, 'fetch')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Make a booking' }))
+
+    // Assert
+    expect(combobox('Staff member')).toHaveFocus()
+    expect(combobox('Staff member')).toHaveAccessibleDescription(
+      expect.stringContaining('Choose the staff member.'),
+    )
+    expect(combobox('Service of line 1')).toHaveAccessibleDescription(
+      'Choose a service.',
+    )
+    expect(field('Start of line 1')).toHaveAccessibleDescription(
+      'Enter the start time.',
+    )
+    expect(field('Deposit')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Enter the deposit as a whole number of yen, 0 or more.',
+      ),
+    )
+    expect(asked(fetched).filter((line) => line.startsWith('POST '))).toEqual(
+      [],
+    )
+  })
+
+  it('should change what the salon wrote down, and remove the booking after asking, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0001',
+      day: DAY,
+      at: '10:00',
+    })
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(`/salons/${tokyo}/bookings/${id}`, OWNER, 'en')
+    await user.click(
+      await screen.findByRole('link', { name: 'Edit the requests and notes' }),
+    )
+    await screen.findByRole('combobox', { name: 'How it was booked' })
+    await user.selectOptions(combobox('How it was booked'), 'Walk-in')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(notifications()).toContain('Saved the record of the booking.')
+    expect((await storedBooking(id)).source).toBe('walk_in')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Remove the booking' }))
+    const dialog = screen.getByRole('dialog', { name: 'Remove the booking?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(await heading('Booking ledger')).toHaveFocus()
+    expect(notifications()).toContain('Removed the booking.')
+    expect(await screen.findByText(/^No bookings on /)).toBeVisible()
   })
 })

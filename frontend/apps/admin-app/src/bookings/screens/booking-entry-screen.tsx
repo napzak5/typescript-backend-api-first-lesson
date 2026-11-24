@@ -23,16 +23,20 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminBookingMessages,
+  adminCustomerMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -80,7 +84,8 @@ import {
   readLines,
 } from '../utils/booking-entry'
 
-const TITLE = '予約を入れる'
+const { titles, names, entry: ENTRY } = adminBookingMessages
+const { customer: CUSTOMER } = ENTRY
 
 /** The address of the screen with another choice in it. */
 const hrefOf = (choice: EntryChoice): string =>
@@ -99,6 +104,7 @@ const CustomerResults = ({
   keyword,
   entryHref,
 }: CustomerResultsProps) => {
+  const say = useSay()
   const found = useInfiniteQuery({
     queryKey: [...CUSTOMER_LISTS, 'search', keyword],
     queryFn: ({ pageParam }) => findCustomers(keyword, pageParam),
@@ -111,11 +117,11 @@ const CustomerResults = ({
   return match(
     found.data === undefined ? undefined : listingOf(found.data.pages),
   )
-    .with(undefined, () => <LoadingIndicator label='お客様を探しています' />)
+    .with(undefined, () => <LoadingIndicator label={say(CUSTOMER.searching)} />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('お客様'), reason),
+        message={say(
+          unreadMessageOf(adminCustomerMessages.names.customers, reason),
         )}
         onRetry={() => void found.refetch()}
         pending={found.isFetching}
@@ -123,9 +129,13 @@ const CustomerResults = ({
     ))
     .with({ type: 'listed', items: [] }, () => (
       <EmptyState
-        title='キーワードに合うお客様が見つかりませんでした'
-        description='キーワードを変えて、もう一度お探しください。台帳にないお客様は、先に台帳に登録してください。登録したお客様の台帳から、予約を入れられます。'
-        actions={<ButtonLink href={entryHref}>お客様を登録する</ButtonLink>}
+        title={say(CUSTOMER.none)}
+        description={say(CUSTOMER.noneDescription)}
+        actions={
+          <ButtonLink href={entryHref}>
+            {say(adminCustomerMessages.titles.entry)}
+          </ButtonLink>
+        }
       />
     ))
     .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -160,6 +170,7 @@ type StepProps = {
  * back from the form leads to the customers that were found.
  */
 const CustomerStep = ({ salon, choice }: StepProps) => {
+  const say = useSay()
   const [, setQuery] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -178,8 +189,8 @@ const CustomerStep = ({ salon, choice }: StepProps) => {
   return (
     <>
       <KeywordSearch
-        label='お客様を探す'
-        description='お名前（カナでも）、メールアドレス、電話番号の一部。台帳のお客様から、予約を入れる方を探します。'
+        label={say(CUSTOMER.search)}
+        description={say(CUSTOMER.searchDescription)}
         keyword={choice.search}
         clearHref={hrefOf({ ...choice, search: undefined })}
         onSubmit={search}
@@ -213,10 +224,11 @@ type EntryProps = StepProps & {
  * API does not say which.
  */
 const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const checks = useMutation({
     mutationFn: (lines: Parameters<typeof checkLine>[1][]) =>
       Promise.all(lines.map((line) => checkLine(salon.id, line))),
@@ -252,7 +264,7 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
           const read: BookingRead = { type: 'found', booking: outcome.booking }
           queryClient.setQueryData(bookingKeyOf(outcome.booking.id), read)
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
-          notify({ tone: 'success', message: '予約を入れました。' })
+          notify({ tone: 'success', message: ENTRY.added })
           void navigate(bookingHrefOf(salon.id, outcome.booking.id))
           return
         }
@@ -291,7 +303,7 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
             href={`${bookingsHrefOf(salon.id)}?date=${choice.date}`}
             variant='quiet'
           >
-            やめる
+            {say(ENTRY.form.cancel)}
           </ButtonLink>
         }
       />
@@ -309,6 +321,7 @@ const EntryStep = ({
   choice,
   customerId,
 }: StepProps & { customerId: string }) => {
+  const say = useSay()
   const customer = useQuery({
     queryKey: customerKeyOf(customerId),
     queryFn: () => readCustomer(customerId),
@@ -331,14 +344,12 @@ const EntryStep = ({
       [undefined, P._, P._],
       [P._, undefined, P._],
       [P._, P._, undefined],
-      () => <LoadingIndicator label='お客様とメニューを読み込んでいます' />,
+      () => <LoadingIndicator label={say(ENTRY.loading)} />,
     )
     .with([{ type: 'notFound' }, P._, P._], () => (
       <>
-        <Alert tone='warning'>
-          お客様が見つかりません。台帳から削除されたか、アドレスが正しくありません。
-        </Alert>
-        <ButtonLink href={againHref}>お客様を選び直す</ButtonLink>
+        <Alert tone='warning'>{say(CUSTOMER.notFound)}</Alert>
+        <ButtonLink href={againHref}>{say(CUSTOMER.chooseAgain)}</ButtonLink>
       </>
     ))
     .with(
@@ -346,8 +357,8 @@ const EntryStep = ({
       ([ofCustomer, ofStaff, ofServices]) =>
         ofStaff.items.length === 0 || ofServices.items.length === 0 ? (
           <EmptyState
-            title='予約を入れられません'
-            description='このサロンには、表示しているスタッフかメニューがありません。スタッフとメニューを登録すると、予約を入れられるようになります。'
+            title={say(ENTRY.unbookable)}
+            description={say(ENTRY.unbookableDescription)}
           />
         ) : (
           <Entry
@@ -365,11 +376,8 @@ const EntryStep = ({
       [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(
-              writtenInJapanese('お客様とメニュー'),
-              whyUnread(reads),
-            ),
+          message={say(
+            unreadMessageOf(names.customerAndServices, whyUnread(reads)),
           )}
           onRetry={() => {
             void customer.refetch()
@@ -392,6 +400,7 @@ const EntryStep = ({
  * focus goes to the heading of the screen.
  */
 const BookingEntry = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [query] = useSearchParams()
   const choice = entryChoiceIn(query, dayAt(new Date(), salon.timezone))
   const focusHeading = useScreenHeadingFocus()
@@ -406,7 +415,7 @@ const BookingEntry = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.entry)} description={salon.name} />
       {choice.customerId === undefined ? (
         <CustomerStep salon={salon} choice={choice} />
       ) : (
@@ -424,10 +433,11 @@ const BookingEntry = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** Puts a booking into the ledger of the salon of the address. */
 export const BookingEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) => <BookingEntry key={salon.id} salon={salon} />}
     </WithSalon>
   )

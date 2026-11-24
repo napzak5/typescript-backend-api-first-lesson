@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -23,11 +24,10 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import {
   arrange,
   clockOf,
@@ -109,7 +109,7 @@ describe('a booking of a salon, against the API', () => {
     expect(await heading('予約の内容')).toHaveFocus()
     expect(recordTerms()).toEqual([
       ['予約番号', 'BK-TEST-0001'],
-      ['来店日', inJapanese(dayNameOf(day))],
+      ['来店日', dayNameOf(day).ja],
       ['時刻', '14:30〜16:30'],
       ['お客様', KENJI.name],
       ['お客様の電話番号', expect.stringMatching(/\d/)],
@@ -238,8 +238,8 @@ describe('a booking of a salon, against the API', () => {
     ])
     expect(recordTerms()).toEqual(
       expect.arrayContaining([
-        ['実際の開始', `${inJapanese(dayNameOf(day))} 10:05`],
-        ['実際の終了', `${inJapanese(dayNameOf(day))} 11:10`],
+        ['実際の開始', `${dayNameOf(day).ja} 10:05`],
+        ['実際の終了', `${dayNameOf(day).ja} 11:10`],
       ]),
     )
   })
@@ -264,7 +264,7 @@ describe('a booking of a salon, against the API', () => {
     expect(
       within(dialog).getByLabelText('実際の開始'),
     ).toHaveAccessibleDescription(
-      expect.stringContaining(`${inJapanese(dayNameOf(day))} 10:05`),
+      expect.stringContaining(`${dayNameOf(day).ja} 10:05`),
     )
     fireEvent.change(within(dialog).getByLabelText('実際の終了'), {
       target: { value: `${day}T10:00` },
@@ -550,5 +550,162 @@ describe('a booking of a salon, against the API', () => {
     expect(address()).toBe(
       `/salons/${tokyo}/bookings/0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01`,
     )
+  })
+})
+
+describe('a booking of a salon on a page in English', () => {
+  /** The part of the page with the state of the booking, in English. */
+  const statusInEnglish = (): HTMLElement =>
+    screen.getByRole('region', { name: 'Status' })
+
+  /** Opens a booking of the Tokyo salon in English, signed in as the owner. */
+  const openInEnglish = async (id: string): Promise<void> => {
+    await openAs(
+      `/salons/${await salonIdOf(TOKYO)}/bookings/${id}`,
+      OWNER,
+      'en',
+    )
+    await screen.findByRole('region', { name: 'Status' })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should show who comes when, and confirm the booking, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0001',
+      day: 3,
+      at: '14:30',
+      minutes: 120,
+      customer: KENJI.email,
+      staffCode: 'STF002',
+      service: 'Full Color',
+    })
+    await testApi().query(
+      `update bookings set source = 'online', "depositAmount" = 3000 where id = $1`,
+      [id],
+    )
+    const day = await dayFromToday(3)
+    await openInEnglish(id)
+    expect(await heading('Booking details')).toBeVisible()
+    expect(
+      within(screen.getByRole('region', { name: 'Booking' }))
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Booking number', 'BK-TEST-0001'],
+      ['Date of visit', dayNameOf(day).en],
+      ['Time', '14:30–16:30'],
+      ['Customer', KENJI.name],
+      ['Customer’s phone number', expect.stringMatching(/\d/)],
+      ['Staff', 'Mika Suzuki'],
+      ['Customer’s requests', 'Not recorded'],
+      ['Notes for the salon', 'Not recorded'],
+      ['How it was booked', 'Online'],
+      ['Deposit', '¥3,000'],
+    ])
+    expect(rowsOf('Service lines')).toEqual([
+      [
+        'Full Color',
+        'Mika Suzuki',
+        '14:30–16:30',
+        '¥8,000 (tax included)',
+        'Not yet',
+      ],
+    ])
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Confirm the booking' }),
+    )
+
+    // Assert
+    await waitFor(() =>
+      expect(within(statusInEnglish()).getByText('Confirmed')).toBeVisible(),
+    )
+    expect(notifications()).toContain('Confirmed the booking.')
+    expect(
+      within(statusInEnglish())
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Start the treatment', 'Complete', 'Cancel the booking'])
+    expect(
+      screen.getByRole('link', { name: 'Go to the bookings of this day' }),
+    ).toHaveAttribute(
+      'href',
+      `/salons/${await salonIdOf(TOKYO)}/bookings?date=${day}`,
+    )
+  })
+
+  it('should cancel a booking with its reason, after asking, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0001',
+      day: 5,
+      at: '13:00',
+    })
+    await openInEnglish(id)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Cancel the booking' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Cancel the booking?',
+    })
+    await user.type(
+      within(dialog).getByLabelText('Reason for cancelling'),
+      'Called to cancel',
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Confirm the cancellation' }),
+    )
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(within(statusInEnglish()).getByText('Cancelled')).toBeVisible()
+    expect(notifications()).toContain('Cancelled the booking.')
+    expect(
+      within(statusInEnglish()).getByText(
+        'The status of this booking cannot be changed any more. If it was recorded by mistake, remove the booking and make it again.',
+      ),
+    ).toBeVisible()
+    expect((await storedBooking(id)).cancellationReason).toBe(
+      'Called to cancel',
+    )
+  })
+
+  it('should say in English that a booking that is not there is not found', async () => {
+    // Arrange
+    const tokyo = await salonIdOf(TOKYO)
+
+    // Act
+    await openAs(
+      `/salons/${tokyo}/bookings/0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01`,
+      OWNER,
+      'en',
+    )
+
+    // Assert
+    expect(await heading('Booking not found')).toHaveFocus()
+    expect(
+      screen.getByText(
+        'Check that the address is right. A removed booking cannot be shown.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Go to today’s bookings' }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/bookings`)
   })
 })

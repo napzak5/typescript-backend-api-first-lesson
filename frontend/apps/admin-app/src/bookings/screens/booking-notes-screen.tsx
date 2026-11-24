@@ -12,7 +12,11 @@ import {
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   useNotifications,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -28,7 +32,8 @@ import { BookingNotesFields } from '../components/booking-notes-fields/booking-n
 import { afterNotesChange, readNotesChange } from '../utils/booking-entry'
 import { WithBooking } from './with-booking'
 
-const TITLE = '要望とメモを変える'
+const { titles } = adminBookingMessages
+const { notesChange: CHANGE } = adminBookingMessages.entry
 
 type NotesChangeProps = {
   salon: ModelsSalonResponse
@@ -42,10 +47,12 @@ type NotesChangeProps = {
  * page of the booking shows at once.
  */
 const NotesChange = ({ salon, booking }: NotesChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const shown = useSaidForm(said.message, said.errors)
   const key = bookingKeyOf(booking.id)
   const back = bookingHrefOf(salon.id, booking.id)
   const update = useMutation({
@@ -57,7 +64,7 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
           const read: BookingRead = { type: 'found', booking: updated }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
-          notify({ tone: 'success', message: '予約の記録を変えました。' })
+          notify({ tone: 'success', message: CHANGE.done })
           void navigate(back)
         })
         // The booking was removed meanwhile: the screen says that there is none
@@ -88,14 +95,14 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
 
   return (
     <Form
-      submitLabel='変更を保存する'
-      message={said.message}
+      submitLabel={say(CHANGE.submit)}
+      message={shown.message}
       errors={said.errors}
       pending={update.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(CHANGE.cancel)}
         </ButtonLink>
       }
     >
@@ -106,12 +113,14 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
 
 /** Changes what the salon wrote down on a booking of the salon of the address. */
 export const BookingNotesScreen = () => {
+  const say = useSay()
+  const title = say(titles.notes)
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+        <WithBooking key={salon.id} salon={salon} title={title}>
           {(booking) => <NotesChange salon={salon} booking={booking} />}
         </WithBooking>
       )}
