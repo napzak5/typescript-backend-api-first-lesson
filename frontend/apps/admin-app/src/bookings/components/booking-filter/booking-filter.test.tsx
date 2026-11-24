@@ -97,6 +97,8 @@ describe('BookingFilter', () => {
         }),
       },
     })
+    await userEvent.clear(date())
+    await userEvent.type(date(), '2026-11-21')
     await userEvent.selectOptions(status(), '施術中')
     await userEvent.selectOptions(member(), '佐藤 健')
 
@@ -106,7 +108,7 @@ describe('BookingFilter', () => {
     // Assert
     expect(received).toEqual([
       [
-        ['date', DAY],
+        ['date', '2026-11-21'],
         ['status', 'in_progress'],
         ['staffId', staff[1]?.id],
       ],

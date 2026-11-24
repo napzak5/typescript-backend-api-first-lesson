@@ -73,8 +73,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
     queryFn: ({ pageParam }) =>
       readProductPage(salon.id, conditions, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Products are added and changed by others: the ledger is read whenever it is shown
     staleTime: 0,
   })

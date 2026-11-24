@@ -79,6 +79,7 @@ export {
   errorAt,
   type FormRead,
   type FormSays,
+  formValuesOf,
   NO_CHANGE_MESSAGE,
   NO_ERRORS,
   NOTHING_TO_SAY,

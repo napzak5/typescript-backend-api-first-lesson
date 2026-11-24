@@ -62,8 +62,7 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
     queryKey: [...saleListsKeyOf(salon.id), asked],
     queryFn: ({ pageParam }) => readSales(salon.id, conditions, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Sales are entered at the counter all day: the ledger is read whenever it is shown
     staleTime: 0,
   })

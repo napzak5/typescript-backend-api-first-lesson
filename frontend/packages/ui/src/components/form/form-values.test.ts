@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   aboutTheAttempt,
   errorAt,
+  formValuesOf,
   NO_ERRORS,
   NOTHING_TO_SAY,
   same,
@@ -10,6 +11,36 @@ import {
   textOrNull,
   textsOf,
 } from './form-values'
+
+describe('formValuesOf', () => {
+  it('should give the values of the form a part is in, as it would be sent now', () => {
+    // Arrange
+    const form = document.createElement('form')
+    const part = document.createElement('fieldset')
+    const name = document.createElement('input')
+    name.name = 'name'
+    name.value = '山田'
+    part.append(name)
+    form.append(part)
+
+    // Act
+    const values = formValuesOf(part)
+
+    // Assert
+    expect([...values.entries()]).toEqual([['name', '山田']])
+  })
+
+  it('should give no values for a control that is in no form', () => {
+    // Arrange
+    const button = document.createElement('button')
+
+    // Act
+    const values = formValuesOf(button)
+
+    // Assert
+    expect([...values.entries()]).toEqual([])
+  })
+})
 
 describe('textOf', () => {
   it('should give the text of a control', () => {

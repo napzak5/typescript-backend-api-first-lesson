@@ -388,6 +388,53 @@ describe('readEntry', () => {
       },
     })
   })
+
+  it.each<
+    [
+      string,
+      [string, string, string, string],
+      string,
+      Record<string, LocalizedText>,
+    ]
+  >([
+    [
+      'the lines alone',
+      [CUT, 'same', '', ''],
+      '1000',
+      {
+        'services.0.startTime': {
+          en: 'Enter the start time.',
+          ja: '開始の時刻を入力してください。',
+        },
+      },
+    ],
+    [
+      'the notes alone',
+      [CUT, 'same', '10:00', ''],
+      '-1',
+      {
+        depositAmount: {
+          en: 'Enter the deposit as a whole number of yen, 0 or more.',
+          ja: '予約金は、0 以上の円の整数で入力してください。',
+        },
+      },
+    ],
+  ])(
+    'should say what is wrong when %s are',
+    (_case, line, depositAmount, errors) => {
+      // Act
+      const read = readEntry(
+        formOfEntries([
+          ...linesValues([line]),
+          ...notesValues({ depositAmount }),
+        ]),
+        { salonId: 'salon', customerId: 'customer', timezone: TOKYO },
+      )
+
+      // Assert
+      expect(read).toEqual({ type: 'invalid', errors })
+    },
+  )
 })
 
 describe('readNotesChange', () => {
@@ -439,6 +486,29 @@ describe('readNotesChange', () => {
       },
     })
   })
+
+  it.each([
+    ['changed', '5,000', 5000],
+    ['emptied', '', null],
+  ])(
+    'should ask for a deposit that was %s alone',
+    (_case, typed, depositAmount) => {
+      // Act
+      const change = readNotesChange(
+        formOfEntries(
+          notesValues({
+            source: 'online',
+            depositAmount: typed,
+            customerRequest: '根元を明るめに',
+          }),
+        ),
+        shown,
+      )
+
+      // Assert
+      expect(change).toEqual({ type: 'valid', value: { depositAmount } })
+    },
+  )
 
   it('should take a note the booking holds with blanks around it for the same note', () => {
     // Act

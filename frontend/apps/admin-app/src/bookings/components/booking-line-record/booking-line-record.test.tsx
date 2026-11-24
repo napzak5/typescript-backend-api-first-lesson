@@ -36,6 +36,17 @@ describe('BookingLineRecord', () => {
     ])
   })
 
+  it('should say that the service and the member of a line are gone', async () => {
+    // Act
+    await stories.OfWhatIsGone.run()
+
+    // Assert
+    expect(terms().slice(0, 2)).toEqual([
+      ['メニュー', '削除されたメニュー'],
+      ['担当', '一覧にないスタッフ'],
+    ])
+  })
+
   it('should say the discount, a price without the tax, that nobody does it, when it was done, and the note', async () => {
     // Act
     await stories.Done.run()

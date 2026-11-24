@@ -98,8 +98,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     queryKey: [...alertsKeyOf(salon.id), 'list', asked],
     queryFn: ({ pageParam }) => readAlertPage(salon.id, conditions, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     staleTime: 0,
   })
   const staff = useQuery({

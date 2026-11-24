@@ -55,7 +55,11 @@ import {
   movedLines,
 } from '../utils/booking-moves'
 
-/** The account may not see the bookings of the salon: a member of another one. */
+/**
+ * The account reaches no bookings of the salon: a member of another one
+ * asks for its list, or the account belongs to no salon any more. A booking
+ * of another salon is not found.
+ */
 type Forbidden = { type: 'forbidden' }
 
 export type BookingPage = Page<ModelsBookingResponse> | Forbidden | Unread

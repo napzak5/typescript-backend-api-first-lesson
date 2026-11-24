@@ -7,6 +7,7 @@ import type { CustomersRead } from '../../customers/api/customers-api'
 import { aBooking, aCustomer, services, staff } from '../components/examples'
 import {
   customerIdsOf,
+  memberNameOf,
   type Names,
   rowsOf,
   serviceNamesOf,
@@ -140,6 +141,24 @@ describe('staffNameOf', () => {
     ['no member', null, null],
   ])('should name %s', (_case, staffId, name) => {
     expect(staffNameOf(staffId, STAFF)).toBe(name)
+  })
+})
+
+describe('memberNameOf', () => {
+  it.each([
+    [
+      'a member the salon shows',
+      STAFF[0]?.id ?? '',
+      { en: '田中 美咲', ja: '田中 美咲' },
+    ],
+    [
+      'a member the salon does not show',
+      GONE_ID,
+      { en: 'Staff member not listed', ja: '一覧にないスタッフ' },
+    ],
+    ['nobody yet', null, { en: 'Unassigned', ja: '未定' }],
+  ])('should name %s', (_case, staffId, name) => {
+    expect(memberNameOf(staffId, STAFF)).toEqual(name)
   })
 })
 

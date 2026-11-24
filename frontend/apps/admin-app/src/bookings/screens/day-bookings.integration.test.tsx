@@ -3,9 +3,13 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
+  giveBack,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
+  unreadable,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -29,6 +33,10 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
+import {
+  customerIdOf,
+  staffRemovedMeanwhile,
+} from '../../customers/__tests__/arrangements'
 import { arrange, arrangeMany } from '../__tests__/arrangements'
 
 const navigationItems = () =>
@@ -48,6 +56,19 @@ const rowsOfDay = async (day: string): Promise<string[][]> =>
     }),
   )
 
+/** What is said below a list whose next page did not come. */
+const NEXT_UNREAD =
+  '続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** Opens the bookings of a day of the Tokyo salon, signed in as `email`. */
+const openDay = async (days: number, email = OWNER): Promise<string> => {
+  const day = await dayFromToday(days)
+  renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings?date=${day}`)
+  await signInAs(email)
+
+  return day
+}
+
 describe('the bookings of a salon, against the API', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_MODE', 'production')
@@ -55,6 +76,7 @@ describe('the bookings of a salon, against the API', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.restoreAllMocks()
   })
 
   describe('the start', () => {
@@ -571,6 +593,151 @@ describe('the bookings of a salon, against the API', () => {
       expect(within(table).getAllByRole('link').at(50)).toHaveFocus()
       expect(screen.getByText('55 件')).toBeVisible()
       expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
+    })
+
+    it('should say that the staff and the menu could not be read, and show the list when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrange({ bookingNumber: 'BK-TEST-0001', day: 0, at: '10:00' })
+      await takeAway('services')
+      const day = await openDay(0)
+      expect(
+        await screen.findByText(
+          'スタッフとメニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('services')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect((await rowsOfDay(day))[0]?.[3]).toBe('Ladies Cut')
+    })
+
+    it('should say that the bookings could not be read, and show them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrange({ bookingNumber: 'BK-TEST-0001', day: 0, at: '10:00' })
+      await takeAway('bookings')
+      const day = await openDay(0)
+      expect(
+        await screen.findByText(
+          '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('bookings')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect((await rowsOfDay(day)).map((row) => row.at(-1))).toEqual([
+        'BK-TEST-0001',
+      ])
+    })
+
+    it('should say that the customers of the bookings could not be read, and show the list when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrange({ bookingNumber: 'BK-TEST-0001', day: 0, at: '10:00' })
+      const restore = await unreadable(
+        'customers',
+        'createdAt',
+        await customerIdOf(YUKI.email),
+      )
+      const day = await openDay(0)
+      expect(
+        await screen.findByText(
+          '予約のお客様を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await restore()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect((await rowsOfDay(day)).map((row) => row[1])).toEqual([YUKI.name])
+    })
+
+    it('should keep the bookings whose customers it has when those of the next page do not come, and add them when asked again', async () => {
+      // Arrange: the fifty of the first page are Kenji's, the one after them Yuki's
+      const user = userEvent.setup()
+      await arrangeMany(20, 50)
+      await arrange({
+        bookingNumber: 'BK-TEST-0001',
+        day: 20,
+        at: '18:00',
+      })
+      const restore = await unreadable(
+        'customers',
+        'createdAt',
+        await customerIdOf(YUKI.email),
+      )
+      const day = await openDay(20)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+      await restore()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await waitFor(async () => expect(await rowsOfDay(day)).toHaveLength(51))
+      expect((await rowsOfDay(day)).at(-1)?.[1]).toBe(YUKI.name)
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should keep the bookings it has when the next ones do not come, and add them when asked again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeMany(20, 55)
+      const day = await openDay(20)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+      await takeAway('bookings')
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+      await giveBack('bookings')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      await waitFor(async () => expect(await rowsOfDay(day)).toHaveLength(55))
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it('should end the list where the account left its salon, and say so when the list is read again', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeMany(20, 55)
+      const day = await openDay(20, STYLIST)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+      whenAskedFor('GET /bookings', () =>
+        staffRemovedMeanwhile('Hiroshi Tanaka'),
+      )
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(NEXT_UNREAD)
+      expect(await rowsOfDay(day)).toHaveLength(50)
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByText(
+          'このサロンの予約は、見られません。予約を見られるのは、そのサロンのスタッフと、管理者です。',
+        ),
+      ).toBeVisible()
+      expect(screen.queryByRole('table')).toBeNull()
     })
 
     it('should show an administrator the bookings of any salon', async () => {

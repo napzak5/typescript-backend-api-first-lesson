@@ -108,7 +108,7 @@ describe('BookingRecord', () => {
     )
   })
 
-  it('should say when and why a booking was cancelled, and who is gone', async () => {
+  it('should say when and why a booking was cancelled, and who and what is gone', async () => {
     // Act
     await stories.Cancelled.run()
 
@@ -117,6 +117,9 @@ describe('BookingRecord', () => {
     expect(terms).toContainEqual(['お客様', '削除された顧客'])
     expect(terms.map(([term]) => term)).not.toContain('お客様の電話番号')
     expect(terms).toContainEqual(['担当', '一覧にないスタッフ'])
+    expect(rowsOf('施術明細').map((row) => row.slice(0, 2))).toEqual([
+      ['削除されたメニュー', '一覧にないスタッフ'],
+    ])
     expect(terms.slice(-2)).toEqual([
       ['キャンセルした日時', '2026年11月19日（木） 15:30'],
       ['キャンセルの理由', '体調不良のため'],

@@ -1,4 +1,10 @@
-import { FAILED, type Page, type Unread } from './reading'
+import {
+  FAILED,
+  type Forbidden,
+  type NotFound,
+  type Page,
+  type Unread,
+} from './reading'
 
 /** What the pages of a list that were read so far amount to. */
 export type Listing<Item> =
@@ -47,9 +53,13 @@ export const listingOf = <Item>(
   }
 }
 
-/** Where the page after one begins, for the query that reads the pages. */
+/**
+ * Where the page after one begins, for the query that reads the pages.
+ * After a read that is no page (not read, refused, or of nothing) there is
+ * none: reading on is reading again.
+ */
 export const cursorAfter = <Item>(
-  page: Page<Item> | Unread,
+  page: Page<Item> | Unread | Forbidden | NotFound,
 ): string | undefined =>
   page.type === 'found' ? (page.nextCursor ?? undefined) : undefined
 

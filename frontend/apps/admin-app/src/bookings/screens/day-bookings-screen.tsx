@@ -35,6 +35,7 @@ import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
   CUSTOMER_LISTS,
+  type CustomersRead,
   readCustomers,
 } from '../../customers/api/customers-api'
 import { bookingEntryHrefOf, bookingHrefOf } from '../../navigation'
@@ -85,8 +86,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
     queryFn: ({ pageParam }) =>
       readDayBookings(salon.id, conditions, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Bookings are made and changed at the counter, on the phone and by the
     // customers themselves: the list is read whenever it is shown
     staleTime: 0,
@@ -113,13 +113,17 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
       }
     }),
   })
-  const pageOf = new Map(
+  // What was read of the customers of a booking: those of its page
+  const customersOfBookings = new Map(
     pagesOfBookings.flatMap((bookings, index) =>
-      bookings.map((booking): [string, number] => [booking.id, index]),
+      bookings.map((booking): [string, CustomersRead | undefined] => [
+        booking.id,
+        customers.at(index)?.data,
+      ]),
     ),
   )
   const customersOf = (booking: ModelsBookingResponse) =>
-    customers.at(pageOf.get(booking.id) ?? -1)?.data
+    customersOfBookings.get(booking.id)
   const readingCustomersAgain = customers.some((one) => one.isRefetching)
   const readCustomersAgain = (): void => {
     for (const one of customers) {
@@ -157,7 +161,8 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
       ? undefined
       : listingOf(
           // A page after the first is refused only when the account was
-          // moved to another salon meanwhile: it ends the list there
+          // moved to another salon, or left its own, meanwhile: it ends the
+          // list there
           pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
         )
 

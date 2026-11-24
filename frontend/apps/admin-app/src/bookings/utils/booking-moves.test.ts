@@ -414,6 +414,17 @@ describe('afterMove', () => {
       },
     ],
     [
+      'a beginning the API refused at its control',
+      { type: 'invalid', values: [{ field: 'startTime', rule: 'invalid' }] },
+      undefined,
+      {
+        startTime: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
+      },
+    ],
+    [
       'a member that is taken',
       { type: 'taken', checks: [] },
       {
@@ -494,6 +505,24 @@ describe('afterAddition', () => {
       {},
     ],
     [
+      'an account that may not',
+      { type: 'forbidden' },
+      {
+        en: 'This account cannot change this booking.',
+        ja: 'このアカウントでは、この予約を変えられません。',
+      },
+      {},
+    ],
+    [
+      'too many requests',
+      { type: 'tooManyRequests' },
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
+      {},
+    ],
+    [
       'a failure',
       { type: 'failed' },
       {
@@ -538,6 +567,17 @@ describe('afterLineRemoval', () => {
         message: {
           en: 'This account cannot change this booking.',
           ja: 'このアカウントでは、この予約を変えられません。',
+        },
+      },
+    ],
+    [
+      'too many requests',
+      { type: 'tooManyRequests' },
+      {
+        type: 'again',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
         },
       },
     ],

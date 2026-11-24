@@ -206,6 +206,7 @@ describe('afterOrderStep', () => {
     expect(afterOrderStep(changed, action, 'PO-7K3M-Q9TX')).toEqual({
       type: 'done',
       message,
+      now: pendingOrder,
     })
   })
 

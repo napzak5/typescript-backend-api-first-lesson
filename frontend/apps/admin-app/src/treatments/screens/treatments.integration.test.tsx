@@ -27,7 +27,11 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange, arrangeMany } from '../../bookings/__tests__/arrangements'
+import {
+  arrange,
+  arrangeMany,
+  bookingRemovedMeanwhile,
+} from '../../bookings/__tests__/arrangements'
 import {
   customerIdOf,
   removeMeanwhile,
@@ -43,7 +47,6 @@ import {
 } from '../../navigation'
 import {
   bookingCancelledMeanwhile,
-  bookingRemovedMeanwhile,
   evaluationWrittenMeanwhile,
   lotOf,
   productRemovedMeanwhile,

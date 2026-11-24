@@ -223,6 +223,10 @@ export const readLines = (
       timezone,
     }),
   )
+  // A line that was not read says why among the errors
+  const services = lines.flatMap((line) =>
+    line.type === 'valid' ? [line.value] : [],
+  )
   const errors: Errors = Object.assign(
     {
       ...(staffId === '' ? { staffId: ERRORS.staff } : {}),
@@ -234,15 +238,7 @@ export const readLines = (
     return { type: 'invalid', errors }
   }
 
-  return {
-    type: 'valid',
-    value: {
-      staffId,
-      services: lines.flatMap((line) =>
-        line.type === 'valid' ? [line.value] : [],
-      ),
-    },
-  }
+  return { type: 'valid', value: { staffId, services } }
 }
 
 /** The booking of a customer at a salon, from the form that puts it in. */

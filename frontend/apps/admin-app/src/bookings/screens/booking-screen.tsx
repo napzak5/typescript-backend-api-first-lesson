@@ -16,7 +16,7 @@ import {
   OtherSalonNotice,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   ButtonLink,
@@ -139,7 +139,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const session = useSession()
+  const user = useSignedInUser()
   const { notify } = useNotifications()
   const customer = useQuery({
     queryKey: customerKeyOf(booking.customerId),
@@ -210,11 +210,8 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
     onSuccess: (outcome, operation) => {
       const where = operation.type === 'confirm' || operation.type === 'start'
       match(afterChange(outcome, operation.type))
-        .with({ type: 'done' }, ({ message }) => {
-          if (outcome.type !== 'changed') {
-            return
-          }
-          const read: BookingRead = { type: 'found', booking: outcome.booking }
+        .with({ type: 'done' }, ({ message, now }) => {
+          const read: BookingRead = { type: 'found', booking: now }
           changedFrom.current = booking.updatedAt
           setAsking(undefined)
           setSaid(undefined)
@@ -374,10 +371,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
                 : undefined
             }
             notesHref={`${bookingHrefOf(salon.id, booking.id)}/edit`}
-            removable={
-              session.type === 'signedIn' &&
-              REMOVERS.includes(session.user.role)
-            }
+            removable={user !== undefined && REMOVERS.includes(user.role)}
             when={when}
             open={removing}
             onOpen={() => {

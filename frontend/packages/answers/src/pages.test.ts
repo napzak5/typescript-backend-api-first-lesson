@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cursorAfter, firstCursor, listingOf } from './pages'
-import { FAILED, type Page, TOO_MANY_REQUESTS } from './reading'
+import { FAILED, NOT_FOUND, type Page, TOO_MANY_REQUESTS } from './reading'
 
 const page = (
   items: string[],
@@ -83,6 +83,11 @@ describe('cursorAfter', () => {
   it('should be none after a page that was not read: reading on is reading again', () => {
     expect(cursorAfter(FAILED)).toBeUndefined()
     expect(cursorAfter(TOO_MANY_REQUESTS)).toBeUndefined()
+  })
+
+  it('should be none after a page that was refused, or of nothing', () => {
+    expect(cursorAfter({ type: 'forbidden' })).toBeUndefined()
+    expect(cursorAfter(NOT_FOUND)).toBeUndefined()
   })
 })
 

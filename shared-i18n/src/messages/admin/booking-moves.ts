@@ -154,7 +154,6 @@ export const bookingMoveMessages = {
     finalPriceOf: (amount: LocalizedText, taxIncluded: boolean) =>
       amountWithTax(amount, null, taxIncluded),
     completed: BOOKING_WORDS.completed,
-    done: BOOKING_WORDS.done,
     /** A line that was done, with when it was recorded */
     doneAt: (moment: LocalizedText) =>
       text({ en: `Done (${moment.en})`, ja: `済み（${moment.ja}）` }),

@@ -107,8 +107,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
     queryKey: [...stockKeyOf(salon.id), 'page', asked],
     queryFn: ({ pageParam }) => readStockPage(salon.id, view, pageParam),
     initialPageParam: firstCursor(),
-    getNextPageParam: (page) =>
-      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    getNextPageParam: cursorAfter,
     // Stock is moved by others all day: it is read whenever it is shown
     staleTime: 0,
   })

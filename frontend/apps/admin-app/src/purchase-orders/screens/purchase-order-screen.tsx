@@ -143,11 +143,8 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
     mutationFn: (operation: Operation) => send(order.id, operation),
     onSuccess: (outcome, operation) =>
       match(afterOrderStep(outcome, operation.type, order.orderNumber))
-        .with({ type: 'done' }, ({ message }) => {
-          if (outcome.type !== 'changed') {
-            return
-          }
-          const read: OrderRead = { type: 'found', order: outcome.order }
+        .with({ type: 'done' }, ({ message, now }) => {
+          const read: OrderRead = { type: 'found', order: now }
           changedFrom.current = order.updatedAt
           setAsking(false)
           setSaid(undefined)

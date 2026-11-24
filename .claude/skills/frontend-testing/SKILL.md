@@ -895,14 +895,25 @@ is tested for what it must leave alone as well:
   path below `/api/v1`, without the query; the change is made the first
   time the line is asked for, and `vi.restoreAllMocks()` after the test
   takes it away. The answers are those of the API; the test fixes only
-  when the database changes.
+  when the database changes. It is called once in a test: a second call
+  would stand in for the stand-in of the first, which then calls itself.
+  A screen that reads a record again after a refusal meets the record
+  gone when the reason of the refusal is arranged first and the record
+  is removed when it is read again
+  (`whenAskedFor('GET /bookings/<id>', () => bookingRemovedMeanwhile(id))`
+  after a booking was set in progress, in
+  `booking-changes.integration.test.tsx`).
 - **A role is changed between two requests the same way.** The API reads
   the role of the account at every request, and the session of the
   screen keeps the one it signed in with: an owner who is made a member
   of the staff as a part of the page is asked for
   (`whenAskedFor('GET /customers/<id>/deletion-request', () => madeStaffMeanwhile(OWNER))`
   in `customer-erasure.integration.test.tsx`) meets the refusal the
-  screen says then.
+  screen says then. An account that belongs to no salon any more is a
+  member whose record of the staff was removed meanwhile
+  (`staffRemovedMeanwhile('Hiroshi Tanaka')` of the customers): the API
+  answers it 403 for the bookings of every salon, and 404 for a booking
+  of another salon to a member of one.
 - **A file the browser reads late, or cannot read**, is a `File` with an
   `arrayBuffer` of its own:
   `Object.assign(fileOf(rows), { arrayBuffer: () => held.then(() => bytes) })`,

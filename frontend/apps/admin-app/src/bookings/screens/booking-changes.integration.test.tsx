@@ -3,11 +3,14 @@ import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
+  giveBack,
   idsOf,
   refuse,
   salonIdOf,
   signInAs,
+  takeAway,
   testApi,
+  whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -35,13 +38,24 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { openAs, renderAt } from '../../__tests__/screens'
-import { arrange } from '../__tests__/arrangements'
+import { staffRemovedMeanwhile } from '../../customers/__tests__/arrangements'
+import { arrange, bookingRemovedMeanwhile } from '../__tests__/arrangements'
 
 const MOVE_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。'
 
 const ADDITION_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、施術明細を足せませんでした。足す明細に重なる、ほかの予約を確かめました。'
+
+/** What an account that may no longer change a booking is told. */
+const NOT_TO_CHANGE = 'このアカウントでは、この予約を変えられません。'
+
+/** What an account that belongs to no salon is told of the bookings of a salon. */
+const NOT_THEIRS =
+  'このサロンの予約は、見られません。予約を見られるのは、そのサロンのスタッフと、管理者です。'
+
+/** The member of the staff the stylist of the seed data is */
+const STYLIST_NAME = 'Hiroshi Tanaka'
 
 const combobox = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
@@ -493,6 +507,94 @@ describe('moving a booking and changing its lines, against the API', () => {
       })
     })
 
+    it('should say that the booking is not found when it was removed while it was moved', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheMove(user, id)
+      await user.clear(field('開始の時刻'))
+      await user.type(field('開始の時刻'), '14:30')
+      whenAskedFor(`POST /bookings/${id}/reschedule`, () =>
+        bookingRemovedMeanwhile(id),
+      )
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '日時と担当を変える' }),
+      )
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should say that the booking is not found when it was removed after the API refused the move', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheMove(user, id)
+      await user.clear(field('開始の時刻'))
+      await user.type(field('開始の時刻'), '14:30')
+      // The treatment began meanwhile, and the booking went before it was read again
+      await testApi().query(
+        `update bookings set status = 'in_progress', "actualStartTime" = now() where id = $1`,
+        [id],
+      )
+      whenAskedFor(`GET /bookings/${id}`, () => bookingRemovedMeanwhile(id))
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '日時と担当を変える' }),
+      )
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should say that an account that left its salon meanwhile cannot move the booking, and keep the form', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheMove(user, id, STYLIST)
+      await user.clear(field('開始の時刻'))
+      await user.type(field('開始の時刻'), '14:30')
+      whenAskedFor(`POST /bookings/${id}/reschedule`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '日時と担当を変える' }),
+      )
+
+      // Assert
+      expect(await screen.findByText(NOT_TO_CHANGE)).toBeVisible()
+      expect(field('開始の時刻')).toHaveValue('14:30')
+      expect(await storedBooking(id)).toMatchObject({ startTime: '10:00' })
+    })
+
+    it('should say that the staff and the menu could not be read, and open the form when asked again', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await takeAway('services')
+      renderAt(`/salons/${await salonIdOf(TOKYO)}/bookings/${id}/reschedule`)
+      await signInAs(OWNER)
+      expect(
+        await screen.findByText(
+          'スタッフとメニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('services')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await screen.findByRole('region', { name: '動かしたあとの明細' }),
+      ).toBeVisible()
+    })
+
     it('should keep the form as it was typed, and say so, when the database refuses the move', async () => {
       // Arrange
       const id = await arrangeTwoLines()
@@ -714,6 +816,83 @@ describe('moving a booking and changing its lines, against the API', () => {
       expect(await lineIdsOf(id)).toHaveLength(1)
     })
 
+    it('should say that the booking is not found when it was removed while the line was added', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0002',
+        day: DAY,
+        at: '10:00',
+      })
+      const user = userEvent.setup()
+      await toTheAddition(user, id)
+      await user.selectOptions(combobox('メニュー'), 'Mens Cut（45 分）')
+      await user.type(field('開始の時刻'), '11:00')
+      whenAskedFor(`POST /bookings/${id}/services`, () =>
+        bookingRemovedMeanwhile(id),
+      )
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '施術明細を追加する' }),
+      )
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should say that the booking is not found when it was removed after the API refused the line', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0002',
+        day: DAY,
+        at: '10:00',
+      })
+      const user = userEvent.setup()
+      await toTheAddition(user, id)
+      await user.selectOptions(combobox('メニュー'), 'Mens Cut（45 分）')
+      await user.type(field('開始の時刻'), '11:00')
+      // Completed meanwhile, and gone before it was read again
+      await testApi().query(
+        `update bookings set status = 'completed', "completedAt" = now() where id = $1`,
+        [id],
+      )
+      whenAskedFor(`GET /bookings/${id}`, () => bookingRemovedMeanwhile(id))
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '施術明細を追加する' }),
+      )
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+    })
+
+    it('should say that an account that left its salon meanwhile cannot add the line, and keep the form', async () => {
+      // Arrange
+      const id = await arrange({
+        bookingNumber: 'BK-TEST-0002',
+        day: DAY,
+        at: '10:00',
+      })
+      const user = userEvent.setup()
+      await toTheAddition(user, id, STYLIST)
+      await user.selectOptions(combobox('メニュー'), 'Mens Cut（45 分）')
+      await user.type(field('開始の時刻'), '11:00')
+      whenAskedFor(`POST /bookings/${id}/services`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      await user.click(
+        screen.getByRole('button', { name: '施術明細を追加する' }),
+      )
+
+      // Assert
+      expect(await screen.findByText(NOT_TO_CHANGE)).toBeVisible()
+      expect(field('開始の時刻')).toHaveValue('11:00')
+      expect(await lineIdsOf(id)).toHaveLength(1)
+    })
+
     it('should keep the form as it was typed, and say so, when the database refuses the line', async () => {
       // Arrange
       const id = await arrange({
@@ -931,6 +1110,138 @@ describe('moving a booking and changing its lines, against the API', () => {
       expect(await lineIdsOf(id)).toHaveLength(2)
     })
 
+    it('should say that the line could not be read, and show it when asked again', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      const [, second] = await lineIdsOf(id)
+      whenAskedFor(`GET /bookings/${id}/services/${second}`, () =>
+        takeAway('booking_services'),
+      )
+      renderAt(
+        `/salons/${await salonIdOf(TOKYO)}/bookings/${id}/services/${second}`,
+      )
+      await signInAs(OWNER)
+      expect(
+        await screen.findByText(
+          '施術明細を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+        ),
+      ).toBeVisible()
+      await giveBack('booking_services')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+
+      // Assert
+      expect(
+        await within(
+          await screen.findByRole('region', { name: '施術明細' }),
+        ).findByText('Mens Cut'),
+      ).toBeVisible()
+    })
+
+    it('should tell an account that belongs to no salon any more that the line is not theirs to see', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const [, second] = await lineIdsOf(id)
+      whenAskedFor(`GET /bookings/${id}/services/${second}`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      renderAt(
+        `/salons/${await salonIdOf(TOKYO)}/bookings/${id}/services/${second}`,
+      )
+      await signInAs(STYLIST)
+
+      // Assert
+      expect(await screen.findByText(NOT_THEIRS)).toBeVisible()
+      expect(screen.queryByRole('region', { name: '施術明細' })).toBeNull()
+    })
+
+    it('should name a line of a service the menu no longer has as such, and ask about its removal with that name', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await testApi().query(
+        `update services set "deletedAt" = now()
+         where name = 'Mens Cut' and "salonId" = (select id from salons where name = $1)`,
+        [TOKYO],
+      )
+      await toTheLine(user, id, '削除されたメニュー')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'この明細を外す' }))
+
+      // Assert
+      expect(
+        screen.getByRole('dialog', { name: '施術明細を外しますか？' }),
+      ).toHaveAccessibleDescription(
+        expect.stringContaining('削除されたメニュー'),
+      )
+    })
+
+    it('should close the dialog and say that the booking is not found when it was removed while the line was taken away', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheLine(user, id, 'Mens Cut')
+      const [, second] = await lineIdsOf(id)
+      await user.click(screen.getByRole('button', { name: 'この明細を外す' }))
+      whenAskedFor(`DELETE /bookings/${id}/services/${second}`, () =>
+        bookingRemovedMeanwhile(id),
+      )
+
+      // Act
+      await user.click(removeButton())
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    it('should say that the booking is not found when it was removed after the API kept the last line', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheLine(user, id, 'Ladies Cut')
+      // Somebody took the other line away, and the booking went before it was read again
+      await testApi().query(
+        `delete from booking_services where "bookingId" = $1 and "sortOrder" = 1`,
+        [id],
+      )
+      await user.click(screen.getByRole('button', { name: 'この明細を外す' }))
+      whenAskedFor(`GET /bookings/${id}`, () => bookingRemovedMeanwhile(id))
+
+      // Act
+      await user.click(removeButton())
+
+      // Assert
+      expect(await heading('予約が見つかりません')).toBeVisible()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    it('should say in the open dialog that an account that left its salon meanwhile cannot take the line away', async () => {
+      // Arrange
+      const id = await arrangeTwoLines()
+      const user = userEvent.setup()
+      await toTheLine(user, id, 'Mens Cut', STYLIST)
+      const [, second] = await lineIdsOf(id)
+      await user.click(screen.getByRole('button', { name: 'この明細を外す' }))
+      whenAskedFor(`DELETE /bookings/${id}/services/${second}`, () =>
+        staffRemovedMeanwhile(STYLIST_NAME),
+      )
+
+      // Act
+      await user.click(removeButton())
+
+      // Assert
+      expect(
+        await within(screen.getByRole('dialog')).findByText(NOT_TO_CHANGE),
+      ).toBeVisible()
+      expect(await lineIdsOf(id)).toHaveLength(2)
+    })
+
     it('should say that a line that is not on the booking is not found, and lead back to the booking', async () => {
       // Arrange
       const id = await arrange({
@@ -1033,6 +1344,37 @@ describe('moving a booking and changing its lines on a page in English', () => {
       ['Ladies Cut', 'Yui Watanabe', '14:30–15:30'],
       ['Kids Cut (Under 12)', 'Unassigned', '15:30–16:00'],
     ])
+  })
+
+  it('should say in English that an account that left its salon meanwhile cannot move the booking', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0002',
+      day: DAY,
+      at: '10:00',
+    })
+    await openAs(
+      `/salons/${await salonIdOf(TOKYO)}/bookings/${id}/reschedule`,
+      STYLIST,
+      'en',
+    )
+    await screen.findByRole('region', { name: 'The lines after the move' })
+    await user.clear(field('Start time'))
+    await user.type(field('Start time'), '14:30')
+    whenAskedFor(`POST /bookings/${id}/reschedule`, () =>
+      staffRemovedMeanwhile(STYLIST_NAME),
+    )
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Change the date, time and staff' }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText('This account cannot change this booking.'),
+    ).toBeVisible()
   })
 
   it('should say in English why a booking whose treatment began is not moved', async () => {
