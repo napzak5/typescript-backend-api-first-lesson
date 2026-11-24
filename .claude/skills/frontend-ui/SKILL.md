@@ -24,7 +24,7 @@ this one: a component is not done without its stories and its test.
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The language of the page: where the choice is kept (`languageStore`), the choice in the header (`LanguageChoice`, which `AppShell` shows), the hooks that say a message in it (`useSay`, `usePageLanguage`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), and how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/components/language-choice/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
-| What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the texts of the controls of one name, the boxes of a group that are checked (`textsOf`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
+| What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the texts of the controls of one name, the boxes of a group that are checked (`textsOf`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`), the values of the form a control or a part of one is in, as the form would be sent now (`formValuesOf`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
 | The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/screens/`, `src/components/not-found-page/`, `src/utils/addresses.ts` (`@beauty-salon-frontend/app-frame`) |
 | The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` (the rule: `utils/password-rule.ts`) |
@@ -1636,7 +1636,7 @@ comes on top.
   booking” (「予約の担当と同じ」) or “Not decided” (「決めない」) beside the
   members.
 - **What can be found out before sending is a button of the form**, not a
-  submit: it hands `new FormData(event.currentTarget.form)` to the screen,
+  submit: it hands `formValuesOf(event.currentTarget)` to the screen,
   which reads what it needs (`readLines`), says what is missing at the
   controls as a submit does, and asks the API (`checkLine` per row). What
   was found out is shown at each row and in one sentence (`role="status"`)
@@ -1658,7 +1658,7 @@ comes on top.
   in a sentence of the state, and leads back (`Unchangeable`).
 - **What a change will do is shown while the values change.** The form of
   a move hands its values over at every change (`onChange` of the
-  `fieldset`, `new FormData(event.currentTarget.form)`), and the screen
+  `fieldset`, `formValuesOf(event.currentTarget)`), and the screen
   shows the lines where the API would put them (`movedLines`, the rule of
   the API: every line as far as the first, the lines of the member of the
   booking to the new member). Values that are no move show a sentence in
