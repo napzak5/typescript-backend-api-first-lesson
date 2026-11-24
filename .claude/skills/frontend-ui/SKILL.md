@@ -2510,9 +2510,11 @@ the header:
   read beside the rows, and the rows are shown once their names are
   there; a product that is not among them is named as removed.
 - **A control follows what is chosen**: the lot of a new row is asked
-  for only when the product chosen is kept by lots. When the API says
-  that the product was marked otherwise meanwhile, the products are
-  read anew and the form follows them.
+  for only when the product chosen is kept by lots. The form checks
+  every value before it sends, so the API refuses a value only when a
+  product changed meanwhile (it was removed, or marked otherwise):
+  whatever value it refuses, the products are read anew and the form
+  follows them.
 
 The movements of a stock row (`src/inventory/`) are recorded and read
 by everybody who works at the salon:
@@ -2530,6 +2532,10 @@ by everybody who works at the salon:
 - **A history below its record**: the movements of a row are read under
   the key of the row, so that dropping the row once a movement is
   recorded drops its history as well.
+- **A history waits for who recorded it**: every movement names the
+  member of the staff who recorded it, so the history is shown once the
+  staff are read; until then the row is shown, and below it that the
+  history is being read.
 
 The count of the stock and its value (`src/inventory/`) are for the
 owner, a manager and an administrator:
@@ -2539,7 +2545,8 @@ owner, a manager and an administrator:
   and only the rows that were filled in are counted. A salon counts
   shelf by shelf, in as many counts as it likes.
 - **The result on the same screen**: once a count is recorded, the rows
-  that differed from the books take the place of the form, which comes
+  that differed from the books, in the order they were counted (each is
+  one of the rows sent), take the place of the form, which comes
   back, read anew and empty, to go on counting.
 - **Refused as a whole**: a count records all its rows or none. When a
   row was removed meanwhile (400) or reserved below its count (409), the
@@ -2562,7 +2569,9 @@ works at the salon:
 - **Read before the dialog closes**: once an alert is acknowledged, or
   refused because it went (404) or somebody saw to it meanwhile (409),
   the alerts are read anew before the dialog closes, and the heading
-  takes the focus. A refusal is said under the heading.
+  takes the focus. A refusal is said under the heading. As with a
+  removal, the screen keeps the alert the dialog sees to apart from
+  whether the dialog is open, so the dialog names it while it closes.
 
 The purchase orders of a salon (`src/purchase-orders/`) are searched,
 read, drafted, moved on and received by everybody who works at the

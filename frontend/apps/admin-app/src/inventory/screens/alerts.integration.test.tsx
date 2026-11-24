@@ -36,6 +36,7 @@ import {
   rowIdOf,
   usedUpMeanwhile,
 } from '../__tests__/arrangements'
+import { ALERTS, openedAlerts } from '../__tests__/screens'
 import { expiryNameOf } from '../utils/stock-format'
 
 /*
@@ -48,16 +49,7 @@ import { expiryNameOf } from '../utils/stock-format'
  * says so.
  */
 
-const ALERTS = '在庫のアラート'
-
 const NARROWED = '条件に合う在庫のアラート'
-
-/** Waits for the alerts: the heading comes first, how many there are and the table once each was read. */
-const openedAlerts = async (caption = ALERTS): Promise<void> => {
-  await heading(ALERTS)
-  await screen.findByText(/^今出ているアラート/)
-  await screen.findByRole('table', { name: caption })
-}
 
 /** What the statuses of the screen say: how many alerts the table shows among them */
 const statuses = (): (string | null)[] =>

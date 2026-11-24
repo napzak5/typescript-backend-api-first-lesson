@@ -212,14 +212,6 @@ export const readStockChange = (
 const isLotMarkRefusal = ({ field, rule }: RefusedValue): boolean =>
   field === 'lotNumber' && rule === 'custom'
 
-/**
- * Whether the products a form was opened with are not what the API holds:
- * the product was removed, or marked otherwise as to its lots, meanwhile.
- * They are read anew, so that the form offers and asks what it may.
- */
-export const productsChanged = (values: readonly RefusedValue[]): boolean =>
-  values.some((value) => value.field === 'productId' || isLotMarkRefusal(value))
-
 /** What is said at a control the API refused a value of. */
 const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)

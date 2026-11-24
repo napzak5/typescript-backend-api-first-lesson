@@ -11,7 +11,6 @@ import { colourLot, shampooRow } from '../components/examples'
 import {
   afterStockRemoval,
   afterStockWrite,
-  productsChanged,
   readStockChange,
   readStockEntry,
   showsLot,
@@ -402,6 +401,40 @@ describe('afterStockWrite', () => {
     })
   })
 
+  it('should say at each control what it takes, and a value of a control without words of its own as refused', () => {
+    expect(
+      afterStockWrite(
+        {
+          type: 'invalid',
+          values: [
+            { field: 'productId', rule: 'invalid' },
+            { field: 'expiryDate', rule: 'invalid' },
+            { field: 'location', rule: 'too_big' },
+            { field: 'notes', rule: 'invalid' },
+          ],
+        },
+        false,
+      ),
+    ).toEqual({
+      message: undefined,
+      errors: {
+        productId: { en: 'Choose a product.', ja: '商品を選んでください。' },
+        expiryDate: {
+          en: 'Enter the expiry date as a date from January 1, 1900 to December 31, 2999.',
+          ja: '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
+        },
+        location: {
+          en: 'Storage location: enter up to 100 characters.',
+          ja: '保管場所は、100 文字以内で入力してください。',
+        },
+        notes: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
+      },
+    })
+  })
+
   it('should say above the form that the product was marked otherwise as to its lots', () => {
     expect(
       afterStockWrite(
@@ -481,6 +514,13 @@ describe('afterStockWrite', () => {
       },
     ],
     [
+      'tooManyRequests',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
+    ],
+    [
       'failed',
       {
         en: 'The stock row could not be saved. Check your connection and try again.',
@@ -490,20 +530,6 @@ describe('afterStockWrite', () => {
   ])('should say above the form why it was not saved: %s', (type, message) => {
     expect(afterStockWrite({ type }, false)).toEqual({ message, errors: {} })
   })
-})
-
-describe('productsChanged', () => {
-  it.each<[string, string, boolean]>([
-    ['productId', 'not_found', true],
-    ['lotNumber', 'custom', true],
-    ['lotNumber', 'too_big', false],
-    ['shelf', 'too_big', false],
-  ])(
-    'should tell whether a refusal of %s (%s) means that the products changed',
-    (field, rule, changed) => {
-      expect(productsChanged([{ field, rule }])).toBe(changed)
-    },
-  )
 })
 
 describe('afterStockRemoval', () => {

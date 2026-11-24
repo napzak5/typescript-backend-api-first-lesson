@@ -1,3 +1,4 @@
+import type { ModelsInventoryMovementRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
   asked,
@@ -88,6 +89,17 @@ describe('readMovementPage', () => {
 })
 
 describe('recordMovement', () => {
+  /** A use of one tube of the lot of the colour */
+  const USE: ModelsInventoryMovementRequest = {
+    inventoryId: colourLot.id,
+    transactionType: 'use',
+    quantity: -1,
+    unitCost: null,
+    referenceType: null,
+    referenceId: null,
+    reason: null,
+  }
+
   it.each<[string, Answer, string]>([
     [
       'the row removed meanwhile',
@@ -107,17 +119,23 @@ describe('recordMovement', () => {
     answering(given)
 
     // Act
-    const recorded = await recordMovement({
-      inventoryId: colourLot.id,
-      transactionType: 'use',
-      quantity: -1,
-      unitCost: null,
-      referenceType: null,
-      referenceId: null,
-      reason: null,
-    })
+    const recorded = await recordMovement(USE)
 
     // Assert
     expect(recorded).toEqual({ type })
+  })
+
+  it('should name the values the API refused, but for the row', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'reason', rule: 'custom' }]))
+
+    // Act
+    const recorded = await recordMovement(USE)
+
+    // Assert
+    expect(recorded).toEqual({
+      type: 'invalid',
+      values: [{ field: 'reason', rule: 'custom' }],
+    })
   })
 })

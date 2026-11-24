@@ -101,11 +101,15 @@ export const readStockCount = (
   const items = read.flatMap((row) =>
     row.type === 'counted' ? [row.item] : [],
   )
-  const first = items[0]
-  if (first === undefined) {
+  if (items.length === 0) {
+    // Said at the first row: the form is shown with one at least
     return {
       type: 'invalid',
-      errors: { [countedControlOf(rows[0]?.id ?? '')]: words.noneCounted },
+      errors: Object.fromEntries(
+        rows
+          .slice(0, 1)
+          .map(({ id }) => [countedControlOf(id), words.noneCounted]),
+      ),
     }
   }
   const beyond = items[MOST_ROWS]

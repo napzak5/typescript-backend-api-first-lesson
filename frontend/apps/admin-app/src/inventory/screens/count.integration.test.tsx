@@ -34,6 +34,7 @@ import {
   rowRemovedMeanwhile,
   storedMovementsOf,
 } from '../__tests__/arrangements'
+import { openedCount, openedValue } from '../__tests__/screens'
 
 /*
  * The count of the stock and its value, against the API. The salon in
@@ -52,18 +53,6 @@ const counted = (product: string): HTMLElement =>
 const COLOUR = 'Hair Color - Natural Brown'
 const SHAMPOO = 'Professional Shampoo 500ml'
 const POWDER = 'Lightening Powder 500g'
-
-/** Waits for the form of a count: its heading comes first, the rows once they were read. */
-const openedCount = async (): Promise<void> => {
-  await heading('棚卸し')
-  await screen.findByRole('textbox', { name: new RegExp(`^${COLOUR}`) })
-}
-
-/** Waits for the value: its heading comes first, the table once it was read. */
-const openedValue = async (): Promise<void> => {
-  await heading('在庫評価額')
-  await screen.findByRole('table', { name: 'カテゴリーごとの在庫評価額' })
-}
 
 const DIFFERED = '帳簿の在庫数と差のあった行'
 

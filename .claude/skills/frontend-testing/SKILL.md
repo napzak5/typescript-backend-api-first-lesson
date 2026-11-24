@@ -1225,6 +1225,44 @@ add:
   (`storedRecordOf`: the member, the time on the clock of the salon, the
   day, the note, the voiding; `storedRefundsOf`).
 
+The stock of a salon
+(`frontend/apps/admin-app/src/inventory/screens/`: `inventory` for the
+stock, a row and its change, `movements`, `count` for the count and the
+value, `alerts`; and beside them, a file for each group of screens, what
+their requests meet when they fail or something changes meanwhile:
+`stock-failures`, `stock-row-failures`, `movement-failures`,
+`count-failures`, `alert-failures`) adds:
+
+- **The tests of the stock wait for a screen alike**
+  (`inventory/__tests__/screens.ts`: `openedStock`, `openedRow`,
+  `openedStockEntry`, `openedChange`, `openedHistory`,
+  `openedMovementEntry`, `openedCount`, `openedValue`, `openedAlerts`:
+  the heading first, then what comes once the screen read its parts),
+  and what the screens say alike is one constant there (`NOT_THEIRS`,
+  `REST_UNREAD`).
+- **The stock a test needs is a statement** of
+  `inventory/__tests__/arrangements.ts`: a row more (`anotherRow`), a
+  page and more of rows or of alerts (`padRowsOf`, `padAlertsOf`),
+  movements recorded before the seed's (`recordedEarlier`), and a salon
+  that carries none of its products (`carriesNothing`: its rows stay, and
+  the form of a new row leads to the catalogue).
+- **A page after the first fails where its order puts the failure**: the
+  stock is in the order of the codes of the products, so the row of the
+  last code is made unreadable (`unreadable('inventory', 'createdAt', id)`)
+  and the first page still comes. The movements are the latest first,
+  and `unreadable` makes a moment `infinity`, which comes first: their
+  table is taken away the moment the screen asks for the second page
+  (`whenAskedFor('GET /inventory/<id>/movements', () => takeAway('inventory_transactions'))`,
+  set once the first page was read).
+- **The count of the alerts and their list are worked out from the same
+  facts**: what breaks one breaks both
+  (`takeAway('inventory_alert_acknowledgements')`), and each is read
+  again by its own button, that of the count first.
+- **A read that comes later than another is held, not answered**: the
+  staff of the history of a row come when the test lets them
+  (`whenAskedFor('GET /staff-profiles', () => staff.promise)` with
+  `Promise.withResolvers()`); the answer is that of the API.
+
 The ledger of the customers
 (`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)
 adds:

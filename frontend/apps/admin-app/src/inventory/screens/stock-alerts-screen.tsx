@@ -105,8 +105,9 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     queryKey: staffProfilesKeyOf(salon.id),
     queryFn: () => readStaffProfiles(salon.id),
   })
-  /** The alert the dialog sees to */
+  /** The alert the dialog sees to, also while the dialog closes */
   const [seeing, setSeeing] = useState<ModelsInventoryAlertResponse>()
+  const [open, setOpen] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
   const [message, setMessage] = useState<LocalizedText>()
   /** What changed meanwhile: said under the heading */
@@ -132,7 +133,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           await queryClient.invalidateQueries({
             queryKey: alertsKeyOf(salon.id),
           })
-          setSeeing(undefined)
+          setOpen(false)
           setMoves((count) => count + 1)
           match(says)
             .with({ type: 'done' }, ({ message: said }) => {
@@ -244,6 +245,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             onAcknowledge={(alert) => {
               setMessage(undefined)
               setSeeing(alert)
+              setOpen(true)
             }}
           />
         ))
@@ -251,17 +253,18 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       <ButtonLink href={inventoryHrefOf(salon.id)}>
         {say(list.toInventory)}
       </ButtonLink>
-      <AlertDialog
-        alert={seeing}
-        onClose={() => setSeeing(undefined)}
-        message={message}
-        pending={acknowledgement.isPending}
-        onSubmit={(values) => {
-          if (seeing !== undefined) {
+      {seeing !== undefined && (
+        <AlertDialog
+          open={open}
+          alert={seeing}
+          onClose={() => setOpen(false)}
+          message={message}
+          pending={acknowledgement.isPending}
+          onSubmit={(values) =>
             acknowledgement.mutate({ alert: seeing, values })
           }
-        }}
-      />
+        />
+      )}
     </>
   )
 }

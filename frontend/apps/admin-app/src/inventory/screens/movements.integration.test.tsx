@@ -34,6 +34,11 @@ import {
   rowRemovedMeanwhile,
   storedMovementsOf,
 } from '../__tests__/arrangements'
+import {
+  openedHistory,
+  openedMovementEntry,
+  openedRow,
+} from '../__tests__/screens'
 
 /*
  * The movements of a stock row, recorded and read against the API. The
@@ -43,24 +48,6 @@ import {
  * every day; its owner and its manager record the others as well.
  * Somebody did something meanwhile where a test says so.
  */
-
-/** Waits for a row: its heading comes first, the record once the row was read. */
-const openedRow = async (): Promise<void> => {
-  await heading('在庫の行')
-  await screen.findByRole('region', { name: '在庫' })
-}
-
-/** Waits for the history: its heading comes first, the table once the movements were read. */
-const openedHistory = async (caption = '在庫の移動'): Promise<void> => {
-  await heading('在庫の移動')
-  await screen.findByRole('table', { name: caption })
-}
-
-/** Waits for the form of a movement: its heading comes first, the form once the row was read. */
-const openedEntry = async (): Promise<void> => {
-  await heading('在庫の移動を記録する')
-  await screen.findByRole('radiogroup', { name: /^区分/ })
-}
 
 /** The rows of the history, each as the texts of its cells but the moment. */
 const movements = (caption = '在庫の移動'): string[][] =>
@@ -116,7 +103,7 @@ describe('the screens of the movements of the stock', () => {
     )
     await openedRow()
     await user.click(screen.getByRole('link', { name: '在庫の移動を記録する' }))
-    await openedEntry()
+    await openedMovementEntry()
     expect(
       within(screen.getByRole('radiogroup', { name: /^区分/ }))
         .getAllByRole('radio')
@@ -191,7 +178,7 @@ describe('the screens of the movements of the stock', () => {
     await openedHistory()
     expect(screen.getByText('1 件')).toBeVisible()
     await user.click(screen.getByRole('link', { name: '在庫の移動を記録する' }))
-    await openedEntry()
+    await openedMovementEntry()
     await choose(user, '在庫の調整')
     await choose(user, '在庫が減る')
     await user.type(quantity(), '3')
@@ -242,7 +229,7 @@ describe('the screens of the movements of the stock', () => {
     const rowId = await rowIdOf(TOKYO, 'COLOR001')
     await reservedMeanwhile(rowId, 15)
     await openAs(movementEntryHrefOf(await salonIdOf(TOKYO), rowId), MANAGER)
-    await openedEntry()
+    await openedMovementEntry()
     await choose(user, '廃棄')
     await user.type(quantity(), '6')
     await user.type(text(/^理由/), '落として割れた')
@@ -263,7 +250,7 @@ describe('the screens of the movements of the stock', () => {
     const user = userEvent.setup()
     const rowId = await rowIdOf(TOKYO, 'COLOR001')
     await openAs(movementEntryHrefOf(await salonIdOf(TOKYO), rowId), MANAGER)
-    await openedEntry()
+    await openedMovementEntry()
     await choose(user, '施術で使用')
     await user.type(quantity(), '10')
     await reservedMeanwhile(rowId, 15)
@@ -416,7 +403,7 @@ describe('the screens of the movements of the stock', () => {
       lotNumber: 'LOT-2026-001',
     })
     await openAs(movementEntryHrefOf(await salonIdOf(TOKYO), emptied), MANAGER)
-    await openedEntry()
+    await openedMovementEntry()
     await choose(user, '仕入れ')
     await user.type(quantity(), '1')
     await rowRemovedMeanwhile(emptied)
@@ -450,7 +437,7 @@ describe('the screens of the movements of the stock', () => {
   >([
     ['the row', stockRowHrefOf, openedRow],
     ['the history', stockMovementsHrefOf, () => openedHistory()],
-    ['the form of a movement', movementEntryHrefOf, openedEntry],
+    ['the form of a movement', movementEntryHrefOf, openedMovementEntry],
   ])(
     'should have no accessibility violations on %s',
     async (_, hrefOf, opened) => {

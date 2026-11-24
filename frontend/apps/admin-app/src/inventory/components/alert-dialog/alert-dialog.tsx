@@ -18,11 +18,13 @@ import { expiryNameOf, quantityNameOf } from '../../utils/stock-format'
 const { dialog: words } = adminInventoryMessages.alerts
 
 export type AlertDialogProps = {
-  /** The alert the dialog sees to; `undefined` while the dialog is closed */
-  alert: ModelsInventoryAlertResponse | undefined
+  /** The dialog is open */
+  open: boolean
+  /** The alert the dialog sees to, also while it closes */
+  alert: ModelsInventoryAlertResponse
   /**
    * The dialog has closed, or its button that changes nothing was pressed.
-   * Set `alert` to `undefined` here
+   * Set `open` to false here
    */
   onClose: () => void
   /** What went wrong with an attempt that can be made again: said in the dialog */
@@ -39,6 +41,7 @@ export type AlertDialogProps = {
  * what it was given for lasts.
  */
 export const AlertDialog = ({
+  open,
   alert,
   onClose,
   message,
@@ -49,47 +52,38 @@ export const AlertDialog = ({
 
   return (
     <FormDialog
-      open={alert !== undefined}
+      open={open}
       onClose={onClose}
-      title={
-        alert === undefined
-          ? ''
-          : say(
-              words.title(
-                alertKindNameOf(alert.alert),
-                alertSubjectNameOf(alert),
-              ),
-            )
-      }
+      title={say(
+        words.title(alertKindNameOf(alert.alert), alertSubjectNameOf(alert)),
+      )}
       description={say(words.description)}
       submitLabel={say(words.submit)}
       message={message === undefined ? undefined : say(message)}
       pending={pending}
       onSubmit={onSubmit}
     >
-      {alert !== undefined && (
-        <DescriptionList
-          items={[
-            {
-              term: say(words.severity),
-              description: say(severityNameOf(alert.severity)),
-            },
-            {
-              term: say(words.inStock),
-              description: say(quantityNameOf(alert.currentStock, alert)),
-            },
-            alert.threshold === null
-              ? {
-                  term: say(words.expiry),
-                  description: say(expiryNameOf(alert.expiryDate)),
-                }
-              : {
-                  term: say(thresholdTermOf(alert.alert)),
-                  description: say(quantityNameOf(alert.threshold, alert)),
-                },
-          ]}
-        />
-      )}
+      <DescriptionList
+        items={[
+          {
+            term: say(words.severity),
+            description: say(severityNameOf(alert.severity)),
+          },
+          {
+            term: say(words.inStock),
+            description: say(quantityNameOf(alert.currentStock, alert)),
+          },
+          alert.threshold === null
+            ? {
+                term: say(words.expiry),
+                description: say(expiryNameOf(alert.expiryDate)),
+              }
+            : {
+                term: say(thresholdTermOf(alert.alert)),
+                description: say(quantityNameOf(alert.threshold, alert)),
+              },
+        ]}
+      />
       <TextArea
         label={say(words.notes)}
         name='notes'
