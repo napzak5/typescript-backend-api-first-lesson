@@ -11,6 +11,7 @@ import {
   FormPart,
   type FormProps,
   FormRow,
+  formValuesOf,
   NO_ERRORS,
   TextArea,
   TextField,
@@ -114,12 +115,8 @@ export const OrderForm = ({
   )
   const subtotal = subtotalOf(entered, rows)
 
-  const tally = (event: FormEvent<HTMLFieldSetElement>): void => {
-    const form = event.currentTarget.form
-    if (form !== null) {
-      setEntered(new FormData(form))
-    }
-  }
+  const tally = (event: FormEvent<HTMLFieldSetElement>): void =>
+    setEntered(formValuesOf(event.currentTarget))
 
   return (
     <Form {...form} message={said.message} errors={errors}>

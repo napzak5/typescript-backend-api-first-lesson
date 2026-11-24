@@ -10,6 +10,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  formValuesOf,
   NO_ERRORS,
   Select,
   TextField,
@@ -126,12 +127,7 @@ export const BookingEntryForm = ({
         <div className={styles['check']}>
           <Button
             pending={checking}
-            onClick={(event) => {
-              const { form: values } = event.currentTarget
-              if (values !== null) {
-                onCheck(new FormData(values))
-              }
-            }}
+            onClick={(event) => onCheck(formValuesOf(event.currentTarget))}
           >
             {say(WORDS.check)}
           </Button>

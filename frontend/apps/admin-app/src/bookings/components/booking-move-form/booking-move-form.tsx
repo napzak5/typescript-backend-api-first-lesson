@@ -10,6 +10,7 @@ import {
   Form,
   type FormErrors,
   type FormProps,
+  formValuesOf,
   NO_ERRORS,
   Select,
   TextField,
@@ -82,12 +83,7 @@ export const BookingMoveForm = ({
     >
       <fieldset
         className={styles['part']}
-        onChange={(event) => {
-          const { form: values } = event.currentTarget
-          if (values !== null) {
-            onValuesChange(new FormData(values))
-          }
-        }}
+        onChange={(event) => onValuesChange(formValuesOf(event.currentTarget))}
       >
         <legend className={styles['name']}>{say(WORDS.to)}</legend>
         <div className={styles['controls']}>

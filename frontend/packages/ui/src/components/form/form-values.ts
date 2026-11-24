@@ -47,6 +47,17 @@ export const aboutTheAttempt = <Text>(message: Text): FormSays<Text> => ({
  */
 export const NO_CHANGE_MESSAGE: LocalizedText = uiMessages.noChange
 
+/**
+ * The values of the form a control or a part of one is in, as the form
+ * would be sent now: what a button that is no submit button, or a change of
+ * a part, hands on. One that is in no form has none.
+ */
+export const formValuesOf = ({
+  form,
+}: {
+  form: HTMLFormElement | null
+}): FormData => new FormData(form ?? undefined)
+
 /** The text of a control of a form; nothing for one that is not there or holds a file. */
 export const textOf = (values: FormData, name: string): string => {
   const value = values.get(name)
