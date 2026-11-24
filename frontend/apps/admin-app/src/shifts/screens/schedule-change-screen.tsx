@@ -11,7 +11,10 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -30,7 +33,7 @@ import {
 } from '../utils/schedule-form'
 import { type ScheduleOf, usePlansShifts, WithSchedule } from './with-schedule'
 
-const TITLE = '勤務スケジュールを直す'
+const { form, titles } = adminShiftMessages
 
 type ScheduleChangeProps = {
   salon: ModelsSalonResponse
@@ -47,10 +50,11 @@ type ScheduleChangeProps = {
  * the schedule of the member shows at once.
  */
 const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   /** The schedule the form is sent against: the one it opened with, or the one another account wrote meanwhile */
   const [opened, setOpened] = useState<ModelsStaffSchedule[]>(schedule.rows)
   const today = dayAt(new Date(), salon.timezone)
@@ -64,10 +68,7 @@ const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
         .with({ type: 'saved' }, ({ rows }) => {
           const read: ScheduleRead = { type: 'found', rows }
           queryClient.setQueryData(key, read)
-          notify({
-            tone: 'success',
-            message: `${schedule.name} さんの勤務スケジュールを保存しました。`,
-          })
+          notify({ tone: 'success', message: form.saved(schedule.name) })
           void navigate(back)
         })
         // The member was removed from the staff ledger meanwhile
@@ -106,14 +107,14 @@ const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
     <ScheduleForm
       rows={opened}
       today={today}
-      submitLabel='保存する'
+      submitLabel={say(form.submit)}
       message={said.message}
       errors={said.errors}
       pending={save.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(form.cancel)}
         </ButtonLink>
       }
     />
@@ -122,24 +123,24 @@ const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
 
 /** Changes the schedule of a member of the staff of the salon of the address. */
 export const ScheduleChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', staffId = '' } = useParams()
   const plans = usePlansShifts()
+  const title = say(titles.change)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) =>
         plans ? (
-          <WithSchedule key={staffId} salon={salon} title={TITLE} fresh>
+          <WithSchedule key={staffId} salon={salon} title={title} fresh>
             {(schedule) => <ScheduleChange salon={salon} schedule={schedule} />}
           </WithSchedule>
         ) : (
           <>
-            <PageHeader title={TITLE} description={salon.name} />
-            <p>
-              このアカウントでは、勤務スケジュールを直せません。勤務スケジュールを直せるのは、サロンのオーナー、マネージャーと、管理者です。
-            </p>
+            <PageHeader title={title} description={salon.name} />
+            <p>{say(form.forbidden)}</p>
             <ButtonLink href={scheduleHrefOf(salon.id, staffId)}>
-              勤務スケジュールへ
+              {say(form.toSchedule)}
             </ButtonLink>
           </>
         )

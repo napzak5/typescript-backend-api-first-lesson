@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reviewReportStories from './review-report.stories'
 
 const stories = composeStories(reviewReportStories)
@@ -121,6 +122,93 @@ describe('ReviewReport', () => {
       screen.getByRole('textbox', { name: '詳しい内容' }),
     ).toHaveAccessibleDescription(
       'どこが規則に反するかを、2,000 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。',
+    )
+  })
+})
+
+describe('ReviewReport on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what a report does, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Closed.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', {
+        name: 'Report to the team that runs the site',
+      }),
+    ).toBeVisible()
+    expect(screen.getByText(/A salon cannot delete a review/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Report' })).toBeVisible()
+  })
+
+  it('should ask for the reason and the details in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', { name: 'Report the review' })
+    expect(dialog).toHaveAccessibleDescription(
+      'This reports the review to the team that runs the site. Only the team reads the report: the customer who wrote the review is not told. Until the team has checked it, the review stays listed.',
+    )
+    expect(
+      within(dialog).getByRole('radiogroup', { name: 'Reason for the report' }),
+    ).toBeVisible()
+    expect(
+      [
+        'Inappropriate language (abuse, discrimination and the like)',
+        'Something that is not true',
+        'Personal information (names, contact details and the like)',
+        'Advertising, or something that has nothing to do with a visit',
+        'Other',
+      ].map((name) =>
+        within(dialog).getByRole('radio', { name }).getAttribute('value'),
+      ),
+    ).toEqual([
+      'inappropriate',
+      'false_information',
+      'personal_information',
+      'spam',
+      'other',
+    ])
+    expect(
+      within(dialog).getByRole('textbox', { name: 'Details' }),
+    ).toHaveAccessibleDescription(
+      'Say how the review breaks the rules, in up to 2,000 characters. When the reason is “Other”, this is required.',
+    )
+  })
+
+  it('should say in English what is wrong with the details, and that the account reported the review before', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog')).getByRole('textbox', {
+        name: 'Details',
+      }),
+    ).toHaveAccessibleDescription(
+      /When you choose “Other”, say what the problem is\./,
+    )
+
+    // Act
+    await stories.ReportedBefore.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog')).getByRole('status'),
+    ).toHaveTextContent(
+      'This account has reported this review already. A review can be reported once.',
     )
   })
 })

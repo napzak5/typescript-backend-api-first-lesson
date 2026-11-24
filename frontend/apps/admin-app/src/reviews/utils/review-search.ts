@@ -1,5 +1,11 @@
 import type { ModelsReviewSortType } from '@beauty-salon-frontend/api-client'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import * as z from 'zod'
 import type { ReviewListParams } from '../api/reviews-api'
 
@@ -63,12 +69,12 @@ export const reviewConditionsIn = (
   }
 }
 
-const RANGE_ERROR = '評価の上限は、下限と同じか、それより高くしてください。'
+const RANGE_ERROR = adminReviewMessages.list.rangeReversed
 
 /** The conditions that were chosen: each may be left as it is, for every review. */
 export const readReviewConditions = (
   values: FormData,
-): FormRead<ReviewConditions> => {
+): FormRead<ReviewConditions, FormErrors<LocalizedText>> => {
   const minRating = ratingFrom(textOf(values, 'min'))
   const maxRating = ratingFrom(textOf(values, 'max'))
   if (

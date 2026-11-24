@@ -1,18 +1,27 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
-  type ChoiceOption,
   countNarrowing,
   FilterForm,
   type FormErrors,
+  type NamedChoice,
   NO_ERRORS,
   Select,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   RATINGS,
   type ReviewConditions,
   reviewQueryOf,
 } from '../../utils/review-search'
+
+const { list, words } = adminReviewMessages
 
 export type ReviewFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -20,7 +29,7 @@ export type ReviewFilterProps = {
   /** The members of the staff of the salon */
   staff: readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[]
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of every review, when the conditions narrow the list */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
@@ -42,14 +51,15 @@ const valuesOf = ({
   sort: order ?? '',
 })
 
-const RATING_OPTIONS: readonly ChoiceOption[] = RATINGS.map((rating) => ({
+const RATING_CHOICES: readonly NamedChoice[] = RATINGS.map((rating) => ({
   value: `${rating}`,
-  label: `${rating}`,
+  label: formats.numberOf(rating),
 }))
 
-const ORDER_OPTIONS: readonly ChoiceOption[] = [
-  { value: 'rating', label: '評価の高い順' },
-  { value: 'helpful', label: '参考になった順' },
+/** The orders besides the latest first, which is the order when none is chosen */
+const ORDER_CHOICES: readonly NamedChoice[] = [
+  { value: 'rating', label: reviewMessages.highestRated },
+  { value: 'helpful', label: reviewMessages.mostHelpful },
 ]
 
 /**
@@ -71,6 +81,9 @@ export const ReviewFilter = ({
   clearHref,
   onSubmit,
 }: ReviewFilterProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(undefined, errors)
   const [values, hold] = useFilterValues(
     reviewQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -78,7 +91,7 @@ export const ReviewFilter = ({
 
   return (
     <FilterForm
-      label='レビューを絞り込む'
+      label={say(list.filter)}
       purpose='view'
       errors={errors}
       clearHref={clearHref}
@@ -87,38 +100,38 @@ export const ReviewFilter = ({
       conditions={
         <>
           <Select
-            label='評価の下限'
+            label={say(list.lowest)}
             name='min'
-            options={RATING_OPTIONS}
-            placeholder='指定しない'
+            options={options(RATING_CHOICES)}
+            placeholder={say(list.anyRating)}
             value={values.min}
             onChange={(event) => hold('min', event.target.value)}
           />
           <Select
-            label='評価の上限'
+            label={say(list.highest)}
             name='max'
-            options={RATING_OPTIONS}
-            placeholder='指定しない'
+            options={options(RATING_CHOICES)}
+            placeholder={say(list.anyRating)}
             value={values.max}
-            error={errors['max']}
+            error={said.errors['max']}
             onChange={(event) => hold('max', event.target.value)}
           />
           <Select
-            label='担当スタッフ'
+            label={say(words.staff)}
             name='staff'
             options={staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             }))}
-            placeholder='すべて'
+            placeholder={say(list.allStaff)}
             value={values.staff}
             onChange={(event) => hold('staff', event.target.value)}
           />
           <Select
-            label='並び順'
+            label={say(reviewMessages.sortBy)}
             name='sort'
-            options={ORDER_OPTIONS}
-            placeholder='新しい順'
+            options={options(ORDER_CHOICES)}
+            placeholder={say(reviewMessages.recent)}
             value={values.sort}
             onChange={(event) => hold('sort', event.target.value)}
           />

@@ -14,10 +14,8 @@ import {
   type Shift,
   scheduleOn,
   shiftOf,
-  shortDayNameOf,
   timeNameOf,
   WEEKDAYS,
-  weekdayNameOf,
   weekdayOf,
   weekIn,
   weekNameOf,
@@ -39,20 +37,6 @@ describe('dateRowsIn', () => {
 describe('weekdayOf', () => {
   it('should find the day of the week of every day of a week', () => {
     expect(daysOfWeek('2026-11-16').map(weekdayOf)).toEqual(WEEKDAYS)
-  })
-})
-
-describe('weekdayNameOf', () => {
-  it('should name the days of the week from Monday', () => {
-    expect(WEEKDAYS.map(weekdayNameOf)).toEqual([
-      '月曜日',
-      '火曜日',
-      '水曜日',
-      '木曜日',
-      '金曜日',
-      '土曜日',
-      '日曜日',
-    ])
   })
 })
 
@@ -93,17 +77,16 @@ describe('weekIn', () => {
   })
 })
 
-describe('shortDayNameOf', () => {
-  it('should name a day by its month, its day and its day of the week', () => {
-    expect(shortDayNameOf('2026-11-16')).toBe('11/16（月）')
-  })
-})
-
 describe('weekNameOf', () => {
   it('should name a week by its first and its last day', () => {
-    expect(weekNameOf('2026-11-16')).toBe(
-      '2026年11月16日（月）〜2026年11月22日（日）',
-    )
+    // Act
+    const week = weekNameOf('2026-11-16')
+
+    // Assert
+    expect(week).toEqual({
+      en: 'Mon, November 16, 2026 – Sun, November 22, 2026',
+      ja: '2026年11月16日（月）〜2026年11月22日（日）',
+    })
   })
 })
 
@@ -157,8 +140,8 @@ describe('shiftOf', () => {
       aWeek()[0],
       {
         type: 'works',
-        hours: '09:00〜20:00',
-        rest: '13:00〜14:00',
+        hours: { en: '09:00–20:00', ja: '09:00〜20:00' },
+        rest: { en: '13:00–14:00', ja: '13:00〜14:00' },
         notes: null,
         once: false,
       },
@@ -168,7 +151,7 @@ describe('shiftOf', () => {
       aShortSaturday(),
       {
         type: 'works',
-        hours: '12:00〜18:00',
+        hours: { en: '12:00–18:00', ja: '12:00〜18:00' },
         rest: undefined,
         notes: '午前は講習',
         once: true,
@@ -186,6 +169,23 @@ describe('shiftOf', () => {
     ],
     ['no row', undefined, { type: 'none' }],
   ])('should say %s', (_, row, shift) => {
+    // Assert
     expect(shiftOf(row)).toEqual(shift)
+  })
+
+  it('should keep the seconds of a time that has some', () => {
+    // Arrange
+    const row: ModelsStaffSchedule = {
+      ...aShortSaturday(),
+      startTime: '12:00:30',
+    }
+
+    // Act
+    const shift = shiftOf(row)
+
+    // Assert
+    expect(shift).toMatchObject({
+      hours: { en: '12:00:30–18:00', ja: '12:00:30〜18:00' },
+    })
   })
 })

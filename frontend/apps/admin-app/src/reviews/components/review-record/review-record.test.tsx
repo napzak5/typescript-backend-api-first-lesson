@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { customers, salon } from '../../../bookings/components/examples'
 import { answeredReview } from '../examples'
 import * as reviewRecordStories from './review-record.stories'
@@ -107,4 +108,79 @@ describe('ReviewRecord', () => {
     // Assert
     expect(details()).toContainEqual(['お客様', '読み込めませんでした'])
   })
+})
+
+describe('ReviewRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the rating, the day and the rest of the review in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Rated.run()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Review' })).toBeVisible()
+    expect(screen.getByRole('img', { name: '5.0 out of 5' })).toBeVisible()
+    expect(screen.getByText('Wed, November 18, 2026')).toBeVisible()
+    expect(screen.getByText('Verified visit')).toBeVisible()
+    expect(details()).toEqual([
+      ['Service rating', '5'],
+      ['Staff rating', '5'],
+      ['Atmosphere rating', '4'],
+      ['Cleanliness rating', '5'],
+      ['Value rating', '4'],
+      ['Customer', '山田 花子'],
+      ['Booking', 'Booking of the visit'],
+      ['Staff member', '田中 美咲'],
+      ['Posted', 'Wed, November 18, 2026 at 18:30'],
+      ['Pictures', 'https://images.example.com/reviews/after.jpg'],
+      ['Found helpful by', '3 people'],
+      ['Pending reports', 'None'],
+    ])
+  })
+
+  it('should say what the customer did not rate, that nobody was named and what reports wait, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Reported.run()
+
+    // Assert
+    expect(details()).toEqual([
+      ['Service rating', '4'],
+      ['Staff rating', 'Not rated'],
+      ['Atmosphere rating', '3'],
+      ['Cleanliness rating', 'Not rated'],
+      ['Value rating', 'Not rated'],
+      ['Customer', '鈴木 一郎'],
+      ['Booking', 'Booking of the visit'],
+      ['Staff member', 'No staff member'],
+      ['Posted', 'Fri, November 20, 2026 at 14:00'],
+      ['Edited', 'Fri, November 20, 2026 at 15:15'],
+      ['Found helpful by', '0 people'],
+      ['Pending reports', '1 report'],
+    ])
+  })
+
+  it.each<['AuthorGone' | 'AuthorUnread', string]>([
+    ['AuthorGone', 'Removed from the ledger'],
+    ['AuthorUnread', 'Could not be loaded'],
+  ])(
+    'should say in English of the story %s who wrote it',
+    async (story, customer) => {
+      // Arrange
+      languageStore.choose('en')
+
+      // Act
+      await stories[story].run()
+
+      // Assert
+      expect(details()).toContainEqual(['Customer', customer])
+    },
+  )
 })

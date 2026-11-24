@@ -8,11 +8,19 @@ import {
   Card,
   Dialog,
   EmptyState,
-  inJapanese,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import {
+  reviewMessages,
+  uiMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import type { Ref } from 'react'
 import styles from './review-answer.module.css'
+
+const { answer: ANSWER, withdrawal } = adminReviewMessages
 
 export type ReviewAnswerProps = {
   review: Pick<ModelsReviewResponse, 'ownerResponse' | 'ownerRespondedAt'>
@@ -23,7 +31,7 @@ export type ReviewAnswerProps = {
   /** Whether the account withdraws the answer */
   withdraws: boolean
   /** What the account may not do here, and who may */
-  note?: string | undefined
+  note?: LocalizedText | undefined
   /** The heading of the part: the focus goes there after the withdrawal */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** The withdrawal is on its way */
@@ -31,7 +39,7 @@ export type ReviewAnswerProps = {
   /** Whether the dialog of the withdrawal is open */
   asking?: boolean | undefined
   /** What went wrong with the withdrawal, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The button of the withdrawal was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -60,14 +68,15 @@ export const ReviewAnswer = ({
   onClose,
   onWithdraw,
 }: ReviewAnswerProps) => {
+  const say = useSay()
   const answered = review.ownerResponse !== null
   const withdrawable = withdraws && answered
 
   return (
-    <Card title='サロンからの返信' headingRef={headingRef}>
+    <Card title={say(reviewMessages.response)} headingRef={headingRef}>
       <div className={styles['answer']}>
         {review.ownerResponse === null ? (
-          <EmptyState kind='part' title='まだ返信していません。' />
+          <EmptyState kind='part' title={say(ANSWER.none)} />
         ) : (
           <>
             <WrittenText className={styles['text']}>
@@ -75,7 +84,11 @@ export const ReviewAnswer = ({
             </WrittenText>
             {review.ownerRespondedAt !== null && (
               <p className={styles['moment']}>
-                {`返信日時 ${inJapanese(momentNameAt(review.ownerRespondedAt, timezone))}`}
+                {say(
+                  ANSWER.respondedAt(
+                    momentNameAt(review.ownerRespondedAt, timezone),
+                  ),
+                )}
               </p>
             )}
           </>
@@ -84,33 +97,33 @@ export const ReviewAnswer = ({
           <Actions>
             {responseHref !== undefined && (
               <ButtonLink href={responseHref} variant='primary'>
-                {answered ? '返信を直す' : '返信を書く'}
+                {say(answered ? ANSWER.change : ANSWER.write)}
               </ButtonLink>
             )}
             {withdrawable && (
               <Button variant='danger' onClick={onAsk}>
-                返信を取り下げる
+                {say(ANSWER.withdraw)}
               </Button>
             )}
           </Actions>
         )}
-        {note !== undefined && <p className={styles['note']}>{note}</p>}
+        {note !== undefined && <p className={styles['note']}>{say(note)}</p>}
       </div>
       <Dialog
         open={asking}
         onClose={onClose}
-        title='返信を取り下げますか？'
-        description='サロンからの返信を、このレビューから消します。消した返信は元に戻せません。返信は、あとからもう一度書けます。'
+        title={say(withdrawal.confirm)}
+        description={say(withdrawal.description)}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(uiMessages.back)}</Button>
             <Button variant='danger' pending={pending} onClick={onWithdraw}>
-              取り下げる
+              {say(withdrawal.submit)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </Card>
   )

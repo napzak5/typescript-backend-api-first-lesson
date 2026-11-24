@@ -1,3 +1,5 @@
+import { languageStore } from '@beauty-salon-frontend/io'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
@@ -5,6 +7,7 @@ import {
   firstSight,
   goBack,
   heading,
+  optionsOf,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -15,6 +18,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -35,7 +39,6 @@ import {
   reviewsKeptOf,
   storedReportStatesOf,
 } from '../__tests__/arrangements'
-import { reportMomentOf } from '../utils/review-reports'
 
 /*
  * The reports of reviews against the API: the list of a salon, which
@@ -50,20 +53,23 @@ const DETAILS = '担当したスタッフの名前が違います。'
 const COMMENT =
   'Really enjoyed my visit. The stylist understood exactly what I wanted.'
 
-/** The report of a review of the seed data, with its moments as the screens say them */
-const reportOf = async (title: string) => {
+/** The report of a review of the seed data, with its moments as the screens say them in a language */
+const reportOf = async (title: string, language: Locale = 'ja') => {
   const [report] = await storedReportStatesOf(title)
   if (report === undefined) {
     throw new Error(`No report of ${title}`)
   }
+  const momentOf = (moment: string): string =>
+    momentNameAt(moment, report.timezone)[language]
+  const dismissedOn = (moment: string): string =>
+    language === 'ja'
+      ? `却下${momentOf(moment)}に却下`
+      : `DismissedDismissed on ${momentOf(moment)}`
 
   return {
     ...report,
-    received: reportMomentOf(report.createdAt, report.timezone),
-    dismissed:
-      report.resolvedAt === null
-        ? ''
-        : `却下${reportMomentOf(report.resolvedAt, report.timezone)}に却下`,
+    received: momentOf(report.createdAt),
+    dismissed: report.resolvedAt === null ? '' : dismissedOn(report.resolvedAt),
   }
 }
 
@@ -530,5 +536,120 @@ describe('the reports of reviews', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the reports of reviews on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should lead an administrator to the reports that wait, and let them dismiss one from its review, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const { received } = await reportOf(GREAT, 'en')
+    await openAs(reviewsHrefOf(await salonIdOf(OSAKA)), OPERATOR, 'en')
+    await user.click(
+      await screen.findByRole('link', { name: 'See the reports' }),
+    )
+    await heading('Reports of reviews')
+    await screen.findByRole('table', { name: 'Pending reports' })
+    await waitFor(() =>
+      expect(rowsOf('Pending reports')).toEqual([
+        [received, GREAT, 'Something that is not true', DETAILS, 'Pending'],
+      ]),
+    )
+    expect(optionsOf(screen.getByRole('combobox', { name: 'Status' }))).toEqual(
+      ['Pending', 'Dismissed', 'All'],
+    )
+    await user.click(screen.getByRole('link', { name: GREAT }))
+    await heading(GREAT)
+    const part = screen.getByRole('region', { name: 'Reports' })
+    await within(part).findByRole('table', { name: 'Reports of this review' })
+
+    // Act
+    await user.click(
+      within(part).getByRole('button', {
+        name: `Dismiss the report received on ${received}`,
+      }),
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Dismiss the report?' })
+    expect(dialog).toHaveAccessibleDescription(
+      `This dismisses the report received on ${received}. A dismissed report is no longer pending, and the review stays listed as it is. A dismissal cannot be undone.`,
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Dismiss' }))
+
+    // Assert
+    expect(await screen.findByText('Dismissed the report.')).toBeVisible()
+    const { dismissed } = await reportOf(GREAT, 'en')
+    await waitFor(() =>
+      expect(rowsOf('Reports of this review')).toEqual([
+        [received, 'Something that is not true', DETAILS, dismissed, 'Done'],
+      ]),
+    )
+  })
+
+  it('should show every report of a salon with its state, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const { received, dismissed } = await reportOf(EXCELLENT, 'en')
+    await openAs(reviewReportsHrefOf(await salonIdOf(TOKYO)), OPERATOR, 'en')
+    expect(await screen.findByText('No pending reports')).toBeVisible()
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Status' }),
+      'all',
+    )
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    await screen.findByRole('table', { name: 'Reports' })
+    await waitFor(() =>
+      expect(rowsOf('Reports')).toEqual([
+        [
+          received,
+          EXCELLENT,
+          'Advertising, or something that has nothing to do with a visit',
+          'Not recorded',
+          dismissed,
+        ],
+      ]),
+    )
+  })
+
+  it('should let an administrator delete a review that breaks the rules, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      reviewHrefOf(await salonIdOf(OSAKA), await reviewIdOf(GREAT)),
+      OPERATOR,
+      'en',
+    )
+    await heading(GREAT)
+    const part = screen.getByRole('region', { name: 'Deleting the review' })
+
+    // Act
+    await user.click(
+      within(part).getByRole('button', { name: 'Delete the review' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: `Delete “${GREAT}”?`,
+    })
+    await user.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Deleted the review, and its reports with it.'),
+    ).toBeVisible()
+    await heading('Reviews')
+    expect(await reviewsKeptOf(GREAT)).toBe(0)
   })
 })

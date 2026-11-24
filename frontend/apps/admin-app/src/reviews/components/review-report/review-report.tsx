@@ -1,23 +1,28 @@
-import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   Alert,
   Button,
   Card,
   FormDialog,
   type FormErrors,
-  inJapanese,
   NO_ERRORS,
   RadioGroup,
   TextArea,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   DETAILS,
   MAX_DETAILS_LENGTH,
   REASON,
   REASONS,
-  REPORTED_BEFORE,
 } from '../../utils/review-actions'
 import styles from './review-report.module.css'
+
+const { report } = adminReviewMessages
 
 export type ReviewReportProps = {
   /** The report is on its way */
@@ -27,9 +32,9 @@ export type ReviewReportProps = {
   /** The API answered that the account reported the review before: the dialog says so, and only closes */
   reportedBefore?: boolean | undefined
   /** What went wrong with the report as a whole, in the dialog */
-  message?: string | undefined
-  /** What is wrong with the reason and the details, under the names of their controls */
-  errors?: FormErrors | undefined
+  message?: LocalizedText | undefined
+  /** What is wrong with the reason and the details, under the names of their controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The button of the report was pressed: the dialog opens */
   onAsk: () => void
   /** The dialog has closed, or its button that changes nothing was pressed */
@@ -51,49 +56,52 @@ export const ReviewReport = ({
   onAsk,
   onClose,
   onReport,
-}: ReviewReportProps) => (
-  <Card title='運営への通報'>
-    <div className={styles['report']}>
-      <p>
-        事実と違う内容や個人情報など、規則に反するレビューを運営に知らせます。サロンは、レビューを削除できません。運営が内容を確かめ、規則に反するレビューは削除します。通報は、1
-        つのレビューに 1 回です。
-      </p>
-      <Button variant='danger' onClick={onAsk}>
-        通報する
-      </Button>
-    </div>
-    <FormDialog
-      open={asking}
-      onClose={onClose}
-      title='レビューを通報する'
-      description='このレビューを、運営に通報します。通報の内容を読むのは運営だけで、レビューを書いたお客様には伝わりません。確かめが済むまで、レビューは掲載されたままです。'
-      submitLabel='通報する'
-      submitVariant='danger'
-      message={message}
-      errors={errors}
-      pending={pending}
-      onSubmit={onReport}
-      answer={
-        reportedBefore ? (
-          <Alert tone='info'>{REPORTED_BEFORE}</Alert>
-        ) : undefined
-      }
-    >
-      <RadioGroup
-        label='通報の理由'
-        name={REASON}
-        options={REASONS}
-        required
-        error={errors[REASON]}
-      />
-      <TextArea
-        label='詳しい内容'
-        name={DETAILS}
-        rows={4}
-        maxLength={MAX_DETAILS_LENGTH}
-        description={`どこが規則に反するかを、${inJapanese(charactersOf(MAX_DETAILS_LENGTH))}以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
-        error={errors[DETAILS]}
-      />
-    </FormDialog>
-  </Card>
-)
+}: ReviewReportProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Card title={say(report.title)}>
+      <div className={styles['report']}>
+        <p>{say(report.explanation)}</p>
+        <Button variant='danger' onClick={onAsk}>
+          {say(reviewMessages.report.submit)}
+        </Button>
+      </div>
+      <FormDialog
+        open={asking}
+        onClose={onClose}
+        title={say(reviewMessages.report.title)}
+        description={say(report.description)}
+        submitLabel={say(reviewMessages.report.submit)}
+        submitVariant='danger'
+        message={said.message}
+        errors={errors}
+        pending={pending}
+        onSubmit={onReport}
+        answer={
+          reportedBefore ? (
+            <Alert tone='info'>{say(report.reportedBefore)}</Alert>
+          ) : undefined
+        }
+      >
+        <RadioGroup
+          label={say(reviewMessages.report.reason)}
+          name={REASON}
+          options={options(REASONS)}
+          required
+          error={said.errors[REASON]}
+        />
+        <TextArea
+          label={say(reviewMessages.report.details)}
+          name={DETAILS}
+          rows={4}
+          maxLength={MAX_DETAILS_LENGTH}
+          description={say(report.detailsDescription(MAX_DETAILS_LENGTH))}
+          error={said.errors[DETAILS]}
+        />
+      </FormDialog>
+    </Card>
+  )
+}

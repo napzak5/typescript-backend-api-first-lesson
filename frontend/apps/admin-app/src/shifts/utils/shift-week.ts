@@ -3,11 +3,9 @@ import type {
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
-import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import { dayAfter, periodNameOf } from '@beauty-salon-frontend/salon-screens'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
-import { adminSettingsMessages } from '@beauty-salon-shared/i18n/messages/admin'
-import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -27,10 +25,6 @@ export const WEEKDAYS: readonly ModelsDayOfWeekType[] = [
   'saturday',
   'sunday',
 ]
-
-/** A day of the week as the screens of the shifts name it: 「月曜日」. */
-export const weekdayNameOf = (weekday: ModelsDayOfWeekType): string =>
-  inJapanese(termMessages.dayOfWeek[weekday])
 
 /** The day of the week a day of the calendar is. */
 export const weekdayOf = (day: string): ModelsDayOfWeekType =>
@@ -63,13 +57,9 @@ export const weekIn = (query: URLSearchParams, today: string): string => {
   return mondayOf(isDay(week) ? week : today)
 }
 
-/** A day as a column of a week names it: 「11/16（月）」. */
-export const shortDayNameOf = (day: string): string =>
-  inJapanese(formats.shortDayOf(day))
-
 /** A week as a heading names it: 「2026年11月16日（月）〜2026年11月22日（日）」. */
-export const weekNameOf = (monday: string): string =>
-  `${inJapanese(dayNameOf(monday))}〜${inJapanese(dayNameOf(dayAfter(monday, 6)))}`
+export const weekNameOf = (monday: string): LocalizedText =>
+  periodNameOf({ from: monday, to: dayAfter(monday, 6) })
 
 /**
  * The row of a schedule that applies on a day, as the API decides it: the
@@ -91,9 +81,9 @@ export const timeNameOf = (time: string): string =>
 export type Shift =
   | {
       type: 'works'
-      hours: string
+      hours: LocalizedText
       /** The break, 「13:00〜14:00」: none for a day without one */
-      rest: string | undefined
+      rest: LocalizedText | undefined
       notes: string | null
       /** The row is of that date alone, not of every week */
       once: boolean
@@ -110,11 +100,17 @@ export const shiftOf = (row: ModelsStaffSchedule | undefined): Shift =>
       { isAvailable: true, startTime: P.string, endTime: P.string },
       (worked) => ({
         type: 'works',
-        hours: `${timeNameOf(worked.startTime)}〜${timeNameOf(worked.endTime)}`,
+        hours: formats.timeRangeOf(
+          timeNameOf(worked.startTime),
+          timeNameOf(worked.endTime),
+        ),
         rest:
           worked.breakStartTime === null || worked.breakEndTime === null
             ? undefined
-            : `${timeNameOf(worked.breakStartTime)}〜${timeNameOf(worked.breakEndTime)}`,
+            : formats.timeRangeOf(
+                timeNameOf(worked.breakStartTime),
+                timeNameOf(worked.breakEndTime),
+              ),
         notes: worked.notes,
         once: !worked.isRecurring,
       }),
@@ -131,16 +127,6 @@ export const shiftOf = (row: ModelsStaffSchedule | undefined): Shift =>
  * and the schedule of a member, both written by the day of the week and by
  * the date.
  */
-
-/** What is said at the end of a break that has a start only. */
-export const NO_BREAK_END = inJapanese(
-  adminSettingsMessages.hoursForm.errors.noBreakEnd,
-)
-
-/** What is said at the start of a break that has an end only. */
-export const NO_BREAK_START = inJapanese(
-  adminSettingsMessages.hoursForm.errors.noBreakStart,
-)
 
 /** The rows of a form that dates are written at (`dates.0.date`, …), by their numbers. */
 export const dateRowsIn = (values: FormData): number[] =>

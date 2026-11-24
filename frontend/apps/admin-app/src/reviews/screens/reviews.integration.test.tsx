@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
@@ -69,8 +70,8 @@ const listed = (): string[] =>
     .map(({ textContent }) => textContent ?? '')
 
 /** Each term of the record of the review with its description */
-const detailsOf = (): string[][] => {
-  const record = screen.getByRole('region', { name: 'レビュー' })
+const detailsOf = (name = 'レビュー'): string[][] => {
+  const record = screen.getByRole('region', { name })
   const descriptions = within(record).getAllByRole('definition')
 
   return within(record)
@@ -734,5 +735,230 @@ describe('the reviews of a salon', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the reviews of a salon on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should say what the reviews come to, list them, narrow them and show one with its answer, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(reviewsHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+    await heading('Reviews')
+    const summary = await screen.findByRole('region', {
+      name: 'Summary of the ratings',
+    })
+    expect(
+      within(summary).getByRole('img', { name: '4.0 out of 5 (3 ratings)' }),
+    ).toBeVisible()
+    expect(
+      within(summary)
+        .getAllByRole('listitem')
+        .map(({ textContent }) => textContent),
+    ).toEqual([
+      '5 stars1 review',
+      '4 stars1 review',
+      '3 stars1 review',
+      '2 stars0 reviews',
+      '1 star0 reviews',
+    ])
+    const table = await screen.findByRole('table', { name: 'Reviews' })
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map(({ textContent }) => textContent),
+    ).toEqual([
+      'Review',
+      'Posted',
+      'Rating',
+      'Comment',
+      'Staff member',
+      'Response',
+      'Reports',
+    ])
+    const good = screen.getByRole('row', { name: new RegExp(GOOD) })
+    await within(good).findByText('Yui Watanabe')
+    expect(
+      within(good)
+        .getAllByRole('cell')
+        .map(({ textContent }) => textContent),
+    ).toEqual([
+      expect.stringMatching(/^[A-Z][a-z]{2}, [A-Z][a-z]+ \d+, \d{4}$/),
+      '3.0',
+      'Service was good but had to wait despite having a reservation.',
+      'Yui Watanabe',
+      'No response',
+      'None',
+    ])
+    expect(screen.getByText('3 items')).toBeVisible()
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Highest rating' }),
+      '4',
+    )
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('table', {
+        name: 'Reviews matching the filters',
+      }),
+    ).toBeVisible()
+    await waitFor(() => expect(listed().toSorted()).toEqual([GOOD, SATISFIED]))
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Clear filters' }))
+    await user.click(await screen.findByRole('link', { name: EXCELLENT }))
+
+    // Assert
+    await heading(EXCELLENT)
+    await waitFor(() =>
+      expect(detailsOf('Review')).toContainEqual(['Customer', YUKI.name]),
+    )
+    expect(detailsOf('Review')).toEqual([
+      ['Service rating', '5'],
+      ['Staff rating', '5'],
+      ['Atmosphere rating', '5'],
+      ['Cleanliness rating', '5'],
+      ['Value rating', '5'],
+      ['Customer', YUKI.name],
+      ['Booking', 'Booking of the visit'],
+      ['Staff member', 'Hiroshi Tanaka'],
+      ['Posted', expect.stringMatching(/^[A-Z][a-z]{2}, .+ at \d{2}:\d{2}$/)],
+      ['Found helpful by', '3 people'],
+      ['Pending reports', 'None'],
+    ])
+    const answer = screen.getByRole('region', {
+      name: 'Response from the salon',
+    })
+    expect(within(answer).getByText(ANSWER_OF_THE_SEED)).toBeVisible()
+    expect(within(answer).getByText(/^Responded on [A-Z]/)).toBeVisible()
+    expect(
+      within(answer).getByText(
+        'Only the owners and managers of the salon can write responses and report reviews to the team that runs the site.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should let the owner answer a review and withdraw the answer, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(
+      reviewResponseHrefOf(await salonIdOf(TOKYO), await reviewIdOf(GOOD)),
+      OWNER,
+      'en',
+    )
+    await heading('Respond to the review')
+    const answer = await screen.findByRole('textbox', { name: 'Response' })
+    expect(
+      screen.getByRole('region', { name: 'Review by the customer' }),
+    ).toBeVisible()
+    await user.type(answer, '   ')
+    await user.click(screen.getByRole('button', { name: 'Post the response' }))
+    expect(answer).toHaveAccessibleDescription(/Enter the response\./)
+    await user.clear(answer)
+
+    // Act
+    await user.type(answer, 'We are sorry you had to wait.')
+    await user.click(screen.getByRole('button', { name: 'Post the response' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Posted the response to the review.'),
+    ).toBeVisible()
+    await heading(GOOD)
+    const part = screen.getByRole('region', {
+      name: 'Response from the salon',
+    })
+    expect(
+      within(part).getByText('We are sorry you had to wait.'),
+    ).toBeVisible()
+
+    // Act
+    await user.click(
+      within(part).getByRole('button', { name: 'Withdraw the response' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Withdraw the response?',
+    })
+    await user.click(within(dialog).getByRole('button', { name: 'Withdraw' }))
+
+    // Assert
+    expect(await screen.findByText('Withdrew the response.')).toBeVisible()
+    expect(
+      within(part).getByText('The salon has not responded yet.'),
+    ).toBeVisible()
+    expect(await storedReviewOf(GOOD)).toMatchObject({ ownerResponse: null })
+  })
+
+  it('should let a manager report a review with the details «Other» needs, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(await reviewAt(GOOD), MANAGER, 'en')
+    await heading(GOOD)
+    const part = await screen.findByRole('region', {
+      name: 'Report to the team that runs the site',
+    })
+
+    // Act
+    await user.click(within(part).getByRole('button', { name: 'Report' }))
+    const dialog = screen.getByRole('dialog', { name: 'Report the review' })
+    await user.click(within(dialog).getByRole('radio', { name: 'Other' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Report' }))
+
+    // Assert
+    const details = within(dialog).getByRole('textbox', { name: 'Details' })
+    await waitFor(() => expect(details).toHaveFocus())
+    expect(details).toHaveAccessibleDescription(
+      /When you choose “Other”, say what the problem is\./,
+    )
+
+    // Act
+    await user.type(details, 'The visit never took place.')
+    await user.click(within(dialog).getByRole('button', { name: 'Report' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Reported the review. The team that runs the site will check it.',
+      ),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(detailsOf('Review')).toContainEqual([
+        'Pending reports',
+        '1 report',
+      ]),
+    )
+  })
+
+  it('should say in English that a review is not found', async () => {
+    // Arrange
+    await openAs(
+      reviewHrefOf(
+        await salonIdOf(TOKYO),
+        '00000000-0000-4000-8000-000000000000',
+      ),
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    expect(await heading('Review not found')).toBeVisible()
+    expect(
+      screen.getByText(
+        'Check that the address is right. A review deleted by its customer or by the team that runs the site cannot be shown.',
+      ),
+    ).toBeVisible()
   })
 })

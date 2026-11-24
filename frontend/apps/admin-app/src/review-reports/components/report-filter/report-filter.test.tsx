@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reportFilterStories from './report-filter.stories'
 
 const stories = composeStories(reportFilterStories)
@@ -45,5 +46,27 @@ describe('ReportFilter', () => {
     // Assert
     const [values] = onSubmit.mock.lastCall ?? []
     expect(values?.get('status')).toBe('dismissed')
+  })
+})
+
+describe('ReportFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the reports that wait, those dismissed and all, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Pending.run()
+
+    // Assert
+    const status = screen.getByRole('combobox', { name: 'Status' })
+    expect(status.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Filter the reports',
+    )
+    expect(optionsOf(status)).toEqual(['Pending', 'Dismissed', 'All'])
   })
 })

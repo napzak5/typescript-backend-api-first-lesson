@@ -1,6 +1,11 @@
-import { Alert, Button, Card, Dialog } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, Dialog, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode, Ref } from 'react'
 import styles from './review-reports.module.css'
+
+const { dismissal, ofReview } = adminReviewReportMessages
 
 export type ReviewReportsProps = {
   /** What is shown of the reports: that they are read, that they could not be, that there are none, or their table */
@@ -8,13 +13,13 @@ export type ReviewReportsProps = {
   /** The heading of the part: the focus goes there after a dismissal, where its button was */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** Why the last dismissal changed nothing, said above the reports */
-  refusal?: string | undefined
+  refusal?: LocalizedText | undefined
   /** When the report the dialog asks to dismiss was received, in words; `undefined` while the dialog is closed */
-  asking?: string | undefined
+  asking?: LocalizedText | undefined
   /** The dismissal is on its way */
   pending?: boolean | undefined
   /** What went wrong with the last attempt, in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The dialog has closed, or its button that changes nothing was pressed */
   onClose: () => void
   /** The dismissal was confirmed */
@@ -35,30 +40,34 @@ export const ReviewReports = ({
   message,
   onClose,
   onDismiss,
-}: ReviewReportsProps) => (
-  <Card title='通報' headingRef={headingRef}>
-    <div className={styles['reports']}>
-      <p>
-        お客様とサロンから届いた、このレビューへの通報です。レビューが規則に反していなければ、通報を却下します。反していれば、「レビューの削除」から、レビューを削除します。
-      </p>
-      {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
-      {children}
-    </div>
-    <Dialog
-      open={asking !== undefined}
-      onClose={onClose}
-      title='通報を却下しますか？'
-      description={`${asking ?? ''}に受け付けた通報を却下します。却下した通報は未処理の通報から外れ、レビューは、そのまま掲載されます。却下は、取り消せません。`}
-      actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='primary' pending={pending} onClick={onDismiss}>
-            却下する
-          </Button>
-        </>
-      }
-    >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </Card>
-)
+}: ReviewReportsProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(ofReview.title)} headingRef={headingRef}>
+      <div className={styles['reports']}>
+        <p>{say(ofReview.explanation)}</p>
+        {refusal !== undefined && <Alert tone='warning'>{say(refusal)}</Alert>}
+        {children}
+      </div>
+      <Dialog
+        open={asking !== undefined}
+        onClose={onClose}
+        title={say(dismissal.confirm)}
+        description={
+          asking === undefined ? undefined : say(dismissal.description(asking))
+        }
+        actions={
+          <>
+            <Button onClick={onClose}>{say(uiMessages.back)}</Button>
+            <Button variant='primary' pending={pending} onClick={onDismiss}>
+              {say(dismissal.submit)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </Card>
+  )
+}

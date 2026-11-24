@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as scheduleFormStories from './schedule-form.stories'
 
 const stories = composeStories(scheduleFormStories)
@@ -185,7 +186,9 @@ describe('ScheduleForm', () => {
     ).toHaveAccessibleDescription(expect.stringContaining('始まりより後の時刻'))
     expect(
       within(group('1 行目')).getByLabelText('日付'),
-    ).toHaveAccessibleDescription(expect.stringContaining('ほかの行と同じ'))
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('今日より前の日付の行に、すでにあります'),
+    )
   })
 
   it('should hide the errors of the rows of dates once one was taken away, and keep those of the week', async () => {
@@ -201,7 +204,9 @@ describe('ScheduleForm', () => {
     // Assert
     expect(
       within(group('1 行目')).getByLabelText('日付'),
-    ).not.toHaveAccessibleDescription(expect.stringContaining('ほかの行と同じ'))
+    ).not.toHaveAccessibleDescription(
+      expect.stringContaining('今日より前の日付の行に、すでにあります'),
+    )
     expect(
       within(group('月曜日')).getByLabelText('終わり'),
     ).toHaveAccessibleDescription(expect.stringContaining('始まりより後の時刻'))
@@ -214,6 +219,80 @@ describe('ScheduleForm', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       'ほかのアカウントがこの勤務スケジュールを変えていました',
+    )
+  })
+})
+
+describe('ScheduleForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every part and control of the form in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Whole.run()
+
+    // Assert
+    expect(
+      screen.getByRole('group', { name: 'Every week' }),
+    ).toHaveAccessibleDescription(
+      'The hours of each day of the week, at the clock of the salon. A note on a day the member does not work on is kept as the reason for the day off.',
+    )
+    const monday = within(group('Monday'))
+    expect(monday.getByRole('radiogroup', { name: 'Work' })).toBeVisible()
+    expect(monday.getByRole('radio', { name: 'Works' })).toBeChecked()
+    expect(monday.getByLabelText('Starts')).toHaveValue('09:00')
+    expect(monday.getByLabelText('Ends')).toHaveValue('20:00')
+    expect(monday.getByLabelText('Break starts')).toHaveValue('13:00')
+    expect(monday.getByLabelText('Break ends')).toHaveValue('14:00')
+    expect(
+      within(group('Sunday')).getByRole('radio', { name: 'Does not work' }),
+    ).toBeChecked()
+    const first = within(group('Row 1'))
+    expect(first.getByLabelText('Date')).toHaveValue('2026-11-21')
+    expect(first.getByRole('radio', { name: 'Day off' })).not.toBeChecked()
+    expect(first.getByLabelText('Notes')).toHaveAccessibleDescription(
+      'Why the member is off (paid leave, training and the like), or why the hours change.',
+    )
+    expect(
+      first.getByRole('button', { name: 'Remove row 1' }),
+    ).toHaveTextContent('Remove')
+    expect(screen.getByRole('button', { name: 'Add a date' })).toBeVisible()
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Delete the rows of dates before today (2 rows)',
+      }),
+    ).toHaveAccessibleDescription(
+      'Rows that are not deleted stay as they are. The rows of past days are not used for the shifts.',
+    )
+  })
+
+  it('should say in English what is wrong under the control it belongs to, and what went wrong above the form', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      within(group('Monday')).getByLabelText('Ends'),
+    ).toHaveAccessibleDescription(
+      'Make the end of the work later than its start. Work cannot run past midnight.',
+    )
+    expect(
+      within(group('Row 1')).getByLabelText('Date'),
+    ).toHaveAccessibleDescription(
+      'This date already has a row among the dates before today.',
+    )
+
+    // Act
+    await stories.ChangedMeanwhile.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Meanwhile, another account changed this work schedule.',
     )
   })
 })

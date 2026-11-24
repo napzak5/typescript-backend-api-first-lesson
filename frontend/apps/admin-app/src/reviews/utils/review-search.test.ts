@@ -65,9 +65,18 @@ describe('readReviewConditions', () => {
   })
 
   it('should say that the highest rating is below the lowest', () => {
-    expect(readReviewConditions(formOf({ min: '4', max: '2' }))).toEqual({
+    // Act
+    const read = readReviewConditions(formOf({ min: '4', max: '2' }))
+
+    // Assert
+    expect(read).toEqual({
       type: 'invalid',
-      errors: { max: '評価の上限は、下限と同じか、それより高くしてください。' },
+      errors: {
+        max: {
+          en: 'Make the highest rating the same as the lowest, or higher.',
+          ja: '評価の上限は、下限と同じか、それより高くしてください。',
+        },
+      },
     })
   })
 })

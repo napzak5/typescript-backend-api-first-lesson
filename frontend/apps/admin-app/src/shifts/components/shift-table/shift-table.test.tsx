@@ -1,20 +1,20 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as shiftTableStories from './shift-table.stories'
 
 const stories = composeStories(shiftTableStories)
 
 /** The table of the week of the stories */
-const week = (): HTMLElement =>
-  screen.getByRole('table', {
-    name: '2026年11月16日（月）〜2026年11月22日（日）のシフト',
-  })
+const week = (
+  name = '2026年11月16日（月）〜2026年11月22日（日）のシフト',
+): HTMLElement => screen.getByRole('table', { name })
 
 /** The words of every cell of a row, the name first */
-const rowOf = (name: string): string[] =>
-  within(within(week()).getByRole('row', { name: new RegExp(`^${name}`) }))
+const rowOf = (name: string, table = week()): string[] =>
+  within(within(table).getByRole('row', { name: new RegExp(`^${name}`) }))
     .getAllByRole('cell')
     .map((cell) => cell.textContent)
 
@@ -98,5 +98,50 @@ describe('ShiftTable', () => {
         .getAllByRole('rowheader')
         .map((header) => header.textContent),
     ).toEqual(['Misaki Tanaka'])
+  })
+})
+
+describe('ShiftTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the week and its days, and say who works when, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Week.run()
+
+    // Assert
+    const table = week(
+      'Shifts for Mon, November 16, 2026 – Sun, November 22, 2026',
+    )
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Staff member',
+      'Mon, 11/16',
+      'Tue, 11/17',
+      'Wed, 11/18',
+      'Thu, 11/19',
+      'Fri, 11/20',
+      'Sat, 11/21',
+      'Sun, 11/22',
+    ])
+    expect(rowOf('Misaki Tanaka', table)).toEqual([
+      '09:00–20:00Break 13:00–14:00',
+      '09:00–20:00Break 13:00–14:00',
+      'Day off研修This date only',
+      '09:00–20:00Break 13:00–14:00',
+      '09:00–20:00Break 13:00–14:00',
+      '12:00–18:00This date only',
+      'Day off定休日',
+    ])
+    expect(rowOf('Ren Mori', table)).toEqual(
+      Array.from({ length: 7 }, () => 'Not working'),
+    )
   })
 })
