@@ -3,6 +3,13 @@ import {
   problem,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
+
+/** A refusal of the account, or a customer who is not in the ledger: a read of the points says it failed */
+const REFUSED: [string, () => Response, string][] = [
+  ['a refusal of the account', () => problem(403), 'failed'],
+  ['a customer who is not in the ledger', () => problem(404), 'failed'],
+]
+
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aCustomer } from '../../bookings/components/examples'
 import type { PointRecording } from '../utils/points'
@@ -37,6 +44,17 @@ describe('readBalance', () => {
     },
   )
 
+  it.each(REFUSED)(
+    'should say that it failed after %s',
+    async (_case, answer, type) => {
+      // Arrange
+      answering(answer)
+
+      // Act, Assert
+      expect(await readBalance(id)).toEqual({ type })
+    },
+  )
+
   it('should not ask for the balance of what is no ID', async () => {
     // Arrange
     const fetched = answering(() => problem(500))
@@ -62,6 +80,26 @@ describe('readExpiring', () => {
       expect(await readExpiring(id)).toEqual({ type })
     },
   )
+
+  it.each(REFUSED)(
+    'should say that it failed after %s',
+    async (_case, answer, type) => {
+      // Arrange
+      answering(answer)
+
+      // Act, Assert
+      expect(await readExpiring(id)).toEqual({ type })
+    },
+  )
+
+  it('should not ask for the points of what is no ID', async () => {
+    // Arrange
+    const fetched = answering(() => problem(500))
+
+    // Act, Assert
+    expect(await readExpiring('yamada')).toEqual({ type: 'failed' })
+    expect(fetched).not.toHaveBeenCalled()
+  })
 })
 
 describe('readTransactionsPage', () => {
@@ -71,6 +109,17 @@ describe('readTransactionsPage', () => {
 
   it.each(UNREAD)(
     'should say why nothing came of %s',
+    async (_case, answer, type) => {
+      // Arrange
+      answering(answer)
+
+      // Act, Assert
+      expect(await readTransactionsPage(id, undefined)).toEqual({ type })
+    },
+  )
+
+  it.each(REFUSED)(
+    'should say that it failed after %s',
     async (_case, answer, type) => {
       // Arrange
       answering(answer)
@@ -116,5 +165,18 @@ describe('recordPoints', () => {
 
     // Act, Assert
     expect(await recordPoints(POINTS_GIVEN)).toEqual({ type })
+  })
+
+  it('should say that it does not know why the API refused points when the balance cannot be read again', async () => {
+    // Arrange
+    answering((request) =>
+      request.method === 'POST' ? problem(409) : problem(500),
+    )
+
+    // Act, Assert
+    expect(await recordPoints(POINTS_GIVEN)).toEqual({
+      type: 'refused',
+      why: { type: 'unknown' },
+    })
   })
 })

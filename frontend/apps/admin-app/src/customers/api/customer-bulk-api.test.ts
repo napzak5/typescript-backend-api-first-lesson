@@ -101,6 +101,17 @@ describe('registerCustomers', () => {
     // Assert
     expect(attempt).toEqual({ type })
   })
+
+  it('should name no value when the API says nothing of the conflict', async () => {
+    // Arrange
+    answering(() => problem(409))
+
+    // Act
+    const attempt = await registerCustomers(FILE)
+
+    // Assert
+    expect(attempt).toEqual({ type: 'conflict', detail: '' })
+  })
 })
 
 describe('retagCustomers', () => {
@@ -237,6 +248,33 @@ describe('removeCustomers', () => {
     // Assert
     expect(attempt).toEqual({ type })
   })
+
+  it('should name no customer when the API says nothing of the one it could not remove', async () => {
+    // Arrange
+    answering(() => problem(409))
+
+    // Act
+    const attempt = await removeCustomers(ids)
+
+    // Assert
+    expect(attempt).toEqual({ type: 'unfinished', id: undefined })
+  })
+
+  it.each(UNREAD)(
+    'should say why nothing came of it when somebody is gone and the chosen cannot be read anew: %s',
+    async (_, answer, type) => {
+      // Arrange
+      answering((request) =>
+        request.url.endsWith('/batch/get') ? answer() : problem(404),
+      )
+
+      // Act
+      const attempt = await removeCustomers(ids)
+
+      // Assert
+      expect(attempt).toEqual({ type })
+    },
+  )
 
   it('should fail when the API says somebody is gone and everybody is found', async () => {
     // Arrange

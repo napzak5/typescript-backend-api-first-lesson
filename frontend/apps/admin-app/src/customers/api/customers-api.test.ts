@@ -7,6 +7,7 @@ import {
   record,
   sent,
   UNREAD,
+  UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -27,6 +28,7 @@ import {
   readPreferences,
   readPreferencesToChange,
   readStatistics,
+  updatePreferences,
 } from './customers-api'
 
 /*
@@ -338,12 +340,24 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
       ...UNREAD,
       ['a body the API did not read (413)', () => problem(413), 'failed'],
       ['a body the API did not read (415)', () => problem(415), 'failed'],
+      ['an account that may not', () => problem(403), 'forbidden'],
     ])('should say why nothing came of %s', async (_case, answer, type) => {
       // Arrange
       answering(answer)
 
       // Act, Assert
       expect(await call()).toEqual({ type })
+    })
+  })
+
+  it('should name the values the API refuses in a registration', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'email', rule: 'invalid_format' }]))
+
+    // Act, Assert
+    expect(await attemptCustomerEntry(ENTRY)).toEqual({
+      type: 'invalid',
+      values: [{ field: 'email', rule: 'invalid_format' }],
     })
   })
 
@@ -426,20 +440,25 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
     expect(fetched).toHaveBeenCalledTimes(1)
   })
 
-  it('should say why nothing came of asking whose the address of mail is', async () => {
-    // Arrange
-    answering(
-      answerOf({
-        [`POST ${CUSTOMERS}`]: () => problem(409),
-        [`GET ${CUSTOMERS}`]: () => problem(429),
-      }),
-    )
+  it.each<[string, () => Response | Promise<Response>, string]>([
+    ['too many requests', () => problem(429), 'tooManyRequests'],
+    [
+      'no answer',
+      () => Promise.reject(new TypeError('Failed to fetch')),
+      'failed',
+    ],
+  ])(
+    'should say why nothing came of asking whose the address of mail is: %s',
+    async (_case, answer, type) => {
+      // Arrange
+      answering((request) =>
+        request.method === 'POST' ? problem(409) : answer(),
+      )
 
-    // Act, Assert
-    expect(await attemptCustomerEntry(ENTRY)).toEqual({
-      type: 'tooManyRequests',
-    })
-  })
+      // Act, Assert
+      expect(await attemptCustomerEntry(ENTRY)).toEqual({ type })
+    },
+  )
 })
 
 describe('readPreferences and readPreferencesToChange', () => {
@@ -511,6 +530,60 @@ describe('readPreferences and readPreferencesToChange', () => {
     })
   })
 
+  it('should say why nothing came of reading a member the preferences name who gave no answer', async () => {
+    // Arrange
+    answering((request) =>
+      new URL(request.url).pathname === PREFERENCES
+        ? preferences(misaki?.id ?? '', [])
+        : Promise.reject(new TypeError('Failed to fetch')),
+    )
+
+    // Act, Assert
+    expect(await readPreferences(customer.id)).toEqual({ type: 'failed' })
+  })
+
+  it.each<[string, string]>([
+    ['the preferences', PREFERENCES],
+    ['the staff the salon shows', '/api/v1/staff-profiles'],
+  ])(
+    'should say why nothing came of the preferences to change when %s could not be read',
+    async (_case, path) => {
+      // Arrange
+      answering(
+        answerOf({
+          [`GET ${PREFERENCES}`]: () => preferences(null, []),
+          'GET /api/v1/staff-profiles': () => page([]),
+          [`GET ${path}`]: () => problem(429),
+        }),
+      )
+
+      // Act, Assert
+      expect(await readPreferencesToChange(customer.id, salon)).toEqual({
+        type: 'tooManyRequests',
+      })
+    },
+  )
+
+  it('should not offer a member of another salon that is no longer there', async () => {
+    // Arrange
+    const GONE = '5d2c7e91-3a4b-4f6e-9c8d-1e2f3a4b5c6d'
+    answering(
+      answerOf({
+        [`GET ${PREFERENCES}`]: () => preferences(misaki?.id ?? '', []),
+        'GET /api/v1/staff-profiles': () => page([]),
+        [`GET /api/v1/staff-profiles/${misaki?.id}`]: () =>
+          record(200, { ...misaki, salonId: GONE }),
+        [`GET /api/v1/salons/${GONE}`]: () => problem(404),
+      }),
+    )
+
+    // Act
+    const read = await readPreferencesToChange(customer.id, salon)
+
+    // Assert
+    expect(read.type === 'found' && read.staff).toEqual([])
+  })
+
   it('should say why nothing came of reading a member of another salon, when another was read', async () => {
     // Arrange
     answering(
@@ -564,6 +637,25 @@ describe('readPreferences and readPreferencesToChange', () => {
 
     // Act, Assert
     expect(await readPreferences(customer.id)).toEqual({ type })
+  })
+})
+
+describe('updatePreferences', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it.each([
+    ...UNWRITTEN,
+    ['an account that may not', () => problem(403), 'forbidden'],
+  ])('should say why nothing came of %s', async (_case, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act, Assert
+    expect(
+      await updatePreferences(aCustomer().id, { specialRequests: null }),
+    ).toEqual({ type })
   })
 })
 
