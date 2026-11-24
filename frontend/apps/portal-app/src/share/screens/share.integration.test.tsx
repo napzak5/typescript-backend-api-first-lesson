@@ -8,7 +8,7 @@ import {
   savedFiles,
 } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, waitFor, within } from '@testing-library/react'
@@ -458,6 +458,42 @@ describe('the screen of a share link, against the API', () => {
       expect(
         asked(fetched).filter((line) => line.includes(' /share/')),
       ).toEqual([])
+    })
+  })
+
+  describe('a link the API could not check', () => {
+    it('should say that what the file is could not be read, and say it when asked again', async () => {
+      // Arrange
+      const link = await sharePhoto()
+      await takeAway('share_links')
+      openLink(link.token)
+      expect(await main().findByRole('alert')).toHaveTextContent(
+        'ファイルの情報を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      const notChecked = {
+        heading: screen.getByRole('heading', { level: 1 }).textContent,
+        address: address(),
+        violations: await findAccessibilityViolations(),
+      }
+      await giveBack('share_links')
+
+      // Act
+      await userEvent.click(
+        main().getByRole('button', { name: 'もう一度読み込む' }),
+      )
+
+      // Assert
+      expect(await heading(PHOTO)).toBeVisible()
+      expect(notChecked).toEqual({
+        heading: '共有されたファイル',
+        address: '/share',
+        violations: [],
+      })
+      expect(main().queryByRole('alert')).toBeNull()
+      expect(await countsOf(link.id)).toEqual({
+        downloadCount: 0,
+        failedAttempts: 0,
+      })
     })
   })
 
