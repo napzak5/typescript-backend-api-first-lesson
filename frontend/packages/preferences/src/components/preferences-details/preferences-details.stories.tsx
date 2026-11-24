@@ -1,4 +1,4 @@
-import { writtenInJapanese } from '@beauty-salon-frontend/ui'
+import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { staffLabelOf, staffNamed } from '../../utils/staff-choices'
 import {
@@ -41,7 +41,7 @@ export const StaffThatLeft: Story = {
   args: { preferences: preferencesOfStaffThatLeft },
 }
 
-/** The same preferences on a screen that says of a member nobody shows any more that there is one */
+/** The same preferences on a screen that says of a member nobody shows any more that there is one, as the admin application does */
 export const StaffThatLeftSaidSo: Story = {
   args: {
     preferences: preferencesOfStaffThatLeft,
@@ -50,7 +50,7 @@ export const StaffThatLeftSaidSo: Story = {
         const member = staff.find((choice) => choice.id === id)
 
         return member === undefined
-          ? writtenInJapanese('一覧にないスタッフ')
+          ? adminStaffMessages.unlisted
           : staffLabelOf(member)
       }),
   },

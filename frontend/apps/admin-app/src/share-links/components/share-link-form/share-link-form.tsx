@@ -6,7 +6,11 @@ import {
   PasswordField,
   Select,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import {
   DEFAULT_PERIOD,
@@ -16,13 +20,15 @@ import {
   PERIODS,
 } from '../../utils/share-link'
 
+const { form: FORM } = adminShareLinkMessages
+
 export type ShareLinkFormProps = {
   /** The name of the file the link shows */
   filename: string
-  /** What went wrong with the attempt as a whole */
-  message?: string | undefined
-  /** What is wrong with a value, under the name of its control */
-  errors?: FormErrors | undefined
+  /** What went wrong with the attempt as a whole, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with a value, under the name of its control. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The link is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -43,45 +49,48 @@ export const ShareLinkForm = ({
   pending,
   actions,
   onSubmit,
-}: ShareLinkFormProps) => (
-  <Form
-    submitLabel='共有リンクを発行する'
-    message={message}
-    errors={errors}
-    pending={pending}
-    actions={actions}
-    onSubmit={onSubmit}
-  >
-    <Note>
-      「{filename}」を、アカウントを持たない人に見せるリンクを発行します。
-    </Note>
-    <Select
-      label='有効期間'
-      name={PERIOD}
-      options={PERIODS.map(({ days, label }) => ({
-        value: String(days),
-        label,
-      }))}
-      defaultValue={String(DEFAULT_PERIOD)}
-      required
-      description='発行した時刻から数えます。期限を過ぎると、リンクは使えなくなります。'
-      error={errors[PERIOD]}
-    />
-    <TextField
-      width='short'
-      label='ダウンロードの回数の上限'
-      name={MAX_DOWNLOADS}
-      inputMode='numeric'
-      autoComplete='off'
-      description='リンクからファイルを読み込める回数です。空のままなら、上限はありません。'
-      error={errors[MAX_DOWNLOADS]}
-    />
-    <PasswordField
-      label='パスワード'
-      name={PASSWORD}
-      autoComplete='new-password'
-      description='8 文字から 128 文字。空のままなら、パスワードなしで共有します。パスワードは、リンクとは別の方法で伝えてください。'
-      error={errors[PASSWORD]}
-    />
-  </Form>
-)
+}: ShareLinkFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      submitLabel={say(FORM.submit)}
+      message={said.message}
+      errors={said.errors}
+      pending={pending}
+      actions={actions}
+      onSubmit={onSubmit}
+    >
+      <Note>{say(FORM.intro(filename))}</Note>
+      <Select
+        label={say(FORM.period)}
+        name={PERIOD}
+        options={PERIODS.map(({ days, label }) => ({
+          value: String(days),
+          label: say(label),
+        }))}
+        defaultValue={String(DEFAULT_PERIOD)}
+        required
+        description={say(FORM.periodDescription)}
+        error={said.errors[PERIOD]}
+      />
+      <TextField
+        width='short'
+        label={say(FORM.limit)}
+        name={MAX_DOWNLOADS}
+        inputMode='numeric'
+        autoComplete='off'
+        description={say(FORM.limitDescription)}
+        error={said.errors[MAX_DOWNLOADS]}
+      />
+      <PasswordField
+        label={say(FORM.password)}
+        name={PASSWORD}
+        autoComplete='new-password'
+        description={say(FORM.passwordDescription)}
+        error={said.errors[PASSWORD]}
+      />
+    </Form>
+  )
+}

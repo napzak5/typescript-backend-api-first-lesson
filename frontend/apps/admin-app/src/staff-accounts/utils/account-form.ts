@@ -7,11 +7,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type {
   AccountUnlinking,
@@ -30,23 +32,34 @@ import { roleNameOf } from './account-format'
 /** The control that chooses the role */
 export const ROLE = 'role'
 
-const NO_ROLE = 'ロールを選んでください。'
+const {
+  invite,
+  revocation: REVOCATION,
+  account: ACCOUNT,
+  roleChange: ROLE_CHANGE,
+  unlinking: UNLINKING,
+} = adminStaffAccountMessages
 
 /** The role chosen in a form, if it is one the account may give. */
 export const readRole = (
   values: FormData,
   roles: readonly ModelsSalonRoleType[],
-): FormRead<ModelsSalonRoleType> => {
+): FormRead<ModelsSalonRoleType, FormErrors<LocalizedText>> => {
   const chosen = textOf(values, ROLE)
   const role = roles.find((offered) => offered === chosen)
 
   return role === undefined
-    ? { type: 'invalid', errors: { [ROLE]: NO_ROLE } }
+    ? {
+        type: 'invalid',
+        errors: { [ROLE]: adminStaffAccountMessages.roles.missing },
+      }
     : { type: 'valid', value: role }
 }
 
 /** What a form of the role of an account gives: nothing to send when the role stays as it is. */
-export type RoleChoice = FormRead<ModelsSalonRoleType> | { type: 'unchanged' }
+export type RoleChoice =
+  | FormRead<ModelsSalonRoleType, FormErrors<LocalizedText>>
+  | { type: 'unchanged' }
 
 /** The role chosen for an account, or that it was left as it is. */
 export const readRoleChange = (
@@ -61,38 +74,37 @@ export const readRoleChange = (
     : read
 }
 
-const notSent = (what: string): FormSays => ({
-  message: `${what}通信の状態を確かめて、もう一度お試しください。`,
-  errors: {},
-})
-
 /** What the screen does after an invitation was mailed, or was not. */
 export type AfterInvitation =
   /** The invitation is shown, and the notification says it was mailed */
   | {
       type: 'invited'
       invitation: ModelsStaffInvitationResponse
-      message: string
+      message: LocalizedText
     }
   /** The account an invitation made meanwhile is shown, and what happened is said above it */
-  | { type: 'accepted'; account: ModelsStaffAccountResponse; message: string }
+  | {
+      type: 'accepted'
+      account: ModelsStaffAccountResponse
+      message: LocalizedText
+    }
   /** The member as they are now is shown, and why there was no invitation is said above */
-  | { type: 'inactive'; member: ModelsStaffResponse; message: string }
+  | { type: 'inactive'; member: ModelsStaffResponse; message: LocalizedText }
   /** The invitation of a minute ago is read again, and the form says why no other was mailed */
-  | { type: 'recent'; says: FormSays }
+  | { type: 'recent'; says: FormSays<LocalizedText> }
   /** The member was removed meanwhile */
   | { type: 'gone' }
   /** The form says what went wrong, and the invitation may be mailed again */
-  | { type: 'again'; says: FormSays }
+  | { type: 'again'; says: FormSays<LocalizedText> }
 
 /**
  * What the screen does with what the API answered to an invitation, for a
- * member who is called so (「Yui Watanabe さん」), and who had an
+ * member of the name the ledger has (「Yui Watanabe」), who had an
  * invitation before or not.
  */
 export const afterInvitation = (
   attempt: InvitationAttempt,
-  called: string,
+  displayName: string,
   again: boolean,
 ): AfterInvitation =>
   match(attempt)
@@ -100,161 +112,150 @@ export const afterInvitation = (
     .with({ type: 'invited' }, ({ invitation }) => ({
       type: 'invited',
       invitation,
-      message: again
-        ? `${called}に、招待メールを送り直しました。前に送ったメールのリンクは、使えなくなりました。`
-        : `${called}に、招待メールを送りました。`,
+      message: again ? invite.doneAgain(displayName) : invite.done(displayName),
     }))
     .with({ type: 'accepted' }, ({ account }) => ({
       type: 'accepted',
       account,
-      message: `その間に、${called}が招待を受け入れて、ログインアカウントができていました。招待メールは、送っていません。`,
+      message: invite.acceptedMeanwhile(displayName),
     }))
     .with({ type: 'inactive' }, ({ member }) => ({
       type: 'inactive',
       member,
-      message: `招待メールを送れませんでした。その間に、${called}のスタッフ情報が無効になっていました。`,
+      message: invite.inactiveMeanwhile(displayName),
     }))
     .with({ type: 'recent' }, () => ({
       type: 'recent',
-      says: {
-        message: `${called}には、1 分以内に招待メールを送ったばかりです。続けては送れません。メールが見当たらないときは、迷惑メールのフォルダーも確かめてもらい、少し待ってから送り直してください。`,
-        errors: {},
-      },
+      says: aboutTheAttempt(invite.recent(displayName)),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(
-        'このアカウントでは、このロールで招待できません。オーナーのロールを与えられるのは、管理者です。',
-      ),
+      says: aboutTheAttempt(invite.forbidden),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      says: notSent('招待メールを送れませんでした。'),
+      says: aboutTheAttempt(invite.failed),
     }))
     .exhaustive()
-
-/** The words said when what was to be changed was not there any more, and the screen shows what is there now */
-const goneMeanwhile = (called: string): string =>
-  `その間に、${called}のログインアカウントか招待が、変わっていました（招待が受け入れられたか、取り消されたか、紐づけが解除されていました）。いまの状態を出しています。`
 
 /** What the screen does after an attempt to give an account another role. */
 export type AfterRoleChange =
   /** The account is shown with its role, and the notification says it was changed */
-  | { type: 'changed'; account: ModelsStaffAccountResponse; message: string }
+  | {
+      type: 'changed'
+      account: ModelsStaffAccountResponse
+      message: LocalizedText
+    }
   /** What the member has now is read again, and what happened is said above it */
-  | { type: 'gone'; message: string }
+  | { type: 'gone'; message: LocalizedText }
   /** The form says what went wrong */
-  | { type: 'again'; says: FormSays }
+  | { type: 'again'; says: FormSays<LocalizedText> }
 
 /** What the screen does with what the API answered to a change of the role of the account of a member. */
 export const afterRoleChange = (
   change: RoleChange,
-  called: string,
+  displayName: string,
 ): AfterRoleChange =>
   match(change)
     .returnType<AfterRoleChange>()
     .with({ type: 'changed' }, ({ account }) => ({
       type: 'changed',
       account,
-      message: `${called}のロールを、${roleNameOf(account.role)}にしました。次の操作から、新しいロールで扱われます。`,
+      message: ROLE_CHANGE.done(displayName, roleNameOf(account.role)),
     }))
     .with({ type: 'gone' }, () => ({
       type: 'gone',
-      message: goneMeanwhile(called),
+      message: ACCOUNT.goneMeanwhile(displayName),
     }))
     .with({ type: 'own' }, () => ({
       type: 'again',
-      says: aboutTheAttempt('ご自身のアカウントのロールは、変えられません。'),
+      says: aboutTheAttempt(ROLE_CHANGE.own),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(
-        'このアカウントでは、このロールを与えられません。オーナーのロールを与えられるのは、管理者です。',
-      ),
+      says: aboutTheAttempt(ROLE_CHANGE.forbidden),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      says: notSent('ロールを変えられませんでした。'),
+      says: aboutTheAttempt(ROLE_CHANGE.failed),
     }))
     .exhaustive()
 
 /** What the screen does after a dialog asked to revoke an invitation or to unlink an account. */
 export type AfterDialog =
   /** What the member has now is shown, and the notification says what was done */
-  | { type: 'done'; message: string }
+  | { type: 'done'; message: LocalizedText }
   /** What the member has now is read again, and what happened is said above it */
-  | { type: 'gone'; message: string }
+  | { type: 'gone'; message: LocalizedText }
   /** The dialog says what went wrong, and the attempt may be made again */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
 
 const tooManyRequests = (): AfterDialog => ({
   type: 'again',
-  message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+  message: TOO_MANY_REQUESTS_MESSAGE,
 })
 
 /** What the screen does with what the API answered to the revocation of the invitation of a member. */
 export const afterRevocation = (
   revocation: InvitationRevocation,
-  called: string,
+  displayName: string,
 ): AfterDialog =>
   match(revocation)
     .returnType<AfterDialog>()
     .with({ type: 'revoked' }, () => ({
       type: 'done',
-      message: `${called}への招待を取り消しました。`,
+      message: REVOCATION.done(displayName),
     }))
     .with({ type: 'gone' }, () => ({
       type: 'gone',
-      message: goneMeanwhile(called),
+      message: ACCOUNT.goneMeanwhile(displayName),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: 'このアカウントでは、招待を取り消せません。',
+      message: REVOCATION.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, tooManyRequests)
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '招待を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: REVOCATION.failed,
     }))
     .exhaustive()
 
 /** What the screen does with what the API answered to the unlinking of the account of a member. */
 export const afterUnlinking = (
   unlinking: AccountUnlinking,
-  called: string,
+  displayName: string,
 ): AfterDialog =>
   match(unlinking)
     .returnType<AfterDialog>()
     .with({ type: 'unlinked' }, () => ({
       type: 'done',
-      message: `${called}のログインアカウントの紐づけを解除しました。`,
+      message: UNLINKING.done(displayName),
     }))
     .with({ type: 'gone' }, () => ({
       type: 'gone',
-      message: goneMeanwhile(called),
+      message: ACCOUNT.goneMeanwhile(displayName),
     }))
     .with({ type: 'own' }, () => ({
       type: 'again',
-      message: 'ご自身のアカウントの紐づけは、解除できません。',
+      message: UNLINKING.own,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: 'このアカウントでは、紐づけを解除できません。',
+      message: UNLINKING.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, tooManyRequests)
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '紐づけを解除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: UNLINKING.failed,
     }))
     .exhaustive()

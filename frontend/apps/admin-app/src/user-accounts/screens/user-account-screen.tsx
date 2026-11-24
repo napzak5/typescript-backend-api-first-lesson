@@ -6,13 +6,14 @@ import {
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminUserAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -34,15 +35,17 @@ import {
   ADMINISTRATORS_ONLY,
   afterTwoFactorReset,
   afterUnlocking,
-  NOTHING_TO_DO,
-  OWN_ACCOUNT,
   supportOf,
 } from '../utils/user-accounts'
 
-const TITLE = 'ログインアカウント'
+const { title: TITLE } = adminUserAccountMessages
 
 /** The way out of a screen that shows no account */
-const ToTheStart = () => <ButtonLink href='/'>トップへ戻る</ButtonLink>
+const ToTheStart = () => {
+  const say = useSay()
+
+  return <ButtonLink href='/'>{say(adminUserAccountMessages.toTop)}</ButtonLink>
+}
 
 type AccountPartsProps = {
   user: ModelsUserResponse
@@ -60,6 +63,7 @@ type AccountPartsProps = {
  * and said above the record.
  */
 const AccountParts = ({ user, readAt }: AccountPartsProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const support = supportOf(user, new Date(), useSignedInUserId())
@@ -67,11 +71,11 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
   const heading = useRef<HTMLHeadingElement>(null)
   /** Whether the focus goes to the heading once the account is shown anew */
   const toHeading = useRef(false)
-  const [meanwhile, setMeanwhile] = useState<string>()
-  const [unlockMessage, setUnlockMessage] = useState<string>()
+  const [meanwhile, setMeanwhile] = useState<LocalizedText>()
+  const [unlockMessage, setUnlockMessage] = useState<LocalizedText>()
   const [asking, setAsking] = useState(false)
-  const [resetMessage, setResetMessage] = useState<string>()
-  const [resetRefusal, setResetRefusal] = useState<string>()
+  const [resetMessage, setResetMessage] = useState<LocalizedText>()
+  const [resetRefusal, setResetRefusal] = useState<LocalizedText>()
 
   useLayoutEffect(() => {
     if (toHeading.current && readAt > 0) {
@@ -87,7 +91,7 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
     }
   }
 
-  const show = (changed: ModelsUserResponse, message: string): void => {
+  const show = (changed: ModelsUserResponse, message: LocalizedText): void => {
     forgetElsewhere()
     setMeanwhile(undefined)
     setUnlockMessage(undefined)
@@ -98,7 +102,7 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
     notify({ tone: 'success', message })
   }
 
-  const readAnew = (message: string): void => {
+  const readAnew = (message: LocalizedText): void => {
     forgetElsewhere()
     setMeanwhile(message)
     toHeading.current = true
@@ -153,7 +157,7 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
   return (
     <>
       {match(support)
-        .with({ type: 'own' }, () => <p>{OWN_ACCOUNT}</p>)
+        .with({ type: 'own' }, () => <p>{say(adminUserAccountMessages.own)}</p>)
         .with({ type: P.union('none', 'some') }, () => null)
         .exhaustive()}
       <UserRecord
@@ -163,7 +167,9 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
         headingRef={heading}
         meanwhile={meanwhile}
       />
-      {support.type === 'none' && <p>{NOTHING_TO_DO}</p>}
+      {support.type === 'none' && (
+        <p>{say(adminUserAccountMessages.nothingToDo)}</p>
+      )}
       {support.type === 'some' && support.unlock && (
         <AccountUnlock
           pending={unlock.isPending}
@@ -201,6 +207,7 @@ type AccountPageProps = { userId: string }
 
 /** The account of the address, read whenever the screen opens: users sign in, and get locked, at any time. */
 const AccountPage = ({ userId }: AccountPageProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: userKeyOf(userId),
     queryFn: () => readUser(userId),
@@ -210,36 +217,34 @@ const AccountPage = ({ userId }: AccountPageProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(TITLE)}
         description={
           read.data?.type === 'found' ? read.data.user.email : undefined
         }
       />
       {match(read.data)
         .with(undefined, () => (
-          <LoadingIndicator label='アカウントを読み込んでいます' />
+          <LoadingIndicator label={say(adminUserAccountMessages.loading)} />
         ))
         .with({ type: 'found' }, ({ user }) => (
           <AccountParts key={user.id} user={user} readAt={read.dataUpdatedAt} />
         ))
         .with({ type: 'notFound' }, () => (
           <>
-            <p>
-              このアカウントは見つかりません。削除されたか、アドレスが違います。
-            </p>
+            <p>{say(adminUserAccountMessages.notFound)}</p>
             <ToTheStart />
           </>
         ))
         .with({ type: 'forbidden' }, () => (
           <>
-            <p>{ADMINISTRATORS_ONLY}</p>
+            <p>{say(ADMINISTRATORS_ONLY)}</p>
             <ToTheStart />
           </>
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('アカウント'), reason),
+            message={say(
+              unreadMessageOf(adminUserAccountMessages.names.account, reason),
             )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
@@ -257,6 +262,7 @@ const AccountPage = ({ userId }: AccountPageProps) => {
  * API is not asked.
  */
 export const UserAccountScreen = () => {
+  const say = useSay()
   const { userId = '' } = useParams()
   const administers = useAdministersAccounts()
 
@@ -264,8 +270,8 @@ export const UserAccountScreen = () => {
     <AccountPage userId={userId} />
   ) : (
     <>
-      <PageHeader title={TITLE} />
-      <p>{ADMINISTRATORS_ONLY}</p>
+      <PageHeader title={say(TITLE)} />
+      <p>{say(ADMINISTRATORS_ONLY)}</p>
       <ToTheStart />
     </>
   )

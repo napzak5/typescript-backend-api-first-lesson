@@ -3,11 +3,15 @@ import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { contentTypeNameOf, sizeNameOf } from '../../utils/attachment-file'
+
+const { table: TABLE } = adminAttachmentMessages
 
 export type AttachmentTableProps = {
   /** The files that were read so far, the latest uploaded first; at least one */
@@ -15,7 +19,7 @@ export type AttachmentTableProps = {
   /** The time zone of the salon, which the moments are said in */
   timezone: string
   /** Who uploaded a file, by the ID of the account */
-  uploaderName: (uploadedBy: string) => string
+  uploaderName: (uploadedBy: string) => LocalizedText
   /** The screen of a file */
   attachmentHref: (attachmentId: string) => string
   /** How many files there are; `null` when the API did not count them */
@@ -37,44 +41,48 @@ export const AttachmentTable = ({
   total,
   more,
   onMore,
-}: AttachmentTableProps) => (
-  <PagedTable
-    caption='ファイル'
-    columns={[
-      {
-        key: 'filename',
-        header: 'ファイル名',
-        cell: ({ id, filename }) => (
-          <Link href={attachmentHref(id)}>{filename}</Link>
-        ),
-      },
-      {
-        key: 'contentType',
-        header: '種類',
-        cell: ({ contentType }) => contentTypeNameOf(contentType),
-      },
-      {
-        key: 'size',
-        header: 'サイズ',
-        cell: ({ size }) => sizeNameOf(size),
-      },
-      {
-        key: 'uploadedBy',
-        header: 'アップロードした人',
-        cell: ({ uploadedBy }) => uploaderName(uploadedBy),
-      },
-      {
-        key: 'uploadedAt',
-        header: 'アップロード日時',
-        cell: ({ uploadedAt, createdAt }) =>
-          inJapanese(momentNameAt(uploadedAt ?? createdAt, timezone)),
-      },
-    ]}
-    rows={attachments}
-    rowKey={({ id }) => id}
-    emptyMessage='ファイルはありません'
-    count={inJapanese(countOf(total, attachments.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: AttachmentTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(TABLE.caption)}
+      columns={[
+        {
+          key: 'filename',
+          header: say(TABLE.filename),
+          cell: ({ id, filename }) => (
+            <Link href={attachmentHref(id)}>{filename}</Link>
+          ),
+        },
+        {
+          key: 'contentType',
+          header: say(TABLE.type),
+          cell: ({ contentType }) => say(contentTypeNameOf(contentType)),
+        },
+        {
+          key: 'size',
+          header: say(TABLE.size),
+          cell: ({ size }) => say(sizeNameOf(size)),
+        },
+        {
+          key: 'uploadedBy',
+          header: say(TABLE.uploader),
+          cell: ({ uploadedBy }) => say(uploaderName(uploadedBy)),
+        },
+        {
+          key: 'uploadedAt',
+          header: say(TABLE.uploadedAt),
+          cell: ({ uploadedAt, createdAt }) =>
+            say(momentNameAt(uploadedAt ?? createdAt, timezone)),
+        },
+      ]}
+      rows={attachments}
+      rowKey={({ id }) => id}
+      emptyMessage={say(adminAttachmentMessages.none)}
+      count={say(countOf(total, attachments.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as attachmentUploadStories from './attachment-upload.stories'
 
 const stories = composeStories(attachmentUploadStories)
@@ -64,6 +65,55 @@ describe('AttachmentUpload', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       'ファイルを送れませんでした。',
+    )
+  })
+})
+
+describe('AttachmentUpload on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say in English what files it takes and who sees them', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Upload a file' })).toBeVisible()
+    expect(screen.getByLabelText('File')).toHaveAccessibleDescription(
+      'An image in JPEG, PNG or WebP, or a PDF file, one at a time, up to 10 MB. Every member of the staff of this salon can see the files uploaded.',
+    )
+    expect(screen.getByRole('button', { name: 'Upload' })).toBeVisible()
+  })
+
+  it('should say in English what is wrong with the file at its control', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithError.run()
+
+    // Assert
+    expect(screen.getByLabelText('File')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Choose an image in JPEG, PNG or WebP, or a PDF file.',
+      ),
+    )
+  })
+
+  it('should say in English that the file could not be sent', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not send the file. Check your connection and upload it again.',
     )
   })
 })

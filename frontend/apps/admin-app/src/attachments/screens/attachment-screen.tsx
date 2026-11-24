@@ -6,13 +6,14 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -35,7 +36,7 @@ import { useUploaderName } from '../hooks/use-uploader-name'
 import { afterRemoving, removesAttachment } from '../utils/attachment-file'
 import { AttachmentNotFound, ToTheFiles } from './attachment-not-found'
 
-const TITLE = 'ファイル'
+const { titles, names, loading } = adminAttachmentMessages
 
 /** The URLs last five minutes: they are read anew a minute before */
 const LINKS_LAST = 4 * 60 * 1000
@@ -83,12 +84,7 @@ const useLinks = (
         }))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
           type: 'unread',
-          message: inJapanese(
-            unreadMessageOf(
-              writtenInJapanese('ファイルを開くアドレス'),
-              reason,
-            ),
-          ),
+          message: unreadMessageOf(names.openingAddress, reason),
         }))
         .with(P.union(undefined, { type: 'notFound' }), () => ({
           type: 'reading',
@@ -97,9 +93,7 @@ const useLinks = (
     )
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('ファイルを開くアドレス'), reason),
-      ),
+      message: unreadMessageOf(names.openingAddress, reason),
     }))
     .with(P.union(undefined, { type: 'notFound' }), () => ({ type: 'reading' }))
     .exhaustive()
@@ -136,7 +130,7 @@ const AttachmentDetails = ({ salon, attachment }: AttachmentDetailsProps) => {
   const uploaderName = useUploaderName(salon.id)
   const { links, retry, retrying } = useLinks(attachment.id)
   const [asking, setAsking] = useState(false)
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = attachmentKeyOf(attachment.id)
 
   const removal = useMutation({
@@ -147,7 +141,7 @@ const AttachmentDetails = ({ salon, attachment }: AttachmentDetailsProps) => {
           queryClient.removeQueries({ queryKey: attachmentsKeyOf(salon.id) })
           notify({
             tone: 'success',
-            message: `「${attachment.filename}」を削除しました。`,
+            message: adminAttachmentMessages.removal.done(attachment.filename),
           })
           void navigate(attachmentsHrefOf(salon.id))
         })
@@ -209,13 +203,14 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
     queryFn: () => readAttachment(attachmentId),
     staleTime: 0,
   })
+  const say = useSay()
 
   return (
     match(read.data)
       .with(undefined, () => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <LoadingIndicator label='ファイルを読み込んでいます' />
+          <PageHeader title={say(titles.file)} description={salon.name} />
+          <LoadingIndicator label={say(loading.file)} />
         </>
       ))
       .with({ type: 'notFound' }, () => (
@@ -233,11 +228,9 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
       )
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={say(titles.file)} description={salon.name} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('ファイル'), reason),
-            )}
+            message={say(unreadMessageOf(names.file, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -258,9 +251,10 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
 /** A file of the salon of the address, for every member of its staff and an administrator. */
 export const AttachmentScreen = () => {
   const { salonId = '', attachmentId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.file)}>
       {(salon) => (
         <AttachmentPart
           key={attachmentId}

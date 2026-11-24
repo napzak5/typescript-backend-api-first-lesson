@@ -1,14 +1,15 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as roleFormStories from './role-form.stories'
 
 const stories = composeStories(roleFormStories)
 
 /** The names of the roles offered, in their order. */
-const roles = (): string[] =>
-  within(screen.getByRole('radiogroup', { name: 'ロール' }))
+const roles = (label = 'ロール'): string[] =>
+  within(screen.getByRole('radiogroup', { name: label }))
     .getAllByRole('radio')
     .map((radio) => radio.closest('label')?.textContent ?? '')
 
@@ -83,6 +84,54 @@ describe('RoleForm', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       '1 分以内に招待メールを送ったばかりです',
+    )
+  })
+})
+
+describe('RoleForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the roles and say what they do, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Invitation.run()
+
+    // Assert
+    expect(roles('Role')).toEqual(['Manager', 'Staff'])
+    expect(
+      screen.getByRole('radiogroup', { name: 'Role' }),
+    ).toHaveAccessibleDescription(
+      /Only an administrator can give the role of an owner\.$/,
+    )
+  })
+
+  it('should say in English at the choice that no role was chosen', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutARole.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Role' }),
+    ).toHaveAccessibleDescription(/Choose a role\./)
+  })
+
+  it('should say in English above the choice why no invitation was mailed', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.MailedMomentsAgo.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /^An invitation email was sent to 田中 美咲 less than a minute ago/,
     )
   })
 })

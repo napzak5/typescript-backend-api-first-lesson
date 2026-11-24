@@ -1,3 +1,4 @@
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { consentForm } from '../../../attachments/components/examples'
@@ -22,10 +23,7 @@ export const Empty: Story = {}
 /** The API refused the password as too easy to guess */
 export const PasswordGuessed: Story = {
   args: {
-    errors: {
-      password:
-        '推測されやすいパスワードです。連番、キーボードの並び、同じ文字の繰り返し、よく使われるパスワードは使えません。ほかのパスワードにしてください。',
-    },
+    errors: { password: adminShareLinkMessages.form.errors.passwordGuessed },
   },
 }
 
@@ -37,7 +35,6 @@ export const Pending: Story = {
 /** The link could not be issued */
 export const Failed: Story = {
   args: {
-    message:
-      '共有リンクを発行できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: adminShareLinkMessages.form.failed,
   },
 }

@@ -167,76 +167,22 @@ export const sourcesBelow = (directory: string): SourceFile[] =>
     }))
 
 /**
- * Whether a source is in a part: the file the part names, or one below the
- * folder it names. A part is written with `/` (`customers/components/form`),
- * and a folder is none of those whose names begin with its name.
- */
-const isIn = (source: SourceFile, part: string): boolean => {
-  const below = path.join(...part.split('/'))
-
-  return source.path === below || source.path.startsWith(`${below}${path.sep}`)
-}
-
-/**
- * The sources below `directory` that are in the parts it names: folders and
- * files right below it, as the areas of an application are, or deeper,
- * where an area is done in parts.
- */
-export const sourcesIn = (
-  directory: string,
-  parts: readonly string[],
-): SourceFile[] =>
-  sourcesBelow(directory).filter((source) =>
-    parts.some((part) => isIn(source, part)),
-  )
-
-/**
- * The parts named that have no source below `directory`: a name written
- * wrong, or that of a part that went, where the test would read nothing.
- */
-export const partsWithoutSources = (
-  directory: string,
-  parts: readonly string[],
-): string[] => {
-  const sources = sourcesBelow(directory)
-
-  return parts.filter((part) => !sources.some((source) => isIn(source, part)))
-}
-
-/**
  * Declares the test that the sources below `directory` write no text in
  * Japanese: every text they show is a message, written in every language.
- * A package has this test from when its texts are messages:
+ * Every package and application that shows a text has this test:
  *
  * ```ts
  * describe('the texts of the package', () => {
  *   itShouldWriteItsTextsAsMessages(import.meta.dirname)
  * })
  * ```
- *
- * An application becomes messages an area at a time, and names the parts of
- * its `src` that are done (`['account', 'navigation.ts']`), until all are.
- * An area that is done in parts names the folders and files inside it that
- * are (`'customers/components/customer-form'`), until the whole area is.
- * A part it names that has no source fails the test, which would otherwise
- * read nothing there.
  */
-export const itShouldWriteItsTextsAsMessages = (
-  directory: string,
-  parts?: readonly string[],
-): void => {
+export const itShouldWriteItsTextsAsMessages = (directory: string): void => {
   it('should write no text in Japanese in its sources: a text is a message, written in every language', () => {
     // Act
-    const sources =
-      parts === undefined
-        ? sourcesBelow(directory)
-        : sourcesIn(directory, parts)
-    const lines = linesWrittenInJapanese(sources)
+    const lines = linesWrittenInJapanese(sourcesBelow(directory))
 
     // Assert
     expect(lines).toEqual([])
-    expect(
-      parts === undefined ? [] : partsWithoutSources(directory, parts),
-    ).toEqual([])
   })
 }

@@ -8,13 +8,15 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   NONE,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type {
   ShareLinkIssue,
@@ -33,25 +35,7 @@ const SHARERS: readonly string[] = ['owner', 'manager', 'admin']
 /** Whether a role issues, lists and revokes the share links of the files of its salon. */
 export const sharesFiles = (role: string): boolean => SHARERS.includes(role)
 
-/** Who shares a file, said to a role that does not. */
-export const SHARING_NOTE =
-  'ファイルの共有リンクを発行し、取り消せるのは、サロンのオーナー、マネージャー、管理者です。'
-
-/** Said of a file whose upload was not finished. */
-export const NOT_UPLOADED_NOTE =
-  'アップロードが済んでいないファイルは、共有できません。アップロードが済んでから、共有リンクを発行してください。'
-
-/** What a share link is, said above the links of a file. */
-export const SHARE_LINKS_NOTE =
-  'アカウントを持たない人（お客様、取引先）に、このファイルを見せるリンクです。期限まで、リンクを知っている人がファイルを読み込めます。'
-
-/** Said where the link that was issued is shown: it is in that answer alone. */
-export const ISSUED_NOTE =
-  'このリンクは、いまだけ表示します。この画面を離れると、もう表示できません。なくしたときは、この共有リンクを取り消して、発行し直してください。'
-
-/** Said beside a link that has a password. */
-export const PASSWORD_APART_NOTE =
-  'パスワードは、リンクとは別の方法（電話や、会ったときなど）で伝えてください。'
+const { form: FORM, states: STATES, values: VALUES } = adminShareLinkMessages
 
 /** The names of the controls of the form */
 export const PERIOD = 'period'
@@ -59,13 +43,9 @@ export const MAX_DOWNLOADS = 'maxDownloads'
 export const PASSWORD = 'password'
 
 /** How long a link works, in days, as the form offers it: no longer than the 30 days the API takes */
-export const PERIODS: readonly { days: number; label: string }[] = [
-  { days: 1, label: '1 日' },
-  { days: 3, label: '3 日' },
-  { days: 7, label: '7 日' },
-  { days: 14, label: '14 日' },
-  { days: 30, label: '30 日' },
-]
+export const PERIODS: readonly { days: number; label: LocalizedText }[] = [
+  1, 3, 7, 14, 30,
+].map((days) => ({ days, label: FORM.daysOf(days) }))
 
 /** The period the form starts with, in days */
 export const DEFAULT_PERIOD = 7
@@ -108,18 +88,7 @@ const limitOf = (text: string): number | null | undefined => {
 const lengthOf = (password: string): number =>
   [...password.normalize('NFC')].length
 
-const PERIOD_MISSING = '有効期間を選んでください。'
-
-const LIMIT_ERROR = `回数の上限は、1 から ${inJapanese(formats.numberOf(MOST_DOWNLOADS))} までの整数で入力してください。上限を付けないときは、空のままにしてください。`
-
-const PASSWORD_LENGTH_ERROR =
-  'パスワードは、8 文字から 128 文字で入力してください。パスワードを付けないときは、空のままにしてください。'
-
-const PASSWORD_GUESSED =
-  '推測されやすいパスワードです。連番、キーボードの並び、同じ文字の繰り返し、よく使われるパスワードは使えません。ほかのパスワードにしてください。'
-
-const EXPIRY_REFUSED =
-  '有効期限を決められませんでした。この端末の時計が正しいか確かめて、もう一度発行してください。'
+const LIMIT_ERROR = FORM.errors.limit(formats.numberOf(MOST_DOWNLOADS))
 
 /**
  * The request of the form: the period chosen, as the moment it ends at,
@@ -129,7 +98,7 @@ const EXPIRY_REFUSED =
 export const readShareLinkEntry = (
   values: FormData,
   now: Date,
-): FormRead<ModelsShareLinkCreateRequest> => {
+): FormRead<ModelsShareLinkCreateRequest, FormErrors<LocalizedText>> => {
   const chosen = textOf(values, PERIOD)
   const period = PERIODS.find(({ days }) => String(days) === chosen)
   const maxDownloads = limitOf(textOf(values, MAX_DOWNLOADS))
@@ -142,9 +111,11 @@ export const readShareLinkEntry = (
     return {
       type: 'invalid',
       errors: {
-        ...(period === undefined ? { [PERIOD]: PERIOD_MISSING } : {}),
+        ...(period === undefined
+          ? { [PERIOD]: FORM.errors.periodMissing }
+          : {}),
         ...(maxDownloads === undefined ? { [MAX_DOWNLOADS]: LIMIT_ERROR } : {}),
-        ...(passwordFits ? {} : { [PASSWORD]: PASSWORD_LENGTH_ERROR }),
+        ...(passwordFits ? {} : { [PASSWORD]: FORM.errors.passwordLength }),
       },
     }
   }
@@ -166,46 +137,43 @@ const refusalAt = ({
 }: {
   field: string
   rule: string
-}): [string, string][] =>
+}): [string, LocalizedText][] =>
   match(field)
-    .returnType<[string, string][]>()
+    .returnType<[string, LocalizedText][]>()
     .with('password', () => [
       [
         PASSWORD,
-        rule === 'blocklisted' ? PASSWORD_GUESSED : PASSWORD_LENGTH_ERROR,
+        rule === 'blocklisted'
+          ? FORM.errors.passwordGuessed
+          : FORM.errors.passwordLength,
       ],
     ])
     // The moment is worked out from the clock of the device, which may be wrong
-    .with('expiresAt', () => [[PERIOD, EXPIRY_REFUSED]])
+    .with('expiresAt', () => [[PERIOD, FORM.errors.expiryRefused]])
     .with('maxDownloads', () => [[MAX_DOWNLOADS, LIMIT_ERROR]])
     .otherwise(() => [])
 
 /** What the form of an issue says after the API refused it. */
 export const afterIssuing = (
   outcome: Exclude<ShareLinkIssue, { type: 'issued' | 'notFound' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const errors = Object.fromEntries(values.flatMap(refusalAt))
 
       return Object.keys(errors).length === 0
-        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors }
     })
-    .with({ type: 'notUploaded' }, () => aboutTheAttempt(NOT_UPLOADED_NOTE))
-    .with({ type: 'forbidden' }, () => ({
-      message: `このアカウントでは、このファイルを共有できません。${SHARING_NOTE}`,
-      errors: {},
-    }))
+    .with({ type: 'notUploaded' }, () =>
+      aboutTheAttempt(adminShareLinkMessages.notUploaded),
+    )
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORM.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '共有リンクを発行できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FORM.failed))
     .exhaustive()
 
 /** The address of the portal that a link is given as: the token in the fragment, which no server is sent. */
@@ -240,47 +208,35 @@ export const stateOf = (
 }
 
 /** The state of a link in words. */
-export const stateNameOf = (state: ShareLinkState): string =>
-  match(state)
-    .with('usable', () => '使える')
-    .with('expired', () => '期限切れ')
-    .with('usedUp', () => '回数の上限に達した')
-    .exhaustive()
-
-const timesOf = (count: number): string =>
-  `${inJapanese(formats.numberOf(count))} 回`
+export const stateNameOf = (state: ShareLinkState): LocalizedText =>
+  STATES[state]
 
 /** The limit of downloads in words: 「3 回」, 「上限なし」. */
-export const limitNameOf = (maxDownloads: number | null): string =>
-  maxDownloads === null ? '上限なし' : timesOf(maxDownloads)
+export const limitNameOf = (maxDownloads: number | null): LocalizedText =>
+  maxDownloads === null ? VALUES.noLimit : VALUES.timesOf(maxDownloads)
 
 /** How often a link gave its file, against its limit: 「1 回（上限 3 回）」, 「2 回（上限なし）」. */
 export const downloadsNameOf = ({
   downloadCount,
   maxDownloads,
-}: Pick<ModelsShareLinkResponse, 'downloadCount' | 'maxDownloads'>): string =>
-  `${timesOf(downloadCount)}（${maxDownloads === null ? '上限なし' : `上限 ${timesOf(maxDownloads)}`}）`
+}: Pick<
+  ModelsShareLinkResponse,
+  'downloadCount' | 'maxDownloads'
+>): LocalizedText => VALUES.downloadsOf(downloadCount, maxDownloads)
 
 /** Whether a link has a password, in words. */
-export const passwordNameOf = (hasPassword: boolean): string =>
-  hasPassword ? 'あり' : inJapanese(NONE)
+export const passwordNameOf = (hasPassword: boolean): LocalizedText =>
+  hasPassword ? VALUES.hasPassword : NONE
 
 /** What the dialog of a revocation says after the API refused it. */
 export const afterRevoking = (
   outcome: Exclude<ShareLinkRevocation, { type: 'revoked' | 'notFound' }>,
-): string =>
+): LocalizedText =>
   match(outcome)
     .with(
       { type: 'forbidden' },
-      () =>
-        `このアカウントでは、この共有リンクを取り消せません。${SHARING_NOTE}`,
+      () => adminShareLinkMessages.revocation.forbidden,
     )
-    .with({ type: 'tooManyRequests' }, () =>
-      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-    )
-    .with(
-      { type: 'failed' },
-      () =>
-        '共有リンクを取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'failed' }, () => adminShareLinkMessages.revocation.failed)
     .exhaustive()

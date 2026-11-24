@@ -4,8 +4,8 @@ import type {
   ModelsHealthCheck,
   ModelsHealthStatus,
 } from '@beauty-salon-frontend/api-client'
-import { inJapanese } from '@beauty-salon-frontend/ui'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminOperationMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import type {
   Erasure,
@@ -20,121 +20,97 @@ import type {
  * screen says after each of the operations that are run by hand.
  */
 
+const { system, expiry, erasure, purge } = adminOperationMessages
+
 /** Whether a role runs the platform: an administrator alone. */
 export const runsOperations = (role: string): boolean => role === 'admin'
 
 /** What an account that does not run the platform is told */
-export const ADMINISTRATORS_ONLY =
-  'このアカウントでは、運用の操作を行えません。システムの状態を確かめ、ポイントの失効、データの消去の依頼の実行、添付ファイルの掃除を行うのは、管理者です。'
+export const ADMINISTRATORS_ONLY: LocalizedText =
+  adminOperationMessages.administratorsOnly
 
-const DEPENDENCY_NAMES: Record<string, string> = {
-  database: 'データベース',
-}
+const DEPENDENCY_NAMES: Record<string, LocalizedText> = system.dependencies
 
 /** What the API depends on, in words: the name the API gives it when it is not known here. */
-export const dependencyNameOf = (name: string): string =>
-  DEPENDENCY_NAMES[name] ?? name
+export const dependencyNameOf = (name: string): LocalizedText =>
+  DEPENDENCY_NAMES[name] ?? { en: name, ja: name }
 
 /** Whether the process answers, in words. */
-export const livenessNameOf = (liveness: Liveness): string =>
+export const livenessNameOf = (liveness: Liveness): LocalizedText =>
   match(liveness)
-    .with({ type: 'alive' }, () => '動いています')
-    .with({ type: 'silent' }, () => '応答がありません')
+    .returnType<LocalizedText>()
+    .with({ type: 'alive' }, () => system.alive)
+    .with({ type: 'silent' }, () => system.noAnswer)
     .exhaustive()
 
 /** Whether the API takes requests, in words, with what keeps it from doing so. */
-export const readinessNameOf = (readiness: Readiness): string =>
+export const readinessNameOf = (readiness: Readiness): LocalizedText =>
   match(readiness)
-    .with({ type: 'ready' }, () => '受け付けています')
-    .with({ type: 'notReady', reason: null }, () => '受け付けていません')
-    .with(
-      { type: 'notReady', reason: P.string },
-      ({ reason }) =>
-        `受け付けていません（${dependencyNameOf(reason)}に接続できません）`,
+    .returnType<LocalizedText>()
+    .with({ type: 'ready' }, () => system.ready)
+    .with({ type: 'notReady', reason: null }, () => system.notReady)
+    .with({ type: 'notReady', reason: P.string }, ({ reason }) =>
+      system.notReadyFor(dependencyNameOf(reason)),
     )
-    .with({ type: 'silent' }, () => '応答がありません')
+    .with({ type: 'silent' }, () => system.noAnswer)
     .exhaustive()
 
-const HEALTH_NAMES: Record<ModelsHealthStatus['status'], string> = {
-  healthy: '正常です',
-  degraded: '性能が落ちています',
-  unhealthy: '止まっています',
-}
+const HEALTH_NAMES: Record<ModelsHealthStatus['status'], LocalizedText> =
+  system.health
 
 /** The state of the whole API, in words. */
-export const healthNameOf = (status: ModelsHealthStatus['status']): string =>
-  HEALTH_NAMES[status]
+export const healthNameOf = (
+  status: ModelsHealthStatus['status'],
+): LocalizedText => HEALTH_NAMES[status]
 
-const CHECK_NAMES: Record<ModelsHealthCheck['status'], string> = {
-  up: '動いています',
-  down: '止まっています',
-  degraded: '性能が落ちています',
-}
+const CHECK_NAMES: Record<ModelsHealthCheck['status'], LocalizedText> =
+  system.checks
 
 /** The state of one thing the API depends on, in words. */
-export const checkNameOf = (status: ModelsHealthCheck['status']): string =>
-  CHECK_NAMES[status]
+export const checkNameOf = (
+  status: ModelsHealthCheck['status'],
+): LocalizedText => CHECK_NAMES[status]
 
 /** How long the API waited for what it depends on, in words. */
-export const responseTimeNameOf = (responseTime: number | null): string =>
-  responseTime === null ? '測れませんでした' : `${responseTime} ミリ秒`
+export const responseTimeNameOf = (
+  responseTime: number | null,
+): LocalizedText =>
+  responseTime === null
+    ? system.notMeasured
+    : system.millisecondsOf(responseTime)
 
 /** What the part of an operation that is run by hand says, and asks before it runs. */
 export type RunCopy = {
   /** The heading of the part */
-  title: string
+  title: LocalizedText
   /** What the operation does */
-  text: string
+  text: LocalizedText
   /** The button that asks */
-  button: string
+  button: LocalizedText
   /** The question of the dialog */
-  question: string
+  question: LocalizedText
   /** What cannot be undone, in the dialog */
-  warning: string
+  warning: LocalizedText
   /** The button of the dialog that runs it */
-  confirm: string
+  confirm: LocalizedText
 }
 
-export const EXPIRY_COPY: RunCopy = {
-  title: 'ポイントの失効',
-  text: '有効期限の過ぎたポイントを、すべてのお客様について失効させ、残高から引きます。失効させるのは、どのタイムゾーンでも有効期限の日が終わったポイント（有効期限が一昨日（UTC）以前のもの）です。',
-  button: 'ポイントを失効させる',
-  question: '有効期限の過ぎたポイントを失効させますか？',
-  warning:
-    '失効させたポイントは、もう使えません。取り消せません。ポイントを失効させたお客様ごとに、失効の取引を 1 件記録します。',
-  confirm: '失効させる',
-}
+export const EXPIRY_COPY: RunCopy = expiry
 
-export const ERASURE_COPY: RunCopy = {
-  title: 'データの消去の依頼の実行',
-  text: '受け付けてから 14 日たった、データの消去の依頼をすべて実行し、お客様の氏名、連絡先、住所などを消します。売上と予約の記録は、帳簿書類の保存のために残します。',
-  button: '消去の依頼を実行する',
-  question: '予定日時を過ぎた消去の依頼を、すべて実行しますか？',
-  warning:
-    '消したデータは、元に戻せません。お客様のアカウントも削除し、ログインしている端末は使えなくなります。消去したことを本人に知らせるのは、依頼を受け付けたサロンです。',
-  confirm: '実行する',
-}
+export const ERASURE_COPY: RunCopy = erasure
 
-export const PURGE_COPY: RunCopy = {
-  title: '添付ファイルの掃除',
-  text: '完了しなかったアップロードと、削除した添付ファイルを、保存先のファイルと一緒に消します。消すのは、アップロード用の URL の有効期限が過ぎたものだけです。',
-  button: '添付ファイルを掃除する',
-  question: '要らなくなった添付ファイルを消しますか？',
-  warning:
-    '保存先のファイルも消すので、元に戻せません。削除した添付ファイルの共有リンクも、一緒に消えます。',
-  confirm: '消す',
-}
+export const PURGE_COPY: RunCopy = purge
 
 /** What the screen does after one of the operations that are run by hand. */
 export type RunSays<Result> =
   /** It was done: the result is shown in the part of the operation, and the notification says so */
   | { type: 'done'; result: Result }
   /** It may be done on another attempt: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** Another attempt changes nothing: the dialog closes, and the part says why */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
-const REFUSED: { type: 'refused'; message: string } = {
+const REFUSED: { type: 'refused'; message: LocalizedText } = {
   type: 'refused',
   message: ADMINISTRATORS_ONLY,
 }
@@ -153,12 +129,11 @@ export const afterExpiry = (outcome: Expiry): RunSays<ExpiryResult> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'ポイントの失効を終えられませんでした。途中で止まったときも、それまでの分は失効させてあります。通信の状態を確かめて、もう一度実行すると、残りを失効させます。',
+      message: expiry.failed,
     }))
     .exhaustive()
 
@@ -166,10 +141,8 @@ export const afterExpiry = (outcome: Expiry): RunSays<ExpiryResult> =>
 export const expiryResultOf = ({
   processedCount,
   totalPoints,
-}: ExpiryResult): string =>
-  processedCount === 0
-    ? '失効させるポイントはありませんでした。'
-    : `${inJapanese(formats.numberOf(processedCount))} 人のお客様の、合わせて ${inJapanese(formats.numberOf(totalPoints))} ポイントを失効させました。`
+}: ExpiryResult): LocalizedText =>
+  processedCount === 0 ? expiry.none : expiry.done(processedCount, totalPoints)
 
 /** What follows a run of the deletion requests that are due. */
 export const afterErasure = (
@@ -184,22 +157,19 @@ export const afterErasure = (
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'データの消去の依頼の実行を終えられませんでした。途中で止まったときも、それまでの依頼は実行してあります。通信の状態を確かめて、もう一度実行すると、残りを実行します。',
+      message: erasure.failed,
     }))
     .exhaustive()
 
 /** What a run of the deletion requests did, in words. */
 export const erasureResultOf = (
   requests: readonly ModelsCustomerDeletionRequestResponse[],
-): string =>
-  requests.length === 0
-    ? '予定日時を過ぎた依頼はありませんでした。'
-    : `${inJapanese(formats.numberOf(requests.length))} 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。`
+): LocalizedText =>
+  requests.length === 0 ? erasure.none : erasure.done(requests.length)
 
 /** What follows a run of the removal of the attachments that are no longer needed. */
 export const afterPurge = (outcome: Purge): RunSays<number> =>
@@ -212,21 +182,20 @@ export const afterPurge = (outcome: Purge): RunSays<number> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '添付ファイルの掃除を終えられませんでした。途中で止まったときも、それまでの分は消してあります。通信の状態を確かめて、もう一度実行すると、残りを消します。',
+      message: purge.failed,
     }))
     .exhaustive()
 
 /** What a run of the removal of the attachments did, in words. */
-export const purgeResultOf = (purgedCount: number): string =>
-  purgedCount === 0
-    ? '消す添付ファイルはありませんでした。'
-    : `${inJapanese(formats.numberOf(purgedCount))} 件の添付ファイルを、保存先のファイルと一緒に消しました。`
+export const purgeResultOf = (purgedCount: number): LocalizedText =>
+  purgedCount === 0 ? purge.none : purge.done(purgedCount)
 
 /** When an operation was run, with what it did */
-export const ranAtOf = (moment: string, result: string): string =>
-  `${moment}に実行しました。${result}`
+export const ranAtOf = (
+  moment: LocalizedText,
+  result: LocalizedText,
+): LocalizedText => adminOperationMessages.runs.ranAt(moment, result)

@@ -19,7 +19,6 @@ import {
   THERAPIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -355,8 +354,8 @@ describe('the shifts, against the API', () => {
       ['日曜日', '勤務なし', '', '記録なし'],
     ])
     expect(rowsOf('日付ごと')).toEqual([
-      [inJapanese(dayNameOf(soon)), '休み', '', '有給休暇'],
-      [inJapanese(dayNameOf(later)), '12:00〜16:00', 'なし', '記録なし'],
+      [dayNameOf(soon).ja, '休み', '', '有給休暇'],
+      [dayNameOf(later).ja, '12:00〜16:00', 'なし', '記録なし'],
     ])
     expect(
       screen.getByText('今日より前の日付の行が、ほかに 1 行あります。'),

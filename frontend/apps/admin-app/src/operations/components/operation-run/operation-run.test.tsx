@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as operationRunStories from './operation-run.stories'
 
 const stories = composeStories(operationRunStories)
@@ -129,5 +130,81 @@ describe('OperationRun', () => {
         'アカウントを削除したので、台帳からも消してほしいとメールで依頼があった',
       ],
     ])
+  })
+})
+
+describe('OperationRun on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what the operation does, and ask before it runs, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(part('Expiring points')).toHaveTextContent(
+      /^Expiring pointsExpires the points past their date of expiry for every customer/,
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Expire the points past their date of expiry?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'Expired points can no longer be used. This cannot be undone. One expiry transaction is recorded for each customer whose points expire.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Expire' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+  })
+
+  it('should say in English when the operation ran, and what it did', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Expired.run()
+
+    // Assert
+    expect(part('Expiring points')).toHaveTextContent(
+      'Ran on Fri, November 20, 2026 at 12:00. Expired 1,250 points of 3 customers in all.',
+    )
+  })
+
+  it('should list in English what a run did below what it said', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Erased.run()
+
+    // Assert
+    const erasure = part('Carrying out the requests to erase data')
+    expect(erasure).toHaveTextContent(
+      'Carried out 2 requests, and erased the data of the customers.',
+    )
+    expect(
+      within(erasure)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Taken', 'Scheduled erasure', 'Reason for the request'])
+    expect(rowsOf(erasure)[0]?.slice(0, 2)).toEqual([
+      'Thu, November 5, 2026 at 10:30',
+      'Thu, November 19, 2026 at 10:30',
+    ])
+  })
+
+  it('should say in English why the account runs nothing', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Forbidden.run()
+
+    // Assert
+    expect(
+      within(part('Expiring points')).getByRole('alert'),
+    ).toHaveTextContent(/^This account cannot run the operations\./)
   })
 })

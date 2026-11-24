@@ -10,13 +10,17 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminAttachmentMessages,
+  adminShareLinkMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -36,14 +40,13 @@ import {
 import { ShareLinkForm } from '../components/share-link-form/share-link-form'
 import {
   afterIssuing,
-  NOT_UPLOADED_NOTE,
   readShareLinkEntry,
   shareAddressOf,
   sharesFiles,
 } from '../utils/share-link'
 import { SharingForbidden, ToTheFile } from './share-link-notices'
 
-const TITLE = '共有リンクを発行する'
+const TITLE = adminShareLinkMessages.titles.entry
 
 /** Puts a text on the clipboard: `false` where the browser does not let the page write there. */
 const copied = (text: string): Promise<boolean> =>
@@ -68,8 +71,9 @@ type ShareLinkEntryProps = {
  * focus from the button that went with the form.
  */
 const ShareLinkEntry = ({ salon, attachment }: ShareLinkEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [issued, setIssued] = useState<Issued | null>(null)
   const [copying, setCopying] = useState<Copying>('notCopied')
   const heading = useRef<HTMLHeadingElement>(null)
@@ -162,7 +166,7 @@ const ShareLinkEntry = ({ salon, attachment }: ShareLinkEntryProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={fileHref} variant='quiet'>
-          やめる
+          {say(adminShareLinkMessages.form.cancel)}
         </ButtonLink>
       }
     />
@@ -182,14 +186,15 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
     queryFn: () => readAttachment(attachmentId),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const say = useSay()
+  const header = <PageHeader title={say(TITLE)} description={salon.name} />
 
   return (
     match(read.data)
       .with(undefined, () => (
         <>
           {header}
-          <LoadingIndicator label='ファイルを読み込んでいます' />
+          <LoadingIndicator label={say(adminAttachmentMessages.loading.file)} />
         </>
       ))
       .with({ type: 'notFound' }, () => (
@@ -208,8 +213,8 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('ファイル'), reason),
+            message={say(
+              unreadMessageOf(adminAttachmentMessages.names.file, reason),
             )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
@@ -219,7 +224,7 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
       .with({ type: 'found', attachment: { status: 'pending' } }, () => (
         <>
           {header}
-          <p>{NOT_UPLOADED_NOTE}</p>
+          <p>{say(adminShareLinkMessages.notUploaded)}</p>
           <ToTheFile salonId={salon.id} attachmentId={attachmentId} />
         </>
       ))
@@ -238,9 +243,10 @@ export const ShareLinkEntryScreen = () => {
   const { salonId = '', attachmentId = '' } = useParams()
   const session = useSession()
   const shares = session.type === 'signedIn' && sharesFiles(session.user.role)
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) =>
         shares ? (
           <EntryPart
@@ -250,7 +256,7 @@ export const ShareLinkEntryScreen = () => {
           />
         ) : (
           <SharingForbidden
-            title={TITLE}
+            title={say(TITLE)}
             salon={salon}
             attachmentId={attachmentId}
           />

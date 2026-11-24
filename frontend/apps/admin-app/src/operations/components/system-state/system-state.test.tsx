@@ -1,17 +1,18 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as systemStateStories from './system-state.stories'
 
 const stories = composeStories(systemStateStories)
 
-const record = () => screen.getByRole('region', { name: 'システムの状態' })
+const record = (name = 'システムの状態') => screen.getByRole('region', { name })
 
 /** The terms of the record, each with what it says */
-const describedOf = (): string[][] =>
-  within(record())
+const describedOf = (name?: string): string[][] =>
+  within(record(name))
     .getAllByRole('term')
     .map((term) => [
       term.textContent ?? '',
@@ -91,7 +92,7 @@ describe('SystemStateRecord', () => {
       [
         'データベース',
         '止まっています',
-        '3002 ミリ秒',
+        '3,002 ミリ秒',
         'Database is unreachable',
       ],
     ])
@@ -109,5 +110,72 @@ describe('SystemStateRecord', () => {
       ['確かめた日時', '2026年11月20日（金） 12:00'],
     ])
     expect(screen.queryByRole('table')).toBeNull()
+  })
+})
+
+describe('SystemStateRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the state of the system in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Running.run()
+
+    // Assert
+    expect(describedOf('State of the system')).toEqual([
+      ['Process', 'Running'],
+      ['Accepting requests', 'Accepting'],
+      ['Overall state', 'Healthy'],
+      ['API version', '1.0.0'],
+      ['Checked', 'Fri, November 20, 2026 at 12:00'],
+    ])
+    const dependencies = within(record('State of the system')).getByRole(
+      'table',
+      { name: 'State of the dependencies' },
+    )
+    expect(
+      within(dependencies)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Dependency', 'Status', 'Response time', 'Error'])
+    expect(rowsOf(dependencies)).toEqual([['Database', 'Up', '4 ms', 'None']])
+    expect(screen.getByRole('button', { name: 'Check again' })).toBeVisible()
+  })
+
+  it('should say in English that the API takes no requests, since its database does not answer', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutDatabase.run()
+
+    // Assert
+    expect(describedOf('State of the system').slice(0, 3)).toEqual([
+      ['Process', 'Running'],
+      ['Accepting requests', 'Not accepting (Database cannot be reached)'],
+      ['Overall state', 'Down'],
+    ])
+    expect(rowsOf('State of the dependencies')).toEqual([
+      ['Database', 'Down', '3,002 ms', 'Database is unreachable'],
+    ])
+  })
+
+  it('should say in English that no probe answered', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Silent.run()
+
+    // Assert
+    expect(describedOf('State of the system').slice(0, 3)).toEqual([
+      ['Process', 'No answer'],
+      ['Accepting requests', 'No answer'],
+      ['Overall state', 'No answer'],
+    ])
   })
 })

@@ -11,13 +11,14 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -43,7 +44,12 @@ import {
   ToTheFile,
 } from './share-link-notices'
 
-const TITLE = '共有リンク'
+const {
+  titles,
+  names,
+  loading,
+  revocation: REVOCATION,
+} = adminShareLinkMessages
 
 type ShareLinkDetailsProps = {
   salon: ModelsSalonResponse
@@ -65,7 +71,7 @@ const ShareLinkDetails = ({
   const { notify } = useNotifications()
   const issuerName = useUploaderName(salon.id)
   const [asking, setAsking] = useState(false)
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
 
   const revocation = useMutation({
     mutationFn: () => revokeShareLink(shareLink.id),
@@ -75,7 +81,7 @@ const ShareLinkDetails = ({
           queryClient.removeQueries({
             queryKey: shareLinksKeyOf(attachment.id),
           })
-          notify({ tone: 'success', message: '共有リンクを取り消しました。' })
+          notify({ tone: 'success', message: REVOCATION.done })
           void navigate(attachmentHrefOf(salon.id, attachment.id))
         })
         // Revoked meanwhile, or its file removed: it is read anew, and the
@@ -146,7 +152,10 @@ const ShareLinkPart = ({
     queryFn: () => readShareLink(shareLinkId),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const say = useSay()
+  const header = (
+    <PageHeader title={say(titles.shareLink)} description={salon.name} />
+  )
   const linkRead = link.isFetchedAfterMount ? link.data : undefined
   return (
     match([file.data, linkRead])
@@ -177,8 +186,13 @@ const ShareLinkPart = ({
           shareLink.attachmentId === attachment.id ? (
             <>
               <PageHeader
-                title={TITLE}
-                description={`${attachment.filename}（${salon.name}）`}
+                title={say(titles.shareLink)}
+                description={say(
+                  adminShareLinkMessages.fileOfSalon(
+                    attachment.filename,
+                    salon.name,
+                  ),
+                )}
               />
               <ShareLinkDetails
                 salon={salon}
@@ -200,9 +214,9 @@ const ShareLinkPart = ({
           <>
             {header}
             <UnreadNotice
-              message={inJapanese(
+              message={say(
                 unreadMessageOf(
-                  writtenInJapanese('共有リンク'),
+                  names.shareLink,
                   whyUnread([file.data, linkRead]),
                 ),
               )}
@@ -218,7 +232,7 @@ const ShareLinkPart = ({
       .with(P.union([undefined, P._], [P._, undefined]), () => (
         <>
           {header}
-          <LoadingIndicator label='共有リンクを読み込んでいます' />
+          <LoadingIndicator label={say(loading.shareLink)} />
         </>
       ))
       .exhaustive()
@@ -230,9 +244,10 @@ export const ShareLinkScreen = () => {
   const { salonId = '', attachmentId = '', shareLinkId = '' } = useParams()
   const session = useSession()
   const shares = session.type === 'signedIn' && sharesFiles(session.user.role)
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.shareLink)}>
       {(salon) =>
         shares ? (
           <ShareLinkPart
@@ -243,7 +258,7 @@ export const ShareLinkScreen = () => {
           />
         ) : (
           <SharingForbidden
-            title={TITLE}
+            title={say(titles.shareLink)}
             salon={salon}
             attachmentId={attachmentId}
           />

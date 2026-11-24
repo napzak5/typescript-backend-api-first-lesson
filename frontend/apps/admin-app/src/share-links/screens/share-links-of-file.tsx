@@ -10,11 +10,9 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
-import {
-  inJapanese,
-  moreOf,
-  writtenInJapanese,
-} from '@beauty-salon-frontend/ui'
+import { moreOf } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
 import { shareLinkEntryHrefOf, shareLinkHrefOf } from '../../navigation'
@@ -23,11 +21,7 @@ import {
   ShareLinkList,
   type ShareLinkListing,
 } from '../components/share-link-list/share-link-list'
-import {
-  NOT_UPLOADED_NOTE,
-  SHARING_NOTE,
-  sharesFiles,
-} from '../utils/share-link'
+import { sharesFiles } from '../utils/share-link'
 
 type ShareLinksOfFileProps = {
   salon: ModelsSalonResponse
@@ -64,9 +58,7 @@ const ListedShareLinks = ({ salon, attachment }: ShareLinksOfFileProps) => {
     .with(undefined, () => ({ type: 'reading' }))
     .with({ type: 'unread' }, ({ reason }) => ({
       type: 'unread',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('共有リンク'), reason),
-      ),
+      message: unreadMessageOf(adminShareLinkMessages.names.shareLinks, reason),
     }))
     .with({ type: 'listed' }, ({ items, total, rest }) => ({
       type: 'listed',
@@ -109,9 +101,9 @@ export const ShareLinksOfFile = ({
   const session = useSession()
   const role = session.type === 'signedIn' ? session.user.role : ''
   const note = match({ status: attachment.status, shares: sharesFiles(role) })
-    .returnType<string | undefined>()
-    .with({ status: 'pending' }, () => NOT_UPLOADED_NOTE)
-    .with({ shares: false }, () => SHARING_NOTE)
+    .returnType<LocalizedText | undefined>()
+    .with({ status: 'pending' }, () => adminShareLinkMessages.notUploaded)
+    .with({ shares: false }, () => adminShareLinkMessages.sharers)
     .otherwise(() => undefined)
 
   return note === undefined ? (

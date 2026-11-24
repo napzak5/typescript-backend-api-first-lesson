@@ -1,3 +1,5 @@
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { adminOperationMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import {
@@ -39,6 +41,9 @@ const REQUESTS = [
   }),
 ]
 
+/** When the operations of the stories ran: noon at the salon */
+const RAN_AT = momentNameAt('2026-11-20T03:00:00.000Z', TIMEZONE)
+
 /** What the expiry of the points does, and its button */
 export const Offered: Story = {}
 
@@ -56,8 +61,7 @@ export const Pending: Story = {
 export const Failed: Story = {
   args: {
     asking: true,
-    message:
-      'ポイントの失効を終えられませんでした。途中で止まったときも、それまでの分は失効させてあります。通信の状態を確かめて、もう一度実行すると、残りを失効させます。',
+    message: adminOperationMessages.expiry.failed,
   },
 }
 
@@ -70,7 +74,7 @@ export const Forbidden: Story = {
 export const Expired: Story = {
   args: {
     result: ranAtOf(
-      '2026年11月20日（金） 12:00',
+      RAN_AT,
       expiryResultOf({ processedCount: 3, totalPoints: 1250 }),
     ),
   },
@@ -80,7 +84,7 @@ export const Expired: Story = {
 export const Erased: Story = {
   args: {
     copy: ERASURE_COPY,
-    result: ranAtOf('2026年11月20日（金） 12:00', erasureResultOf(REQUESTS)),
+    result: ranAtOf(RAN_AT, erasureResultOf(REQUESTS)),
     children: <ExecutedRequests requests={REQUESTS} timezone={TIMEZONE} />,
   },
 }

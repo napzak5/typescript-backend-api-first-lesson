@@ -1,18 +1,31 @@
-import { ButtonLink, PageHeader } from '@beauty-salon-frontend/ui'
+import { ButtonLink, PageHeader, useSay } from '@beauty-salon-frontend/ui'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { attachmentsHrefOf } from '../../navigation'
 
+const { notFound } = adminAttachmentMessages
+
 /** The way back to the files of the salon */
-export const ToTheFiles = ({ salonId }: { salonId: string }) => (
-  <ButtonLink href={attachmentsHrefOf(salonId)}>ファイルの一覧へ</ButtonLink>
-)
+export const ToTheFiles = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href={attachmentsHrefOf(salonId)}>
+      {say(notFound.toList)}
+    </ButtonLink>
+  )
+}
 
 /** What the screen of a file says when there is none to show: none at the address, one removed, or one of another salon. */
-export const AttachmentNotFound = ({ salonId }: { salonId: string }) => (
-  <>
-    <PageHeader
-      title='ファイルが見つかりません'
-      description='アドレスが正しいか、お確かめください。削除したファイルは、表示できません。'
-    />
-    <ToTheFiles salonId={salonId} />
-  </>
-)
+export const AttachmentNotFound = ({ salonId }: { salonId: string }) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={say(notFound.title)}
+        description={say(notFound.description)}
+      />
+      <ToTheFiles salonId={salonId} />
+    </>
+  )
+}

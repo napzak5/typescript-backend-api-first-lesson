@@ -7,18 +7,16 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
-  inJapanese,
   Note,
   TextField,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
-import {
-  ISSUED_NOTE,
-  limitNameOf,
-  PASSWORD_APART_NOTE,
-  passwordNameOf,
-} from '../../utils/share-link'
+import { limitNameOf, passwordNameOf } from '../../utils/share-link'
 import styles from './issued-share-link.module.css'
+
+const { issued: ISSUED } = adminShareLinkMessages
 
 /** Whether the link was put on the clipboard */
 export type Copying = 'notCopied' | 'copied' | 'failed'
@@ -55,54 +53,56 @@ export const IssuedShareLink = ({
   headingRef,
   shareLinkHref,
   fileHref,
-}: IssuedShareLinkProps) => (
-  <Card title='発行した共有リンク' headingRef={headingRef}>
-    <div className={styles['issued']}>
-      <Alert tone='warning'>{ISSUED_NOTE}</Alert>
-      <TextField
-        label='共有リンク'
-        autoComplete='off'
-        value={address}
-        readOnly
-        onFocus={(event) => event.currentTarget.select()}
-        description='このアドレスを、ファイルを見せる相手に伝えてください。'
-      />
-      <div className={styles['copy']}>
-        <Button onClick={onCopy}>リンクをコピーする</Button>
-        <Note role='status'>
-          {copying === 'copied' ? 'リンクをコピーしました。' : ''}
-        </Note>
+}: IssuedShareLinkProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(ISSUED.title)} headingRef={headingRef}>
+      <div className={styles['issued']}>
+        <Alert tone='warning'>{say(ISSUED.onlyNow)}</Alert>
+        <TextField
+          label={say(ISSUED.link)}
+          autoComplete='off'
+          value={address}
+          readOnly
+          onFocus={(event) => event.currentTarget.select()}
+          description={say(ISSUED.linkDescription)}
+        />
+        <div className={styles['copy']}>
+          <Button onClick={onCopy}>{say(ISSUED.copy)}</Button>
+          <Note role='status'>
+            {copying === 'copied' ? say(ISSUED.copied) : ''}
+          </Note>
+        </div>
+        {copying === 'failed' && (
+          <Alert tone='danger'>{say(ISSUED.copyFailed)}</Alert>
+        )}
+        <DescriptionList
+          items={[
+            {
+              term: say(ISSUED.expiresAt),
+              description: say(momentNameAt(shareLink.expiresAt, timezone)),
+            },
+            {
+              term: say(ISSUED.limit),
+              description: say(limitNameOf(shareLink.maxDownloads)),
+            },
+            {
+              term: say(ISSUED.password),
+              description: say(passwordNameOf(shareLink.hasPassword)),
+            },
+          ]}
+        />
+        {shareLink.hasPassword && <Note>{say(ISSUED.passwordApart)}</Note>}
+        <Actions>
+          <ButtonLink href={shareLinkHref}>
+            {say(ISSUED.toShareLink)}
+          </ButtonLink>
+          <ButtonLink href={fileHref} variant='quiet'>
+            {say(adminShareLinkMessages.toFile)}
+          </ButtonLink>
+        </Actions>
       </div>
-      {copying === 'failed' && (
-        <Alert tone='danger'>
-          リンクをコピーできませんでした。上の欄のアドレスを選んで、コピーしてください。
-        </Alert>
-      )}
-      <DescriptionList
-        items={[
-          {
-            term: '有効期限',
-            description: inJapanese(
-              momentNameAt(shareLink.expiresAt, timezone),
-            ),
-          },
-          {
-            term: 'ダウンロードの回数の上限',
-            description: limitNameOf(shareLink.maxDownloads),
-          },
-          {
-            term: 'パスワード',
-            description: passwordNameOf(shareLink.hasPassword),
-          },
-        ]}
-      />
-      {shareLink.hasPassword && <Note>{PASSWORD_APART_NOTE}</Note>}
-      <Actions>
-        <ButtonLink href={shareLinkHref}>共有リンクを見る</ButtonLink>
-        <ButtonLink href={fileHref} variant='quiet'>
-          ファイルへ戻る
-        </ButtonLink>
-      </Actions>
-    </div>
-  </Card>
-)
+    </Card>
+  )
+}

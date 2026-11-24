@@ -123,7 +123,7 @@ describe('Notifications', () => {
     expect(first).not.toBeInTheDocument()
   })
 
-  it('should name the button that closes it in English on a page in English, and show a message that is a text as it is', async () => {
+  it('should say the message and name the button that closes it in English on a page in English', async () => {
     // Arrange
     languageStore.choose('en')
 
@@ -133,7 +133,7 @@ describe('Notifications', () => {
     // Assert
     expect(screen.getByRole('button', { name: 'Close' })).toBeVisible()
     expect(screen.getByRole('status')).toHaveTextContent(
-      /^予約を確定しました。$/,
+      /^Confirmed the booking\.$/,
     )
   })
 

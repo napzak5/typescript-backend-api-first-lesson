@@ -1,14 +1,15 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as shareLinkRecordStories from './share-link-record.stories'
 
 const stories = composeStories(shareLinkRecordStories)
 
 /** What the record says, term by term */
-const descriptions = (): [string, string][] =>
-  within(screen.getByRole('region', { name: '共有リンク' }))
+const descriptions = (name = '共有リンク'): [string, string][] =>
+  within(screen.getByRole('region', { name }))
     .getAllByRole('term')
     .map((term) => [
       term.textContent ?? '',
@@ -83,5 +84,58 @@ describe('ShareLinkRecord', () => {
     expect(
       within(screen.getByRole('dialog')).getByRole('alert'),
     ).toHaveTextContent('共有リンクを取り消せませんでした')
+  })
+})
+
+describe('ShareLinkRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what is known of the link in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Usable.run()
+
+    // Assert
+    expect(descriptions('Share link')).toEqual([
+      ['Status', 'Usable'],
+      ['Expires', 'Sat, November 28, 2026 at 09:40'],
+      ['Downloads', '1 time (limit: 3 times)'],
+      ['Password', 'Set'],
+      ['Issued by', 'You'],
+      ['Issued', 'Sat, November 21, 2026 at 09:40'],
+    ])
+    expect(
+      screen.getByText(
+        /^The address of the link was shown only when it was issued\./,
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Revoke the share link' }),
+    ).toBeVisible()
+  })
+
+  it('should ask in English before the link is revoked, and say why it was not', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.RevocationFailed.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Revoke the share link?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'The link stops working at once. A revoked share link cannot be restored.',
+    )
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Could not revoke the share link. Check your connection and try again.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Revoke' })).toBeVisible()
   })
 })

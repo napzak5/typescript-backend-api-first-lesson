@@ -13,15 +13,16 @@ import {
 import {
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useMutation,
@@ -42,7 +43,7 @@ import { AttachmentUpload } from '../components/attachment-upload/attachment-upl
 import { useUploaderName } from '../hooks/use-uploader-name'
 import { afterUploading, readChosenFile } from '../utils/attachment-file'
 
-const TITLE = 'ファイル'
+const { titles, names, loading } = adminAttachmentMessages
 
 /**
  * The form of an upload. The file chosen is kept as it is chosen, and
@@ -54,7 +55,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [chosen, setChosen] = useState<File | undefined>(undefined)
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   /** How many files were uploaded: the form is drawn anew, empty, after each */
   const [uploads, setUploads] = useState(0)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -78,7 +79,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
           })
           notify({
             tone: 'success',
-            message: `「${attachment.filename}」をアップロードしました。`,
+            message: adminAttachmentMessages.upload.done(attachment.filename),
           })
         })
         .with(
@@ -131,6 +132,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
  * see, without the form.
  */
 const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const uploaderName = useUploaderName(salon.id)
   const read = useInfiniteQuery({
     queryKey: [...attachmentsKeyOf(salon.id), 'list'],
@@ -146,15 +148,15 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('ファイル')} />
+        <PageHeader title={say(titles.files)} description={salon.name} />
+        <OtherSalonNotice what={names.filesOfTheSalon} />
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.files)} description={salon.name} />
       <UploadPart salonId={salon.id} />
       {match(
         read.data === undefined
@@ -165,22 +167,18 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='ファイルを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.files)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('ファイル'), reason),
-            )}
+            message={say(unreadMessageOf(names.files, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
           <EmptyState
-            title='ファイルはありません'
-            description='施術の前と後の写真や、お客様の同意書など、サロンで残しておくファイルを、上のフォームからアップロードできます。'
+            title={say(adminAttachmentMessages.none)}
+            description={say(adminAttachmentMessages.noneDescription)}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -207,9 +205,10 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 /** The files of the salon of the address, for every member of its staff and an administrator. */
 export const AttachmentsScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.files)}>
       {(salon) => <AttachmentsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

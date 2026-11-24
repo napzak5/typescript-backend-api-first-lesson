@@ -186,10 +186,4 @@ export {
 export { useSaidChoices, useSaidForm, useSay } from './hooks/language'
 export { useWideScreen } from './hooks/wide-screen'
 export { classNames } from './utils/class-names'
-export {
-  errorsInJapanese,
-  inJapanese,
-  inJapaneseIfAny,
-  writtenInJapanese,
-} from './utils/japanese'
 export type { Tone } from './utils/tone'

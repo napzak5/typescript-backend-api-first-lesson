@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as shareLinkFormStories from './share-link-form.stories'
 
 const stories = composeStories(shareLinkFormStories)
@@ -98,6 +99,75 @@ describe('ShareLinkForm', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       '共有リンクを発行できませんでした',
+    )
+  })
+})
+
+describe('ShareLinkForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls, describe them and offer the periods in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Issues a link that shows “カラー同意書_田中様.pdf” to people who have no account.',
+      ),
+    ).toBeVisible()
+    const period = screen.getByRole('combobox', { name: 'Valid for' })
+    expect(optionsOf(period)).toEqual([
+      '1 day',
+      '3 days',
+      '7 days',
+      '14 days',
+      '30 days',
+    ])
+    expect(period).toHaveAccessibleDescription(
+      'Counted from the time the link is issued. Once it expires, the link no longer works.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Download limit' }),
+    ).toHaveAccessibleDescription(
+      'How many times the file can be downloaded from the link. Left empty, there is no limit.',
+    )
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'From 8 to 128 characters. Left empty, the file is shared without a password. Tell the password in another way than the link.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Issue a share link' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English what the API refused, at the password', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.PasswordGuessed.run()
+
+    // Assert
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      expect.stringContaining('This password is easy to guess.'),
+    )
+  })
+
+  it('should say in English why the link could not be issued', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Failed.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not issue the share link. Check your connection and try again.',
     )
   })
 })

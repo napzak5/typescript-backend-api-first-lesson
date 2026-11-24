@@ -4,7 +4,12 @@ import {
   type FormErrors,
   NO_ERRORS,
   RadioGroup,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { ROLE } from '../../utils/account-form'
 import { roleOptionsOf } from '../../utils/account-format'
@@ -15,11 +20,12 @@ export type RoleFormProps = {
   /** The role chosen when the form opens: none, so that a role is not given unchecked */
   role?: ModelsSalonRoleType | undefined
   /** What the roles let an account do, and who gives that of an owner */
-  description: string
+  description: LocalizedText
   submitLabel: string
-  /** What went wrong with the whole of an attempt */
-  message?: string | undefined
-  errors?: FormErrors | undefined
+  /** What went wrong with the whole of an attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   pending?: boolean | undefined
   onSubmit: (values: FormData) => void
   /** What the form says before the choice: where an invitation goes */
@@ -41,23 +47,29 @@ export const RoleForm = ({
   pending,
   onSubmit,
   children,
-}: RoleFormProps) => (
-  <Form
-    submitLabel={submitLabel}
-    message={message}
-    errors={errors}
-    pending={pending}
-    onSubmit={onSubmit}
-  >
-    {children}
-    <RadioGroup
-      label='ロール'
-      name={ROLE}
-      options={roleOptionsOf(roles)}
-      defaultValue={role}
-      description={description}
-      error={errors[ROLE]}
-      required
-    />
-  </Form>
-)
+}: RoleFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      submitLabel={submitLabel}
+      message={said.message}
+      errors={said.errors}
+      pending={pending}
+      onSubmit={onSubmit}
+    >
+      {children}
+      <RadioGroup
+        label={say(adminStaffAccountMessages.words.role)}
+        name={ROLE}
+        options={options(roleOptionsOf(roles))}
+        defaultValue={role}
+        description={say(description)}
+        error={said.errors[ROLE]}
+        required
+      />
+    </Form>
+  )
+}

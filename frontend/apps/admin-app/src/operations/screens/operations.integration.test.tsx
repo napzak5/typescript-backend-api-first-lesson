@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
@@ -41,14 +42,16 @@ import { ADMINISTRATORS_ONLY } from '../utils/operations'
  */
 
 /** Opens the operations as the administrator, and waits for the state of the system. */
-const openOperations = async (): Promise<void> => {
-  await openAs(OPERATIONS_PATH, OPERATOR)
-  await screen.findByRole('region', { name: 'システムの状態' })
+const openOperations = async (language: 'ja' | 'en' = 'ja'): Promise<void> => {
+  await openAs(OPERATIONS_PATH, OPERATOR, language)
+  await screen.findByRole('region', {
+    name: language === 'ja' ? 'システムの状態' : 'State of the system',
+  })
 }
 
 /** Each term of the state of the system with its description */
-const stateOf = (): string[][] => {
-  const record = screen.getByRole('region', { name: 'システムの状態' })
+const stateOf = (name = 'システムの状態'): string[][] => {
+  const record = screen.getByRole('region', { name })
   const descriptions = within(record).getAllByRole('definition')
 
   return within(record)
@@ -359,7 +362,9 @@ describe('the operations of the platform, against the API', () => {
 
         // Assert
         expect(await heading('運用')).toBeVisible()
-        expect(screen.getByRole('main')).toHaveTextContent(ADMINISTRATORS_ONLY)
+        expect(screen.getByRole('main')).toHaveTextContent(
+          ADMINISTRATORS_ONLY.ja,
+        )
         expect(screen.queryByRole('link', { name: '運用' })).toBeNull()
         expect(
           screen.queryByRole('region', { name: 'システムの状態' }),
@@ -381,5 +386,101 @@ describe('the operations of the platform, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the operations of the platform on a page in English', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should say the state of the system in English', async () => {
+    // Act
+    await openOperations('en')
+
+    // Assert
+    expect(await heading('Operations')).toBeVisible()
+    expect(stateOf('State of the system')).toEqual(
+      expect.arrayContaining([
+        ['Process', 'Running'],
+        ['Accepting requests', 'Accepting'],
+        ['Overall state', 'Healthy'],
+      ]),
+    )
+    expect(rowsOf('State of the dependencies')).toEqual([
+      ['Database', 'Up', expect.stringMatching(/^[\d,]+ ms$/), 'None'],
+    ])
+    expect(
+      screen.getByText(
+        /^Times are shown in the time zone of this device \(.+\)\.$/,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should expire the points after a dialog, and say what it did, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeExpiredPoints(YUKI.email, 300)
+    await openOperations('en')
+
+    // Act
+    const { region } = await run(
+      user,
+      'Expiring points',
+      'Expire the points',
+      'Expire the points past their date of expiry?',
+      'Expire',
+    )
+
+    // Assert
+    expect(
+      await screen.findByText('Expired 300 points of 1 customer in all.'),
+    ).toBeVisible()
+    expect(region).toHaveTextContent(
+      /Ran on .+\. Expired 300 points of 1 customer in all\./,
+    )
+  })
+
+  it('should carry out the requests that are due, and list them, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await dueForErasure(YUKI.email, OWNER)
+    await openOperations('en')
+
+    // Act
+    const { region } = await run(
+      user,
+      'Carrying out the requests to erase data',
+      'Carry out the requests',
+      'Carry out every request to erase data past its scheduled time?',
+      'Carry out',
+    )
+
+    // Assert
+    expect(
+      await within(region).findByRole('table', {
+        name: 'Requests carried out',
+      }),
+    ).toBeVisible()
+    expect(region).toHaveTextContent(
+      'Carried out 1 request, and erased the data of the customers.',
+    )
+  })
+
+  it('should tell an owner in English that the administrator runs the platform', async () => {
+    // Act
+    await openAs(OPERATIONS_PATH, OWNER, 'en')
+
+    // Assert
+    expect(await heading('Operations')).toBeVisible()
+    expect(screen.getByRole('main')).toHaveTextContent(ADMINISTRATORS_ONLY.en)
+    expect(screen.getByRole('link', { name: 'Back to the top' })).toBeVisible()
   })
 })

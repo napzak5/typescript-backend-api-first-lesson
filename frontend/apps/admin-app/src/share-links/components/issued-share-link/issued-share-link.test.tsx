@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as issuedShareLinkStories from './issued-share-link.stories'
 
 const stories = composeStories(issuedShareLinkStories)
@@ -100,6 +101,55 @@ describe('IssuedShareLink', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       '上の欄のアドレスを選んで、コピーしてください',
+    )
+  })
+})
+
+describe('IssuedShareLink on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the link and what it allows in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithPassword.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { name: 'Issued share link' }),
+    ).toBeVisible()
+    expect(screen.getByRole('textbox', { name: 'Share link' })).toHaveValue(
+      stories.WithPassword.args.address,
+    )
+    expect(screen.getByText(/^This link is shown now only\./)).toBeVisible()
+    expect(descriptions()).toEqual([
+      ['Expires', 'Sat, November 28, 2026 at 09:40'],
+      ['Download limit', '3 times'],
+      ['Password', 'Set'],
+    ])
+    expect(
+      screen.getByText(/^Tell the password in another way than the link/),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Copy the link' })).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'See the share link' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the file' })).toBeVisible()
+  })
+
+  it('should say in English how to copy the link when the browser did not let the page', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.CopyFailed.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not copy the link. Select the address in the field above, and copy it.',
     )
   })
 })

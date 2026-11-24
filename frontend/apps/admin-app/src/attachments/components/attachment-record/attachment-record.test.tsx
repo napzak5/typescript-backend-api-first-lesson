@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as attachmentRecordStories from './attachment-record.stories'
 
 const stories = composeStories(attachmentRecordStories)
@@ -134,5 +135,84 @@ describe('AttachmentRecord', () => {
         'ファイルを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
       ),
     ).toBeVisible()
+  })
+})
+
+describe('AttachmentRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer to open and save the file, and say what is known of it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Photo.run()
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'File' })).toBeVisible()
+    const links = within(screen.getByRole('list', { name: 'Open the file' }))
+    expect(
+      links.getByRole('link', { name: 'Open in a new tab' }),
+    ).toHaveAttribute('target', '_blank')
+    expect(links.getByRole('link', { name: 'Save' })).toBeVisible()
+    expect(descriptions()).toEqual([
+      ['File name', '施術前.jpg'],
+      ['Type', 'JPEG image'],
+      ['Size', '1.2 MB (1,258,291 bytes)'],
+      ['Uploaded by', 'You'],
+      ['Uploaded', 'Fri, November 20, 2026 at 10:01'],
+    ])
+    expect(
+      screen.getByRole('button', { name: 'Delete the file' }),
+    ).toBeVisible()
+  })
+
+  it('should tell in English an account that may not remove the file who may', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.DocumentOfAnother.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Only the person who uploaded this file, the owners and managers of the salon and administrators can delete it.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should ask in English before the file is removed, and say why it was not', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.RemovalFailed.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', { name: 'Delete the file?' })
+    expect(dialog).toHaveAccessibleDescription(
+      'Deletes “施術前.jpg” from the files of the salon. A deleted file cannot be restored. The share links of this file stop working too.',
+    )
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      'Could not delete the file. Check your connection and try again.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Delete' })).toBeVisible()
+  })
+
+  it('should say in English that the URLs could not be read', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unread.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /the address that opens the file/,
+    )
   })
 })

@@ -1,6 +1,9 @@
 import type { ModelsCustomerDeletionRequestResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, Table, type TableColumn } from '@beauty-salon-frontend/ui'
+import { Table, type TableColumn, useSay } from '@beauty-salon-frontend/ui'
+import { adminOperationMessages } from '@beauty-salon-shared/i18n/messages/admin'
+
+const { table } = adminOperationMessages.erasure
 
 export type ExecutedRequestsProps = {
   /** The requests a run carried out, in the order of their dates */
@@ -18,22 +21,21 @@ export const ExecutedRequests = ({
   requests,
   timezone,
 }: ExecutedRequestsProps) => {
+  const say = useSay()
   const columns: TableColumn<ModelsCustomerDeletionRequestResponse>[] = [
     {
       key: 'requestedAt',
-      header: '受け付けた日時',
-      cell: ({ requestedAt }) =>
-        inJapanese(momentNameAt(requestedAt, timezone)),
+      header: say(table.requestedAt),
+      cell: ({ requestedAt }) => say(momentNameAt(requestedAt, timezone)),
     },
     {
       key: 'scheduledAt',
-      header: '消去の予定日時',
-      cell: ({ scheduledAt }) =>
-        inJapanese(momentNameAt(scheduledAt, timezone)),
+      header: say(table.scheduledAt),
+      cell: ({ scheduledAt }) => say(momentNameAt(scheduledAt, timezone)),
     },
     {
       key: 'reason',
-      header: '依頼の理由',
+      header: say(table.reason),
       wrap: 'lines',
       cell: ({ reason }) => reason,
     },
@@ -41,11 +43,11 @@ export const ExecutedRequests = ({
 
   return (
     <Table
-      caption='実行した依頼'
+      caption={say(table.caption)}
       columns={columns}
       rows={requests}
       rowKey={({ id }) => id}
-      emptyMessage='実行した依頼はありません'
+      emptyMessage={say(table.none)}
     />
   )
 }

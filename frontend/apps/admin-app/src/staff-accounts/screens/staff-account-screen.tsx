@@ -19,14 +19,15 @@ import {
   Card,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   type QueryClient,
   useMutation,
@@ -51,7 +52,6 @@ import {
   useSignedInUserId,
   WithStaffMember,
 } from '../../staff/screens/with-staff-member'
-import { staffCalled } from '../../staff/utils/staff-format'
 import { useAdministersAccounts } from '../../user-accounts/hooks/administers-accounts'
 import {
   type AccountRead,
@@ -84,7 +84,16 @@ import {
   rolesGivenBy,
 } from '../utils/account-format'
 
-const TITLE = 'ログインアカウント'
+const {
+  title: TITLE,
+  names,
+  invite: INVITE,
+  inactive: INACTIVE,
+  revocation: REVOCATION,
+  account: ACCOUNT,
+  roleChange: ROLE_CHANGE,
+  unlinking: UNLINKING,
+} = adminStaffAccountMessages
 
 /** What the parts of the screen are given: the member, and what the account that keeps them may do */
 type PartProps = {
@@ -93,11 +102,11 @@ type PartProps = {
   /** The roles the signed-in account may give */
   roles: ModelsSalonRoleType[]
   /** What the roles let an account do */
-  description: string
+  description: LocalizedText
   /** The heading of the first card, which takes the focus when a write changed what is shown */
   headingRef: Ref<HTMLHeadingElement> | undefined
   /** What changed is shown: the heading of the first card takes the focus, and what happened meanwhile is said above */
-  onMoved: (said?: string) => void
+  onMoved: (said?: LocalizedText) => void
 }
 
 /** Reads what the member has to sign in with anew, after the API said it was not what was shown. */
@@ -130,16 +139,16 @@ const InvitationForm = ({
   onMoved,
   invitation,
 }: InvitationFormProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
-  const called = inJapanese(staffCalled(member))
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const again = invitation !== undefined
   const invite = useMutation({
     mutationFn: (role: ModelsSalonRoleType) =>
       attemptInvitation(salon.id, member.id, role),
     onSuccess: async (attempt) =>
-      match(afterInvitation(attempt, called, again))
+      match(afterInvitation(attempt, member.displayName, again))
         .with({ type: 'invited' }, ({ invitation: mailed, message }) => {
           const read: InvitationRead = { type: 'found', invitation: mailed }
           queryClient.setQueryData(invitationKeyOf(member.id), read)
@@ -176,12 +185,15 @@ const InvitationForm = ({
   })
 
   return (
-    <Card title={again ? '招待し直す' : '招待する'} headingRef={headingRef}>
+    <Card
+      title={say(again ? INVITE.titleAgain : INVITE.title)}
+      headingRef={headingRef}
+    >
       <RoleForm
         roles={roles}
         role={roles.find((role) => role === invitation?.role)}
         description={description}
-        submitLabel={again ? '招待メールを送り直す' : '招待メールを送る'}
+        submitLabel={say(again ? INVITE.submitAgain : INVITE.submit)}
         message={said.message}
         errors={said.errors}
         pending={invite.isPending}
@@ -196,10 +208,7 @@ const InvitationForm = ({
         }}
       >
         <p>
-          {again
-            ? `招待メールを、台帳のメールアドレス（${member.email}）に送り直します。前に送ったメールのリンクは、使えなくなります。`
-            : `招待メールを、台帳のメールアドレス（${member.email}）に送ります。宛先を変えるときは、先にスタッフ情報を直してください。`}
-          招待のリンクは、7 日の間、使えます。
+          {say(again ? INVITE.toAgain(member.email) : INVITE.to(member.email))}
         </p>
       </RoleForm>
     </Card>
@@ -210,30 +219,34 @@ const InvitationForm = ({
 const InactiveNotice = ({
   salon,
   member,
-}: Pick<PartProps, 'salon' | 'member'>) => (
-  <>
-    <p>
-      無効なスタッフは、招待できません。休職や退職の手続きが終わって復帰するときは、スタッフ情報を有効に戻してから招待してください。
-    </p>
-    <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
-      スタッフ情報を直す
-    </ButtonLink>
-  </>
-)
+}: Pick<PartProps, 'salon' | 'member'>) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(INACTIVE.text)}</p>
+      <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
+        {say(INACTIVE.toChange)}
+      </ButtonLink>
+    </>
+  )
+}
 
 /** A member who has neither an account nor an invitation: an active one is invited. */
-const NoLoginPart = (props: PartProps) => (
-  <>
-    <p>
-      ログインアカウントは、まだありません。招待すると、招待メールのリンクから、スタッフご本人がパスワードを決めて、ログインアカウントを作ります。
-    </p>
-    {props.member.isActive ? (
-      <InvitationForm {...props} />
-    ) : (
-      <InactiveNotice salon={props.salon} member={props.member} />
-    )}
-  </>
-)
+const NoLoginPart = (props: PartProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(adminStaffAccountMessages.noLogin)}</p>
+      {props.member.isActive ? (
+        <InvitationForm {...props} />
+      ) : (
+        <InactiveNotice salon={props.salon} member={props.member} />
+      )}
+    </>
+  )
+}
 
 type InvitationPartProps = PartProps & {
   invitation: ModelsStaffInvitationResponse
@@ -242,16 +255,16 @@ type InvitationPartProps = PartProps & {
 /** An invitation that was not taken yet: mailed again, or revoked after a dialog. */
 const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
   const { salon, member, headingRef, onMoved } = props
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [revoking, setRevoking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
-  const called = inJapanese(staffCalled(member))
+  const [message, setMessage] = useState<LocalizedText>()
   const revocation = useMutation({
     mutationFn: () => revokeInvitation(salon.id, member.id),
     onSuccess: async (revoked) =>
-      match(afterRevocation(revoked, called))
+      match(afterRevocation(revoked, member.displayName))
         .with({ type: 'done' }, ({ message: done }) => {
           queryClient.setQueryData(invitationKeyOf(member.id), NOT_FOUND)
           notify({ tone: 'success', message: done })
@@ -281,7 +294,7 @@ const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
         headingRef={headingRef}
         actions={
           <Button variant='danger' onClick={() => setRevoking(true)}>
-            招待を取り消す
+            {say(REVOCATION.button)}
           </Button>
         }
       />
@@ -297,11 +310,11 @@ const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
       <Dialog
         open={revoking}
         onClose={close}
-        title={`${called}への招待を取り消しますか？`}
-        description='取り消すと、送った招待メールのリンクは使えなくなります。あとで、また招待できます。'
+        title={say(REVOCATION.title(member.displayName))}
+        description={say(REVOCATION.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(REVOCATION.back)}</Button>
             <Button
               variant='danger'
               pending={revocation.isPending}
@@ -310,12 +323,12 @@ const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
                 revocation.mutate()
               }}
             >
-              取り消す
+              {say(REVOCATION.confirm)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -334,15 +347,15 @@ const RoleChangeForm = ({
   onMoved,
   account,
 }: RoleChangeFormProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
-  const called = inJapanese(staffCalled(member))
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const change = useMutation({
     mutationFn: (role: ModelsSalonRoleType) =>
       changeRole(salon.id, member.id, role),
     onSuccess: async (changed) =>
-      match(afterRoleChange(changed, called))
+      match(afterRoleChange(changed, member.displayName))
         .with({ type: 'changed' }, ({ account: now, message }) => {
           const read: AccountRead = { type: 'found', account: now }
           queryClient.setQueryData(accountKeyOf(member.id), read)
@@ -357,16 +370,16 @@ const RoleChangeForm = ({
   })
 
   return (
-    <Card title='ロールを変える'>
+    <Card title={say(ROLE_CHANGE.title)}>
       <RoleForm
         roles={roles}
         role={roles.find((role) => role === account.role)}
         description={
           account.role === 'owner' && !roles.includes('owner')
-            ? `${description}オーナーのロールを外すと、戻せるのは管理者だけです。`
+            ? adminStaffAccountMessages.roles.forOthersOfAnOwner
             : description
         }
-        submitLabel='ロールを変える'
+        submitLabel={say(ROLE_CHANGE.title)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -384,7 +397,7 @@ const RoleChangeForm = ({
           change.mutate(read.value)
         }}
       >
-        <p>ロールの変更は、そのアカウントの次の操作から効きます。</p>
+        <p>{say(ROLE_CHANGE.note)}</p>
       </RoleForm>
     </Card>
   )
@@ -402,18 +415,18 @@ type AccountPartProps = PartProps & {
  */
 const AccountPart = ({ account, ...props }: AccountPartProps) => {
   const { salon, member, headingRef, onMoved } = props
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const own = isOwnAccount(account, useSignedInUserId())
   const administers = useAdministersAccounts()
   const [unlinking, setUnlinking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
-  const called = inJapanese(staffCalled(member))
+  const [message, setMessage] = useState<LocalizedText>()
   const unlink = useMutation({
     mutationFn: () => unlinkAccount(salon.id, member.id),
     onSuccess: async (unlinked) =>
-      match(afterUnlinking(unlinked, called))
+      match(afterUnlinking(unlinked, member.displayName))
         .with({ type: 'done' }, ({ message: done }) => {
           queryClient.setQueryData(accountKeyOf(member.id), NOT_FOUND)
           queryClient.setQueryData(invitationKeyOf(member.id), NOT_FOUND)
@@ -441,16 +454,8 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
 
   return (
     <>
-      {own && (
-        <p>
-          ご自身のアカウントです。このアカウントからは、ロールを変えることも、紐づけを解除することもできません。
-        </p>
-      )}
-      {!member.isActive && (
-        <p>
-          無効なスタッフです。スタッフ情報を有効に戻すまで、このアカウントでは、サロンの画面を使えません。
-        </p>
-      )}
+      {own && <p>{say(ACCOUNT.own)}</p>}
+      {!member.isActive && <p>{say(ACCOUNT.inactiveMember)}</p>}
       <AccountRecord
         account={account}
         member={member}
@@ -461,12 +466,12 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
             <>
               {administers && (
                 <ButtonLink href={userAccountHrefOf(account.id)}>
-                  アカウントの状態を見る
+                  {say(ACCOUNT.toUserAccount)}
                 </ButtonLink>
               )}
               {!own && (
                 <Button variant='danger' onClick={() => setUnlinking(true)}>
-                  紐づけを解除する
+                  {say(UNLINKING.button)}
                 </Button>
               )}
             </>
@@ -479,11 +484,11 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
           <Dialog
             open={unlinking}
             onClose={close}
-            title={`${called}のログインアカウントの紐づけを解除しますか？`}
-            description='解除すると、このアカウントは、次の操作からサロンの画面を使えなくなります。アカウントとスタッフ情報は残り、スタッフは、また招待できます。休職や退職の手続きの間は、解除せずに、スタッフ情報を無効にしてください。'
+            title={say(UNLINKING.title(member.displayName))}
+            description={say(UNLINKING.description)}
             actions={
               <>
-                <Button onClick={close}>戻る</Button>
+                <Button onClick={close}>{say(UNLINKING.back)}</Button>
                 <Button
                   variant='danger'
                   pending={unlink.isPending}
@@ -492,12 +497,14 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
                     unlink.mutate()
                   }}
                 >
-                  解除する
+                  {say(UNLINKING.confirm)}
                 </Button>
               </>
             }
           >
-            {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+            {message !== undefined && (
+              <Alert tone='danger'>{say(message)}</Alert>
+            )}
           </Dialog>
         </>
       )}
@@ -528,6 +535,7 @@ type Moved = { count: number; part: string }
  * from the link of the mail.
  */
 const LoginPart = ({ salon, member }: LoginPartProps) => {
+  const say = useSay()
   const session = useSession()
   const role = session.type === 'signedIn' ? session.user.role : ''
   const account = useQuery({
@@ -554,7 +562,7 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
   /** How many writes had the focus moved */
   const focused = useRef(0)
   /** What happened meanwhile, which the API told when the screen wrote: said above the cards */
-  const [said, setSaid] = useState<string>()
+  const [said, setSaid] = useState<LocalizedText>()
 
   useLayoutEffect(() => {
     if (moved.count > focused.current && moved.part === part) {
@@ -585,20 +593,15 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
 
   return (
     <>
-      {said !== undefined && <Alert tone='warning'>{said}</Alert>}
+      {said !== undefined && <Alert tone='warning'>{say(said)}</Alert>}
       {match(shown)
         .with({ type: 'loading' }, () => (
-          <LoadingIndicator label='ログインアカウントを読み込んでいます' />
+          <LoadingIndicator label={say(adminStaffAccountMessages.loading)} />
         ))
         .with({ type: 'forbidden' }, () => <StaffLedgerForbidden />)
         .with({ type: 'unread' }, ({ reads }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(
-                writtenInJapanese('ログインアカウント'),
-                whyUnread(reads),
-              ),
-            )}
+            message={say(unreadMessageOf(names.account, whyUnread(reads)))}
             onRetry={() => {
               void account.refetch()
               void invitation.refetch()
@@ -615,7 +618,7 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
         .with({ type: 'none' }, () => <NoLoginPart {...props} />)
         .exhaustive()}
       <ButtonLink href={staffMemberHrefOf(salon.id, member.id)}>
-        スタッフの内容へ
+        {say(ACCOUNT.toMember)}
       </ButtonLink>
     </>
   )
@@ -623,15 +626,16 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
 
 /** The account a member of the staff ledger of the salon of the address signs in with, and the invitation that makes it. */
 export const StaffAccountScreen = () => {
+  const say = useSay()
   const { salonId = '', staffId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
         <WithStaffMember
           key={staffId}
           salon={salon}
-          title={TITLE}
+          title={say(TITLE)}
           fresh={false}
         >
           {(member) => <LoginPart salon={salon} member={member} />}

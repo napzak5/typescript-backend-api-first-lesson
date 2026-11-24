@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
+| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`, `salonScreenMessages` of `salon-screens`, `preferenceMessages` of `preferences`), the names of what the record of a customer holds, which the portal and the admin application say alike (`customerMessages`), the words of the business (`termMessages`: the names of the values of the enums of the contract), and how a component says the options of a choice whose names are messages (`useSaidChoices`, over the `NamedChoice`s a module offers) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
@@ -367,8 +367,8 @@ In a package that is done:
 - A component of `ui` says its own texts and no other. What a screen gives
   it (`label`, `title`, `description`, the children of a button) is a string
   the screen has said. A notification is the exception: `notify` takes a
-  message as well as a string, and says the message where it is shown, in
-  the language the page has then.
+  message, and says it where it is shown, in the language the page has
+  then.
 - A form says messages. The functions that read its values and the answer
   return them (`FormRead<Value, FormErrors<LocalizedText>>`,
   `FormSays<LocalizedText>`), and the screen keeps them
@@ -382,8 +382,7 @@ In a package that is done:
   is a new attempt: what was said is a new object at every render, and
   given to the form it would move the focus whenever the language changes.
   The errors of `Form` and `FormDialog` are of the type they are given,
-  texts (`FormErrors`) unless said, so the form of an application that is
-  still written in Japanese (`Pick<FormProps, 'errors'>`) keeps its texts.
+  said texts (`FormErrors`) unless said.
   `FilterForm` takes the errors as they came too (`StatisticsPeriod`), and
   rows that repeat take messages by their type argument
   (`useRepeatedRows<ModelsTimeSlot | undefined, LocalizedText>`).
@@ -477,35 +476,9 @@ In an area of an application that is done, the same rules hold, and:
   was not read) is in `names` of the catalogue
   (`portalBookingMessages.names.freeTimes`), and what parts a list of
   values (`portalSalonMessages.about.betweenPhoneNumbers`) is a message too.
-- The application names its areas that are done in `src/texts.test.ts`
-  (`itShouldWriteItsTextsAsMessages(import.meta.dirname, ['account', …])`),
-  and the test fails on a name that has no source. An application whose
-  areas are all done checks the whole of its source, as a package does
-  (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal
-  and of the dashboard); what the tests share (`__tests__`) is not read.
-  An area that is done in parts names the folders and files inside it
-  that are done (`'customers/components/customer-form'`), until the whole
-  area is and its name takes their place (`'bookings'`, `'customers'`,
-  `'charts'`, `'inventory'`, `'menu'`, `'own-profile'`,
-  `'payment-methods'`, `'products'`, `'purchase-orders'`,
-  `'review-reports'`, `'reviews'`, `'sales'`, `'salons'`, `'settings'`,
-  `'shifts'`, `'staff'` and `'treatments'` of the admin application).
-- An area that is still written in Japanese says what it takes of an area
-  that is done with `inJapanese` (the accounts of the staff say
-  `staffCalled` of the staff so). An area that is done
-  hands on the strings of one that is not as they are. A type of an area
-  that is done that one that is not uses takes the type of its texts as a
-  parameter, with strings for the default. Once
-  every area that uses such a type is done, the parameter goes
-  (`ChangeSays` of the operations of the state of a booking, which the
-  operations of a purchase order use too, and `TreatmentRemovalSays` of
-  the treatments, which the removal of a stock row, of a category or a
-  service of the menu, of a payment method, of a product and of a member
-  of the staff use). No such type is left in any application.
-- An area that is done in two parts splits a file of both, so that the
-  file of the part that is done holds none of the texts of the other (the
-  export and the erasure requests of the page of a customer are
-  `customers/screens/customer-requests-part.tsx`).
+- An application checks the whole of its source in `src/texts.test.ts`,
+  as a package does (`itShouldWriteItsTextsAsMessages(import.meta.dirname)`);
+  what the tests share (`__tests__`) is not read.
 
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its
@@ -528,31 +501,10 @@ does not depend on the language stays where it is used (the ISO day of
 application is written by `quantityOf` of `products/utils/quantity.ts`.
 The whole is in `docs/i18n.md` (「値の書き方」).
 
-A screen that is still written in Japanese takes what became a message
-through the functions of `ui/src/utils/japanese.ts`, which go when the
-last screen is done. `inJapanese(message)` is the string such a screen
-shows: `count={inJapanese(countOf(total, rows.length, COUNTED.items))}`,
-`inJapanese(NONE)`, `aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE))`,
-the functions that write a value say a format with it
-(`inJapanese(formats.dayOf(date))`), and what `salon-screens`
-writes is said the same way (`inJapanese(amountOf(sale.totalAmount,
-currency))`, `inJapanese(dayNameOf(day))`). The errors of the period
-(`readPeriod`, `readDays`) and of the preferences (`readPreferencesChange`,
-`afterPreferencesChange`) stay messages on such a screen too, and go to the
-component that says them (`StatisticsPeriod`, `PreferencesForm`).
-`inJapaneseIfAny(message)` says a rule that says nothing (`undefined`) of a
-right value: `errorAt('email', inJapaneseIfAny(emailError(email)))`.
-`errorsInJapanese(errors)` makes the errors of a form of the messages
-under the names of the controls (`...errorsInJapanese(lengthErrors(LENGTHS,
-optional))`, `...errorsInJapanese(daysErrorsOf(from, to, 'optional'))`). `writtenInJapanese(text)` hands a sentence or a name the
-screen wrote itself to what takes a message: a counter in words of its own
-is `(count) => writtenInJapanese(`${count} 台`)`, the name of a control is
-`tooLongOf(writtenInJapanese('仕入先'), 100)`, what was not read is
-`unreadMessageOf(writtenInJapanese('予約'), reason)`, and what the notice
-of another salon names is `what={writtenInJapanese('商品')}`. A message never goes
-into a template literal, a `+` or a `join`, where it is written
-`[object Object]`: a screen puts the string it said there
-(`` `${inJapanese(charactersOf(500))}以内で書いてください。` ``). The type
+A sentence with a value in it is made by a function of the catalogue
+(`adminShareLinkMessages.form.errors.limit(formats.numberOf(MOST_DOWNLOADS))`):
+a message never goes into a template literal, a `+` or a `join`, where it
+is written `[object Object]`. The type
 check does not see these, nor the values of an `Object.fromEntries` whose
 entries are no tuples (it answers `any`), nor a record spread into an
 object: the tests of a form compare its errors with the sentences.
@@ -1136,8 +1088,7 @@ that has none).
 - **A value the record does not hold is `null`, and is given as it is**:
   a `DescriptionList` and a `Table` say 「記録なし」 for it, quietly
   (`NotRecorded`), and a sentence that needs the words takes
-  `NOT_RECORDED` of `ui` (a message: `inJapanese(NOT_RECORDED)` on a screen
-  that is written in Japanese). A function that names a value returns `null`
+  `NOT_RECORDED` of `ui` (a message). A function that names a value returns `null`
   when there is none, and the screen writes no words of its own: a text of
   several lines is given to `WrittenText` as it is, `null` and all. 「なし」
   (`NONE` of `ui`) is for what is none as a fact: an empty list, which a
@@ -3007,8 +2958,8 @@ A share link opens a file for somebody who has no account
   the button that was first into the one that is first now, and the
   browser draws its colours changing from the one look into the other
   (`transition`), with too little contrast on the way.
-- **Notifications** say what was done: `notify({ tone: 'success', message:
-  '予約を確定しました。' })`. The notification stays, also after the screen
+- **Notifications** say what was done, with a message of the catalogues:
+  `notify({ tone: 'success', message: words.booked })`. The notification stays, also after the screen
   has changed, until the user closes it or the next one takes its place;
   nothing disappears by itself. `NotificationProvider` stands at the root of
   an application, above its routes (in `AppFrame`), and `AppShell` shows the

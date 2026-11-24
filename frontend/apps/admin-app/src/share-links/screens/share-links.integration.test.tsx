@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
@@ -819,5 +820,211 @@ describe('the share links of a file', () => {
         screen.queryByRole('button', { name: '共有リンクを取り消す' }),
       ).toBeNull()
     })
+  })
+})
+
+describe('the share links of a file on a page in English', () => {
+  /** A moment as a page in English writes it */
+  const MOMENT_IN_ENGLISH =
+    /^[A-Z][a-z]{2}, [A-Z][a-z]+ \d+, \d{4} at \d{2}:\d{2}$/
+
+  const englishLinksPart = () =>
+    screen.getByRole('region', { name: 'Share links' })
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    vi.stubEnv('VITE_PORTAL_APP_URL', PORTAL)
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should list the links of a file in English', async () => {
+    // Arrange
+    const file = await consentOfTokyo()
+    await arrangeShareLink({
+      attachmentId: file.attachmentId,
+      issuedBy: OWNER,
+      hoursAgo: 5,
+      maxDownloads: 1,
+      downloadCount: 1,
+    })
+    await arrangeShareLink({
+      attachmentId: file.attachmentId,
+      issuedBy: OWNER,
+      hoursAgo: 1,
+      maxDownloads: 3,
+      withPassword: true,
+    })
+
+    // Act
+    await openAs(attachmentHrefOf(file.salonId, file.attachmentId), OWNER, 'en')
+
+    // Assert
+    await heading(CONSENT)
+    await waitFor(() => expect(rowsOf('Issued share links')).toHaveLength(2))
+    const rows = rowsOf('Issued share links')
+    expect(rows.map(([issued]) => issued)).toEqual([
+      expect.stringMatching(MOMENT_IN_ENGLISH),
+      expect.stringMatching(MOMENT_IN_ENGLISH),
+    ])
+    expect(rows.map((row) => row.slice(2))).toEqual([
+      ['0 times (limit: 3 times)', 'Set', 'Usable'],
+      ['1 time (limit: 1 time)', 'None', 'Download limit reached'],
+    ])
+    expect(
+      within(englishLinksPart()).getByRole('link', {
+        name: 'Issue a share link',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should issue a link from the form in English, and say what it allows', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const file = await consentOfTokyo()
+    await openAs(
+      shareLinkEntryHrefOf(file.salonId, file.attachmentId),
+      MANAGER,
+      'en',
+    )
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Valid for' }),
+      '30 days',
+    )
+    await user.type(
+      screen.getByRole('textbox', { name: 'Download limit' }),
+      '2',
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Issue a share link' }))
+
+    // Assert
+    expect(
+      await screen.findByRole('heading', { name: 'Issued share link' }),
+    ).toHaveFocus()
+    expect(detailsOf('Issued share link')).toEqual([
+      ['Expires', expect.stringMatching(MOMENT_IN_ENGLISH)],
+      ['Download limit', '2 times'],
+      ['Password', 'None'],
+    ])
+    expect(screen.getByRole('textbox', { name: 'Share link' })).toHaveAttribute(
+      'value',
+      expect.stringMatching(`^${PORTAL}/share#token=`),
+    )
+  })
+
+  it('should say in English at the password that the API refused one too easy to guess', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const file = await consentOfTokyo()
+    await openAs(
+      shareLinkEntryHrefOf(file.salonId, file.attachmentId),
+      OWNER,
+      'en',
+    )
+    await screen.findByRole('combobox', { name: 'Valid for' })
+    await user.type(
+      screen.getByLabelText('Password', { selector: 'input' }),
+      'password123',
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Issue a share link' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText('Password', { selector: 'input' }),
+      ).toHaveAccessibleDescription(
+        expect.stringContaining('This password is easy to guess.'),
+      ),
+    )
+    expect(await storedShareLinksOf(file.attachmentId)).toEqual([])
+  })
+
+  it('should revoke a link after the dialog asks, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const file = await consentOfTokyo()
+    await arrangeShareLink({
+      attachmentId: file.attachmentId,
+      issuedBy: OWNER,
+      hoursAgo: 1,
+    })
+    await openAs(attachmentHrefOf(file.salonId, file.attachmentId), OWNER, 'en')
+    await heading(CONSENT)
+    await waitFor(() => expect(rowsOf('Issued share links')).toHaveLength(1))
+    await user.click(
+      within(englishLinksPart()).getByRole('link', { name: MOMENT_IN_ENGLISH }),
+    )
+    await screen.findByRole('button', { name: 'Revoke the share link' })
+    expect(screen.getByText(`${CONSENT} (${TOKYO})`)).toBeVisible()
+    expect(detailsOf('Share link')).toContainEqual(['Issued by', 'You'])
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Revoke the share link' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Revoke the share link?',
+    })
+    await user.click(within(dialog).getByRole('button', { name: 'Revoke' }))
+
+    // Assert
+    expect(await screen.findByText('Revoked the share link.')).toBeVisible()
+    await heading(CONSENT)
+    expect(address()).toBe(attachmentHrefOf(file.salonId, file.attachmentId))
+    expect(
+      await within(englishLinksPart()).findByText('No share links'),
+    ).toBeVisible()
+    expect(await storedShareLinksOf(file.attachmentId)).toEqual([])
+  })
+
+  it('should tell a stylist in English who shares a file', async () => {
+    // Arrange
+    const file = await consentOfTokyo()
+
+    // Act
+    await openAs(
+      shareLinkEntryHrefOf(file.salonId, file.attachmentId),
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    expect(await heading('Issue a share link')).toBeVisible()
+    expect(
+      screen.getByText(
+        'This account cannot share files. Only the owners and managers of the salon and administrators can issue and revoke the share links of files.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the file' })).toBeVisible()
+  })
+
+  it('should tell a stylist in English below a file who shares it', async () => {
+    // Arrange
+    const file = await consentOfTokyo()
+
+    // Act
+    await openAs(
+      attachmentHrefOf(file.salonId, file.attachmentId),
+      STYLIST,
+      'en',
+    )
+
+    // Assert
+    await heading(CONSENT)
+    expect(
+      await within(englishLinksPart()).findByText(
+        'Only the owners and managers of the salon and administrators can issue and revoke the share links of files.',
+      ),
+    ).toBeVisible()
+    expect(within(englishLinksPart()).queryByRole('link')).toBeNull()
   })
 })

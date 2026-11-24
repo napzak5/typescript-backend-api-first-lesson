@@ -1,3 +1,4 @@
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { FILE } from '../../utils/attachment-file'
@@ -19,17 +20,14 @@ export const Empty: Story = {}
 /** A file of a kind the API does not take */
 export const WithError: Story = {
   args: {
-    errors: {
-      [FILE]: 'JPEG、PNG、WebP の画像か、PDF のファイルを選んでください。',
-    },
+    errors: { [FILE]: adminAttachmentMessages.upload.errors.type },
   },
 }
 
 /** The storage did not take the file */
 export const NotSent: Story = {
   args: {
-    message:
-      'ファイルを送れませんでした。通信の状態を確かめて、もう一度アップロードしてください。',
+    message: adminAttachmentMessages.upload.notSent,
   },
 }
 

@@ -3,12 +3,8 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import {
-  Card,
-  DescriptionList,
-  inJapanese,
-  Note,
-} from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, Note, useSay } from '@beauty-salon-frontend/ui'
+import { adminStaffAccountMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode, Ref } from 'react'
 import {
   roleNameOf,
@@ -17,6 +13,8 @@ import {
   statusNoteOf,
   twoFactorNameOf,
 } from '../../utils/account-format'
+
+const { words, account: ACCOUNT } = adminStaffAccountMessages
 
 export type AccountRecordProps = {
   account: ModelsStaffAccountResponse
@@ -44,42 +42,43 @@ export const AccountRecord = ({
   headingRef,
   actions,
 }: AccountRecordProps) => {
+  const say = useSay()
   const note = statusNoteOf(account.status)
 
   return (
-    <Card title='ログインアカウント' headingRef={headingRef} actions={actions}>
+    <Card title={say(words.account)} headingRef={headingRef} actions={actions}>
       <DescriptionList
         items={[
           {
-            term: 'メールアドレス',
+            term: say(words.email),
             description: account.email,
           },
-          { term: 'ロール', description: roleNameOf(account.role) },
-          { term: '状態', description: statusNameOf(account.status) },
+          { term: say(words.role), description: say(roleNameOf(account.role)) },
           {
-            term: '2 要素認証',
-            description: twoFactorNameOf(account.twoFactorStatus),
+            term: say(words.status),
+            description: say(statusNameOf(account.status)),
           },
           {
-            term: '最後のログイン',
-            description:
+            term: say(words.twoFactor),
+            description: say(twoFactorNameOf(account.twoFactorStatus)),
+          },
+          {
+            term: say(words.lastLogin),
+            description: say(
               account.lastLoginAt === null
-                ? 'まだログインしていません'
-                : inJapanese(momentNameAt(account.lastLoginAt, timezone)),
+                ? words.neverSignedIn
+                : momentNameAt(account.lastLoginAt, timezone),
+            ),
           },
           {
-            term: '作った日時',
-            description: inJapanese(momentNameAt(account.createdAt, timezone)),
+            term: say(words.createdAt),
+            description: say(momentNameAt(account.createdAt, timezone)),
           },
         ]}
       />
-      {note !== undefined && <Note>{note}</Note>}
+      {note !== undefined && <Note>{say(note)}</Note>}
       {!sameAddress(account.email, member.email) && (
-        <Note>
-          ログインには、このメールアドレスを使います。台帳のメールアドレス（
-          {member.email}
-          ）とは違います。招待を受け入れたあとで台帳を直しても、ログインのメールアドレスは変わりません。
-        </Note>
+        <Note>{say(ACCOUNT.otherAddress(member.email))}</Note>
       )}
     </Card>
   )

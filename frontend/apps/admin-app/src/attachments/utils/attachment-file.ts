@@ -8,10 +8,10 @@ import {
   aboutTheAttempt,
   type FormErrors,
   type FormSays,
-  inJapanese,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { AttachmentRemoval, Uploading } from '../api/attachments-api'
@@ -20,6 +20,9 @@ import type { AttachmentRemoval, Uploading } from '../api/attachments-api'
  * What a file must be to be uploaded, as the API decides it, how the
  * screens name a file, and who removes one.
  */
+
+const { upload: UPLOAD, removal: REMOVAL } = adminAttachmentMessages
+const { errors: ERRORS } = UPLOAD
 
 /** The control of the file to upload */
 export const FILE = 'file'
@@ -53,15 +56,15 @@ const CONTENT_TYPE_NAMES: Record<ModelsAttachmentContentType, LocalizedText> =
 /** The kind of a file in words. */
 export const contentTypeNameOf = (
   contentType: ModelsAttachmentContentType,
-): string => inJapanese(CONTENT_TYPE_NAMES[contentType])
+): LocalizedText => CONTENT_TYPE_NAMES[contentType]
 
 /** Whether a file is an image, which the screen shows: every kind but a PDF. */
 export const isImage = (contentType: ModelsAttachmentContentType): boolean =>
   contentType !== 'application/pdf'
 
 /** The size of a file in words: 「512 バイト」, 「340 KB」, 「1.2 MB」. */
-export const sizeNameOf = (size: number): string =>
-  inJapanese(formats.fileSizeOf(size))
+export const sizeNameOf = (size: number): LocalizedText =>
+  formats.fileSizeOf(size)
 
 /**
  * The kind of a file by the ending of its name, in whatever case, after at
@@ -95,31 +98,31 @@ const hasRefusedCharacter = (filename: string): boolean =>
   })
 
 export type ChosenFileRead =
-  | { type: 'invalid'; errors: FormErrors }
+  | { type: 'invalid'; errors: FormErrors<LocalizedText> }
   | {
       type: 'valid'
       file: File
       contentType: ModelsAttachmentContentType
     }
 
-const invalid = (message: string): ChosenFileRead => ({
+const invalid = (message: LocalizedText): ChosenFileRead => ({
   type: 'invalid',
   errors: { [FILE]: message },
 })
 
 /** Why a file of a kind the API takes is refused; `undefined` for one it takes. */
-const whyRefused = (file: File): string | undefined => {
+const whyRefused = (file: File): LocalizedText | undefined => {
   if (file.size === 0) {
-    return '中身のないファイルです。ほかのファイルを選んでください。'
+    return ERRORS.empty
   }
   if (file.size > MOST_FILE_SIZE) {
-    return `ファイルが大きすぎます（${sizeNameOf(file.size)}）。10 MB までのファイルを選んでください。`
+    return ERRORS.tooLarge(sizeNameOf(file.size))
   }
   if (lengthOf(file.name) > MOST_FILENAME_LENGTH) {
-    return `ファイル名が長すぎます。${inJapanese(charactersOf(MOST_FILENAME_LENGTH))}までの名前にしてから、選んでください。`
+    return ERRORS.nameTooLong(charactersOf(MOST_FILENAME_LENGTH))
   }
   if (hasRefusedCharacter(file.name)) {
-    return 'ファイル名に、使えない文字が入っています。名前を変えてから、選んでください。'
+    return ERRORS.nameInvalid
   }
 
   return undefined
@@ -132,11 +135,11 @@ const whyRefused = (file: File): string | undefined => {
  */
 export const readChosenFile = (file: File | undefined): ChosenFileRead => {
   if (file === undefined) {
-    return invalid('アップロードするファイルを選んでください。')
+    return invalid(ERRORS.missing)
   }
   const contentType = contentTypeOf(file.name)
   if (contentType === undefined) {
-    return invalid('JPEG、PNG、WebP の画像か、PDF のファイルを選んでください。')
+    return invalid(ERRORS.type)
   }
   const refused = whyRefused(file)
 
@@ -145,53 +148,29 @@ export const readChosenFile = (file: File | undefined): ChosenFileRead => {
     : invalid(refused)
 }
 
+/** What is said at the control of the file */
+const atTheFile = (error: LocalizedText): FormSays<LocalizedText> => ({
+  message: undefined,
+  errors: { [FILE]: error },
+})
+
 /** What the form of the upload says after the API or the storage refused it. */
 export const afterUploading = (
   outcome: Exclude<Uploading, { type: 'uploaded' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     // The form sends only what the API takes: a refusal is a salon that was
     // removed meanwhile, or a rule the form does not know of yet
-    .with({ type: 'invalid' }, () => ({
-      message: undefined,
-      errors: {
-        [FILE]:
-          'このファイルは、アップロードできませんでした。ファイルの種類、大きさ、名前を確かめてください。',
-      },
-    }))
-    .with({ type: 'unreadable' }, () => ({
-      message: undefined,
-      errors: {
-        [FILE]:
-          'ファイルを読めませんでした。選んだあとで、ファイルが移されたか、変えられたのかもしれません。もう一度選んでください。',
-      },
-    }))
-    .with({ type: 'notAsDeclared' }, () => ({
-      message: undefined,
-      errors: {
-        [FILE]:
-          'ファイルの中身が、名前の拡張子の種類と合いませんでした。中身と拡張子の合うファイルを選んでください。',
-      },
-    }))
-    .with({ type: 'notSent' }, () =>
-      aboutTheAttempt(
-        'ファイルを送れませんでした。通信の状態を確かめて、もう一度アップロードしてください。',
-      ),
-    )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt(
-        'このアカウントでは、このサロンにファイルを置けません。置けるのは、このサロンのスタッフと、管理者です。',
-      ),
-    )
+    .with({ type: 'invalid' }, () => atTheFile(ERRORS.refused))
+    .with({ type: 'unreadable' }, () => atTheFile(ERRORS.unreadable))
+    .with({ type: 'notAsDeclared' }, () => atTheFile(ERRORS.mismatch))
+    .with({ type: 'notSent' }, () => aboutTheAttempt(UPLOAD.notSent))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(UPLOAD.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        'ファイルをアップロードできませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(UPLOAD.failed))
     .exhaustive()
 
 /** The roles that remove every file of their salon: those that remove a booking */
@@ -204,24 +183,15 @@ export const removesAttachment = (
 ): boolean =>
   REMOVERS.includes(account.role) || attachment.uploadedBy === account.id
 
-/** Who may remove a file that the account may not: said in place of the button. */
-export const REMOVAL_NOTE =
-  'このファイルを削除できるのは、アップロードした人と、サロンのオーナー、マネージャー、管理者です。'
-
 /** What the dialog of the removal says after the API refused it. */
 export const afterRemoving = (
   outcome: Exclude<AttachmentRemoval, { type: 'removed' | 'notFound' }>,
-): string =>
+): LocalizedText =>
   match(outcome)
-    .with({ type: 'forbidden' }, () => REMOVAL_NOTE)
-    .with({ type: 'tooManyRequests' }, () =>
-      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-    )
-    .with(
-      { type: 'failed' },
-      () =>
-        'ファイルを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
+    .returnType<LocalizedText>()
+    .with({ type: 'forbidden' }, () => REMOVAL.forbidden)
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'failed' }, () => REMOVAL.failed)
     .exhaustive()
 
 /**
@@ -234,13 +204,13 @@ export const uploaderNameOf = (
   uploadedBy: string,
   accountId: string,
   ledger: readonly { userId: string | null; displayName: string }[],
-): string => {
+): LocalizedText => {
   if (uploadedBy === accountId) {
-    return 'あなた'
+    return adminAttachmentMessages.uploaders.you
   }
+  const member = ledger.find(({ userId }) => userId === uploadedBy)
 
-  return (
-    ledger.find(({ userId }) => userId === uploadedBy)?.displayName ??
-    'ほかのアカウント'
-  )
+  return member === undefined
+    ? adminAttachmentMessages.uploaders.other
+    : { en: member.displayName, ja: member.displayName }
 }
