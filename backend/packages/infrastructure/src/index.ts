@@ -11,6 +11,7 @@ export {
 // Logging
 export {
   createLogger,
+  type LogDestination,
   type Logger,
   type LoggerSettings,
 } from './logging/logger'

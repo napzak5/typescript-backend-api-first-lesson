@@ -46,7 +46,7 @@
 - `domain` は I/O を行うパッケージを import しません。`database` から import するのは型だけです。
 - `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）、トークンの生成（`ITokenIssuer`。セッションのトークンと、メールで送るトークン）、2 要素認証のシークレットとコード（`ITwoFactorAuthenticator`）、メールの送信（`IMailer`）も同じ形です。
 - `api` はユースケースを呼び出し、結果を HTTP に変換するだけです。認証も同じで、`Authorization` ヘッダーをユースケースに渡して操作者（`Actor`）を受け取るだけです。ロールや権限は判定しません。
-- 環境変数を読み、プロセスを終了させるのは `backend/apps/server/src/index.ts` だけです。
+- 環境変数を読み、プロセスを終了させるのは、サーバーの `main`（`backend/apps/server/src/main.ts`）だけです。`main` は動くプロセスを受け取り、`backend/apps/server/src/index.ts` が Node.js のプロセスを渡します（`main(process)`）。
 
 データベースのスクリプト（`backend/packages/database/src/scripts`）、シード、テストはサーバーが実行するコードではないので、`throw` や `console` を使ってかまいません。
 

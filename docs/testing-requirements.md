@@ -281,9 +281,9 @@ then on a run that covers less fails; until then its coverage is reported,
 and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
 (`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
-the admin application (`frontend/apps/admin-app`) and the `utility`
-package of the backend say so; the other packages of the backend do not
-yet.
+the admin application (`frontend/apps/admin-app`), and the `utility`
+and `config` packages and the server (`backend/apps/server`) of the
+backend say so; the other packages of the backend do not yet.
 
 | Where | How |
 |---|---|
@@ -313,6 +313,8 @@ reach is reached, or is not written:
 |---|---|
 | A path that a user, the API or another tab can take | A test that takes it. A failure of the API that a screen meets is arranged in the database (`refuse`, `takeAway`, `unreadable` of `@beauty-salon-frontend/testing/api`), never in the answer. A change that falls between two reads of a screen is made in the database when the second is asked for (`whenAskedFor`), and the real API answers it |
 | A branch that the types allow and that never happens: a fallback for a part that a format always gives, a value a pattern always holds, the item of an array that the API answers as long as another, a row that always has its header, the first line of a booking (a booking keeps one at least), the moment of a response (the database keeps the two together), the option that a choice of a `select` names | It is not written. The code says in a comment why it needs none, and optional chaining, which is no branch, stands where the types say a value may be missing |
+| The composition root of the server, which ends the process and takes its signals and the exceptions that nothing caught | `main` (`backend/apps/server/src/main.ts`) takes the process: a test runs it with an event emitter that emits the signals and the exceptions and keeps the statuses, and reads its log (`logTo`). The entry (`src/index.ts`: `main(process)`) is imported by a test that replaces `process.exit` and gives a configuration that cannot be read |
+| What depends on the files of the repository: its `.env`, which a developer may put there | A test reads files of its own, in a directory of its own (`loadEnvFileFrom` of `config`). What reads the repository is asserted to have read a file of it, and no more |
 | Code that only the main process of Vitest runs: the global setup that starts the test server | A function of what it starts (`globalSetupOf`, `startTestServer` of a `TestServerProgram`), which a test runs with a program of Node.js that stands in for the server |
 | Code of a package that only the tests of another package run | A test in its own package: the screens of `salon-screens` have integration tests of their own |
 | The entry of an application (`src/main.tsx`), which the page runs as it loads | A test that loads it as the page does (`src/main.test.tsx`): the element `root` of `index.html` in the document, the entry imported inside `act`, and the application drawn in that element. `startApplication`, which it calls, is tested in `app-frame` |

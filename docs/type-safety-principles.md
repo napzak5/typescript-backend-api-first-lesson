@@ -55,9 +55,9 @@ Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、
 | ライブラリの Promise の reject（Drizzle、postgres.js） | `Result.fromPromise`（`backend/packages/utility/src/result/result.ts`） | `Result<T, Error>` |
 | 同期の関数が投げる例外（`node:crypto` の復号の失敗） | `Result.fromThrowable`（同じファイル）。`TotpAuthenticator`（`backend/packages/infrastructure/src/security/totp-authenticator.ts`）が使う | `Result<T, Error>` |
 | Express とそのボディパーサーが渡すエラー、ハンドラー内の予期しない例外 | `errorHandler` と `toHttpError`（`backend/packages/api/src/middleware/errors.ts`） | `HttpError` → 問題詳細のレスポンス |
-| どこにも捕捉されなかった例外と reject | `uncaughtException` / `unhandledRejection` のハンドラー（`backend/apps/server/src/index.ts`） | ログに書いてプロセスを終了 |
+| どこにも捕捉されなかった例外と reject | `uncaughtException` / `unhandledRejection` のハンドラー（`backend/apps/server/src/main.ts`） | ログに書いてプロセスを終了 |
 
-ハンドラーは `try` / `catch` を書きません。Express 5 は `async` ハンドラーの reject をエラーハンドラーへ渡すので、`errorHandler` がまとめて処理します。プロセスを終了させる `process.exit` を呼ぶのも `backend/apps/server/src/index.ts` だけです。
+ハンドラーは `try` / `catch` を書きません。Express 5 は `async` ハンドラーの reject をエラーハンドラーへ渡すので、`errorHandler` がまとめて処理します。プロセスを終了させるのも、サーバーの `main`（`backend/apps/server/src/main.ts`）だけです。`main` は受け取ったプロセスの `exit` を呼び、`backend/apps/server/src/index.ts` が Node.js のプロセスを渡します（`main(process)`）。
 
 ## 境界で検証する
 

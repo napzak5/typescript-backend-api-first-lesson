@@ -1,3 +1,3 @@
 import { backendTests } from '@beauty-salon-shared/config/vitest'
 
-export default backendTests({ unit: {} })
+export default backendTests({ full: true, unit: {} })

@@ -271,10 +271,10 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
 `Result` の中のエラーがさらに Sum 型のときは、外側と内側の判別子を1つのパターンに書きます。
 
 ```typescript
-// backend/apps/server/src/index.ts（抜粋）
+// backend/apps/server/src/main.ts（抜粋）
 match(started)
   .with({ type: 'success' }, ({ data: server }) => {
-    // ... 起動のログ出力とシグナルハンドラの登録
+    // ... シグナルハンドラの登録
   })
   .with(
     { type: 'error', error: { type: 'databaseUnreachable' } },
@@ -283,12 +283,12 @@ match(started)
         { error: error.error },
         'Cannot start: the database is unreachable',
       )
-      process.exit(1)
+      serverProcess.exit(1)
     },
   )
   .with({ type: 'error', error: { type: 'listenFailed' } }, ({ error }) => {
     logger.fatal({ err: error.error }, 'Cannot start: cannot listen')
-    process.exit(1)
+    serverProcess.exit(1)
   })
   .exhaustive()
 ```
