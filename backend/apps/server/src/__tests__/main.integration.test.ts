@@ -1,31 +1,22 @@
 import { EventEmitter } from 'node:events'
 import { createServer, type Server } from 'node:net'
 import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
+  startTestPostgres,
+  type TestPostgres,
+} from '@beauty-salon-backend/testing'
 import { match, P } from 'ts-pattern'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { main } from '../main'
 
-let container: StartedPostgreSqlContainer | undefined
+let instance: TestPostgres
 let databaseUrl = ''
 
 beforeAll(async () => {
-  const { TEST_DATABASE_URL: externalUrl } = process.env
-
-  if (!externalUrl) {
-    container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withStartupTimeout(120000)
-      .start()
-  }
-
-  databaseUrl = container?.getConnectionUri() ?? externalUrl ?? ''
+  instance = await startTestPostgres(process.env)
+  databaseUrl = instance.url
 })
 
-afterAll(async () => {
-  await container?.stop()
-})
+afterAll(() => instance.stop())
 
 /** Listens on a port the system chooses, and says which. */
 const listening = async (): Promise<{ server: Server; port: number }> => {

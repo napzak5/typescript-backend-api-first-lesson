@@ -26,8 +26,8 @@
     "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
+    "@beauty-salon-backend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
-    "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^26.6.6",
     "postgres": "^4.1.1",
     "tsx": "^4.23.15",

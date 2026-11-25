@@ -7,35 +7,28 @@ import {
   createLogger,
 } from '@beauty-salon-backend/infrastructure'
 import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
+  startTestPostgres,
+  type TestPostgres,
+} from '@beauty-salon-backend/testing'
 import postgres from 'postgres'
 import { match, P } from 'ts-pattern'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { type RunningServer, startServer } from '../server'
 
-let container: StartedPostgreSqlContainer | undefined
+let instance: TestPostgres
 let databaseUrl = ''
 /** A connection of the test's own, to see the server's from the outside. */
 let observer: postgres.Sql
 
 beforeAll(async () => {
-  const { TEST_DATABASE_URL: externalUrl } = process.env
-
-  if (!externalUrl) {
-    container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withStartupTimeout(120000)
-      .start()
-  }
-
-  databaseUrl = container?.getConnectionUri() ?? externalUrl ?? ''
+  instance = await startTestPostgres(process.env)
+  databaseUrl = instance.url
   observer = postgres(databaseUrl, { max: 1 })
 })
 
 afterAll(async () => {
   await observer.end()
-  await container?.stop()
+  await instance.stop()
 })
 
 /**
