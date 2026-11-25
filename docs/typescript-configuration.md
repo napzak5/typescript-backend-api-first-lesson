@@ -139,7 +139,7 @@ export default bundledLibrary(manifest, 'browser')
 
 モジュールごとの形では、コンポーネントのスタイルシートを、モジュールの隣に `*.module.built.css` という名前で書き出し、モジュールがそれを `import` します。`*.module.css` のままだと、アプリのバンドラーがクラス名をもう一度付け直し、スタイルが外れます。
 
-`database` は、ビルドの後に `sql/` を `dist/sql` に写します（`backend/packages/database/vite.config.ts`）。
+`database` の `getSetupSql`（`backend/packages/database/src/setup-sql.ts`）は、パッケージの `sql/setup.sql` を、呼ばれたときに読みます。束ねた `dist/index.js` も `src/setup-sql.ts` も、パッケージの 1 つ下のフォルダーにあるので、どちらからも同じパスで読めます。これを呼ぶのは API のテストだけで、サーバーのイメージには `sql/` を入れません。
 
 設定のテストは `shared-config/vite/library.test.ts` です。`shared-config/vite/__fixtures__/` の小さなライブラリーをビルドして、`dist` の中身を確かめます。各パッケージの `vite.config.ts` の型は、ルートの `tsconfig.json` が検査します（`backend/packages/*`、`frontend/packages/*`、`shared-i18n`）。
 

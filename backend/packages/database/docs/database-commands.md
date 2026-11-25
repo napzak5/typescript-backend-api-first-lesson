@@ -102,3 +102,13 @@ pnpm check:db-schema
 ```
 
 `db:fresh` → `db:introspect` → `db:generate-sql` を実行し、コミットされている生成物と差分がないことを確認します。接続先の DB を作り直すので、消えて困るデータがある DB には実行しません。
+
+## コマンドの作り
+
+`pnpm db:*` と `pnpm check:api-db` は、どれも同じ入口 `src/scripts/main.ts` を、コマンドの名前を付けて実行します(`backend/packages/database/package.json`。`db:fresh` は `db:reset` と `db:setup` を続けて実行します)。
+
+- コマンドは `src/scripts/commands/` に 1 つずつあり、一覧は `src/scripts/commands/index.ts` の `COMMANDS` です。
+- `src/scripts/command.ts` の `runCommand` が、名前でコマンドを選び、環境変数ファイルを読み込み、接続先を決め(`databaseUrlOf`)、実行して、その終了コードで終わります。コマンドが失敗したときは、ここで 1 回だけ受け止め、理由を表示して終了コード 1 で終わります。
+- どのコマンドも `--help`(`-h`)で使い方を表示し、何も実行しません。知らない名前には、コマンドの一覧を表示して終了コード 1 で終わります。
+- コマンドは、出力を `say`(標準出力)と `complain`(標準エラー出力)で書き、パッケージのファイルの場所(`paths`)を受け取ります。テストは、出力を集め、書き出す先を一時フォルダーにして、コマンドを実行します(`src/scripts/commands/__tests__/`。テストごとに作るデータベースで実行します)。
+- `db:introspect` は、drizzle-kit に一時フォルダーへ書かせ(`drizzle.config.ts` の `INTROSPECTION_DIRECTORY`)、正規化して、使わない import を除き(drizzle-kit は、使わなくても `sql` を import し、関係のないスキーマでは `relations` を import します)、Biome でリポジトリの設定のとおりに整形して(標準入力から)、`src/` に書きます。

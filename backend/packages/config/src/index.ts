@@ -6,9 +6,8 @@ export {
   parseAppConfig,
 } from './app-config'
 export {
-  getDatabaseUrl,
+  databaseUrlOf,
   type LoadedEnvFile,
-  loadEnvConfig,
   loadEnvFile,
 } from './env-loader'
 export type { Environment } from './environment'
