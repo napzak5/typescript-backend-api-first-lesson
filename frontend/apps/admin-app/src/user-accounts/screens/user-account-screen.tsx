@@ -4,6 +4,7 @@ import {
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -18,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { useSignedInUserId } from '../../staff/screens/with-staff-member'
 import { accountKeyOf } from '../../staff-accounts/api/accounts-api'
 import {
   readUser,
@@ -66,7 +66,7 @@ const AccountParts = ({ user, readAt }: AccountPartsProps) => {
   const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const support = supportOf(user, new Date(), useSignedInUserId())
+  const support = supportOf(user, new Date(), useSignedInUser()?.id)
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const heading = useRef<HTMLHeadingElement>(null)
   /** Whether the focus goes to the heading once the account is shown anew */

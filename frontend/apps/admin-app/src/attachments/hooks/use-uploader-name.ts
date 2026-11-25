@@ -2,7 +2,7 @@ import { useSession } from '@beauty-salon-frontend/session'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
-import { readWholeLedger, wholeLedgerKeyOf } from '../../staff/api/staff-api'
+import { readWholeLedger, STAFF_LISTS } from '../../staff/api/staff-api'
 import { mayKeepStaffLedger } from '../../staff/utils/staff-format'
 import { uploaderNameOf } from '../utils/attachment-file'
 
@@ -17,7 +17,8 @@ export const useUploaderName = (
   const session = useSession()
   const account = session.type === 'signedIn' ? session.user : undefined
   const ledger = useQuery({
-    queryKey: wholeLedgerKeyOf(salonId),
+    // Among the lists of the staff, which a write of a member drops
+    queryKey: [...STAFF_LISTS, salonId, 'whole'],
     queryFn: () => readWholeLedger(salonId),
     enabled: mayKeepStaffLedger(account?.role ?? ''),
   })

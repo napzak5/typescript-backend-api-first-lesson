@@ -163,13 +163,6 @@ const updateStaffMember = async (
     .exhaustive(outsideTheContract)
 }
 
-/** The key the whole ledger of a salon is read under: among the lists, which a write drops. */
-export const wholeLedgerKeyOf = (salonId: string): string[] => [
-  ...STAFF_LISTS,
-  salonId,
-  'whole',
-]
-
 /** The members of a salon, read to the end: for the owner and an administrator, who keep the ledger. */
 export const readWholeLedger = (
   salonId: string,

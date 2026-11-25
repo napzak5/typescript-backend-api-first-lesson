@@ -1,3 +1,4 @@
+import type { ModelsStaffUpdateRequest } from '@beauty-salon-frontend/api-client'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { describe, expect, it } from 'vitest'
@@ -476,6 +477,26 @@ describe('readStaffChange', () => {
         canReceiveBookings: false,
       },
     })
+  })
+
+  it.each<[string, Record<string, string>, ModelsStaffUpdateRequest]>([
+    [
+      'the other telephone number',
+      { alternativePhone: '03-1234-5678' },
+      { alternativePhone: '03-1234-5678' },
+    ],
+    ['the introduction', { bio: '' }, { bio: null }],
+    [
+      'the time kept free before a booking',
+      { bufferTimeBefore: '10' },
+      { bufferTimeBefore: 10 },
+    ],
+  ])('should send %s alone when it alone was changed', (_, changes, value) => {
+    // Act
+    const change = readStaffChange(formOf(changes), aStaffMember(), false)
+
+    // Assert
+    expect(change).toEqual({ type: 'valid', value })
   })
 
   it('should fill in what the ledger did not have of a member', () => {
