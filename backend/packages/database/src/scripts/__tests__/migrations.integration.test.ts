@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import * as path from 'node:path'
+import { useTestDatabases } from '@beauty-salon-backend/testing'
 import type postgres from 'postgres'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { useTestDatabases } from '../../__tests__/_shared/test-databases'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   applyBaseline,
   dropHistory,
@@ -14,17 +14,13 @@ import {
 
 const sqlDirectory = path.resolve(import.meta.dirname, '../../../sql')
 
-const databases = useTestDatabases()
+const databases = useTestDatabases({ prefix: 'database_test' })
 
 /** The database of the running test: empty when the test starts. */
 let sql: postgres.Sql
 
 beforeEach(() => {
-  sql = databases.connect()
-})
-
-afterEach(async () => {
-  await sql.end()
+  sql = databases.client()
 })
 
 /** A schema small enough to read, shaped like the real one. */

@@ -44,6 +44,7 @@
     "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
+    "@beauty-salon-backend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@types/node": "^26.6.6",
     "testcontainers": "^12.2.1",

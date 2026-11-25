@@ -7,13 +7,14 @@ import {
   writtenMail,
 } from '@beauty-salon-backend/domain'
 import {
+  createDatabase,
   createLogger,
   TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
+import type { TestDatabase, TestDatabases } from '@beauty-salon-backend/testing'
 import type { Express } from 'express'
 import { createApp } from '../../index'
 import { LOOPBACK, listen } from '../_shared/listening'
-import type { TestDatabase, TestDatabases } from '../_shared/test-databases'
 
 /** What the applications encrypt the secrets of authenticator apps under. */
 const TWO_FACTOR_ENCRYPTION_KEY = 'key-of-the-test-server-only'
@@ -98,7 +99,7 @@ const applicationOn = (
   fileStorage: IFileStorage,
 ): Express =>
   createApp({
-    database: database.db,
+    database: createDatabase(database.client),
     settings: {
       trustProxyHops: 0,
       cors: { origins: corsOrigins, credentials: true, maxAgeSeconds: 600 },
@@ -215,7 +216,7 @@ export const openTestApis = (
         return { type: 'unknownApi' }
       }
 
-      return api.database.queryClient.unsafe(text, values).then(
+      return api.database.client.unsafe(text, values).then(
         (rows): QueryOutcome => ({ type: 'rows', rows: [...rows] }),
         (error: unknown): QueryOutcome => ({
           type: 'refused',

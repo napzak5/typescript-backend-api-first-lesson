@@ -1,0 +1,48 @@
+{
+  "name": "@beauty-salon-backend/testing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "@beauty-salon-backend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "build:localhost": "vite build --mode localhost",
+    "build:dev": "vite build --mode development",
+    "build:test": "vite build --mode test",
+    "build:stg": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "build:watch": "vite build --watch --mode development",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@testcontainers/postgresql": "^12.2.1",
+    "postgres": "^4.1.1",
+    "testcontainers": "^12.2.1"
+  },
+  "peerDependencies": {
+    "vitest": "^5.1.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1171.0",
+    "@beauty-salon-shared/config": "workspace:*",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}

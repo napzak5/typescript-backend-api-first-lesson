@@ -39,6 +39,7 @@ COPY backend/packages/database/package.json ./backend/packages/database/
 COPY backend/packages/domain/package.json ./backend/packages/domain/
 COPY backend/packages/generated/package.json ./backend/packages/generated/
 COPY backend/packages/infrastructure/package.json ./backend/packages/infrastructure/
+COPY backend/packages/testing/package.json ./backend/packages/testing/
 COPY backend/packages/utility/package.json ./backend/packages/utility/
 
 # Copy frontend packages

@@ -163,6 +163,7 @@ backend/
     ├── database/         # DB schema, migrations, seeds
     ├── generated/        # Auto-generated API types
     ├── config/           # Configuration
+    ├── testing/          # What the tests share: the PostgreSQL of the tests and a database for each test, the object storage
     └── utility/          # Result type and shared helpers
 ```
 

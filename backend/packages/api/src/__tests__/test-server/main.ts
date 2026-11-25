@@ -1,11 +1,17 @@
 import { createServer } from 'node:http'
-import { SEED_PASSWORD, seedDatabase } from '@beauty-salon-backend/database'
-import { PostgreSqlContainer } from '@testcontainers/postgresql'
+import {
+  getSetupSql,
+  SEED_PASSWORD,
+  seedDatabase,
+} from '@beauty-salon-backend/database'
+import {
+  openTestDatabases,
+  startTestPostgres,
+} from '@beauty-salon-backend/testing'
 import { LOOPBACK, listen } from '../_shared/listening'
-import { openTestDatabases } from '../_shared/test-databases'
 import { createControl } from './control'
 import { openTestApis, stop } from './test-apis'
-import { startTestStorage } from './test-storage'
+import { startTestFileStorage } from './test-storage'
 
 /**
  * The test server: what the tests of the clients (the screens, the browser
@@ -22,7 +28,7 @@ import { startTestStorage } from './test-storage'
  * when its standard input ends (so it never outlives the process that
  * started it) or on SIGINT or SIGTERM.
  */
-const { TEST_DATABASE_URL: externalUrl, TEST_SERVER_TOKEN: token } = process.env
+const { TEST_SERVER_TOKEN: token } = process.env
 
 if (!token) {
   throw new Error(
@@ -38,25 +44,21 @@ const explain =
     throw error
   }
 
-const container = externalUrl
-  ? undefined
-  : await new PostgreSqlContainer('postgres:18-alpine')
-      .withStartupTimeout(120000)
-      .start()
-      .catch(
-        explain(
-          'could not start a PostgreSQL container: it needs a running Docker daemon, or the URL of an instance in TEST_DATABASE_URL',
-        ),
-      )
-const databases = await openTestDatabases(
-  container?.getConnectionUri() ?? externalUrl ?? '',
-  seedDatabase,
-).catch(
+const instance = await startTestPostgres(process.env).catch(
+  explain(
+    'could not start a PostgreSQL container: it needs a running Docker daemon, or the URL of an instance in TEST_DATABASE_URL',
+  ),
+)
+const databases = await openTestDatabases(instance.url, {
+  prefix: 'api_test',
+  schema: getSetupSql(),
+  fill: seedDatabase,
+}).catch(
   explain(
     'could not create its template database: it needs a PostgreSQL it may create databases on',
   ),
 )
-const storage = await startTestStorage().catch(
+const storage = await startTestFileStorage().catch(
   explain(
     'could not start its object storage, a SeaweedFS container: it needs a running Docker daemon',
   ),
@@ -75,7 +77,7 @@ const shutDown = async (): Promise<void> => {
   await apis.close()
   await databases.close()
   await storage.stop()
-  await container?.stop()
+  await instance.stop()
   process.exit(0)
 }
 

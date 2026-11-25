@@ -105,6 +105,8 @@ shape the system, and why:
 ├── backend/
 │   ├── packages/
 │   │   ├── utility/         Result type and type helpers
+│   │   ├── testing/         What the tests share: the PostgreSQL of the tests
+│   │   │                    and their databases, the object storage
 │   │   ├── generated/       API types generated from the OpenAPI document
 │   │   ├── config/          Environment files and parseAppConfig
 │   │   ├── database/        Drizzle schema, SQL, migration and seed scripts
@@ -112,7 +114,7 @@ shape the system, and why:
 │   │   │                    repository and service interfaces, errors
 │   │   ├── infrastructure/  Database connection, repository implementations,
 │   │   │                    password hashing, tokens, one-time passwords,
-│   │   │                    mail over SMTP, logger
+│   │   │                    mail over SMTP, object storage (S3), logger
 │   │   └── api/             Express application: middleware, routes,
 │   │                        authentication, error responses
 │   └── apps/
@@ -2432,8 +2434,8 @@ The workflows in `.github/workflows`:
 - `ci.yml` runs on every pull request and on pushes to `main` and `develop`:
   the toolchain-version, generated-file, API–database and schema-file checks,
   lint, format check, build, type check, knip, the unit tests, the integration
-  tests (once against an external PostgreSQL and once through
-  testcontainers, each cut into four parts that run in jobs side by side),
+  tests (against a PostgreSQL service, cut into four parts that run in jobs
+  side by side),
   the browser tests, a build for each environment, and a
   dependency audit. On a
   push to `main`, once the checks have passed, it calls `publish-images.yml`

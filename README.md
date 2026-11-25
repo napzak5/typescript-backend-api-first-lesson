@@ -133,11 +133,12 @@ accounts and their roles are listed in
 ├── backend/                    # Backend monorepo
 │   ├── packages/
 │   │   ├── domain/           # Business logic layer
-│   │   ├── infrastructure/  # Database access, mail (SMTP), password hashing, tokens, one-time passwords, logging
+│   │   ├── infrastructure/  # Database access, mail (SMTP), object storage (S3), password hashing, tokens, one-time passwords, logging
 │   │   ├── api/              # HTTP layer
 │   │   ├── database/         # Database schema, migrations, seeds
 │   │   ├── generated/        # Auto-generated types
 │   │   ├── config/           # Configuration
+│   │   ├── testing/          # What the tests share: the PostgreSQL of the tests and a database for each test, the object storage
 │   │   └── utility/          # Result type and shared helpers
 │   └── apps/
 │       └── server/           # Express application
@@ -370,6 +371,12 @@ dropped.
   The integration tests of the infrastructure package send mail to a Mailpit
   container and files to a SeaweedFS container, which they also start through
   testcontainers.
+
+  What the tests of the backend share is the package
+  `@beauty-salon-backend/testing`: the PostgreSQL of the tests
+  (`startTestPostgres`), a database for each test copied from a template
+  (`openTestDatabases`, `useTestDatabases`) and the object storage
+  (`startTestStorage`).
 
   The integration tests of the frontend (`*.integration.test.tsx`) call the
   production API from the code of the client, and from the screens as a user

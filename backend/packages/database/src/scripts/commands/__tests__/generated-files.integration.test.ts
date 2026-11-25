@@ -1,12 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { useTestDatabases } from '@beauty-salon-backend/testing'
 import { describe, expect, it } from 'vitest'
-import { useTestDatabases } from '../../../__tests__/_shared/test-databases'
 import { runDatabaseCommand } from '../../__tests__/_shared/commands'
 import { useTemporaryFolders } from '../../__tests__/_shared/folders'
 import { PACKAGE_PATHS } from '../../command'
 
-const databases = useTestDatabases()
+const databases = useTestDatabases({ prefix: 'database_test' })
 const folderOf = useTemporaryFolders()
 
 /**
@@ -62,9 +62,7 @@ describe('pnpm db:introspect', () => {
     PROGRAMS,
     async () => {
       // Arrange
-      const sql = databases.connect()
-      await sql`CREATE TABLE salons (id uuid PRIMARY KEY, name text NOT NULL)`
-      await sql.end()
+      await databases.client()`CREATE TABLE salons (id uuid PRIMARY KEY, name text NOT NULL)`
       const source = folderOf({})
 
       // Act

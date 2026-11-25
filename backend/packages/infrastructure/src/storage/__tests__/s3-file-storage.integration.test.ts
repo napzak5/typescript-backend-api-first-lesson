@@ -1,24 +1,22 @@
 import { randomUUID } from 'node:crypto'
 import {
   DeleteObjectCommand,
-  HeadBucketCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
 import type { DomainError } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
 import {
-  GenericContainer,
-  type StartedTestContainer,
-  Wait,
-} from 'testcontainers'
+  startTestStorage,
+  type TestStorage,
+} from '@beauty-salon-backend/testing'
+import type { Result } from '@beauty-salon-backend/utility'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { S3FileStorage, type S3Settings } from '../s3-file-storage'
 
 /**
- * The files go to a real S3-compatible storage: SeaweedFS, the one that
- * docker compose starts, in a container of its own. It is told its bucket
- * and its one identity when it starts.
+ * The files go to a real S3-compatible storage: the storage of the tests
+ * (`startTestStorage`), SeaweedFS in a container of its own, which is told
+ * its bucket and its one identity when it starts.
  *
  * Another storage is tested instead when `TEST_STORAGE_ENDPOINT` names
  * one, with `TEST_STORAGE_REGION`, `TEST_STORAGE_BUCKET`,
@@ -28,12 +26,12 @@ import { S3FileStorage, type S3Settings } from '../s3-file-storage'
  * removed at the end.
  */
 
-const S3_PORT = 8333
 const SECOND = 1000
 
 const external = process.env['TEST_STORAGE_ENDPOINT']
 
-let container: StartedTestContainer | undefined
+/** The storage of the tests, when no other storage is named. */
+let started: TestStorage | undefined
 let settings: S3Settings = {
   endpoint: external ?? '',
   publicEndpoint: external ?? '',
@@ -77,40 +75,15 @@ const directClient = (): S3Client =>
 
 beforeAll(async () => {
   if (external === undefined) {
-    container = await new GenericContainer('chrislusf/seaweedfs:4.54')
-      .withCommand([
-        'mini',
-        '-dir=/data',
-        `-bucket=${settings.bucket}`,
-        '-master.telemetry=false',
-      ])
-      .withEnvironment({
-        AWS_ACCESS_KEY_ID: settings.accessKeyId,
-        AWS_SECRET_ACCESS_KEY: settings.secretAccessKey,
-      })
-      .withExposedPorts(S3_PORT)
-      .withWaitStrategy(Wait.forHttp('/healthz', S3_PORT).forStatusCode(200))
-      .start()
-    const endpoint = `http://${container.getHost()}:${container.getMappedPort(S3_PORT)}`
-    settings = { ...settings, endpoint, publicEndpoint: endpoint }
+    started = await startTestStorage(settings)
+    settings = {
+      ...settings,
+      endpoint: started.endpoint,
+      publicEndpoint: started.endpoint,
+    }
   }
   storage = new S3FileStorage(settings)
   direct = directClient()
-
-  // The storage answers before its bucket is there.
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    const found = await direct
-      .send(new HeadBucketCommand({ Bucket: settings.bucket }))
-      .then(
-        () => true,
-        () => false,
-      )
-    if (found) {
-      return
-    }
-    await pause(500)
-  }
-  throw new Error(`The bucket ${settings.bucket} is not there`)
 })
 
 afterAll(async () => {
@@ -121,7 +94,7 @@ afterAll(async () => {
   }
   storage?.close()
   direct?.destroy()
-  await container?.stop()
+  await started?.stop()
 })
 
 const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]

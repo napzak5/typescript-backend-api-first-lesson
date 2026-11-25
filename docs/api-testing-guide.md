@@ -27,8 +27,7 @@ backend/packages/api/
     │   └── admin-auth/__tests__/admin-auth.integration.test.ts              # what an administrator does to accounts
     └── __tests__/                   # what is about no single route, and what all the tests share
         ├── _shared/
-        │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
-        │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
+        │   ├── setup.ts                 # a database for each test, copied from a template with the schema
         │   ├── test-helpers.ts          # createTestApp, getTestDb, request, the problems the tests expect
         │   ├── listening.ts             # a server of a test on a port of this machine
         │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
@@ -36,6 +35,7 @@ backend/packages/api/
         ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)
         │   ├── main.ts                  # the program: the PostgreSQL instance, the template with the seed data
         │   ├── test-apis.ts             # the APIs it runs: createApp on a port and a database copy each
+        │   ├── test-storage.ts          # the S3FileStorage of the APIs, on the storage of the tests
         │   └── control.ts               # the requests it answers: start, reset, query and remove an API
         ├── app.integration.test.ts            # what the application does for every route
         ├── request-dates.integration.test.ts  # the dates and moments a request may name, at the operations that take one
@@ -68,11 +68,14 @@ TEST_SERVER_TOKEN=<any value> pnpm --filter @beauty-salon-backend/api run test:s
 # READY http://127.0.0.1:<port>
 ```
 
-- It uses the PostgreSQL at `TEST_DATABASE_URL`, or starts a container, as the
-  setup of the integration tests does. With `openTestDatabases` it builds one
-  template that has the schema and the seed data (`seedDatabase` of the
-  database package: the rows of `pnpm db:seed`).
-- It starts a SeaweedFS container through testcontainers whatever
+- It uses the PostgreSQL of the tests (`startTestPostgres` of
+  `@beauty-salon-backend/testing`: the one at `TEST_DATABASE_URL`, or a
+  container), as the setup of the integration tests does. With
+  `openTestDatabases` of the same package it builds one template that has
+  the schema and the seed data (`seedDatabase` of the database package: the
+  rows of `pnpm db:seed`).
+- It starts the storage of the tests (`startTestStorage` of
+  `@beauty-salon-backend/testing`, a SeaweedFS container) whatever
   `TEST_DATABASE_URL` says (`test-server/test-storage.ts`): the object
   storage that all its APIs keep their files in. A test sends a file to it
   at the URL an API signed and reads it back from a URL of a download, as a
@@ -150,7 +153,8 @@ pnpm --filter @beauty-salon-backend/api run test
 The integration tests need a PostgreSQL. There are two ways to give them one.
 
 **Docker running, nothing set.** The setup starts a `postgres:18-alpine`
-container through testcontainers and stops it afterwards.
+container through testcontainers (`startTestPostgres` of
+`@beauty-salon-backend/testing`) and stops it afterwards.
 
 Testcontainers finds Docker Desktop by itself. Another runtime has to be
 named, or the run ends with `Could not find a working container runtime
@@ -175,8 +179,9 @@ The tests change nothing in the database the URL names, so the instance of
 the same instance, one per test, so the user needs the right to create
 databases.
 
-CI runs the integration tests both ways. Each way is cut into four parts,
-run by four jobs side by side: every package's test files are split by
+CI runs the integration tests once, against a PostgreSQL service of its
+jobs through `TEST_DATABASE_URL`. The run is cut into four parts, run by
+four jobs side by side: every package's test files are split by
 Vitest's `--shard` (`pnpm test:integration --shard=<part>/4
 --passWithNoTests`). `pnpm test:integration` does not wait for the tests of
 a package's dependencies (`pnpm -r --no-sort`), so the API tests do not
@@ -193,8 +198,9 @@ server.
 
 The integration tests of the file storage (`S3FileStorage`, in
 `backend/packages/infrastructure/src/storage/__tests__/`) upload and download
-through signed URLs against a real S3-compatible storage: a SeaweedFS container
-they start through testcontainers, or the storage that `TEST_STORAGE_ENDPOINT`,
+through signed URLs against a real S3-compatible storage: the storage of the
+tests (`startTestStorage` of `@beauty-salon-backend/testing`, a SeaweedFS
+container), or the storage that `TEST_STORAGE_ENDPOINT`,
 `TEST_STORAGE_REGION`, `TEST_STORAGE_BUCKET`, `TEST_STORAGE_ACCESS_KEY_ID` and
 `TEST_STORAGE_SECRET_ACCESS_KEY` name, where they write below a random prefix
 and remove what they wrote. The API tests need no storage: `createTestApp`
@@ -209,35 +215,32 @@ The project `integration` of `vitest.config.ts` names
 `src/__tests__/_shared/setup.ts` as a setup file, so its hooks run around
 every integration test of the package.
 
-Once per test file, the setup picks the PostgreSQL instance and builds a
-template on it:
+The setup calls `useTestDatabases` of `@beauty-salon-backend/testing`, the
+package of what the tests of the backend share, and hands the database of
+each test to `getTestDb()` and `getTestDbClient()`:
 
 ```typescript
 // backend/packages/api/src/__tests__/_shared/setup.ts (excerpt)
-beforeAll(async () => {
-  const { TEST_DATABASE_URL: externalUrl } = process.env
+const databases = useTestDatabases({ prefix: 'api_test', schema: getSetupSql() })
 
-  if (!externalUrl) {
-    container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withStartupTimeout(120000)
-      .start()
-  }
-
-  databases = await openTestDatabases(
-    container?.getConnectionUri() ?? externalUrl ?? '',
-  )
+beforeEach(() => {
+  globalThis.__TEST_DB__ = createDatabase(databases.client())
+  globalThis.__TEST_DB_CLIENT__ = databases.client()
 })
 ```
 
-`openTestDatabases` (`test-databases.ts`) creates a database named
-`api_test_<mark>_template`, applies `backend/packages/database/sql/setup.sql`
-to it as it is, and closes the connection. Its tables are empty: a caller
-that wants every copy to start with rows passes a function that inserts them
-into the template, which only the test server does. Around each test, the
-setup gives the test a database of its own:
+Once per test file, `useTestDatabases` picks the PostgreSQL instance
+(`startTestPostgres`) and builds a template on it (`openTestDatabases`): a
+database named `api_test_<mark>_template`, to which it applies
+`backend/packages/database/sql/setup.sql` as it is, before it closes the
+connection. Its tables are empty: a caller that wants every copy to start
+with rows passes `fill`, a function that inserts them into the template,
+which only the test server does. Around each test, it gives the test a
+database of its own:
 
-1. Before the test it creates a database named `api_test_<mark>_<uuid>` as a
-   copy of the template (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
+1. Before the test it creates a database named `api_test_<mark>_<n>` (the
+   `n`th copy of the template) as a copy of the template
+   (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
 2. After the test it closes the connection and drops the database.
 
 The template is dropped when the file is done. The mark (12 hexadecimal
