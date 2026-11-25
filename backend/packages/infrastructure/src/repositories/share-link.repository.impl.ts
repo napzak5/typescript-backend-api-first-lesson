@@ -110,16 +110,16 @@ export class ShareLinkRepository implements IShareLinkRepository {
         after === null
           ? []
           : await this.db
-              .select({ createdAt: shareLinks.createdAt })
+              .select({ createdAt: shareLinks.createdAt, id: shareLinks.id })
               .from(shareLinks)
               .where(and(eq(shareLinks.id, after), ofAttachment))
       if (after !== null && cursor === undefined) {
         return null
       }
       const afterCursor =
-        after === null || cursor === undefined
+        cursor === undefined
           ? undefined
-          : sql`(${shareLinks.createdAt}, ${shareLinks.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
+          : sql`(${shareLinks.createdAt}, ${shareLinks.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
       const [found, counted] = await Promise.all([
         this.db

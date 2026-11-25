@@ -14,6 +14,7 @@ import {
   creationIssues,
   type DbNewTreatmentMaterial,
   type DbNewTreatmentPhoto,
+  type DbTreatmentMaterial,
   type DomainError,
   type ITreatmentRecordRepository,
   isTreated,
@@ -38,7 +39,7 @@ import {
   type TreatmentStatisticsCriteria,
   treatmentIssues,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import {
   and,
   asc,
@@ -54,10 +55,12 @@ import {
 } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
+import { aggregateOf } from '../database/aggregate'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { rowWritten, writtenFor } from '../database/written'
 import { detailsOf } from './_shared/treatment-details'
 
 /** The bookings of the salons the reach covers. */
@@ -174,18 +177,21 @@ const figuresOf = async (
     return null
   }
 
-  const [totals] = await tx
-    .select({
-      total: count(),
-      processingTimeSum:
-        sql<number>`coalesce(sum(${treatmentRecords.processingTime}), 0)`.mapWith(
-          Number,
-        ),
-      processingTimeCount: count(treatmentRecords.processingTime),
-    })
-    .from(treatmentRecords)
-    .innerJoin(bookings, eq(bookings.id, treatmentRecords.bookingId))
-    .where(ofPeriod(criteria))
+  const totals = aggregateOf(
+    await tx
+      .select({
+        total: count(),
+        processingTimeSum:
+          sql<number>`coalesce(sum(${treatmentRecords.processingTime}), 0)`.mapWith(
+            Number,
+          ),
+        processingTimeCount: count(treatmentRecords.processingTime),
+      })
+      .from(treatmentRecords)
+      .innerJoin(bookings, eq(bookings.id, treatmentRecords.bookingId))
+      .where(ofPeriod(criteria)),
+    { total: 0, processingTimeSum: 0, processingTimeCount: 0 },
+  )
 
   // One row for each service a record of the period states.
   const servicesOfRecords = tx
@@ -236,13 +242,7 @@ const figuresOf = async (
     )
     .limit(TOP_SERVICES)
 
-  return {
-    total: totals?.total ?? 0,
-    processingTimeSum: totals?.processingTimeSum ?? 0,
-    processingTimeCount: totals?.processingTimeCount ?? 0,
-    byCategory,
-    topServices,
-  }
+  return { ...totals, byCategory, topServices }
 }
 
 /**
@@ -324,17 +324,38 @@ const productsOf = async (
   )
 }
 
-/** The materials of a record, in the order of the request, written at the moment. */
-const materialRowsOf = (
+/**
+ * Writes the materials of a record, in the order of the request, at the
+ * moment, and answers with the rows written, in that order.
+ */
+const insertMaterials = async (
+  executor: DatabaseExecutor,
   recordId: string,
   materials: DbNewTreatmentMaterial[],
-) =>
-  materials.map((material, sortOrder) => ({
+): Promise<Result<DbTreatmentMaterial[], DomainError>> => {
+  const rows = materials.map((material, sortOrder) => ({
     ...material,
     treatmentRecordId: recordId,
     sortOrder,
     createdAt: CLOCK,
   }))
+  const inserted =
+    rows.length === 0
+      ? []
+      : await executor.insert(treatmentMaterials).values(rows).returning()
+  const placeOf = ({ sortOrder }: { sortOrder: number }): string =>
+    String(sortOrder)
+
+  return Result.map(
+    writtenFor('Insert of treatment materials')(
+      rows,
+      placeOf,
+      inserted,
+      placeOf,
+    ),
+    (pairs) => pairs.map(({ row }) => row),
+  )
+}
 
 export class TreatmentRecordRepository implements ITreatmentRecordRepository {
   constructor(private readonly db: Database) {}
@@ -346,9 +367,9 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
   }: TreatmentRecordCreateCriteria): Promise<
     Result<TreatmentRecordCreation, DomainError>
   > {
-    return attempt('Failed to create treatment record', () =>
+    const created = await attempt('Failed to create treatment record', () =>
       this.db.transaction(
-        async (tx): Promise<TreatmentRecordCreation> => {
+        async (tx): Promise<Result<TreatmentRecordCreation, DomainError>> => {
           // The booking is held, so that a change of its status and its
           // removal, which hold it for an update, come before this or
           // after it: a booking that is being removed is gone once this
@@ -367,7 +388,7 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             )
             .for('share')
           if (booking === undefined) {
-            return { type: 'bookingNotFound' }
+            return Result.success({ type: 'bookingNotFound' })
           }
           // A salon that is being removed is read as it is once removed.
           const [salon] = await tx
@@ -378,7 +399,7 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             )
             .for('key share')
           if (salon === undefined) {
-            return { type: 'bookingNotFound' }
+            return Result.success({ type: 'bookingNotFound' })
           }
 
           const [customer] = await tx
@@ -418,10 +439,13 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             named,
           )
           if (issues.length > 0) {
-            return { type: 'refused', issues }
+            return Result.success({ type: 'refused', issues })
           }
           if (!isTreated(booking.status)) {
-            return { type: 'bookingNotTreated', status: booking.status }
+            return Result.success({
+              type: 'bookingNotTreated',
+              status: booking.status,
+            })
           }
 
           const [stored] = await tx
@@ -431,32 +455,28 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             .onConflictDoNothing({ target: treatmentRecords.bookingId })
             .returning()
           if (stored === undefined) {
-            return { type: 'recordExists' }
+            return Result.success({ type: 'recordExists' })
           }
-          const storedMaterials =
-            materials.length === 0
-              ? []
-              : await tx
-                  .insert(treatmentMaterials)
-                  .values(materialRowsOf(stored.id, materials))
-                  .returning()
 
-          return {
-            type: 'created',
-            record: {
-              record: stored,
-              materials: storedMaterials.toSorted(
-                (left, right) => left.sortOrder - right.sortOrder,
-              ),
-              photos: [],
-            },
-          }
+          return Result.map(
+            await insertMaterials(tx, stored.id, materials),
+            (storedMaterials): TreatmentRecordCreation => ({
+              type: 'created',
+              record: {
+                record: stored,
+                materials: storedMaterials,
+                photos: [],
+              },
+            }),
+          )
         },
         // A request that waited for the booking, the salon, the customer,
         // a service, the staff member or a product sees what it waited for.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(created, (outcome) => outcome)
   }
 
   async findById(
@@ -503,7 +523,10 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
           after === null
             ? []
             : await tx
-                .select({ createdAt: treatmentRecords.createdAt })
+                .select({
+                  createdAt: treatmentRecords.createdAt,
+                  id: treatmentRecords.id,
+                })
                 .from(treatmentRecords)
                 .where(
                   and(eq(treatmentRecords.id, after), shownTo(tx, reach, null)),
@@ -512,9 +535,9 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${treatmentRecords.createdAt}, ${treatmentRecords.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
+            : sql`(${treatmentRecords.createdAt}, ${treatmentRecords.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
         const found = await tx
           .select()
@@ -552,9 +575,9 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
     id: TreatmentRecordId,
     { changes, materials }: TreatmentRecordUpdateCriteria,
   ): Promise<Result<TreatmentRecordChange, DomainError>> {
-    return attempt('Failed to update treatment record', () =>
+    const changed = await attempt('Failed to update treatment record', () =>
       this.db.transaction(
-        async (tx): Promise<TreatmentRecordChange> => {
+        async (tx): Promise<Result<TreatmentRecordChange, DomainError>> => {
           // The record is held, so that two changes of it, and a change
           // and its removal, come one after the other. Its booking, whose
           // treatment has begun, keeps its salon and its date: a booking
@@ -576,7 +599,7 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             )
             .for('update', { of: treatmentRecords })
           if (held === undefined) {
-            return { type: 'notFound' }
+            return Result.success({ type: 'notFound' })
           }
 
           const named: NamedOfTreatment = {
@@ -592,34 +615,47 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             named,
           )
           if (issues.length > 0) {
-            return { type: 'refused', issues }
+            return Result.success({ type: 'refused', issues })
           }
 
-          await tx
-            .update(treatmentRecords)
-            .set({ ...changes, updatedAt: CLOCK })
-            .where(eq(treatmentRecords.id, id))
+          const record = rowWritten('Update of treatment record')(
+            await tx
+              .update(treatmentRecords)
+              .set({ ...changes, updatedAt: CLOCK })
+              .where(eq(treatmentRecords.id, id))
+              .returning(),
+          )
+          if (record.type === 'error') {
+            return record
+          }
           if (materials !== null) {
             await tx
               .delete(treatmentMaterials)
               .where(eq(treatmentMaterials.treatmentRecordId, id))
-            if (materials.length > 0) {
-              await tx
-                .insert(treatmentMaterials)
-                .values(materialRowsOf(id, materials))
+            const replaced = await insertMaterials(tx, id, materials)
+            if (replaced.type === 'error') {
+              return replaced
             }
           }
-          const record = await recordOf(tx, id, reach)
+          // The record as it was written, with what it holds now.
+          const details = await detailsOf(tx, [id])
 
-          return record === null
-            ? { type: 'notFound' }
-            : { type: 'changed', record }
+          return Result.success({
+            type: 'changed',
+            record: {
+              record: record.data,
+              materials: details.materials.get(id) ?? [],
+              photos: details.photos.get(id) ?? [],
+            },
+          })
         },
         // A request that waited for the record, a service or a product sees
         // what it waited for.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(changed, (outcome) => outcome)
   }
 
   async delete(
@@ -647,11 +683,11 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
     id: TreatmentRecordId,
     photos: DbNewTreatmentPhoto[],
   ): Promise<Result<TreatmentPhotoAddition, DomainError>> {
-    return attempt('Failed to add treatment photos', () =>
+    const added = await attempt('Failed to add treatment photos', () =>
       this.db.transaction(
-        async (tx): Promise<TreatmentPhotoAddition> => {
+        async (tx): Promise<Result<TreatmentPhotoAddition, DomainError>> => {
           if (!(await heldRecordOf(tx, reach, id))) {
-            return { type: 'notFound' }
+            return Result.success({ type: 'notFound' })
           }
           const held = await tx
             .select({ photoUrl: treatmentPhotos.photoUrl })
@@ -662,40 +698,58 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             photos,
           )
           if (refusal !== null) {
-            return { type: 'refused', refusal }
+            return Result.success({ type: 'refused', refusal })
           }
 
           // The record changes at the moment the photos are added.
-          const [changed] = await tx
-            .update(treatmentRecords)
-            .set({ updatedAt: CLOCK })
-            .where(eq(treatmentRecords.id, id))
-            .returning({ at: treatmentRecords.updatedAt })
-          const added = await tx
+          const changed = rowWritten(
+            'Update of treatment record of added photos',
+          )(
+            await tx
+              .update(treatmentRecords)
+              .set({ updatedAt: CLOCK })
+              .where(eq(treatmentRecords.id, id))
+              .returning({ at: treatmentRecords.updatedAt }),
+          )
+          if (changed.type === 'error') {
+            return changed
+          }
+          const inserted = await tx
             .insert(treatmentPhotos)
             .values(
               photos.map((photo) => ({
                 ...photo,
                 treatmentRecordId: id,
-                createdAt: changed?.at ?? CLOCK,
+                createdAt: changed.data.at,
               })),
             )
             .returning()
+          // An address is of one photo.
+          const addressOf = ({ photoUrl }: { photoUrl: string }): string =>
+            photoUrl
 
-          return {
-            type: 'added',
-            recordId: id,
-            // In the order they were given; an address is of one photo.
-            photos: photos.flatMap(({ photoUrl }) =>
-              added.filter((row) => row.photoUrl === photoUrl),
+          return Result.map(
+            writtenFor('Insert of treatment photos')(
+              photos,
+              addressOf,
+              inserted,
+              addressOf,
             ),
-          }
+            (pairs): TreatmentPhotoAddition => ({
+              type: 'added',
+              recordId: id,
+              // In the order they were given.
+              photos: pairs.map(({ row }) => row),
+            }),
+          )
         },
         // An addition that waited for the record counts the photos it
         // waited for.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(added, (outcome) => outcome)
   }
 
   async removePhoto(
@@ -703,13 +757,13 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
     id: TreatmentRecordId,
     photoId: TreatmentPhotoId,
   ): Promise<Result<TreatmentPhotoRemoval, DomainError>> {
-    return attempt('Failed to remove treatment photo', () =>
+    const removed = await attempt('Failed to remove treatment photo', () =>
       this.db.transaction(
-        async (tx): Promise<TreatmentPhotoRemoval> => {
+        async (tx): Promise<Result<TreatmentPhotoRemoval, DomainError>> => {
           if (!(await heldRecordOf(tx, reach, id))) {
-            return { type: 'recordNotFound' }
+            return Result.success({ type: 'recordNotFound' })
           }
-          const removed = await tx
+          const photo = await tx
             .delete(treatmentPhotos)
             .where(
               and(
@@ -718,19 +772,25 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
               ),
             )
             .returning({ id: treatmentPhotos.id })
-          if (removed.length === 0) {
-            return { type: 'photoNotFound' }
+          if (photo.length === 0) {
+            return Result.success({ type: 'photoNotFound' })
           }
-          await tx
+          const changed = await tx
             .update(treatmentRecords)
             .set({ updatedAt: CLOCK })
             .where(eq(treatmentRecords.id, id))
+            .returning({ id: treatmentRecords.id })
 
-          return { type: 'removed' }
+          return Result.map(
+            rowWritten('Update of treatment record of removed photo')(changed),
+            (): TreatmentPhotoRemoval => ({ type: 'removed' }),
+          )
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(removed, (outcome) => outcome)
   }
 
   async findFigures(

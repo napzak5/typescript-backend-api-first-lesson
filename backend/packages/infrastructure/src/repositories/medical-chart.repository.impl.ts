@@ -204,16 +204,19 @@ export class MedicalChartRepository implements IMedicalChartRepository {
           after === null
             ? []
             : await tx
-                .select({ createdAt: medicalCharts.createdAt })
+                .select({
+                  createdAt: medicalCharts.createdAt,
+                  id: medicalCharts.id,
+                })
                 .from(medicalCharts)
                 .where(and(eq(medicalCharts.id, after), shown))
         if (after !== null && cursor === undefined) {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${medicalCharts.createdAt}, ${medicalCharts.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
+            : sql`(${medicalCharts.createdAt}, ${medicalCharts.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
         const found = await tx
           .select()
