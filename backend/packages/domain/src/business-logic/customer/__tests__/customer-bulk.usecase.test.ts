@@ -82,14 +82,16 @@ const strangers: [string, Actor][] = [
 ]
 
 describe('BatchGetCustomersUseCase', () => {
+  /** The customers there are, in an order of the repository's own. */
+  const stored = [
+    dbCustomer({ id: THIRD_ID, email: 'third@example.com' }),
+    dbCustomer(),
+    dbCustomer({ id: OTHER_CUSTOMER_ID, email: 'other@example.com' }),
+  ]
   const ofIds = (repository: Partial<ICustomerRepository> = {}) =>
     customerDependencies({
-      findByIds: vi.fn(async () =>
-        Result.success([
-          dbCustomer({ id: THIRD_ID, email: 'third@example.com' }),
-          dbCustomer(),
-          dbCustomer({ id: OTHER_CUSTOMER_ID, email: 'other@example.com' }),
-        ]),
+      findByIds: vi.fn(async (ids: readonly string[]) =>
+        Result.success(stored.filter(({ id }) => ids.includes(id))),
       ),
       ...repository,
     })
@@ -591,12 +593,9 @@ describe('BulkUpdateCustomersUseCase', () => {
     expect(callsOf(dependencies.customerRepository, 'updateMany')).toEqual([])
   })
 
-  it('answers not found with the first customer of the request that is missing', async () => {
+  it('answers not found with the customer the repository finds missing first, in the order of the request', async () => {
     const result = await new BulkUpdateCustomersUseCase(
-      updating({
-        type: 'customersNotFound',
-        missing: [OTHER_CUSTOMER_ID, THIRD_ID],
-      }),
+      updating({ type: 'customerNotFound', id: THIRD_ID }),
     ).execute(actors.admin, {
       items: [
         { id: CUSTOMER_ID, updates: { notes: null } },
@@ -708,12 +707,9 @@ describe('BulkDeleteCustomersUseCase', () => {
     expect(callsOf(dependencies.customerRepository, 'deleteMany')).toEqual([])
   })
 
-  it('answers not found with the first customer of the request that is missing', async () => {
+  it('answers not found with the customer the repository finds missing first, in the order of the request', async () => {
     const result = await new BulkDeleteCustomersUseCase(
-      deleting({
-        type: 'customersNotFound',
-        missing: [THIRD_ID, OTHER_CUSTOMER_ID],
-      }),
+      deleting({ type: 'customerNotFound', id: OTHER_CUSTOMER_ID }),
     ).execute(actors.admin, { ids: [CUSTOMER_ID, OTHER_CUSTOMER_ID, THIRD_ID] })
 
     expect(result).toEqual(
@@ -723,12 +719,9 @@ describe('BulkDeleteCustomersUseCase', () => {
     )
   })
 
-  it('refuses customers whom unfinished bookings refer to, naming the first of the request', async () => {
+  it('refuses customers whom unfinished bookings refer to, naming the one the repository finds first, in the order of the request', async () => {
     const result = await new BulkDeleteCustomersUseCase(
-      deleting({
-        type: 'bookingsUnfinished',
-        customers: [THIRD_ID, OTHER_CUSTOMER_ID],
-      }),
+      deleting({ type: 'bookingsUnfinished', customer: OTHER_CUSTOMER_ID }),
     ).execute(actors.admin, { ids: [CUSTOMER_ID, OTHER_CUSTOMER_ID, THIRD_ID] })
 
     expect(result).toEqual(

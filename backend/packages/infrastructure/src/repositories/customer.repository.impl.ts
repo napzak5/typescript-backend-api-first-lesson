@@ -179,7 +179,8 @@ const missingReferrers = async (
 /**
  * Locks the customers of the IDs that are not deleted, in the order of their
  * IDs: two bulk writes that name some of the same customers wait for each
- * other and do not deadlock. Resolves to the IDs that were not locked.
+ * other and do not deadlock. Resolves to the IDs that were not locked, in
+ * the order given.
  */
 const holdCustomers = async (
   executor: DatabaseExecutor,
@@ -632,12 +633,12 @@ export class CustomerRepository implements ICustomerRepository {
       () => writing,
       () =>
         this.db.transaction(async (tx): Promise<CustomerBulkUpdate> => {
-          const missing = await holdCustomers(
+          const [missing] = await holdCustomers(
             tx,
             changes.map(({ id }) => id),
           )
-          if (missing.length > 0) {
-            return { type: 'customersNotFound', missing }
+          if (missing !== undefined) {
+            return { type: 'customerNotFound', id: missing }
           }
           const missingOfReferrers = await missingReferrers(
             tx,
@@ -675,13 +676,14 @@ export class CustomerRepository implements ICustomerRepository {
         async (tx): Promise<CustomerBulkDeletion> => {
           // As for a single delete, the bookings are looked for after the
           // customers are held, in a statement of their own.
-          const missing = await holdCustomers(tx, ids)
-          if (missing.length > 0) {
-            return { type: 'customersNotFound', missing }
+          const [missing] = await holdCustomers(tx, ids)
+          if (missing !== undefined) {
+            return { type: 'customerNotFound', id: missing }
           }
-          const referred = await customersOfUnfinishedBookings(tx, ids)
-          if (referred.length > 0) {
-            return { type: 'bookingsUnfinished', customers: referred }
+          const referring = await customersOfUnfinishedBookings(tx, ids)
+          const [referred] = ids.filter((id) => referring.includes(id))
+          if (referred !== undefined) {
+            return { type: 'bookingsUnfinished', customer: referred }
           }
 
           const deleted = await tx
