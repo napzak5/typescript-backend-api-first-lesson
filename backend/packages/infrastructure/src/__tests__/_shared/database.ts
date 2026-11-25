@@ -17,10 +17,13 @@ export interface TestDatabase {
   gone(): Promise<Database>
   /**
    * Makes a trigger of the table skip every row that `operation` writes
-   * (`BEFORE … RETURN NULL`): the statement succeeds and writes nothing,
-   * and a write with `RETURNING` answers with no row.
+   * or deletes (`BEFORE … RETURN NULL`): the statement succeeds and
+   * changes nothing, and a write with `RETURNING` answers with no row.
    */
-  skipWrites(table: string, operation: 'INSERT' | 'UPDATE'): Promise<void>
+  skipWrites(
+    table: string,
+    operation: 'INSERT' | 'UPDATE' | 'DELETE',
+  ): Promise<void>
   /**
    * Runs `write` while a transaction of the test's own holds what `hold`
    * locked. Once a statement of the database waits for a lock, the

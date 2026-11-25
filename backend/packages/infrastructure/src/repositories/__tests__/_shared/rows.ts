@@ -6,12 +6,14 @@ import {
   customerPoints,
   customerPreferences,
   customers,
+  inventory,
   medicalCharts,
   openingHours,
   paymentMethods,
   paymentTransactions,
   products,
   reviewHelpfulVotes,
+  reviewReports,
   reviews,
   sales,
   salesDetails,
@@ -698,6 +700,40 @@ export const insertHelpfulVote = async (
     await db
       .insert(reviewHelpfulVotes)
       .values({ reviewId, customerId, ...overrides })
+      .returning(),
+  )
+
+/** A report of the review in the table by an account, pending: spam. */
+export const insertReviewReport = async (
+  db: Database,
+  reviewId: string,
+  reportedBy: string,
+  overrides: Partial<typeof reviewReports.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(reviewReports)
+      .values({ reviewId, reportedBy, reason: 'spam', ...overrides })
+      .returning(),
+  )
+
+/** A stock row of the product of the salon in the table: 10 in stock, none of it reserved, of no lot. */
+export const insertStock = async (
+  db: Database,
+  salonId: string,
+  productId: string,
+  overrides: Partial<typeof inventory.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(inventory)
+      .values({
+        salonId,
+        productId,
+        currentStock: '10.00',
+        availableStock: '10.00',
+        ...overrides,
+      })
       .returning(),
   )
 
