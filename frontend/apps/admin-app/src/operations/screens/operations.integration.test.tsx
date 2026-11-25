@@ -20,6 +20,7 @@ import {
   arrangePoints,
   askedForErasure,
   customerIdOf,
+  madeStaffMeanwhile,
   storedBalanceOf,
   storedPointsOf,
 } from '../../customers/__tests__/arrangements'
@@ -346,6 +347,26 @@ describe('the operations of the platform, against the API', () => {
   })
 
   describe('the other roles', () => {
+    it('should close the dialog and say in the part who runs the platform when the administrator is one no more, and expire nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeExpiredPoints(YUKI.email, 300)
+      await openOperations()
+      await madeStaffMeanwhile(OPERATOR)
+
+      // Act
+      const { region } = await expire(user)
+
+      // Assert
+      expect(await within(region).findByRole('alert')).toHaveTextContent(
+        ADMINISTRATORS_ONLY.ja,
+      )
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect((await storedPointsOf(YUKI.email))[0]?.transactionType).toBe(
+        'earned',
+      )
+    })
+
     it.each<[string, string]>([
       ['the owner of a salon', OWNER],
       ['its manager', MANAGER],

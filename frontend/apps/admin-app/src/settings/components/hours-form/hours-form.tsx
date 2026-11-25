@@ -150,8 +150,10 @@ export const HoursForm = ({
   const said = useSaidForm(message, errors)
   const week = weekPartsOf(hours.businessHours)
   const calendar = calendarPartsOf(hours.openingHours, today)
-  const [opens, setOpens] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(week.map(({ weekday, opens }) => [weekday, opens])),
+  /** The days of the week the salon opens on, as the form holds them */
+  const [opens, setOpens] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(week.filter(({ opens }) => opens).map(({ weekday }) => weekday)),
   )
   const dates = useRepeatedRows<DateRow, LocalizedText>(
     () =>
@@ -186,7 +188,7 @@ export const HoursForm = ({
         {week.map((part) => {
           const nameOf = (property: HoursProperty): string =>
             weekdayControlOf(part.weekday, property)
-          const open = opens[part.weekday] ?? false
+          const open = opens.has(part.weekday)
 
           return (
             <FormRow
@@ -199,10 +201,13 @@ export const HoursForm = ({
                 options={options(WEEKDAY_CHOICES)}
                 value={open ? OPEN : CLOSED}
                 onChange={(event) =>
-                  setOpens({
-                    ...opens,
-                    [part.weekday]: event.target.value === OPEN,
-                  })
+                  setOpens(
+                    new Set(
+                      event.target.value === OPEN
+                        ? [...opens, part.weekday]
+                        : [...opens].filter((day) => day !== part.weekday),
+                    ),
+                  )
                 }
               />
               {open && (

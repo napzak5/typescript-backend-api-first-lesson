@@ -13,6 +13,7 @@ import {
 } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
+  OPERATOR,
   OSAKA,
   OWNER,
   STYLIST,
@@ -22,6 +23,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../../__tests__/screens'
+import { salonRemovedMeanwhile } from '../../bookings/__tests__/arrangements'
 import {
   bookingsHrefOf,
   salonChangeHrefOf,
@@ -290,6 +292,23 @@ describe('the settings of a salon, against the API', () => {
       ),
     )
     expect(await storedSalonOf(TOKYO)).toEqual(before)
+  })
+
+  it('should say to an administrator that the salon is not found when it was removed while its form was open', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(salonChangeHrefOf(await salonIdOf(TOKYO)), OPERATOR)
+    await openedForm()
+    await user.clear(text('紹介'))
+    await user.type(text('紹介'), '渋谷の駅から歩いて 5 分です。')
+    await salonRemovedMeanwhile(TOKYO)
+
+    // Act
+    await user.click(save())
+
+    // Assert
+    expect(await heading('サロンが見つかりません')).toBeVisible()
+    expect(screen.queryByRole('group', { name: '会計' })).toBeNull()
   })
 
   it('should refuse a stylist the form', async () => {
