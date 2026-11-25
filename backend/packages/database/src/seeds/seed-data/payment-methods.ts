@@ -1,10 +1,6 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
-
-export interface PaymentMethodSeedResult {
-  paymentMethodIds: string[]
-  paymentMethodMap: Record<string, string[]> // salonId -> paymentMethodIds
-}
+import type { SeededSalons } from './salons'
 
 /**
  * The payment methods of every salon. Each row is one that the API could
@@ -13,11 +9,11 @@ export interface PaymentMethodSeedResult {
  */
 export async function seedPaymentMethods(
   db: PostgresJsDatabase<typeof schema>,
-  salonIds: string[],
-): Promise<PaymentMethodSeedResult> {
+  salons: SeededSalons,
+): Promise<void> {
   const paymentMethods: (typeof schema.paymentMethods.$inferInsert)[] = []
 
-  for (const salonId of salonIds) {
+  for (const { id: salonId } of Object.values(salons)) {
     paymentMethods.push(
       {
         salonId,
@@ -108,28 +104,5 @@ export async function seedPaymentMethods(
     )
   }
 
-  const methods = await db
-    .insert(schema.paymentMethods)
-    .values(paymentMethods)
-    .returning({
-      id: schema.paymentMethods.id,
-      salonId: schema.paymentMethods.salonId,
-    })
-
-  // Build payment method map
-  const paymentMethodMap: Record<string, string[]> = {}
-  for (const method of methods) {
-    if (!paymentMethodMap[method.salonId]) {
-      paymentMethodMap[method.salonId] = []
-    }
-    const methodList = paymentMethodMap[method.salonId]
-    if (methodList) {
-      methodList.push(method.id)
-    }
-  }
-
-  return {
-    paymentMethodIds: methods.map((m) => m.id),
-    paymentMethodMap,
-  }
+  await db.insert(schema.paymentMethods).values(paymentMethods)
 }

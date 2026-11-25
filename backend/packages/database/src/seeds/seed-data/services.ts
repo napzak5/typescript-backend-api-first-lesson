@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
-import type { ServiceCategorySeedResult } from './service-categories'
+import { SALON_KEYS, type SalonKey, type SeededSalons } from './salons'
+import type { CategoryKind, SeededCategories } from './service-categories'
 
 /** The lists of a service without images, tags, member services and booking requirements. */
 const withoutLists = {
@@ -10,196 +12,223 @@ const withoutLists = {
   bookingRequirements: [],
 }
 
-export async function seedServices(
-  db: PostgresJsDatabase<typeof schema>,
-  salonIds: string[],
-  categoryResult: ServiceCategorySeedResult,
-): Promise<void> {
-  const services = []
-  const { categoryMap } = categoryResult
+/** The services of each salon, by name. */
+export interface ServiceNames {
+  readonly tokyo:
+    | 'Ladies Cut'
+    | 'Mens Cut'
+    | 'Kids Cut (Under 12)'
+    | 'Full Color'
+    | 'Highlights'
+    | 'Balayage'
+    | 'Digital Perm'
+    | 'Straight Perm'
+    | 'Deep Conditioning Treatment'
+    | 'Keratin Treatment'
+  readonly osaka:
+    | 'Head Spa (30 min)'
+    | 'Premium Head Spa (60 min)'
+    | 'Scalp Treatment'
+    | 'Signature Cut'
+    | 'Spa & Cut Package'
+}
 
-  const salonId1 = salonIds[0]
-  const salonId2 = salonIds[1]
+/** A service of the seed, in the category of its kind. */
+export type SeededService = Omit<
+  typeof schema.services.$inferInsert,
+  | 'id'
+  | 'salonId'
+  | 'categoryId'
+  | 'name'
+  | 'duration'
+  | 'price'
+  | 'discountPrice'
+  | 'taxIncluded'
+  | keyof typeof withoutLists
+> & {
+  readonly id: string
+  readonly category: CategoryKind
+  readonly duration: number
+  readonly price: number
+  readonly discountPrice: number | null
+  /** Every price of the seed includes the tax, as a price shown in Japan does. */
+  readonly taxIncluded: true
+}
 
-  if (!(salonId1 && salonId2)) {
-    throw new Error('At least 2 salon IDs required for services seeding')
+export type SeededServices = {
+  readonly [S in SalonKey]: { readonly [N in ServiceNames[S]]: SeededService }
+}
+
+/** The services that are no package, whose IDs a package names. */
+type PlainServices = {
+  readonly [S in SalonKey]: {
+    readonly [N in Exclude<ServiceNames[S], 'Spa & Cut Package'>]: SeededService
   }
+}
 
-  // Services for Salon 1 (Beauty Studio Tokyo)
-  services.push(
-    // Cut services
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_cut`],
-      name: 'Ladies Cut',
+const plainServices = (): PlainServices => ({
+  tokyo: {
+    'Ladies Cut': {
+      id: randomUUID(),
+      category: 'cut',
       description: 'Professional hair cut for ladies with consultation',
       shortDescription: 'Includes shampoo, cut, and blow dry',
       duration: 60,
       price: 5500,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'stylist' as const,
+      requiredStaffLevel: 'stylist',
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 1,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_cut`],
-      name: 'Mens Cut',
+    'Mens Cut': {
+      id: randomUUID(),
+      category: 'cut',
       description: 'Professional hair cut for men',
       shortDescription: 'Includes shampoo, cut, and styling',
       duration: 45,
       price: 4000,
+      discountPrice: null,
       taxIncluded: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 2,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_cut`],
-      name: 'Kids Cut (Under 12)',
+    'Kids Cut (Under 12)': {
+      id: randomUUID(),
+      category: 'cut',
       description: 'Hair cut for children under 12 years old',
       shortDescription: 'Quick and gentle service for kids',
       duration: 30,
       price: 2500,
+      discountPrice: null,
       taxIncluded: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 3,
     },
-
-    // Color services
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_color`],
-      name: 'Full Color',
+    'Full Color': {
+      id: randomUUID(),
+      category: 'color',
       description: 'Complete hair coloring from roots to tips',
       shortDescription: 'Single process color application',
       duration: 120,
       price: 8000,
       discountPrice: 7200,
       taxIncluded: true,
-      requiredStaffLevel: 'stylist' as const,
+      requiredStaffLevel: 'stylist',
       requiresConsultation: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 4,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_color`],
-      name: 'Highlights',
+    Highlights: {
+      id: randomUUID(),
+      category: 'color',
       description: 'Professional highlighting with foil technique',
       shortDescription: 'Partial or full head highlights',
       duration: 150,
       price: 12000,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'senior' as const,
+      requiredStaffLevel: 'senior',
       requiresConsultation: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 5,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_color`],
-      name: 'Balayage',
+    Balayage: {
+      id: randomUUID(),
+      category: 'color',
       description:
         'Hand-painted balayage technique for natural-looking highlights',
       shortDescription: 'Custom balayage coloring',
       duration: 180,
       price: 15000,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'expert' as const,
+      requiredStaffLevel: 'expert',
       requiresConsultation: true,
       allowOnlineBooking: false,
       isActive: true,
       sortOrder: 6,
     },
-
-    // Perm services
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_perm`],
-      name: 'Digital Perm',
+    'Digital Perm': {
+      id: randomUUID(),
+      category: 'perm',
       description: 'Modern digital perm for lasting curls',
       shortDescription: 'Heat-activated curling system',
       duration: 180,
       price: 14000,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'senior' as const,
+      requiredStaffLevel: 'senior',
       requiresConsultation: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 7,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_perm`],
-      name: 'Straight Perm',
+    'Straight Perm': {
+      id: randomUUID(),
+      category: 'perm',
       description: 'Japanese straightening treatment',
       shortDescription: 'Permanent hair straightening',
       duration: 240,
       price: 18000,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'expert' as const,
+      requiredStaffLevel: 'expert',
       requiresConsultation: true,
       allowOnlineBooking: false,
       isActive: true,
       sortOrder: 8,
     },
-
-    // Treatment services
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_treatment`],
-      name: 'Deep Conditioning Treatment',
+    'Deep Conditioning Treatment': {
+      id: randomUUID(),
+      category: 'treatment',
       description: 'Intensive moisture treatment for damaged hair',
       shortDescription: 'Repair and hydrate',
       duration: 30,
       price: 3500,
+      discountPrice: null,
       taxIncluded: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 9,
     },
-    {
-      salonId: salonId1,
-      categoryId: categoryMap[`${salonId1}_treatment`],
-      name: 'Keratin Treatment',
+    'Keratin Treatment': {
+      id: randomUUID(),
+      category: 'treatment',
       description: 'Professional keratin smoothing treatment',
       shortDescription: 'Smooth and strengthen',
       duration: 90,
       price: 8000,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'senior' as const,
+      requiredStaffLevel: 'senior',
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 10,
     },
-  )
-
-  // Services for Salon 2 (Hair & Spa Osaka)
-  services.push(
-    // Spa services
-    {
-      salonId: salonId2,
-      categoryId: categoryMap[`${salonId2}_spa`],
-      name: 'Head Spa (30 min)',
+  },
+  osaka: {
+    'Head Spa (30 min)': {
+      id: randomUUID(),
+      category: 'spa',
       description: 'Relaxing head spa with scalp massage',
       shortDescription: 'Stress relief and scalp care',
       duration: 30,
       price: 3000,
+      discountPrice: null,
       taxIncluded: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 1,
     },
-    {
-      salonId: salonId2,
-      categoryId: categoryMap[`${salonId2}_spa`],
-      name: 'Premium Head Spa (60 min)',
+    'Premium Head Spa (60 min)': {
+      id: randomUUID(),
+      category: 'spa',
       description: 'Luxury head spa with aromatherapy',
       shortDescription: 'Ultimate relaxation experience',
       duration: 60,
@@ -210,57 +239,67 @@ export async function seedServices(
       isActive: true,
       sortOrder: 2,
     },
-    {
-      salonId: salonId2,
-      categoryId: categoryMap[`${salonId2}_spa`],
-      name: 'Scalp Treatment',
+    'Scalp Treatment': {
+      id: randomUUID(),
+      category: 'spa',
       description: 'Therapeutic scalp treatment for health',
       shortDescription: 'Improve scalp condition',
       duration: 45,
       price: 4500,
+      discountPrice: null,
       taxIncluded: true,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 3,
     },
-
-    // Cut services for Salon 2
-    {
-      salonId: salonId2,
-      categoryId: categoryMap[`${salonId2}_cut`],
-      name: 'Signature Cut',
+    'Signature Cut': {
+      id: randomUUID(),
+      category: 'cut',
       description: 'Our signature cutting technique',
       shortDescription: 'Personalized style consultation',
       duration: 75,
       price: 6500,
+      discountPrice: null,
       taxIncluded: true,
-      requiredStaffLevel: 'senior' as const,
+      requiredStaffLevel: 'senior',
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 4,
     },
-  )
+  },
+})
 
-  const plainServices = await db
+export async function seedServices(
+  db: PostgresJsDatabase<typeof schema>,
+  salons: SeededSalons,
+  categories: SeededCategories,
+): Promise<SeededServices> {
+  const plain = plainServices()
+  const rowOf = (
+    salon: SalonKey,
+    name: string,
+    { category, ...service }: SeededService,
+  ): typeof schema.services.$inferInsert => ({
+    ...withoutLists,
+    ...service,
+    salonId: salons[salon].id,
+    categoryId: categories[salon][category],
+    name,
+  })
+  await db
     .insert(schema.services)
-    .values(services.map((service) => ({ ...withoutLists, ...service })))
-    .returning({
-      id: schema.services.id,
-      salonId: schema.services.salonId,
-      name: schema.services.name,
-    })
+    .values(
+      SALON_KEYS.flatMap((salon) =>
+        Object.entries(plain[salon]).map(([name, service]) =>
+          rowOf(salon, name, service),
+        ),
+      ),
+    )
 
   // A package names its member services, so it is stored after them.
-  const packageMembers = [
-    'Head Spa (30 min)',
-    'Scalp Treatment',
-    'Signature Cut',
-  ]
-  await db.insert(schema.services).values({
-    ...withoutLists,
-    salonId: salonId2,
-    categoryId: categoryMap[`${salonId2}_other`],
-    name: 'Spa & Cut Package',
+  const spaAndCut: SeededService = {
+    id: randomUUID(),
+    category: 'other',
     description: 'Complete relaxation and styling package',
     shortDescription: 'Head spa + Cut + Treatment',
     duration: 150,
@@ -268,48 +307,46 @@ export async function seedServices(
     discountPrice: 10000,
     taxIncluded: true,
     isPackage: true,
-    packageServiceIds: plainServices
-      .filter(
-        (service) =>
-          service.salonId === salonId2 && packageMembers.includes(service.name),
-      )
-      .map((service) => service.id),
     requiresConsultation: false,
     allowOnlineBooking: true,
     isActive: true,
     sortOrder: 5,
+  }
+  await db.insert(schema.services).values({
+    ...rowOf('osaka', 'Spa & Cut Package', spaAndCut),
+    packageServiceIds: [
+      plain.osaka['Head Spa (30 min)'].id,
+      plain.osaka['Scalp Treatment'].id,
+      plain.osaka['Signature Cut'].id,
+    ],
   })
 
-  // Create service options for some services
-  const serviceOptions = []
-  const firstServiceId = plainServices[0]?.id
+  // The options of the ladies' cut
+  await db.insert(schema.serviceOptions).values([
+    {
+      serviceId: plain.tokyo['Ladies Cut'].id,
+      name: 'Fringe Trim',
+      description: 'Quick fringe/bangs trim',
+      additionalTime: 10,
+      additionalPrice: 500,
+      isRequired: false,
+      sortOrder: 1,
+      isActive: true,
+    },
+    {
+      serviceId: plain.tokyo['Ladies Cut'].id,
+      name: 'Hair Treatment Add-on',
+      description: 'Add deep conditioning treatment',
+      additionalTime: 20,
+      additionalPrice: 2000,
+      isRequired: false,
+      sortOrder: 2,
+      isActive: true,
+    },
+  ])
 
-  if (firstServiceId) {
-    serviceOptions.push(
-      {
-        serviceId: firstServiceId,
-        name: 'Fringe Trim',
-        description: 'Quick fringe/bangs trim',
-        additionalTime: 10,
-        additionalPrice: 500,
-        isRequired: false,
-        sortOrder: 1,
-        isActive: true,
-      },
-      {
-        serviceId: firstServiceId,
-        name: 'Hair Treatment Add-on',
-        description: 'Add deep conditioning treatment',
-        additionalTime: 20,
-        additionalPrice: 2000,
-        isRequired: false,
-        sortOrder: 2,
-        isActive: true,
-      },
-    )
-  }
-
-  if (serviceOptions.length > 0) {
-    await db.insert(schema.serviceOptions).values(serviceOptions)
+  return {
+    tokyo: plain.tokyo,
+    osaka: { ...plain.osaka, 'Spa & Cut Package': spaAndCut },
   }
 }

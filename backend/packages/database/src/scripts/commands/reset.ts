@@ -1,5 +1,6 @@
 import { type Command, withDatabase } from '../command'
 import { dropHistory } from '../migrations'
+import { publicTablesOf } from '../tables'
 
 /** `pnpm db:reset`: drops every table, type and the history of the migrations. */
 export const resetCommand: Command = {
@@ -18,12 +19,9 @@ migrations: the database counts as empty afterwards. Every row is lost.
     )
     await withDatabase(context, async (sql) => {
       context.say('📝 Dropping all tables...')
-      const tables = await sql<{ tablename: string }[]>`
-        SELECT tablename FROM pg_tables WHERE schemaname = 'public'
-      `
-      for (const { tablename } of tables) {
-        context.say(`  Dropping table: ${tablename}`)
-        await sql`DROP TABLE IF EXISTS ${sql(tablename)} CASCADE`
+      for (const table of await publicTablesOf(sql)) {
+        context.say(`  Dropping table: ${table}`)
+        await sql`DROP TABLE IF EXISTS ${sql(table)} CASCADE`
       }
 
       context.say('📝 Dropping all custom types...')

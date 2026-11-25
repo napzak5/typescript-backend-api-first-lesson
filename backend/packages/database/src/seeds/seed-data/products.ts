@@ -1,30 +1,53 @@
+import { randomUUID } from 'node:crypto'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
+import { SALON_KEYS, type SalonKey, type SeededSalons } from './salons'
 
-export interface ProductSeedResult {
-  productIds: string[]
-  productMap: Record<string, string[]> // salonId -> productIds
+/** The products of each salon, by code. */
+interface ProductCodes {
+  readonly tokyo:
+    | 'SHMP001'
+    | 'COND001'
+    | 'TREAT001'
+    | 'COLOR001'
+    | 'BLEACH001'
+    | 'DEVELOPER001'
+    | 'WAX001'
+  readonly osaka: 'SPA001' | 'SPA002'
 }
 
-export async function seedProducts(
-  db: PostgresJsDatabase<typeof schema>,
-  salonIds: string[],
-): Promise<ProductSeedResult> {
-  const products = []
+/** The products the first salon keeps a row of stock of. */
+export type StockedCode = Exclude<ProductCodes['tokyo'], 'WAX001'>
 
-  const salonId1 = salonIds[0]
-  const salonId2 = salonIds[1]
+/** A product of the seed, at the price it is bought at. */
+type SeededProduct = Omit<
+  typeof schema.products.$inferInsert,
+  'id' | 'salonId' | 'productCode' | 'name' | 'unit' | 'purchasePrice'
+> & {
+  readonly id: string
+  readonly name: string
+  readonly unit: string
+  readonly purchasePrice: number
+}
 
-  if (!(salonId1 && salonId2)) {
-    throw new Error('At least 2 salon IDs required for products seeding')
-  }
+type SeededProducts = {
+  readonly [S in SalonKey]: { readonly [C in ProductCodes[S]]: SeededProduct }
+}
 
-  // Products for Salon 1
-  products.push(
-    // Hair care products
-    {
-      salonId: salonId1,
-      productCode: 'SHMP001',
+/** A row of stock of the first salon, as a treatment that uses it names it. */
+interface SeededStock {
+  readonly inventoryId: string
+  readonly productId: string
+  readonly unit: string
+  readonly lotNumber: string
+}
+
+export type SeededStockRows = Readonly<Record<StockedCode, SeededStock>>
+
+const productsOf = (): SeededProducts => ({
+  tokyo: {
+    SHMP001: {
+      id: randomUUID(),
       name: 'Professional Shampoo 500ml',
       description: 'Salon-grade moisturizing shampoo for all hair types',
       category: 'Hair Care',
@@ -47,9 +70,8 @@ export async function seedProducts(
       storageConditions: 'Store in cool, dry place',
       isActive: true,
     },
-    {
-      salonId: salonId1,
-      productCode: 'COND001',
+    COND001: {
+      id: randomUUID(),
       name: 'Professional Conditioner 500ml',
       description: 'Deep conditioning treatment for damaged hair',
       category: 'Hair Care',
@@ -70,9 +92,8 @@ export async function seedProducts(
       expiryMonths: 36,
       isActive: true,
     },
-    {
-      salonId: salonId1,
-      productCode: 'TREAT001',
+    TREAT001: {
+      id: randomUUID(),
       name: 'Intensive Hair Mask 250ml',
       description: 'Weekly intensive treatment for dry and damaged hair',
       category: 'Hair Treatment',
@@ -93,11 +114,8 @@ export async function seedProducts(
       expiryMonths: 24,
       isActive: true,
     },
-
-    // Hair color products
-    {
-      salonId: salonId1,
-      productCode: 'COLOR001',
+    COLOR001: {
+      id: randomUUID(),
       name: 'Hair Color - Natural Brown',
       description: 'Professional hair color with ammonia-free formula',
       category: 'Hair Color',
@@ -120,9 +138,8 @@ export async function seedProducts(
       safetyDataSheet: 'https://example.com/docs/sds/color-001.pdf',
       isActive: true,
     },
-    {
-      salonId: salonId1,
-      productCode: 'BLEACH001',
+    BLEACH001: {
+      id: randomUUID(),
       name: 'Lightening Powder 500g',
       description: 'Professional bleaching powder for highlights',
       category: 'Hair Color',
@@ -145,9 +162,8 @@ export async function seedProducts(
       safetyDataSheet: 'https://example.com/docs/sds/bleach-001.pdf',
       isActive: true,
     },
-    {
-      salonId: salonId1,
-      productCode: 'DEVELOPER001',
+    DEVELOPER001: {
+      id: randomUUID(),
       name: 'Developer 6% 1000ml',
       description: 'Hydrogen peroxide developer for hair color',
       category: 'Hair Color',
@@ -170,11 +186,8 @@ export async function seedProducts(
       safetyDataSheet: 'https://example.com/docs/sds/developer-001.pdf',
       isActive: true,
     },
-
-    // Styling products
-    {
-      salonId: salonId1,
-      productCode: 'WAX001',
+    WAX001: {
+      id: randomUUID(),
       name: 'Styling Wax 80g',
       description: 'Medium hold styling wax for all hair types',
       category: 'Styling',
@@ -195,13 +208,10 @@ export async function seedProducts(
       expiryMonths: 36,
       isActive: true,
     },
-  )
-
-  // Products for Salon 2 (Spa focused)
-  products.push(
-    {
-      salonId: salonId2,
-      productCode: 'SPA001',
+  },
+  osaka: {
+    SPA001: {
+      id: randomUUID(),
       name: 'Scalp Treatment Oil 100ml',
       description: 'Aromatherapy oil for scalp massage',
       category: 'Spa',
@@ -221,9 +231,8 @@ export async function seedProducts(
       storageConditions: 'Store in dark place at room temperature',
       isActive: true,
     },
-    {
-      salonId: salonId2,
-      productCode: 'SPA002',
+    SPA002: {
+      id: randomUUID(),
       name: 'Relaxing Head Spa Cream 250ml',
       description: 'Cooling cream for head spa treatments',
       category: 'Spa',
@@ -242,85 +251,78 @@ export async function seedProducts(
       expiryMonths: 18,
       isActive: true,
     },
+  },
+})
+
+const stockOf = ({ id, unit }: SeededProduct): SeededStock => ({
+  inventoryId: randomUUID(),
+  productId: id,
+  unit,
+  lotNumber: `LOT-2024-${Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, '0')}`,
+})
+
+export async function seedProducts(
+  db: PostgresJsDatabase<typeof schema>,
+  salons: SeededSalons,
+): Promise<SeededStockRows> {
+  const products = productsOf()
+  await db.insert(schema.products).values(
+    SALON_KEYS.flatMap((salon) =>
+      Object.entries(products[salon]).map(([productCode, product]) => ({
+        ...product,
+        salonId: salons[salon].id,
+        productCode,
+      })),
+    ),
   )
 
-  const insertedProducts = await db
-    .insert(schema.products)
-    .values(products)
-    .returning({
-      id: schema.products.id,
-      salonId: schema.products.salonId,
-      productCode: schema.products.productCode,
-      name: schema.products.name,
-      unit: schema.products.unit,
-      purchasePrice: schema.products.purchasePrice,
-    })
-
   // Create initial inventory for products
-  const inventory = []
-  for (const product of insertedProducts.slice(0, 6)) {
-    // First 6 products
-    inventory.push({
-      salonId: product.salonId,
-      productId: product.id,
-      currentStock: '20.00',
-      availableStock: '20.00',
-      reservedStock: '0.00',
-      lotNumber: `LOT-2024-${Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(3, '0')}`,
-      expiryDate: '2025-12-31',
-      location: 'Storage Room A',
-      shelf: `A-${Math.floor(Math.random() * 10) + 1}`,
-    })
+  const stock: SeededStockRows = {
+    SHMP001: stockOf(products.tokyo.SHMP001),
+    COND001: stockOf(products.tokyo.COND001),
+    TREAT001: stockOf(products.tokyo.TREAT001),
+    COLOR001: stockOf(products.tokyo.COLOR001),
+    BLEACH001: stockOf(products.tokyo.BLEACH001),
+    DEVELOPER001: stockOf(products.tokyo.DEVELOPER001),
   }
-
-  if (inventory.length > 0) {
-    const rows = await db.insert(schema.inventory).values(inventory).returning()
-    // Each row's history begins with the stock it starts with, as the
-    // migration that began recording movements opened the rows it found.
-    await db.insert(schema.inventoryTransactions).values(
-      rows.map((row): typeof schema.inventoryTransactions.$inferInsert => ({
-        salonId: row.salonId,
-        productId: row.productId,
-        inventoryId: row.id,
-        transactionType: 'adjustment',
-        quantity: row.currentStock,
-        balanceBefore: '0.00',
-        balanceAfter: row.currentStock,
-        lotNumber: row.lotNumber,
-        expiryDate: row.expiryDate,
-        reason: '在庫移動の記録を始めた時点の在庫数',
+  const rows = await db
+    .insert(schema.inventory)
+    .values(
+      Object.values(stock).map(({ inventoryId, productId, lotNumber }) => ({
+        id: inventoryId,
+        salonId: salons.tokyo.id,
+        productId,
+        currentStock: '20.00',
+        availableStock: '20.00',
+        reservedStock: '0.00',
+        lotNumber,
+        expiryDate: '2025-12-31',
+        location: 'Storage Room A',
+        shelf: `A-${Math.floor(Math.random() * 10) + 1}`,
       })),
     )
-    await seedPurchaseOrders(db, rows, insertedProducts)
-  }
+    .returning()
+  // Each row's history begins with the stock it starts with, as the
+  // migration that began recording movements opened the rows it found.
+  await db.insert(schema.inventoryTransactions).values(
+    rows.map((row): typeof schema.inventoryTransactions.$inferInsert => ({
+      salonId: row.salonId,
+      productId: row.productId,
+      inventoryId: row.id,
+      transactionType: 'adjustment',
+      quantity: row.currentStock,
+      balanceBefore: '0.00',
+      balanceAfter: row.currentStock,
+      lotNumber: row.lotNumber,
+      expiryDate: row.expiryDate,
+      reason: '在庫移動の記録を始めた時点の在庫数',
+    })),
+  )
+  await seedPurchaseOrders(db, salons.tokyo.id, products, stock)
 
-  // Build product map
-  const productMap: Record<string, string[]> = {}
-  for (const product of insertedProducts) {
-    if (!productMap[product.salonId]) {
-      productMap[product.salonId] = []
-    }
-    const productList = productMap[product.salonId]
-    if (productList) {
-      productList.push(product.id)
-    }
-  }
-
-  return {
-    productIds: insertedProducts.map((p) => p.id),
-    productMap,
-  }
-}
-
-type SeededStockRow = { id: string; salonId: string; productId: string }
-type SeededProduct = {
-  id: string
-  productCode: string
-  name: string
-  unit: string
-  purchasePrice: number | null
+  return stock
 }
 
 /**
@@ -331,39 +333,36 @@ type SeededProduct = {
  */
 const seedPurchaseOrders = async (
   db: PostgresJsDatabase<typeof schema>,
-  rows: SeededStockRow[],
-  products: SeededProduct[],
+  salonId: string,
+  products: SeededProducts,
+  stock: SeededStockRows,
 ): Promise<void> => {
-  const itemOf = (row: SeededStockRow, quantity: number, sortOrder: number) => {
-    const product = products.find(({ id }) => id === row.productId)
-    const unitPrice = product?.purchasePrice ?? 0
+  const itemOf = (code: StockedCode, quantity: number, sortOrder: number) => {
+    const { name, unit, purchasePrice } = products.tokyo[code]
     return {
-      inventoryId: row.id,
-      productCode: product?.productCode ?? '',
-      productName: product?.name ?? '',
+      inventoryId: stock[code].inventoryId,
+      productCode: code,
+      productName: name,
       quantity: quantity.toFixed(2),
-      unit: product?.unit ?? '',
-      unitPrice,
-      totalPrice: Math.round(unitPrice * quantity),
+      unit,
+      unitPrice: purchasePrice,
+      totalPrice: Math.round(purchasePrice * quantity),
       notes: null,
       sortOrder,
     }
-  }
-  const [first, second, third] = rows
-  if (first === undefined || second === undefined || third === undefined) {
-    return
   }
   const now = new Date().toISOString()
   const orders: {
     order: Omit<
       typeof schema.purchaseOrders.$inferInsert,
-      'subtotal' | 'taxAmount' | 'totalAmount'
-    >
+      'id' | 'subtotal' | 'taxAmount' | 'totalAmount'
+    > & { id: string }
     items: ReturnType<typeof itemOf>[]
   }[] = [
     {
       order: {
-        salonId: first.salonId,
+        id: randomUUID(),
+        salonId,
         orderNumber: 'PO-SEED-0001',
         supplier: 'Beauty Supply Tokyo',
         status: 'pending',
@@ -373,11 +372,12 @@ const seedPurchaseOrders = async (
         notes: '定期補充',
         approvedAt: null,
       },
-      items: [itemOf(first, 10, 0), itemOf(second, 5, 1)],
+      items: [itemOf('SHMP001', 10, 0), itemOf('COND001', 5, 1)],
     },
     {
       order: {
-        salonId: first.salonId,
+        id: randomUUID(),
+        salonId,
         orderNumber: 'PO-SEED-0002',
         supplier: 'Beauty Supply Tokyo',
         status: 'ordered',
@@ -387,25 +387,20 @@ const seedPurchaseOrders = async (
         notes: null,
         approvedAt: now,
       },
-      items: [itemOf(third, 12, 0)],
+      items: [itemOf('TREAT001', 12, 0)],
     },
   ]
   for (const { order, items } of orders) {
     const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
     const taxAmount = Math.round(subtotal * 0.1)
-    const [stored] = await db
-      .insert(schema.purchaseOrders)
-      .values({
-        ...order,
-        subtotal,
-        taxAmount,
-        totalAmount: subtotal + taxAmount + (order.shippingCost ?? 0),
-      })
-      .returning({ id: schema.purchaseOrders.id })
-    if (stored !== undefined) {
-      await db
-        .insert(schema.purchaseOrderItems)
-        .values(items.map((item) => ({ ...item, purchaseOrderId: stored.id })))
-    }
+    await db.insert(schema.purchaseOrders).values({
+      ...order,
+      subtotal,
+      taxAmount,
+      totalAmount: subtotal + taxAmount + (order.shippingCost ?? 0),
+    })
+    await db
+      .insert(schema.purchaseOrderItems)
+      .values(items.map((item) => ({ ...item, purchaseOrderId: order.id })))
   }
 }

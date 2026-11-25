@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import type postgres from 'postgres'
 import * as schema from '../schema'
 import { seedBookings } from './seed-data/bookings'
@@ -17,226 +16,67 @@ import { seedStaff } from './seed-data/staff'
 import { seedTreatmentRecords } from './seed-data/treatment-records'
 import { seedUsers } from './seed-data/users'
 
-export interface SeedOptions {
-  /**
-   * Whether to reset the database before seeding
-   */
-  reset?: boolean
-}
-
 /**
- * Main seeding function
+ * Inserts the seed data into a database without data, in the order of the
+ * rows each step names, and says each step to `say` before it is taken.
+ * Every step is given the rows of the steps before it by name.
  */
 export async function seed(
-  db: PostgresJsDatabase<typeof schema>,
-  options: SeedOptions = {},
+  client: postgres.Sql,
+  say: (line: string) => void,
 ): Promise<void> {
-  const { reset = false } = options
+  const db = drizzle(client, { schema })
 
-  if (reset) {
-    console.log('Resetting database...')
-    await truncateAll(db)
-  }
+  say('Seeding salons...')
+  const salons = await seedSalons(db)
 
-  // Seed base data in order of dependencies
-  console.log('Seeding salons...')
-  const salonIds = await seedSalons(db)
+  say('Seeding users...')
+  const users = await seedUsers(db)
 
-  console.log('Seeding users...')
-  const userResult = await seedUsers(db)
+  say('Seeding customers...')
+  const customers = await seedCustomers(db, users)
 
-  console.log('Seeding customers...')
-  const customerResult = await seedCustomers(db, {
-    customerUserIds: userResult.customerUserIds,
+  say('Seeding medical charts...')
+  await seedMedicalCharts(db, customers)
+
+  say('Seeding customer allergies...')
+  await seedCustomerAllergies(db, customers)
+
+  say('Seeding staff...')
+  const staff = await seedStaff(db, salons, users)
+
+  say('Seeding service categories...')
+  const categories = await seedServiceCategories(db, salons)
+
+  say('Seeding services...')
+  const services = await seedServices(db, salons, categories)
+
+  say('Seeding opening hours...')
+  await seedOpeningHours(db, salons)
+
+  say('Seeding payment methods...')
+  await seedPaymentMethods(db, salons)
+
+  say('Seeding products and inventory...')
+  const stock = await seedProducts(db, salons)
+
+  say('Seeding bookings...')
+  const visits = await seedBookings(db, {
+    salons,
+    customers,
+    staff,
+    services,
   })
 
-  console.log('Seeding medical charts...')
-  await seedMedicalCharts(db, customerResult.customerIds)
+  say('Seeding reviews...')
+  await seedReviews(db, { visits, customers, users })
 
-  console.log('Seeding customer allergies...')
-  await seedCustomerAllergies(db, customerResult.customerIds)
+  say('Seeding treatment records...')
+  await seedTreatmentRecords(db, visits, stock)
 
-  console.log('Seeding staff...')
-  await seedStaff(db, salonIds, {
-    staffUserIds: userResult.staffUserIds,
-    ownerUserId: userResult.ownerUserId,
-    managerUserId: userResult.managerUserId,
-  })
-
-  console.log('Seeding service categories...')
-  const categoryResult = await seedServiceCategories(db, salonIds)
-
-  console.log('Seeding services...')
-  await seedServices(db, salonIds, categoryResult)
-
-  console.log('Seeding opening hours...')
-  await seedOpeningHours(db, salonIds)
-
-  console.log('Seeding payment methods...')
-  await seedPaymentMethods(db, salonIds)
-
-  console.log('Seeding products and inventory...')
-  await seedProducts(db, salonIds)
-
-  console.log('Seeding bookings...')
-  const completedBookings = await seedBookings(db, {
-    salonIds,
-    customerIds: customerResult.customerIds,
-    vipCustomerId: customerResult.vipCustomerId,
-  })
-
-  console.log('Seeding reviews...')
-  await seedReviews(db, completedBookings, customerResult.customerIds, {
-    adminUserId: userResult.adminUserId,
-  })
-
-  const [firstSalonId] = salonIds
-  if (firstSalonId !== undefined) {
-    console.log('Seeding treatment records...')
-    await seedTreatmentRecords(db, completedBookings, firstSalonId)
-  }
-
-  console.log('Seeding completed successfully!')
+  say('Seeding completed successfully!')
 }
 
-/**
- * Inserts the seed data over a connection: for a caller outside this package,
- * which has no Drizzle instance of the type that `seed` takes.
- */
+/** Inserts the seed data and says nothing: for the test server of the API. */
 export const seedDatabase = (client: postgres.Sql): Promise<void> =>
-  seed(drizzle(client, { schema }))
-
-/**
- * Utility function to truncate all tables
- */
-export async function truncateAll(
-  db: PostgresJsDatabase<typeof schema>,
-): Promise<void> {
-  try {
-    // Use TRUNCATE with CASCADE which respects foreign keys without needing special privileges
-    // Group tables by dependency levels and truncate in batches
-
-    console.log('Truncating all tables with CASCADE...')
-
-    // Method 1: Try TRUNCATE CASCADE (fastest if permissions allow)
-    try {
-      await db.execute(sql`
-        TRUNCATE TABLE 
-          treatment_photos,
-          treatment_materials,
-          treatment_records,
-          staff_schedules,
-          sessions,
-          review_helpful_votes,
-          review_reports,
-          reviews,
-          sales_details,
-          payment_transactions,
-          sales,
-          payment_methods,
-          purchase_order_items,
-          purchase_orders,
-          inventory_transactions,
-          inventory,
-          products,
-          booking_status_histories,
-          booking_services,
-          bookings,
-          service_options,
-          services,
-          service_categories,
-          opening_hours,
-          medical_charts,
-          customer_preferences,
-          customer_points,
-          customer_allergies,
-          customer_deletion_requests,
-          customer_versions,
-          share_links,
-          attachments,
-          staff,
-          users,
-          customers,
-          salons
-        CASCADE
-      `)
-      console.log('All tables truncated successfully using CASCADE')
-      return
-    } catch (truncateError) {
-      console.log(
-        'TRUNCATE CASCADE failed, falling back to DELETE method...',
-        truncateError,
-      )
-    }
-
-    // Method 2: Delete in dependency order (works without special privileges)
-    // Delete from leaf tables first (those with foreign keys to other tables)
-
-    // Level 1: Tables that depend on others (leaf nodes)
-    await Promise.all([
-      db.delete(schema.treatmentPhotos),
-      db.delete(schema.treatmentMaterials),
-      db.delete(schema.salesDetails),
-      db.delete(schema.serviceOptions),
-      db.delete(schema.customerPreferences),
-      db.delete(schema.medicalCharts),
-      db.delete(schema.customerPoints),
-      db.delete(schema.customerAllergies),
-      db.delete(schema.customerDeletionRequests),
-      db.delete(schema.shareLinks),
-      db.delete(schema.attachments),
-      db.delete(schema.customerVersions),
-      db.delete(schema.bookingStatusHistories),
-      db.delete(schema.reviewHelpfulVotes),
-      db.delete(schema.reviewReports),
-      db.delete(schema.purchaseOrderItems),
-      db.delete(schema.inventoryAlertAcknowledgements),
-    ])
-
-    // Level 2: Tables that Level 1 tables depend on
-    await Promise.all([
-      db.delete(schema.treatmentRecords),
-      db.delete(schema.staffSchedules),
-      db.delete(schema.paymentTransactions),
-      db.delete(schema.inventoryTransactions),
-      db.delete(schema.purchaseOrders),
-      db.delete(schema.bookingServices),
-      db.delete(schema.reviews),
-    ])
-
-    // Level 3: Core transaction tables
-    await Promise.all([
-      db.delete(schema.sessions),
-      db.delete(schema.sales),
-      db.delete(schema.bookings),
-      db.delete(schema.inventory),
-    ])
-
-    // Level 4: Reference data tables
-    await Promise.all([
-      db.delete(schema.paymentMethods),
-      db.delete(schema.products),
-      db.delete(schema.services),
-      db.delete(schema.openingHours),
-    ])
-
-    // Level 5: Category and classification tables
-    await db.delete(schema.serviceCategories)
-
-    // Level 6: Entity tables
-    await Promise.all([db.delete(schema.staff), db.delete(schema.customers)])
-
-    // Level 7: User table
-    await db.delete(schema.users)
-
-    // Level 8: Root tables
-    await db.delete(schema.salons)
-
-    console.log('All tables truncated successfully using DELETE')
-  } catch (error) {
-    console.error('Error during truncation:', error)
-    throw new Error(
-      `Failed to truncate tables: ${error instanceof Error ? error.message : String(error)}`,
-    )
-  }
-}
+  seed(client, () => {})

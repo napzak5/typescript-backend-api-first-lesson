@@ -1,7 +1,5 @@
-import { drizzle } from 'drizzle-orm/postgres-js'
-import * as schema from '../../schema'
-import { truncateAll } from '../../seeds/index'
 import { type Command, withDatabase } from '../command'
+import { truncateAll } from '../tables'
 
 /** `pnpm db:truncate`: deletes every row and keeps the schema. */
 export const truncateCommand: Command = {
@@ -18,7 +16,7 @@ Clears all data from all tables while preserving the database schema.
       `🗑️  Truncating all database tables in ${context.environment.toUpperCase()} environment...`,
     )
     context.say('⚠️  This will remove all data but preserve the schema')
-    await withDatabase(context, (sql) => truncateAll(drizzle(sql, { schema })))
+    await withDatabase(context, truncateAll)
     context.say('✅ Database truncation completed successfully!')
     return 0
   },
