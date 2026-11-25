@@ -20,7 +20,6 @@ import {
   planReviewRemoval,
   planReviewReport,
   planReviewResponse,
-  type ReportedReview,
   type RequestedReview,
   type RequestedReviewChange,
   type RequestedReviewReport,
@@ -43,7 +42,7 @@ import {
   type SalonId,
   type StaffId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import {
   and,
   count,
@@ -63,18 +62,11 @@ import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
+import { written } from '../database/written'
 import { countMarksOf } from './_shared/review-marks'
 import { countReportsOf } from './_shared/review-report-count'
 import { countReviewsOf } from './_shared/salon-review-counts'
-
-/**
- * A read of a page of reviews in one snapshot: the cursor, the page and
- * the count of what matches are of one moment.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
 
 /** A review is read while its salon is not deleted. */
 const ofLiveSalon = and(
@@ -229,18 +221,16 @@ const heldReviewOf = async (
  * once the one before it is committed, and a change or a removal of the
  * review under way (`FOR UPDATE`) has been made when the row is returned.
  * Its salon is read, not held: none of them writes anything of the salon.
- * Null when there is no review with the ID, or its salon is deleted.
+ * The review is read whole, as it is when it is held: a response that
+ * writes nothing answers with it. Null when there is no review with the
+ * ID, or its salon is deleted.
  */
 const notedReviewOf = async (
   tx: DatabaseExecutor,
   id: string,
-): Promise<(HeldReview & ReportedReview) | null> => {
+): Promise<DbReview | null> => {
   const [review] = await tx
-    .select({
-      customerId: reviews.customerId,
-      staffId: reviews.staffId,
-      salonId: reviews.salonId,
-    })
+    .select(reviewColumns)
     .from(reviews)
     .where(eq(reviews.id, id))
     .for('no key update')
@@ -446,8 +436,8 @@ export class ReviewRepository implements IReviewRepository {
     customerId: CustomerId,
     request: RequestedReviewChange,
   ): Promise<Result<ReviewChange, DomainError>> {
-    return attempt('Failed to update review', () =>
-      this.db.transaction(async (tx): Promise<ReviewChange> => {
+    const changed = await attempt('Failed to update review', () =>
+      this.db.transaction(async (tx): Promise<ReviewChange | null> => {
         const plan = planReviewChange(customerId, request, {
           reviewerDeleted: await isReviewerDeleted(tx, customerId),
           review: await heldReviewOf(tx, id),
@@ -461,23 +451,26 @@ export class ReviewRepository implements IReviewRepository {
           .set({ ...plan.write, updatedAt: CLOCK })
           .where(eq(reviews.id, id))
           .returning()
-        // The review is held: it is there until the transaction ends.
+        // The review is held: only a trigger that skips the write leaves it
+        // unwritten.
         if (review === undefined) {
-          return { type: 'reviewNotFound' }
+          return null
         }
         await countReviewsOf(tx, review.salonId)
 
         return { type: 'updated', review }
       }, WRITE),
     )
+
+    return Result.flatMap(changed, written('Update of review'))
   }
 
   async delete(
     id: ReviewId,
     remover: ReviewRemover,
   ): Promise<Result<ReviewRemoval, DomainError>> {
-    return attempt('Failed to delete review', () =>
-      this.db.transaction(async (tx): Promise<ReviewRemoval> => {
+    const removal = await attempt('Failed to delete review', () =>
+      this.db.transaction(async (tx): Promise<ReviewRemoval | null> => {
         const plan = planReviewRemoval(remover, {
           // An administrator removes a review whatever became of its author.
           reviewerDeleted:
@@ -493,15 +486,18 @@ export class ReviewRepository implements IReviewRepository {
           .delete(reviews)
           .where(eq(reviews.id, id))
           .returning({ salonId: reviews.salonId })
-        // The review is held: it is there until the transaction ends.
+        // The review is held: only a trigger that skips the delete leaves it
+        // there.
         if (removed === undefined) {
-          return { type: 'reviewNotFound' }
+          return null
         }
         await countReviewsOf(tx, removed.salonId)
 
         return { type: 'deleted' }
       }, WRITE),
     )
+
+    return Result.flatMap(removal, written('Delete of review'))
   }
 
   async markHelpful(
@@ -593,9 +589,10 @@ export class ReviewRepository implements IReviewRepository {
         }
 
         // A response that is stored already is not written again, and
-        // the time it was written stays. What the review says did not
-        // change, so its `updatedAt` stays too.
-        await tx
+        // the time it was written stays: the review is then what it was
+        // when it was held. What the review says did not change, so its
+        // `updatedAt` stays too.
+        const [responded] = await tx
           .update(reviews)
           .set({
             ownerResponse,
@@ -607,16 +604,9 @@ export class ReviewRepository implements IReviewRepository {
               sql`${reviews.ownerResponse} is distinct from ${ownerResponse}`,
             ),
           )
-        const [review] = await tx
-          .select()
-          .from(reviews)
-          .where(eq(reviews.id, id))
-        // The review is held: it is there until the transaction ends.
-        if (review === undefined) {
-          return { type: 'reviewNotFound' }
-        }
+          .returning()
 
-        return { type: 'responded', review }
+        return { type: 'responded', review: responded ?? plan.review }
       }, WRITE),
     )
   }

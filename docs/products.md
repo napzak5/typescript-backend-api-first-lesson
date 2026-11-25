@@ -243,6 +243,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - **商品コードの重なりは、一意インデックスが決めます**。同じコードの作成が同時に何件も届くと、1 件が 201 で、ほかは 409 です。2 つの商品を同じコードに変える更新が同時に届くと、1 件が 200 で、もう 1 件は 409 です。書いている途中の商品と同じコードの作成は、その商品を待ち、コミットされれば 409、取り消されれば書きます
 - **削除は、商品の行をロックしてから、次の文で、その商品の在庫のレコードを探します**。このロックは、在庫のレコードの外部キーの確認が待つロックです。書いている途中の在庫のレコードがあれば、削除はそれを待ち、コミットされれば 409、取り消されれば削除します
 - 更新と削除は、同じ商品の行で、互いに待ちます。削除を待った更新は、404 で、何も書きません
+- ロックした商品への更新が行を返さないのは、書き込みを飛ばすトリガーがあるときだけです。そのときはデータベースのエラー（500）で、404 とは答えません
 - 待ったリクエストが書く時刻（`updatedAt`、`deletedAt`）は、待ったあとの時刻です
 - 更新と削除がロックするのは、その商品の行だけです。サロンの行も、ほかの商品の行も、ロックしません
 - 取得と一覧は、ロックを待ちません
@@ -279,4 +280,4 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | インフラ | `backend/packages/infrastructure/src/repositories/product.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/product/`（`/api/v1/salons/:salonId/products` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171300_product_rules.sql` |
-| テスト | `backend/packages/domain/src/schemas/__tests__/product.schema.test.ts`、`backend/packages/domain/src/business-logic/product/__tests__/product.stock-levels.test.ts`、`backend/packages/domain/src/mappers/__tests__/product.mapper.test.ts`、`backend/packages/domain/src/business-logic/product/__tests__/product.usecase.test.ts`、`backend/packages/api/src/routes/product/__tests__/product.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/product.schema.test.ts`、`backend/packages/domain/src/business-logic/product/__tests__/product.stock-levels.test.ts`、`backend/packages/domain/src/mappers/__tests__/product.mapper.test.ts`、`backend/packages/domain/src/business-logic/product/__tests__/product.usecase.test.ts`、`backend/packages/api/src/routes/product/__tests__/product.integration.test.ts`、`backend/packages/infrastructure/src/repositories/__tests__/product.repository.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
