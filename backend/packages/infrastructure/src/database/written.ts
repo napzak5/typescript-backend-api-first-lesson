@@ -25,3 +25,32 @@ export const rowWritten =
     const [row] = rows
     return row === undefined ? noRow(write) : Result.success(row)
   }
+
+/**
+ * Each of the items a write was to write a row for, with the row it
+ * returned for it, in the order of the items; a failure when it returned
+ * no row for one of them. `keyOf` names an item, and `rowKeyOf` the item a
+ * row is for.
+ */
+export const writtenFor =
+  (write: string) =>
+  <Item, Row>(
+    items: readonly Item[],
+    keyOf: (item: Item) => string,
+    rows: readonly Row[],
+    rowKeyOf: (row: Row) => string | null,
+  ): Result<{ item: Item; row: Row }[], DomainError> => {
+    const rowOf = new Map(rows.map((row) => [rowKeyOf(row), row]))
+    const paired = items.flatMap((item) => {
+      const row = rowOf.get(keyOf(item))
+      return row === undefined ? [] : [{ item, row }]
+    })
+    return paired.length < items.length
+      ? Result.error(
+          DomainErrors.database(
+            `${write} returned no row for ${items.length - paired.length} of ${items.length}`,
+            null,
+          ),
+        )
+      : Result.success(paired)
+  }
