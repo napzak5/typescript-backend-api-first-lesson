@@ -255,7 +255,7 @@ describe('pnpm db:seed', () => {
   const salonCount = (): Promise<unknown> =>
     answerTo('SELECT count(*)::integer AS value FROM salons')
 
-  it('should insert the seed data into a database without data, and tell the rows of every table that has rows', async () => {
+  it('should insert the seed data into a database without data, tell each step, and tell the rows of every table that has rows', async () => {
     // Arrange
     await run('migrate')
 
@@ -263,7 +263,12 @@ describe('pnpm db:seed', () => {
     const seeded = await run('seed')
 
     // Assert
-    expect(seeded.status).toBe(0)
+    expect(seeded).toMatchObject({ status: 0, stderr: '' })
+    expect(seeded.stdout).toContain('Seeding salons...\nSeeding users...\n')
+    expect(seeded.stdout).toContain(
+      'Seeding completed successfully!\n📊 Collecting seeding statistics...\n',
+    )
+    expect(seeded.stdout).not.toContain('Resetting database...')
     const salons = await salonCount()
     expect(salons).toBeGreaterThan(0)
     expect(seeded.stdout).toContain(
@@ -323,6 +328,9 @@ describe('pnpm db:seed', () => {
     // Assert
     expect(seeded.status).toBe(0)
     expect(seeded.stdout).toContain('🔄 Reset database: true')
+    expect(seeded.stdout).toContain(
+      'Resetting database...\nSeeding salons...\n',
+    )
     expect(await salonCount()).toBe(salons)
   })
 

@@ -89,6 +89,7 @@ backend or the frontend.
 | Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 | The migration runner, and the migrations of the repository | Integration | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
 | The commands of the database package (`pnpm db:*`, `pnpm check:api-db`): the entry, the runner that chooses a command and ends with its status, and every command, on a database of its own and with the files it writes in folders of the test | Unit; integration against PostgreSQL | `backend/packages/database/src/scripts/__tests__/command.test.ts`, `backend/packages/database/src/scripts/commands/__tests__/database-commands.integration.test.ts`, `backend/packages/database/src/scripts/commands/__tests__/generated-files.integration.test.ts` |
+| The seed data: the rows of every table it writes to, the steps it says, the rows a row names (of the salon of the row; the visit of a review and of a treatment record; the account of a customer and of a staff member), and `seedDatabase`, which says nothing; and what the commands read and empty of the tables of the public schema (`publicTablesOf`, `rowCountsOf`, `truncateAll`) | Integration against PostgreSQL | `backend/packages/database/src/seeds/__tests__/seed.integration.test.ts`, `backend/packages/database/src/scripts/__tests__/tables.integration.test.ts` |
 | Configuration: every variable, and every environment file in the repository (the local ones allow the origins of the frontend applications) | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
 | Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
@@ -283,8 +284,8 @@ and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
 (`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
 the admin application (`frontend/apps/admin-app`), and the `utility`,
-`config`, `domain` and `api` packages and the server (`backend/apps/server`)
-of the backend say so; the other packages of the backend do not yet.
+`config`, `domain`, `api` and `database` packages and the server
+(`backend/apps/server`) of the backend say so; the other packages of the backend do not yet.
 
 | Where | How |
 |---|---|
