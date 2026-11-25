@@ -39,6 +39,18 @@ holds the three that are about no single route (`app.integration.test.ts`,
 all the integration tests share (`_shared/`) and the test server
 (`test-server/`).
 
+What the tests of more than one backend package share is the package
+`@beauty-salon-backend/testing` (`backend/packages/testing`), a dependency
+of their tests alone. It holds the PostgreSQL of the tests
+(`startTestPostgres`: the instance at `TEST_DATABASE_URL`, or a container),
+the databases of the tests (`openTestDatabases`: a template with the schema
+and the rows a caller gives, copied for every test and dropped after it;
+`useTestDatabases`, the hooks of Vitest that give every test of a file a
+copy) and the object storage (`startTestStorage`: a SeaweedFS container with
+a bucket and one identity). The API, the database package, the
+infrastructure and the server take their PostgreSQL, their databases and
+their storage from it, and the test server of the API does too.
+
 The unit and the integration tests run on Vitest, configured in one place
 for every package: the `vitest.config.ts` of a package calls `backendTests`,
 `frontendTests` or `sharedTests` of `@beauty-salon-shared/config/vitest`
@@ -284,7 +296,7 @@ and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
 (`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
 the admin application (`frontend/apps/admin-app`), and the `utility`,
-`config`, `domain`, `api` and `database` packages and the server
+`config`, `domain`, `api`, `database` and `testing` packages and the server
 (`backend/apps/server`) of the backend say so; the other packages of the backend do not yet.
 
 | Where | How |
