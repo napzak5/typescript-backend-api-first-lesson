@@ -18,6 +18,7 @@ import request, { type Response } from 'supertest'
 import { expect } from 'vitest'
 import { type AppSettings, createApp } from '../../index'
 import { InMemoryFileStorage } from './in-memory-file-storage'
+import { LOOPBACK, listen } from './listening'
 
 // Global type declarations for testing
 declare global {
@@ -146,17 +147,9 @@ export async function connectSilentDatabase(): Promise<DatabaseConnection> {
   const server = createServer((socket) => {
     sockets.add(socket)
   })
-  const port = await new Promise<number>((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address()
-      if (address === null || typeof address === 'string') {
-        throw new Error('The silent database listens on no port')
-      }
-      resolve(address.port)
-    })
-  })
+  const port = await listen(server)
   const connection = connectDatabase({
-    url: `postgres://nobody:nothing@127.0.0.1:${port}/nowhere`,
+    url: `postgres://nobody:nothing@${LOOPBACK}:${port}/nowhere`,
     poolMax: 1,
     connectTimeoutMs: 30_000,
   })

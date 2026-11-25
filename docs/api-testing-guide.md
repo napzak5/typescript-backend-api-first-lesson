@@ -29,7 +29,8 @@ backend/packages/api/
         ├── _shared/
         │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
         │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
-        │   ├── test-helpers.ts          # createTestApp, getTestDb, request
+        │   ├── test-helpers.ts          # createTestApp, getTestDb, request, the problems the tests expect
+        │   ├── listening.ts             # a server of a test on a port of this machine
         │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
         │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
         ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)

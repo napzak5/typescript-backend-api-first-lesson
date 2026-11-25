@@ -1,8 +1,12 @@
+import { once } from 'node:events'
+import { createServer } from 'node:http'
+import { connect } from 'node:net'
 import { createLogger } from '@beauty-salon-backend/infrastructure'
 import express, { type Express, type RequestHandler } from 'express'
 import request from 'supertest'
 import { match, P } from 'ts-pattern'
 import { describe, expect, it } from 'vitest'
+import { LOOPBACK, listen } from '../../__tests__/_shared/listening'
 import { noteSignedInUser } from '../../shared/signed-in-user'
 import { errorHandler, notFoundHandler, toHttpError } from '../errors'
 import { requestLogging } from '../request-logging'
@@ -132,23 +136,46 @@ describe('request logging', () => {
 
   it('should log as an error a response that the route writes to after its end', async () => {
     // Arrange
-    // A body too large to be handed to the connection at once: the write
-    // after the end fails before the response has finished.
-    const { app, logs } = createAppWith((_req, res) => {
-      res.status(200).end('x'.repeat(1024 * 1024))
+    // Two requests on one connection: the answer to the second waits until
+    // the first is sent, so its end is still on its way when the write after
+    // it fails. (A response that has the connection may have sent its end
+    // already, and then the failure comes after its line.)
+    const firstMaySend = Promise.withResolvers<void>()
+    const { app, logs } = createAppWith(async (req, res) => {
+      if (req.query['first'] !== undefined) {
+        await firstMaySend.promise
+        res.end('first')
+        return
+      }
+      res.status(200).end('second')
       res.write('more')
+      firstMaySend.resolve()
     })
+    const server = createServer(app)
+    const client = connect(await listen(server), LOOPBACK)
+    client.resume()
 
     // Act
-    await request(app).get('/route')
+    client.write(
+      'GET /route?first HTTP/1.1\r\nHost: test\r\n\r\n' +
+        'GET /route HTTP/1.1\r\nHost: test\r\nConnection: close\r\n\r\n',
+    )
+    await once(client, 'close')
+    server.close()
 
     // Assert
     expect(logs).toEqual([
       expect.objectContaining({
         level: 'error',
         msg: 'request errored',
+        req: expect.objectContaining({ url: '/route' }),
         res: { statusCode: 200 },
         responseTime: expect.any(Number),
+      }),
+      expect.objectContaining({
+        level: 'info',
+        msg: 'request completed',
+        req: expect.objectContaining({ url: '/route?first' }),
       }),
     ])
   })
