@@ -6,7 +6,7 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   type FormErrors,
   LoadingIndicator,
@@ -119,9 +119,8 @@ type ReviewDetailsProps = {
 const ReviewDetails = ({ salon, review, staff }: ReviewDetailsProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const session = useSession()
-  const role = session.type === 'signedIn' ? session.user.role : ''
-  const speaks = speaksForTheSalon(role)
+  const user = useSignedInUser()
+  const speaks = user !== undefined && speaksForTheSalon(user.role)
   const author = useAuthor(salon.id, review.customerId)
   const [asking, setAsking] = useState<Asking>('none')
   const [message, setMessage] = useState<LocalizedText>()
@@ -248,8 +247,8 @@ const ReviewDetails = ({ salon, review, staff }: ReviewDetailsProps) => {
         responseHref={
           speaks ? reviewResponseHrefOf(salon.id, review.id) : undefined
         }
-        withdraws={withdrawsAnswers(role)}
-        note={reviewActionNoteOf(role)}
+        withdraws={user !== undefined && withdrawsAnswers(user.role)}
+        note={reviewActionNoteOf(user?.role)}
         headingRef={answerHeading}
         pending={withdrawal.isPending}
         asking={asking === 'withdrawal'}

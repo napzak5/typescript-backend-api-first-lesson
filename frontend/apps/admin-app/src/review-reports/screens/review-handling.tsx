@@ -10,7 +10,6 @@ import type {
   ModelsReviewResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
@@ -140,19 +139,14 @@ export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
     <ReviewReports
       headingRef={heading}
       refusal={refusal}
-      asking={
-        asking === undefined
-          ? undefined
-          : momentNameAt(asking.createdAt, salon.timezone)
-      }
+      asking={asking}
+      timezone={salon.timezone}
       pending={dismissal.isPending}
       message={message}
       onClose={() => setAsking(undefined)}
-      onDismiss={() => {
-        if (asking !== undefined) {
-          setMessage(undefined)
-          dismissal.mutate(asking.id)
-        }
+      onDismiss={(report) => {
+        setMessage(undefined)
+        dismissal.mutate(report.id)
       }}
     >
       {match(read.data === undefined ? undefined : listingOf(read.data.pages))

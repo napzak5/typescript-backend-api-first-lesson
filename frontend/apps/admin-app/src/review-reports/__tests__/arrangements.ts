@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -72,3 +72,37 @@ export const reviewsKeptOf = async (title: string): Promise<number> =>
       [title],
     ),
   )[0].kept
+
+/**
+ * So many reports of a review that wait, each by an account of its own that
+ * the test makes, received a minute apart before the reports of the seed
+ * data, as advertisements.
+ */
+export const reportedByMany = (
+  title: string,
+  count: number,
+): Promise<unknown> =>
+  testApi().query(
+    `with reporters as (
+       insert into users (email, "passwordHash")
+       select 'reporter-' || n || '@example.com', 'no password opens this'
+       from generate_series(1, $2::int) as n
+       returning id, email
+     )
+     insert into review_reports ("reviewId", "reportedBy", reason, "createdAt", "updatedAt")
+     select reviews.id, reporters.id, 'spam',
+            now() - make_interval(mins => 1000 - row_number() over (order by reporters.email)::int),
+            now() - make_interval(mins => 1000 - row_number() over (order by reporters.email)::int)
+     from reviews cross join reporters
+     where reviews.title = $1`,
+    [title, count],
+  )
+
+/** The ID of the report of a review received last: the last of the lists, which show the first received first. */
+export const lastReportOf = (title: string): Promise<string> =>
+  idOf(
+    `select rr.id::text from review_reports rr join reviews r on r.id = rr."reviewId"
+     where r.title = $1
+     order by rr."createdAt" desc, rr.id desc limit 1`,
+    [title],
+  )

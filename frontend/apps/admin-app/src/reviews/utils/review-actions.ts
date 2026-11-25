@@ -44,8 +44,10 @@ export const speaksForTheSalon = (role: string): boolean =>
 export const withdrawsAnswers = (role: string): boolean =>
   speaksForTheSalon(role) || role === 'admin'
 
-/** Why a review offers a role no operation, or only some: what the role may not do, and who may. */
-export const reviewActionNoteOf = (role: string): LocalizedText | undefined =>
+/** Why a review offers a role no operation, or only some: what the role may not do, and who may. No role is told as a role of no operation. */
+export const reviewActionNoteOf = (
+  role: string | undefined,
+): LocalizedText | undefined =>
   match(role)
     .with('owner', 'manager', () => undefined)
     .with('admin', () => notes.admin)

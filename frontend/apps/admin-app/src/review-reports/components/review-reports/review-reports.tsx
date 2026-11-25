@@ -1,3 +1,5 @@
+import type { ModelsReviewReportResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Alert, Button, Card, Dialog, useSay } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
@@ -14,16 +16,18 @@ export type ReviewReportsProps = {
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** Why the last dismissal changed nothing, said above the reports */
   refusal?: LocalizedText | undefined
-  /** When the report the dialog asks to dismiss was received, in words; `undefined` while the dialog is closed */
-  asking?: LocalizedText | undefined
+  /** The report the dialog asks to dismiss; `undefined` while the dialog is closed */
+  asking?: ModelsReviewReportResponse | undefined
+  /** The time zone of the salon, which the moment a report was received is said in */
+  timezone: string
   /** The dismissal is on its way */
   pending?: boolean | undefined
   /** What went wrong with the last attempt, in the dialog */
   message?: LocalizedText | undefined
   /** The dialog has closed, or its button that changes nothing was pressed */
   onClose: () => void
-  /** The dismissal was confirmed */
-  onDismiss: () => void
+  /** The dismissal of the report the dialog asks of was confirmed */
+  onDismiss: (report: ModelsReviewReportResponse) => void
 }
 
 /**
@@ -36,6 +40,7 @@ export const ReviewReports = ({
   headingRef,
   refusal,
   asking,
+  timezone,
   pending = false,
   message,
   onClose,
@@ -55,14 +60,24 @@ export const ReviewReports = ({
         onClose={onClose}
         title={say(dismissal.confirm)}
         description={
-          asking === undefined ? undefined : say(dismissal.description(asking))
+          asking === undefined
+            ? undefined
+            : say(
+                dismissal.description(momentNameAt(asking.createdAt, timezone)),
+              )
         }
         actions={
           <>
             <Button onClick={onClose}>{say(uiMessages.back)}</Button>
-            <Button variant='primary' pending={pending} onClick={onDismiss}>
-              {say(dismissal.submit)}
-            </Button>
+            {asking !== undefined && (
+              <Button
+                variant='primary'
+                pending={pending}
+                onClick={() => onDismiss(asking)}
+              >
+                {say(dismissal.submit)}
+              </Button>
+            )}
           </>
         }
       >

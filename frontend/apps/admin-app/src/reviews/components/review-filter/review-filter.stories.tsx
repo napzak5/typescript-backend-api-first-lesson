@@ -33,6 +33,14 @@ export const Narrowed: Story = {
   },
 }
 
+/** The reviews of four or more */
+export const FromFour: Story = {
+  args: {
+    conditions: { minRating: 4 },
+    clearHref: `/salons/${salon.id}/reviews`,
+  },
+}
+
 /** A highest rating below the lowest */
 export const WithErrors: Story = {
   args: {

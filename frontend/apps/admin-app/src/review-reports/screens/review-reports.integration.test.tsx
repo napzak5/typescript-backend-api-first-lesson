@@ -38,6 +38,13 @@ import {
   reviewsKeptOf,
   storedReportStatesOf,
 } from '../__tests__/arrangements'
+import {
+  askToRemove,
+  GREAT,
+  openReviewAs,
+  removalPart,
+  reportsPart,
+} from '../__tests__/screens'
 
 /*
  * The reports of reviews against the API: the list of a salon, which
@@ -46,7 +53,6 @@ import {
  * with them. The reports of the seed data are in `__tests__/arrangements.ts`.
  */
 
-const GREAT = 'Great experience'
 const EXCELLENT = 'Excellent service!'
 const DETAILS = '担当したスタッフの名前が違います。'
 const COMMENT =
@@ -72,15 +78,6 @@ const reportOf = async (title: string, language: Locale = 'ja') => {
   }
 }
 
-/** Opens a review of the salon in Osaka, and waits for its reports. */
-const openReviewAs = async (email: string, title = GREAT): Promise<void> => {
-  await openAs(
-    reviewHrefOf(await salonIdOf(OSAKA), await reviewIdOf(title)),
-    email,
-  )
-  await heading(title)
-}
-
 /** Each term of the record of the review with its description */
 const detailsOf = (): string[][] => {
   const record = screen.getByRole('region', { name: 'レビュー' })
@@ -94,12 +91,6 @@ const detailsOf = (): string[][] => {
     ])
 }
 
-const reportsPart = (): HTMLElement =>
-  screen.getByRole('region', { name: '通報' })
-
-const removalPart = (): HTMLElement =>
-  screen.getByRole('region', { name: 'レビューの削除' })
-
 /** Opens the dialog of the dismissal of the report that waits, from its row. */
 const askToDismiss = async (
   user: ReturnType<typeof userEvent.setup>,
@@ -112,17 +103,6 @@ const askToDismiss = async (
   )
 
   return screen.getByRole('dialog', { name: '通報を却下しますか？' })
-}
-
-/** Opens the dialog of the removal of the review. */
-const askToRemove = async (
-  user: ReturnType<typeof userEvent.setup>,
-): Promise<HTMLElement> => {
-  await user.click(
-    within(removalPart()).getByRole('button', { name: 'レビューを削除する' }),
-  )
-
-  return screen.getByRole('dialog', { name: `「${GREAT}」を削除しますか？` })
 }
 
 describe('the reports of reviews', () => {

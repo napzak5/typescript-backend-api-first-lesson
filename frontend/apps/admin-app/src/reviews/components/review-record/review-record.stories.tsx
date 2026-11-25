@@ -1,7 +1,7 @@
 import { adminStaffMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { customers, salon } from '../../../bookings/components/examples'
-import { answeredReview, reportedReview } from '../examples'
+import { answeredReview, reportedReview, unansweredReview } from '../examples'
 import { ReviewRecord } from './review-record'
 
 const SALON = `/salons/${salon.id}`
@@ -40,6 +40,15 @@ export const Reported: Story = {
     },
     staffName: undefined,
     bookingHref: `${SALON}/bookings/${reportedReview.bookingId}`,
+  },
+}
+
+/** A review of the ratings alone, without a comment */
+export const WithoutComment: Story = {
+  args: {
+    review: unansweredReview,
+    staffName: adminStaffMessages.named('佐藤 健'),
+    bookingHref: `${SALON}/bookings/${unansweredReview.bookingId}`,
   },
 }
 

@@ -93,6 +93,18 @@ describe('ReviewTable', () => {
     ])
   })
 
+  it('should say of a member who left the staff that the salon no longer shows them', async () => {
+    // Act
+    await stories.StaffRemoved.run()
+
+    // Assert
+    expect(rowsOf(screen.getByRole('table')).map((cells) => cells[4])).toEqual([
+      '指名なし',
+      '一覧にないスタッフ',
+      '田中 美咲',
+    ])
+  })
+
   it('should ask for the reviews that come next', async () => {
     // Arrange
     await stories.More.run()

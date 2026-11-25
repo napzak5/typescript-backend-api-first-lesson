@@ -108,6 +108,29 @@ describe('ReviewRecord', () => {
     // Assert
     expect(details()).toContainEqual(['お客様', '読み込めませんでした'])
   })
+
+  it('should say that a review has no comment', async () => {
+    // Act
+    await stories.WithoutComment.run()
+
+    // Assert
+    expect(screen.getByText('ヘッドスパが気持ちよかった')).toBeVisible()
+    expect(screen.getByText('コメントなし')).toBeVisible()
+  })
+
+  it('should show an address that is none of the web as text, not as a link', async () => {
+    // Act
+    await stories.Rated.run({
+      args: {
+        ...stories.Rated.args,
+        review: { ...answeredReview, imageUrls: ['javascript:alert(1)'] },
+      },
+    })
+
+    // Assert
+    expect(details()).toContainEqual(['写真', 'javascript:alert(1)'])
+    expect(screen.queryByRole('link', { name: /javascript/ })).toBeNull()
+  })
 })
 
 describe('ReviewRecord on a page in English', () => {
