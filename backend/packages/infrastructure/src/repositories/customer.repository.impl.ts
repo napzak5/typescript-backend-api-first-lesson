@@ -366,11 +366,11 @@ export class CustomerRepository implements ICustomerRepository {
   ): Promise<Result<CustomerUpdate, DomainError>> {
     const { referredBy } = changes
 
-    return attemptWrite(
+    const changed = await attemptWrite(
       'Failed to update customer',
       () => uniqueValuesOf(changes),
       () =>
-        this.db.transaction(async (tx): Promise<CustomerUpdate> => {
+        this.db.transaction(async (tx): Promise<CustomerUpdate | null> => {
           // The row is locked: a customer who is found here is not deleted
           // before the change is written.
           const [locked] = await tx
@@ -395,13 +395,15 @@ export class CustomerRepository implements ICustomerRepository {
             .where(eq(customers.id, id))
             .returning()
           if (updated === undefined) {
-            return { type: 'notFound' }
+            return null
           }
           await recordVersions(tx, [updated], 'update', changedBy)
 
           return { type: 'updated', customer: updated }
         }),
     )
+
+    return Result.flatMap(changed, written('Update of customer'))
   }
 
   async delete(
@@ -452,11 +454,11 @@ export class CustomerRepository implements ICustomerRepository {
     // The email of the customer, for the error of a restore it is refused.
     let restoring: UniqueValues = { email: null, referralCode: null }
 
-    return attemptWrite(
+    const restoration = await attemptWrite(
       'Failed to restore customer',
       () => restoring,
       () =>
-        this.db.transaction(async (tx): Promise<CustomerRestoration> => {
+        this.db.transaction(async (tx): Promise<CustomerRestoration | null> => {
           // Of two restores of a customer, the second sees the first.
           const [held] = await tx
             .select({ email: customers.email, deletedAt: customers.deletedAt })
@@ -499,13 +501,15 @@ export class CustomerRepository implements ICustomerRepository {
             .where(eq(customers.id, id))
             .returning()
           if (restored === undefined) {
-            return { type: 'notFound' }
+            return null
           }
           await recordVersions(tx, [restored], 'restore', changedBy)
 
           return { type: 'restored', customer: restored }
         }),
     )
+
+    return Result.flatMap(restoration, written('Update of restored customer'))
   }
 
   async merge(

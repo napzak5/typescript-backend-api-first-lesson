@@ -30,6 +30,7 @@ import {
   sql,
 } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
+import { aggregateOf } from '../database/aggregate'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
 
@@ -92,17 +93,20 @@ const statisticsOf = async (
     lte(bookings.bookingDate, endDate),
   )
   const completed = and(ofPeriod, eq(bookings.status, COMPLETED))
-  const [booked] = await tx
-    .select({
-      bookings: count(),
-      cancelled: countWhere(eq(bookings.status, CANCELLED)),
-      noShows: countWhere(eq(bookings.status, NO_SHOW)),
-      lastVisit: sql<
-        string | null
-      >`max(${bookings.startTime}) filter (where ${eq(bookings.status, COMPLETED)})`,
-    })
-    .from(bookings)
-    .where(ofPeriod)
+  const booked = aggregateOf(
+    await tx
+      .select({
+        bookings: count(),
+        cancelled: countWhere(eq(bookings.status, CANCELLED)),
+        noShows: countWhere(eq(bookings.status, NO_SHOW)),
+        lastVisit: sql<
+          string | null
+        >`max(${bookings.startTime}) filter (where ${eq(bookings.status, COMPLETED)})`,
+      })
+      .from(bookings)
+      .where(ofPeriod),
+    { bookings: 0, cancelled: 0, noShows: 0, lastVisit: null },
+  )
 
   // The sales of the customer at the salon whose day is in the period and
   // that are not void. A payment has a refund amount only while it is
@@ -129,15 +133,18 @@ const statisticsOf = async (
     .as('refunds_of_sale')
   const net = sql`${sales.totalAmount} - coalesce(${refundsOfSale.refunds}, 0)`
   const ofBooking = isNotNull(sales.bookingId)
-  const [spending] = await tx
-    .select({
-      spent: sumOf(net),
-      bookingSpent: sumWhere(net, ofBooking),
-      bookingSales: countWhere(ofBooking),
-    })
-    .from(sales)
-    .leftJoin(refundsOfSale, eq(refundsOfSale.saleId, sales.id))
-    .where(ofSales)
+  const spending = aggregateOf(
+    await tx
+      .select({
+        spent: sumOf(net),
+        bookingSpent: sumWhere(net, ofBooking),
+        bookingSales: countWhere(ofBooking),
+      })
+      .from(sales)
+      .leftJoin(refundsOfSale, eq(refundsOfSale.saleId, sales.id))
+      .where(ofSales),
+    { spent: 0, bookingSpent: 0, bookingSales: 0 },
+  )
 
   const serviceRows = await tx
     .select({
@@ -161,17 +168,11 @@ const statisticsOf = async (
     .where(completed)
     .groupBy(staff.id, staff.displayName)
 
-  // An aggregate without GROUP BY gives one row, also of no rows.
   return {
     type: 'found',
     figures: {
-      bookings: booked?.bookings ?? 0,
-      cancelled: booked?.cancelled ?? 0,
-      noShows: booked?.noShows ?? 0,
-      spent: spending?.spent ?? 0,
-      bookingSpent: spending?.bookingSpent ?? 0,
-      bookingSales: spending?.bookingSales ?? 0,
-      lastVisit: booked?.lastVisit ?? null,
+      ...booked,
+      ...spending,
       services: serviceRows,
       staff: staffRows,
       loyaltyPoints: customer.loyaltyPoints,
