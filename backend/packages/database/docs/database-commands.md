@@ -51,7 +51,7 @@ pnpm db:seed --if-empty   # データがある DB には何もしない
 pnpm db:truncate          # 全テーブルのデータを削除
 ```
 
-シードは決まった行を入れるので、データがあるところへ足すことはできません。データがある DB にオプションなしで実行すると、何も書き込まずに、理由と 2 つの選択肢(`--reset`、`--if-empty`)を表示して、終了コード 1 で終わります。「データがある」は、サロンが 1 件以上あることです(`src/scripts/seed-plan.ts` の `planSeed`)。入れ直すときは `--reset` を使います。件数の表は、`public` スキーマのすべてのテーブルを数えます。
+シードは決まった行を入れるので、データがあるところへ足すことはできません。データがある DB にオプションなしで実行すると、何も書き込まずに、理由と 2 つの選択肢(`--reset`、`--if-empty`)を表示して、終了コード 1 で終わります。「データがある」は、サロンが 1 件以上あることです(`src/scripts/seed-plan.ts` の `planSeed`)。入れ直すときは `--reset` を使います。`--reset` と `pnpm db:truncate` は、`public` スキーマのすべてのテーブルを、カタログから読んで空にします(`src/scripts/tables.ts` の `truncateAll`。`pnpm db:reset` が消すテーブルと同じ読み方です)。適用履歴(`migration_history` スキーマ)は残ります。件数の表は、`public` スキーマのすべてのテーブルを数えます。
 
 シードはログインできるアカウント(`admin@beautysalon.jp`、`owner@beautysalon.jp` など)を作ります。パスワードはすべて同じで、`src/seeds/seed-data/users.ts` の `SEED_PASSWORD` です。リポジトリで公開されているパスワードなので、`NODE_ENV=production` のときは、オプションにかかわらず `pnpm db:seed` は何もせずにエラーで終了します。アカウントの一覧とロールは [認証と認可](../../../../docs/authentication.md#シードのアカウント) にあります。
 

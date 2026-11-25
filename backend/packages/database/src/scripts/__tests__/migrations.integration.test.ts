@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import * as path from 'node:path'
 import type postgres from 'postgres'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { useTestDatabases } from '../../__tests__/_shared/test-databases'
 import {
   applyBaseline,
   dropHistory,
@@ -10,7 +11,6 @@ import {
   readBaseline,
   readMigrationFiles,
 } from '../migrations'
-import { useTestDatabases } from './_shared/test-databases'
 
 const sqlDirectory = path.resolve(import.meta.dirname, '../../../sql')
 

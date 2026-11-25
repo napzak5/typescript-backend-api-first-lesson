@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { useTestDatabases } from '../../../__tests__/_shared/test-databases'
 import { runDatabaseCommand } from '../../__tests__/_shared/commands'
 import { useTemporaryFolders } from '../../__tests__/_shared/folders'
-import { useTestDatabases } from '../../__tests__/_shared/test-databases'
 import { PACKAGE_PATHS } from '../../command'
 import { readMigrationFiles } from '../../migrations'
 

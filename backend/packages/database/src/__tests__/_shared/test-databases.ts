@@ -43,7 +43,7 @@ export const useTestDatabases = (): TestDatabases => {
   })
 
   beforeEach(async () => {
-    databaseName = `scripts_test_${randomUUID().replaceAll('-', '')}`
+    databaseName = `database_test_${randomUUID().replaceAll('-', '')}`
     await admin.unsafe(`CREATE DATABASE ${databaseName}`)
   })
 

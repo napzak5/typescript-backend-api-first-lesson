@@ -1,26 +1,10 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
-import type postgres from 'postgres'
 import { match } from 'ts-pattern'
 import * as schema from '../../schema'
-import { seed } from '../../seeds/index'
+import { seed } from '../../seeds/seed'
 import { type Command, type CommandContext, withDatabase } from '../command'
 import { planSeed } from '../seed-plan'
-
-type TableCount = { table: string; count: number }
-
-/** The number of rows of every table, counted exactly, in the order of their names. */
-const countsOf = (sql: postgres.Sql): Promise<TableCount[]> =>
-  sql<TableCount[]>`
-    SELECT
-      table_name AS "table",
-      (xpath(
-        '/row/count/text()',
-        query_to_xml(format('SELECT count(*) FROM public.%I', table_name), false, true, '')
-      ))[1]::text::integer AS count
-    FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-    ORDER BY table_name COLLATE "C"
-  `
+import { rowCountsOf, type TableCount, truncateAll } from '../tables'
 
 /** Tells the number of rows of every table that has rows, and of all of them. */
 const tellCounts = (context: CommandContext, counts: TableCount[]): void => {
@@ -81,6 +65,13 @@ Examples:
         reset,
         onlyIfEmpty: context.args.includes('--if-empty'),
       })
+      const insert = async (): Promise<number> => {
+        await seed(db)
+        context.say('📊 Collecting seeding statistics...')
+        tellCounts(context, await rowCountsOf(sql))
+        context.say('✅ Database population completed successfully!')
+        return 0
+      }
 
       return match(plan)
         .returnType<Promise<number>>()
@@ -101,12 +92,11 @@ Examples:
           )
           return 1
         })
-        .with('insert', 'reset-and-insert', async (inserted) => {
-          await seed(db, { reset: inserted === 'reset-and-insert' })
-          context.say('📊 Collecting seeding statistics...')
-          tellCounts(context, await countsOf(sql))
-          context.say('✅ Database population completed successfully!')
-          return 0
+        .with('insert', insert)
+        .with('reset-and-insert', async () => {
+          context.say('Resetting database...')
+          await truncateAll(sql)
+          return insert()
         })
         .exhaustive()
     })
