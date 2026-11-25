@@ -301,9 +301,12 @@
 
 - **更新、承認、取り消しは、発注の行を `FOR UPDATE` でロックしてから、ステータスを確かめます**。同じ発注の変更は 1 件ずつ、前の変更が残したステータスで決めます。同じ発注の承認が同時に 2 件届くと、1 件が 200 で、もう 1 件は 409 です。承認と取り消しが同時に届くと、取り消しは、どちらが先でも 200 です。承認は、取り消しより先なら 200、あとなら 409 です
 - 承認と取り消しの時刻（`approvedAt`、`cancelledAt`）と、変更の `updatedAt` は、書いた文の時刻（データベースの `statement_timestamp()`）で、同じ値です。ロックを待った変更は、待ったあとの時刻です
+- 変更と入荷が答える発注は、書いた文が返した行と、その明細です。発注は読み直しません
 - **作成は、明細の在庫の行と、その商品の行を、`FOR KEY SHARE` でロックしてから、行を確かめて商品を写します**（`READ COMMITTED` のトランザクション。在庫の行は ID の順）。これは、在庫の行の削除と、商品の更新がとるロック（`FOR UPDATE`）と互いに待つロックです。削除の途中の在庫の行への作成は、それを待ち、削除されれば 400（`items.<n>.inventoryId` の `not_found`）で、何も書きません。更新の途中の商品は、更新されたあとの名前、商品コード、単位を写します
 - **入荷は、発注の行を `FOR UPDATE` でロックしてから、ステータスと明細を確かめ、本文の在庫の行を、ID の順に `FOR UPDATE` でロックしてから、在庫数を増やします**（`READ COMMITTED` のトランザクション）。同じ発注の入荷が同時に 2 件届くと、1 件が 200 で、もう 1 件は 409 です（在庫は 1 回だけ増えます）。取り消しの途中の発注への入荷は、それを待ち、取り消されれば 409 です
 - 在庫の移動、棚卸し、在庫の行の削除の途中の行への入荷は、それを待ちます。在庫の移動と棚卸しのあとは、それが残した在庫数から増やします。削除されれば、明細にない行として 400 で、何も書きません。ロックを待った入荷の時刻は、待ったあとの時刻です
+- 入荷の前の在庫数（`balanceBefore`）は、在庫の行を書いた文が答えます。書いたあとの在庫数から、入荷した数を引いた値です
+- ロックした発注と在庫の行への書き込みと、明細と在庫の移動の記録が行を返さないのは、書き込みを飛ばすトリガーがあるときだけです。そのときはデータベースのエラー（500）です。何行かを書く文は、書いた行を、明細と入荷した行ごとに組みにして確かめます
 - 取得、一覧、発注の提案は、ロックを待ちません
 
 ## DB の制約
@@ -346,4 +349,4 @@
 | インフラ | `backend/packages/infrastructure/src/repositories/purchase-order.repository.impl.ts`、`security/random-purchase-order-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/purchase-order/`（`/api/v1/purchase-orders` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171600_purchase_orders.sql`、シードは `backend/packages/database/src/seeds/seed-data/products.ts` |
-| テスト | `backend/packages/domain/src/schemas/__tests__/purchase-order.schema.test.ts`、`backend/packages/domain/src/business-logic/purchase-order/__tests__/purchase-order.rules.test.ts`、`backend/packages/domain/src/mappers/__tests__/purchase-order.mapper.test.ts`、`backend/packages/domain/src/business-logic/purchase-order/__tests__/purchase-order.usecase.test.ts`、`purchase-order.receipt.test.ts`（入荷と発注の提案）、`backend/packages/infrastructure/src/security/__tests__/random-purchase-order-number-issuer.test.ts`、`backend/packages/api/src/routes/purchase-order/__tests__/purchase-order.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/purchase-order.schema.test.ts`、`backend/packages/domain/src/business-logic/purchase-order/__tests__/purchase-order.rules.test.ts`、`backend/packages/domain/src/mappers/__tests__/purchase-order.mapper.test.ts`、`backend/packages/domain/src/business-logic/purchase-order/__tests__/purchase-order.usecase.test.ts`、`purchase-order.receipt.test.ts`（入荷と発注の提案）、`backend/packages/infrastructure/src/security/__tests__/random-purchase-order-number-issuer.test.ts`、`backend/packages/api/src/routes/purchase-order/__tests__/purchase-order.integration.test.ts`、`backend/packages/infrastructure/src/repositories/__tests__/purchase-order.repository.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |

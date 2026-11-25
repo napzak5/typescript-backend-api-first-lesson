@@ -7,11 +7,15 @@ import {
   customerPreferences,
   customers,
   inventory,
+  inventoryAlertAcknowledgements,
+  inventoryTransactions,
   medicalCharts,
   openingHours,
   paymentMethods,
   paymentTransactions,
   products,
+  purchaseOrderItems,
+  purchaseOrders,
   reviewHelpfulVotes,
   reviewReports,
   reviews,
@@ -732,6 +736,94 @@ export const insertStock = async (
         productId,
         currentStock: '10.00',
         availableStock: '10.00',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A stock movement of the row in the table: 5 bought into a row that held none. */
+export const insertMovement = async (
+  db: Database,
+  row: { id: string; salonId: string; productId: string },
+  overrides: Partial<typeof inventoryTransactions.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(inventoryTransactions)
+      .values({
+        salonId: row.salonId,
+        productId: row.productId,
+        inventoryId: row.id,
+        transactionType: 'purchase',
+        quantity: '5.00',
+        balanceBefore: '0.00',
+        balanceAfter: '5.00',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A purchase order of the salon in the table: a draft of no amount, with no items. */
+export const insertPurchaseOrder = async (
+  db: Database,
+  salonId: string,
+  overrides: Partial<typeof purchaseOrders.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(purchaseOrders)
+      .values({
+        salonId,
+        orderNumber: `PO-TEST-${String(nextNumber()).padStart(4, '0')}`,
+        supplier: '櫛商事',
+        subtotal: 0,
+        taxAmount: 0,
+        totalAmount: 0,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** An item of the order in the table for the stock row: 10 ml at 100 yen, the first of the order. */
+export const insertPurchaseOrderItem = async (
+  db: Database,
+  purchaseOrderId: string,
+  inventoryId: string | null,
+  overrides: Partial<typeof purchaseOrderItems.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(purchaseOrderItems)
+      .values({
+        purchaseOrderId,
+        inventoryId,
+        productCode: 'P-TEST',
+        productName: 'シャンプー',
+        quantity: '10.00',
+        unit: 'ml',
+        unitPrice: 100,
+        totalPrice: 1000,
+        sortOrder: 0,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** An acknowledgement of the alert that the product in the table is low on stock, at a threshold of 2. */
+export const insertAcknowledgement = async (
+  db: Database,
+  product: { id: string; salonId: string },
+  overrides: Partial<typeof inventoryAlertAcknowledgements.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(inventoryAlertAcknowledgements)
+      .values({
+        salonId: product.salonId,
+        productId: product.id,
+        alert: 'low_stock',
+        severity: 'warning',
+        threshold: '2.00',
         ...overrides,
       })
       .returning(),
