@@ -5,7 +5,10 @@ import {
   salons,
   serviceCategories,
   services,
+  sessions,
   staff,
+  staffInvitations,
+  users,
 } from '@beauty-salon-backend/database'
 import type {
   DbNewOpeningHours,
@@ -13,6 +16,9 @@ import type {
   DbNewService,
   DbNewServiceCategory,
   DbNewServiceOption,
+  DbNewSession,
+  DbNewStaff,
+  DbNewStaffSchedule,
 } from '@beauty-salon-backend/domain'
 import type { Database } from '../../../database/index'
 
@@ -201,25 +207,138 @@ export const insertCustomer = async (db: Database) => {
   )
 }
 
-/** A member of the staff of the salon in the table. */
-export const insertStaffMember = async (db: Database, salonId: string) => {
+/** A member of the staff to create: a stylist who works at the salon and takes bookings. */
+export const newStaffMember = (
+  overrides: Partial<DbNewStaff> = {},
+): DbNewStaff => {
   const number = nextNumber()
-  return theRow(
+  return {
+    firstName: '太郎',
+    lastName: '佐藤',
+    firstNameKana: null,
+    lastNameKana: null,
+    displayName: `佐藤 ${number}`,
+    email: `staff-${number}@example.com`,
+    phoneNumber: '090-8765-4321',
+    alternativePhone: null,
+    staffCode: null,
+    level: 'stylist',
+    position: null,
+    specialties: [],
+    bio: null,
+    imageUrl: null,
+    yearsOfExperience: null,
+    certifications: [],
+    hireDate: null,
+    employmentType: null,
+    baseSalary: null,
+    commissionRate: null,
+    canReceiveBookings: true,
+    maxConcurrentBookings: 1,
+    bufferTimeBefore: 0,
+    bufferTimeAfter: 0,
+    isActive: true,
+    ...overrides,
+  }
+}
+
+/** A member of the staff of the salon in the table. */
+export const insertStaffMember = async (
+  db: Database,
+  salonId: string,
+  overrides: Partial<typeof staff.$inferInsert> = {},
+) =>
+  theRow(
     await db
       .insert(staff)
+      .values({ ...newStaffMember(), salonId, ...overrides })
+      .returning(),
+  )
+
+/** An account in the table: a customer's whose address is confirmed, unless the test says otherwise. */
+export const insertUser = async (
+  db: Database,
+  overrides: Partial<typeof users.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(users)
       .values({
-        salonId,
-        firstName: '太郎',
-        lastName: '佐藤',
-        displayName: `佐藤 ${number}`,
-        email: `staff-${number}@example.com`,
-        phoneNumber: '090-8765-4321',
-        specialties: [],
-        certifications: [],
+        email: `user-${nextNumber()}@example.com`,
+        passwordHash: 'stored-hash',
+        emailVerified: true,
+        ...overrides,
       })
       .returning(),
   )
+
+/** A session of the user to create: signed in at ten on 7 December, its refresh token good for a week. */
+export const newSession = (
+  userId: string,
+  overrides: Partial<DbNewSession> = {},
+): DbNewSession => {
+  const number = nextNumber()
+  return {
+    userId,
+    tokenHash: `access-${number}`,
+    refreshTokenHash: `refresh-${number}`,
+    ipAddress: null,
+    userAgent: null,
+    expiresAt: '2026-12-07T01:15:00.000Z',
+    refreshExpiresAt: '2026-12-14T01:00:00.000Z',
+    lastActivityAt: '2026-12-07T01:00:00.000Z',
+    ...overrides,
+  }
 }
+
+/** A session of the user in the table. */
+export const insertSession = async (
+  db: Database,
+  userId: string,
+  overrides: Partial<typeof sessions.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(sessions)
+      .values({ ...newSession(userId), ...overrides })
+      .returning(),
+  )
+
+/** An invitation of the staff member in the table, to the address the member has, good until 8 December. */
+export const insertInvitation = async (
+  db: Database,
+  member: { id: string; email: string },
+  overrides: Partial<typeof staffInvitations.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(staffInvitations)
+      .values({
+        staffId: member.id,
+        email: member.email,
+        role: 'staff',
+        tokenHash: `invitation-${nextNumber()}`,
+        expiresAt: '2026-12-08T01:00:00.000Z',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A weekly row of the schedule of a staff member: Mondays from ten to seven. */
+export const newSchedule = (
+  overrides: Partial<DbNewStaffSchedule> = {},
+): DbNewStaffSchedule => ({
+  dayOfWeek: 'monday',
+  date: null,
+  startTime: '10:00:00',
+  endTime: '19:00:00',
+  breakStartTime: null,
+  breakEndTime: null,
+  isRecurring: true,
+  isAvailable: true,
+  notes: null,
+  ...overrides,
+})
 
 /** Who a booking is of, at which salon, and with whom. */
 export type BookingParties = {
