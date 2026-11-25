@@ -20,10 +20,10 @@ export type DatabaseFailure = {
 const failedQuery = { query: P.string, params: P.array() }
 
 export const describeDatabaseError = (error: unknown): DatabaseFailure => {
-  // The message of drizzle's own error lists the bound values.
+  // The message of drizzle's own error lists the bound values: what is
+  // described is the error of the driver, its cause, even when it has none.
   const driverError = match(error)
-    .with({ ...failedQuery, cause: P.select() }, (cause) => cause)
-    .with(failedQuery, () => null)
+    .with({ ...failedQuery, cause: P.optional(P.select()) }, (cause) => cause)
     .otherwise(() => error)
 
   return {

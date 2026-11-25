@@ -61,6 +61,7 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { countMarksOf } from './_shared/review-marks'
 import { countReportsOf } from './_shared/review-report-count'
@@ -376,7 +377,7 @@ export class ReviewRepository implements IReviewRepository {
           .orderBy(...order)
           // One extra row tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(reviews)
           .innerJoin(salons, ofLiveSalon)
@@ -384,7 +385,7 @@ export class ReviewRepository implements IReviewRepository {
 
         return {
           reviews: page.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: page.length > limit,
         }
       }, AT_ONE_MOMENT),

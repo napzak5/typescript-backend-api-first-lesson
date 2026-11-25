@@ -12,7 +12,6 @@ import {
   type DbCustomerPreferences,
   type DbCustomerPreferencesChanges,
   type DomainError,
-  DomainErrors,
   type ICustomerPreferencesRepository,
   noCustomerPreferences,
 } from '@beauty-salon-backend/domain'
@@ -21,6 +20,7 @@ import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 
 /** The columns that are the preferences; no other column of the row is read. */
 export const preferenceColumns = {
@@ -170,15 +170,6 @@ export class CustomerPreferencesRepository
       ),
     )
 
-    return Result.flatMap(updated, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database(
-              'Write of customer preferences returned no row',
-              null,
-            ),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(updated, written('Write of customer preferences'))
   }
 }

@@ -12,6 +12,7 @@ import type { Result } from '@beauty-salon-backend/utility'
 import { and, arrayContains, asc, count, eq, isNull, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
 
 /** The columns customers are shown; no other column of `staff` is read. */
@@ -114,7 +115,7 @@ export class StaffProfileRepository implements IStaffProfileRepository {
           ? undefined
           : sql`(${staff.createdAt}, ${staff.id}) > (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select(profileColumns)
           .from(staff)
@@ -132,7 +133,7 @@ export class StaffProfileRepository implements IStaffProfileRepository {
 
       return {
         profiles: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

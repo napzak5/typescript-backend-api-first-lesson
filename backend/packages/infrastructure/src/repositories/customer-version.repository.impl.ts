@@ -11,6 +11,7 @@ import type { Result } from '@beauty-salon-backend/utility'
 import { and, count, desc, eq, lt, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { AT_ONE_MOMENT } from '../database/snapshot'
 
@@ -80,7 +81,7 @@ export class CustomerVersionRepository implements ICustomerVersionRepository {
           .orderBy(desc(customerVersions.version))
           // One extra version tells whether another page follows.
           .limit(limit + 1)
-        const [counted] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(customerVersions)
           .where(ofCustomer)
@@ -88,7 +89,7 @@ export class CustomerVersionRepository implements ICustomerVersionRepository {
         return {
           type: 'listed',
           versions: found.slice(0, limit),
-          total: counted?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

@@ -25,6 +25,7 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { within as withinSales } from './_shared/held-sale'
 import { transactionsInOrder } from './_shared/point-transactions'
@@ -209,7 +210,7 @@ export class PointRepository implements IPointRepository {
           .orderBy(desc(customerPoints.createdAt), desc(customerPoints.id))
           // One extra row tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(customerPoints)
           .where(filters)
@@ -217,7 +218,7 @@ export class PointRepository implements IPointRepository {
         return {
           type: 'listed',
           transactions: found.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

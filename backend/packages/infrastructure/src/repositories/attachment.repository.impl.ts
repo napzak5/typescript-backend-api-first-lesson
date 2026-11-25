@@ -1,15 +1,14 @@
 import { attachments } from '@beauty-salon-backend/database'
-import {
-  type AttachmentId,
-  type AttachmentList,
-  type AttachmentListCriteria,
-  type AttachmentPurge,
-  type DbAttachment,
-  type DbNewAttachment,
-  type DomainError,
-  DomainErrors,
-  type IAttachmentRepository,
-  type LedgerReach,
+import type {
+  AttachmentId,
+  AttachmentList,
+  AttachmentListCriteria,
+  AttachmentPurge,
+  DbAttachment,
+  DbNewAttachment,
+  DomainError,
+  IAttachmentRepository,
+  LedgerReach,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import {
@@ -28,7 +27,9 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
+import { rowWritten } from '../database/written'
 
 /**
  * The purge reads what is committed at each statement, so that it sees an
@@ -92,13 +93,7 @@ export class AttachmentRepository implements IAttachmentRepository {
         .returning(),
     )
 
-    return Result.flatMap(created, ([inserted]) =>
-      inserted === undefined
-        ? Result.error(
-            DomainErrors.database('Insert of attachment returned no row', null),
-          )
-        : Result.success(inserted),
-    )
+    return Result.flatMap(created, rowWritten('Insert of attachment'))
   }
 
   async findById(
@@ -149,7 +144,7 @@ export class AttachmentRepository implements IAttachmentRepository {
           ? undefined
           : sql`(${attachments.uploadedAt}, ${attachments.id}) < (${cursor.uploadedAt}::timestamptz, ${after}::uuid)`
 
-      const [found, [matching]] = await Promise.all([
+      const [found, counted] = await Promise.all([
         this.db
           .select()
           .from(attachments)
@@ -162,7 +157,7 @@ export class AttachmentRepository implements IAttachmentRepository {
 
       return {
         attachments: found.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: found.length > limit,
       }
     })

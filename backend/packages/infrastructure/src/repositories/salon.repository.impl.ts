@@ -34,22 +34,20 @@ import {
 import { alias } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
+import { written } from '../database/written'
 import { hasUnfinishedBooking } from './_shared/unfinished-bookings'
+import { uniqueViolation } from './_shared/unique-violation'
 
-const emailUniqueViolation = {
-  code: '23505',
-  constraint_name: 'salons_email_unique',
-}
+const emailUniqueViolation = uniqueViolation('salons_email_unique')
 
 /**
  * Turns a failed write into a domain error. The unique index on `email`,
- * which covers the salons that are not deleted, is the only expected failure;
- * drizzle wraps the driver error, so the violation is looked for on the error
- * and on its cause. Anything else is
- * unexpected and keeps a description that is safe to log.
+ * which covers the salons that are not deleted, is the only expected failure.
+ * Anything else is unexpected and keeps a description that is safe to log.
  */
 const toDomainError =
   (message: string, email: string | null) =>
@@ -58,7 +56,7 @@ const toDomainError =
       .with(
         {
           email: P.string,
-          cause: P.union(emailUniqueViolation, { cause: emailUniqueViolation }),
+          cause: emailUniqueViolation,
         },
         (violation) =>
           DomainErrors.alreadyExists(
@@ -133,13 +131,7 @@ export class SalonRepository implements ISalonRepository {
       }),
     )
 
-    return Result.flatMap(created, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database('Insert of salon returned no row', null),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(created, written('Insert of salon'))
   }
 
   async findById(
@@ -203,7 +195,7 @@ export class SalonRepository implements ISalonRepository {
             .where(eq(cursorSalon.id, after))})`
 
     return attempt('Failed to list salons', null, async () => {
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(salons)
@@ -228,7 +220,7 @@ export class SalonRepository implements ISalonRepository {
           salon,
           openingHours: calendars.get(salon.id) ?? [],
         })),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

@@ -9,7 +9,6 @@ import {
   type AcceptedStaffInvitation,
   type DbStaffInvitation,
   type DomainError,
-  DomainErrors,
   type HeldStaffInvitation,
   type IStaffInvitationRepository,
   type IssuedStaffInvitation,
@@ -28,6 +27,7 @@ import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 import { salonOfStaff, staffOfUser, userNotDeleted } from './_shared/account'
 import { staffMemberOf } from './_shared/staff-member'
 
@@ -185,16 +185,7 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
       }),
     )
 
-    return Result.flatMap(issued, (outcome) =>
-      outcome === null
-        ? Result.error(
-            DomainErrors.database(
-              'Insert of staff invitation returned no row',
-              null,
-            ),
-          )
-        : Result.success(outcome),
-    )
+    return Result.flatMap(issued, written('Insert of staff invitation'))
   }
 
   async revoke(
