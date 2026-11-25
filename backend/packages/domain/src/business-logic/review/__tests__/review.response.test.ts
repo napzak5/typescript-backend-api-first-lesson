@@ -29,6 +29,7 @@ describe('planReviewResponse', () => {
   it('responds to a review of the salon for a salon', () => {
     expect(planReviewResponse(salon, { salonId: SALON_ID })).toEqual({
       type: 'planned',
+      review: { salonId: SALON_ID },
     })
   })
 
@@ -42,6 +43,7 @@ describe('planReviewResponse', () => {
     for (const salonId of [SALON_ID, OTHER_SALON_ID]) {
       expect(planReviewResponse(administrator, { salonId })).toEqual({
         type: 'planned',
+        review: { salonId },
       })
     }
   })

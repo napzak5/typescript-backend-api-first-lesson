@@ -24,13 +24,16 @@ export type RespondedReview = {
 /**
  * A response to write, or why it is not written:
  * - `planned`: the response is written, or taken down; one that is what
- *   is stored already is not written again
+ *   is stored already is not written again. `review` is the review as it
+ *   is held, which is what it stays when nothing is written
  * - `reviewNotFound`: there is no review with the ID, or its salon is
  *   deleted
  * - `otherSalon`: a salon responds to a review of another salon
  */
-export type ReviewResponsePlan =
-  | { type: 'planned' }
+export type ReviewResponsePlan<
+  Review extends RespondedReview = RespondedReview,
+> =
+  | { type: 'planned'; review: Review }
   | { type: 'reviewNotFound' }
   | { type: 'otherSalon' }
 
@@ -49,18 +52,20 @@ export const mayRespondWith = (
     .exhaustive()
 
 /** Whether a response to the review is written. */
-export const planReviewResponse = (
+export const planReviewResponse = <Review extends RespondedReview>(
   responder: ReviewResponder,
-  review: RespondedReview | null,
-): ReviewResponsePlan => {
+  review: Review | null,
+): ReviewResponsePlan<Review> => {
   if (review === null) {
     return { type: 'reviewNotFound' }
   }
   return match(responder)
-    .returnType<ReviewResponsePlan>()
+    .returnType<ReviewResponsePlan<Review>>()
     .with({ type: 'salon' }, ({ salonId }) =>
-      review.salonId === salonId ? { type: 'planned' } : { type: 'otherSalon' },
+      review.salonId === salonId
+        ? { type: 'planned', review }
+        : { type: 'otherSalon' },
     )
-    .with({ type: 'administrator' }, () => ({ type: 'planned' }))
+    .with({ type: 'administrator' }, () => ({ type: 'planned', review }))
     .exhaustive()
 }
