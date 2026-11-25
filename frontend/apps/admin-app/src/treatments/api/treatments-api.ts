@@ -81,29 +81,38 @@ export type TreatmentConditions = {
 }
 
 /**
- * What the API is asked for: the days at the salon as the moments they
- * begin and end. The end of a day is the moment before the next one begins.
+ * The days at the salon as the moments they begin and end, as the list
+ * and the statistics take them. The end of a day is the moment before the
+ * next one begins.
  */
-export const treatmentListParamsOf = (
-  salonId: string,
-  { staff, customer, from: first, to: last }: TreatmentConditions,
+const daysParamsOf = (
+  { from: first, to: last }: Pick<TreatmentConditions, 'from' | 'to'>,
   timezone: string,
-): Omit<TreatmentRecordCrudListParams, 'cursor' | 'limit'> => {
+): Pick<TreatmentRecordCrudListParams, 'startDate' | 'endDate'> => {
   const startDate =
     first === undefined ? undefined : startOfDayAt(first, timezone)
   const nextDay =
     last === undefined ? undefined : startOfDayAt(dayAfter(last, 1), timezone)
 
   return {
-    salonId,
-    ...(staff === undefined ? {} : { staffId: staff }),
-    ...(customer === undefined ? {} : { customerId: customer }),
     ...(startDate === undefined ? {} : { startDate }),
     ...(nextDay === undefined
       ? {}
       : { endDate: new Date(Date.parse(nextDay) - 1).toISOString() }),
   }
 }
+
+/** What the API is asked for: the conditions, the days at the salon as the moments they begin and end. */
+export const treatmentListParamsOf = (
+  salonId: string,
+  { staff, customer, ...days }: TreatmentConditions,
+  timezone: string,
+): Omit<TreatmentRecordCrudListParams, 'cursor' | 'limit'> => ({
+  salonId,
+  ...(staff === undefined ? {} : { staffId: staff }),
+  ...(customer === undefined ? {} : { customerId: customer }),
+  ...daysParamsOf(days, timezone),
+})
 
 /** A record that was found, and its customer; `undefined` for one who left the ledger. */
 export type FoundTreatment = {
@@ -421,15 +430,9 @@ export const readTreatmentStatistics = async (
   period: Period,
   timezone: string,
 ): Promise<TreatmentStatisticsRead> => {
-  const { startDate, endDate } = treatmentListParamsOf(
-    salonId,
-    period,
-    timezone,
-  )
   const answer = await treatmentRecordCrudGetStatistics({
     salonId,
-    ...(startDate === undefined ? {} : { startDate }),
-    ...(endDate === undefined ? {} : { endDate }),
+    ...daysParamsOf(period, timezone),
   }).catch(() => null)
 
   return (

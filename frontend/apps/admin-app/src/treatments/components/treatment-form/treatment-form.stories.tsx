@@ -43,7 +43,7 @@ export const Opened: Story = {
   args: { record: aTreatment(), submitLabel: '変更を保存する' },
 }
 
-/** A record of a service and a product the salon removed since */
+/** A record of a service and of two products the salon removed since, one kept by lots */
 export const WithRemoved: Story = {
   args: {
     record: aTreatment({
@@ -54,6 +54,13 @@ export const WithRemoved: Story = {
           quantity: 2,
           unit: '本',
           lotNumber: 'OLD-7',
+          notes: null,
+        },
+        {
+          productId: '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a',
+          quantity: 1,
+          unit: '個',
+          lotNumber: null,
           notes: null,
         },
       ],

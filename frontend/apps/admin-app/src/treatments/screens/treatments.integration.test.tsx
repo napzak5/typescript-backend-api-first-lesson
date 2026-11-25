@@ -46,6 +46,7 @@ import {
   treatmentsHrefOf,
 } from '../../navigation'
 import {
+  arrangeVisit,
   bookingCancelledMeanwhile,
   evaluationWrittenMeanwhile,
   lotOf,
@@ -58,6 +59,11 @@ import {
   treatmentRemovedMeanwhile,
   writtenMeanwhile,
 } from '../__tests__/arrangements'
+import {
+  openEntryOf,
+  openTreatmentChangeOf,
+  treatmentForm,
+} from '../__tests__/screens'
 
 /*
  * The treatment records of the seed data are those of the three visits
@@ -77,22 +83,8 @@ const SHAMPOO = 'Professional Shampoo 500ml（SHMP001）'
 const recordsOf = (table: HTMLElement): string[][] =>
   rowsOf(table).map((row) => row.slice(1))
 
-/** Waits until the form of a record is shown. */
-const theForm = (): Promise<HTMLElement> =>
-  screen.findByRole('group', { name: '提供したサービス' })
-
 const material = (place: number): HTMLElement =>
   screen.getByRole('group', { name: `${place} 件目の商材` })
-
-/** Arranges a booking of Yamamoto Kenji that was done today, by Hiroshi Tanaka, of a ladies' cut. */
-const arrangeVisit = (): Promise<string> =>
-  arrange({
-    bookingNumber: 'BK-TREAT-0001',
-    day: 0,
-    at: '10:00',
-    status: 'completed',
-    customer: KENJI.email,
-  })
 
 /** Arranges a booking of Yamamoto Kenji of tomorrow, confirmed. */
 const arrangeUpcoming = (): Promise<string> =>
@@ -103,25 +95,6 @@ const arrangeUpcoming = (): Promise<string> =>
     status: 'confirmed',
     customer: KENJI.email,
   })
-
-/** Opens the writing of the record of a booking, signed in, and waits for the form. */
-const openEntryOf = async (
-  bookingId: string,
-  account = OWNER,
-): Promise<void> => {
-  renderAt(treatmentEntryHrefOf(await salonIdOf(TOKYO), bookingId))
-  await signInAs(account)
-  await theForm()
-}
-
-/** Opens the change of the record of a customer of the seed data, signed in, and waits for the form. */
-const openChangeOf = async (email: string, account = OWNER): Promise<void> => {
-  renderAt(
-    treatmentChangeHrefOf(await salonIdOf(TOKYO), await treatmentIdOf(email)),
-  )
-  await signInAs(account)
-  await theForm()
-}
 
 /** Adds a material of a product, and gives its row. */
 const addMaterial = async (
@@ -377,7 +350,7 @@ describe('the treatment records, against the API', () => {
       await within(part).findByRole('link', { name: '施術記録を書く' }),
     )
     await heading('施術記録を書く')
-    await theForm()
+    await treatmentForm()
     expect(screen.getByRole('combobox', { name: '担当' })).toHaveDisplayValue(
       'Hiroshi Tanaka',
     )
@@ -646,7 +619,7 @@ describe('the treatment records, against the API', () => {
     // Arrange
     const user = userEvent.setup()
     const bookingId = await treatedBookingOf(YUKI.email)
-    await openChangeOf(YUKI.email, STYLIST)
+    await openTreatmentChangeOf(YUKI.email, STYLIST)
     expect(screen.queryByRole('combobox', { name: '担当' })).toBeNull()
     await evaluationWrittenMeanwhile(
       await treatmentIdOf(YUKI.email),
@@ -679,7 +652,7 @@ describe('the treatment records, against the API', () => {
     const user = userEvent.setup()
     const bookingId = await treatedBookingOf(VIP.email)
     const before = await storedTreatmentOf(bookingId)
-    await openChangeOf(VIP.email)
+    await openTreatmentChangeOf(VIP.email)
 
     // Act
     await user.click(screen.getByRole('button', { name: '変更を保存する' }))
@@ -693,7 +666,7 @@ describe('the treatment records, against the API', () => {
   it('should say that the record was removed meanwhile, and lead to the list', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openChangeOf(SAKURA.email)
+    await openTreatmentChangeOf(SAKURA.email)
     await treatmentRemovedMeanwhile(await treatmentIdOf(SAKURA.email))
 
     // Act
@@ -757,7 +730,7 @@ describe('the treatment records, against the API', () => {
     )
 
     // Assert
-    await theForm()
+    await treatmentForm()
     expect(await heading('施術記録を直す')).toHaveFocus()
 
     // Act
@@ -798,13 +771,13 @@ describe('the treatment records, against the API', () => {
     [
       'the writing of a record',
       async (salonId) => treatmentEntryHrefOf(salonId, await arrangeVisit()),
-      theForm,
+      treatmentForm,
     ],
     [
       'the change of a record',
       async (salonId) =>
         treatmentChangeHrefOf(salonId, await treatmentIdOf(VIP.email)),
-      theForm,
+      treatmentForm,
     ],
   ])('should be accessible on %s', async (_, hrefOf, shown) => {
     // Arrange

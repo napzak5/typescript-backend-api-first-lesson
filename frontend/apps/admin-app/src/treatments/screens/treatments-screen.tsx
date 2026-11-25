@@ -25,7 +25,7 @@ import {
   adminBookingMessages,
   adminTreatmentMessages,
 } from '@beauty-salon-shared/i18n/messages/admin'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { skipToken, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -65,8 +65,8 @@ const useCustomerName = (
 ): LocalizedText | undefined => {
   const read = useQuery({
     queryKey: customerKeyOf(customerId ?? ''),
-    queryFn: () => readCustomer(customerId ?? ''),
-    enabled: customerId !== undefined,
+    queryFn:
+      customerId === undefined ? skipToken : () => readCustomer(customerId),
   })
 
   return match(read.data)

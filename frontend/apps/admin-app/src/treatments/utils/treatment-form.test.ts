@@ -249,6 +249,25 @@ describe('readTreatmentEntry', () => {
     })
   })
 
+  it('should say that the staff member is missing when nothing else is wrong', () => {
+    // Arrange
+    const values = formOf({ ...LEAST, staffId: '' })
+
+    // Act
+    const read = readTreatmentEntry(values, booking, context)
+
+    // Assert
+    expect(read).toEqual({
+      type: 'invalid',
+      errors: {
+        staffId: {
+          en: 'Choose the staff member.',
+          ja: '担当を選んでください。',
+        },
+      },
+    })
+  })
+
   it.each<
     [string, Record<string, string | string[]>, Record<string, LocalizedText>]
   >([
@@ -564,6 +583,34 @@ describe('readTreatmentChange', () => {
     })
   })
 
+  it('should send each text of the consultation, the result and the home care that was changed', () => {
+    // Arrange
+    const values = formOfRecord(record, {
+      consultationNotes: '前回より短めを希望。',
+      scalpCondition: '健康',
+      hairCondition: 'ダメージ少なめ',
+      colorFormula: '7N:OX6%=1:1',
+      resultNotes: '自然な仕上がり。',
+      homeCareSuggestions: '週に 1 回のトリートメント。',
+    })
+
+    // Act
+    const change = readTreatmentChange(values, record, context)
+
+    // Assert
+    expect(change).toEqual({
+      type: 'valid',
+      value: {
+        consultationNotes: '前回より短めを希望。',
+        scalpCondition: '健康',
+        hairCondition: 'ダメージ少なめ',
+        colorFormula: '7N:OX6%=1:1',
+        resultNotes: '自然な仕上がり。',
+        homeCareSuggestions: '週に 1 回のトリートメント。',
+      },
+    })
+  })
+
   it('should send a list that was changed whole', () => {
     // Arrange
     const values = formOfRecord(record, {
@@ -739,6 +786,76 @@ describe('afterTreatmentWrite', () => {
 
       // Assert
       expect(says).toEqual({ message: undefined, errors: { [field]: said } })
+    },
+  )
+
+  it.each<[string, string, string, LocalizedText]>([
+    [
+      'techniques',
+      'too_big',
+      'techniques',
+      {
+        en: 'Enter up to 20 techniques.',
+        ja: '技法は、20 件までで入力してください。',
+      },
+    ],
+    [
+      'techniques.2',
+      'too_big',
+      'techniques',
+      {
+        en: 'Name of a technique: enter up to 100 characters for each entry.',
+        ja: '技法の名前は、1 つ 100 文字以内で入力してください。',
+      },
+    ],
+    [
+      'nextRecommendedServices',
+      'too_big',
+      'nextRecommendedServices',
+      {
+        en: 'Choose up to 20 next recommended services.',
+        ja: '次に勧めるサービスは、20 件までにしてください。',
+      },
+    ],
+    [
+      'services',
+      'too_small',
+      'services',
+      {
+        en: 'Choose the services provided.',
+        ja: '提供したサービスを選んでください。',
+      },
+    ],
+    [
+      'nextRecommendedDate',
+      'invalid_format',
+      'nextRecommendedDate',
+      {
+        en: 'Enter the next recommended date as a date.',
+        ja: '次に勧める日を、日付で入力してください。',
+      },
+    ],
+    [
+      'customerSatisfaction',
+      'too_big',
+      'customerSatisfaction',
+      {
+        en: 'Choose the satisfaction again.',
+        ja: '満足度を選び直してください。',
+      },
+    ],
+  ])(
+    'should say beside the control what the API refused of the record: %s, %s',
+    (field, rule, control, said) => {
+      // Act
+      const says = afterTreatmentWrite(
+        { type: 'invalid', values: [{ field, rule }] },
+        'change',
+        booking.bookingDate,
+      )
+
+      // Assert
+      expect(says).toEqual({ message: undefined, errors: { [control]: said } })
     },
   )
 

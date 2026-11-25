@@ -142,6 +142,20 @@ describe('TreatmentForm', () => {
     expect(within(material(1)).getByLabelText('ロット番号')).toBeRequired()
   })
 
+  it('should keep the unit when the product is chosen no more', async () => {
+    // Arrange
+    await stories.New.run()
+    await userEvent.click(screen.getByRole('button', { name: '商材を足す' }))
+    const product = within(material(1)).getByRole('combobox', { name: '商品' })
+    await userEvent.selectOptions(product, 'オキシ 6%（OX-6）')
+
+    // Act
+    await userEvent.selectOptions(product, '選んでください')
+
+    // Assert
+    expect(materialOf(1)).toEqual(['', '', 'ml', null, ''])
+  })
+
   it('should keep a unit that was written until another product is chosen', async () => {
     // Arrange
     await stories.Opened.run()
@@ -264,7 +278,7 @@ describe('TreatmentForm', () => {
     )
   })
 
-  it('should name a service and a product the salon removed, and keep them chosen with the lot number', async () => {
+  it('should name a service and the products the salon removed, and keep them chosen with the lot number of the one kept by lots', async () => {
     // Act
     await stories.WithRemoved.run()
 
@@ -278,6 +292,16 @@ describe('TreatmentForm', () => {
       '2',
       '本',
       'OLD-7',
+      '',
+    ])
+    expect(
+      within(material(2)).getByRole('combobox', { name: '商品' }),
+    ).toHaveDisplayValue('削除した商品')
+    expect(materialOf(2)).toEqual([
+      '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a',
+      '1',
+      '個',
+      null,
       '',
     ])
   })

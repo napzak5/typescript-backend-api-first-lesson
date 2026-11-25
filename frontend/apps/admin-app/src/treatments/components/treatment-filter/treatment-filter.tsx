@@ -28,8 +28,8 @@ export type TreatmentFilterProps = {
    * while the name is not known. The list was opened from the ledger for them
    */
   customerName?: LocalizedText | undefined
-  /** The address of the same conditions without the customer */
-  withoutCustomerHref?: string | undefined
+  /** The address of the same conditions without the customer: the way to every customer, when the list is of one */
+  withoutCustomerHref: string
   /** What is wrong with the values that were sent, under the names of the controls */
   errors?: FormErrors<LocalizedText> | undefined
   /** The address of every record, when the conditions narrow the list */
@@ -126,9 +126,7 @@ export const TreatmentFilter = ({
           <span>
             {say(frame.customerOf(customerName ?? WORDS.thisCustomer))}
           </span>
-          {withoutCustomerHref === undefined ? null : (
-            <Link href={withoutCustomerHref}>{say(WORDS.allCustomers)}</Link>
-          )}
+          <Link href={withoutCustomerHref}>{say(WORDS.allCustomers)}</Link>
           <input type='hidden' name='customer' value={conditions.customer} />
         </p>
       )}

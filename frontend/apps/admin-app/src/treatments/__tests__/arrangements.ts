@@ -1,6 +1,7 @@
 import { countOf, idOf, testApi } from '@beauty-salon-frontend/testing/api'
-import { TOKYO } from '@beauty-salon-frontend/testing/seed'
+import { KENJI, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
+import { arrange } from '../../bookings/__tests__/arrangements'
 
 /*
  * What the screen tests of the treatment records arrange in the database,
@@ -11,6 +12,16 @@ import * as z from 'zod'
  * by Mika Suzuki), written in that order. The lots of the products are
  * numbered at random when the data is seeded.
  */
+
+/** Arranges a booking of Yamamoto Kenji that was done today, by Hiroshi Tanaka, of a ladies' cut. */
+export const arrangeVisit = (): Promise<string> =>
+  arrange({
+    bookingNumber: 'BK-TREAT-0001',
+    day: 0,
+    at: '10:00',
+    status: 'completed',
+    customer: KENJI.email,
+  })
 
 /** The record of a customer of the seed data, by their address of mail. */
 export const treatmentIdOf = async (email: string): Promise<string> =>
@@ -173,6 +184,17 @@ export const recordMany = (): Promise<unknown> =>
             now() - make_interval(mins => 1000 - row_number() over (order by bookings."bookingNumber")::int)
      from bookings where bookings."bookingNumber" like 'BK-MANY-%'`,
   )
+
+/** The ID of the record written first: the last of the list, which shows the latest written first. */
+export const firstTreatmentId = (): Promise<string> =>
+  idOf(
+    'select id::text from treatment_records order by "createdAt", id limit 1',
+    [],
+  )
+
+/** Lets the salons have no record. */
+export const everyTreatmentRemoved = (): Promise<unknown> =>
+  testApi().query('delete from treatment_records')
 
 /** How many records the salons have. */
 export const storedTreatmentCount = async (): Promise<number> =>
