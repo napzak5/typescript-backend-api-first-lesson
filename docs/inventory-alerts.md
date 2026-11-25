@@ -172,7 +172,7 @@
 |---|---|
 | `low_stock` | 最低在庫数が、確認したときの `threshold` と同じで、確認してから、在庫数の合計が最低在庫数を超えたことがない。`warning` として確認したものは、合計が 0 になったことがない |
 | `overstock` | 最大在庫数が、確認したときの `threshold` と同じで、確認してから、合計が最大在庫数以下になったことがない |
-| `expired`、`expiring` | 在庫の行の使用期限が、確認したときと同じで、確認してから、在庫の移動が行の在庫を 0 にしたことがない |
+| `expired`、`expiring` | 在庫の行の使用期限が、確認したときと同じで、確認してから、その行の在庫の移動が、行の在庫を 0 にしたことがない。ほかの行の在庫の移動は見ません |
 
 - 在庫を補充して最低在庫数を超え、また減って在庫僅少になったら、新しく足りなくなったので、確認し直します。在庫切れ（`critical`）は、`warning` の確認では済みません。`critical` として確認したものは、在庫が戻って `warning` になっても効きます
 - 最低在庫数か最大在庫数を変えると、商品のアラートの確認は効かなくなります。比べる数が変わったからです
@@ -189,6 +189,7 @@
 - 在庫の移動、棚卸し、入荷、在庫の行の更新と削除の途中の行への確認は、それを待ち、それが残した在庫数と使用期限で決めます。削除されれば、在庫の行のアラートは 404 です。確認の途中の行への在庫の移動は、確認を待ちます。それで、確認より前に記録した在庫の移動は、確認の時刻より前の時刻で、あとに記録した在庫の移動は、あとの時刻です
 - どちらのロックも、在庫の行の作成（商品の `FOR KEY SHARE`）を待たせません
 - 確認の時刻（`acknowledgedAt`）は、書いた時刻（データベースの `clock_timestamp()`）です。ロックを待った確認は、待ったあとの時刻です
+- 確認の記録が行を返さないのは、書き込みを飛ばすトリガーがあるときだけです。そのときはデータベースのエラー（500）です
 - 一覧と件数は、ロックを待ちません
 
 ## DB の制約
@@ -219,4 +220,4 @@
 | インフラ | `backend/packages/infrastructure/src/repositories/inventory-alert.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/inventory-alert/`（`/api/v1/inventory-alerts` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171700_inventory_alert_acknowledgements.sql` |
-| テスト | `backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.rules.test.ts`、`backend/packages/domain/src/schemas/__tests__/inventory-alert.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/inventory-alert.mapper.test.ts`、`backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.usecase.test.ts`、`backend/packages/api/src/routes/inventory-alert/__tests__/inventory-alert.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.rules.test.ts`、`backend/packages/domain/src/schemas/__tests__/inventory-alert.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/inventory-alert.mapper.test.ts`、`backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.usecase.test.ts`、`backend/packages/api/src/routes/inventory-alert/__tests__/inventory-alert.integration.test.ts`、`backend/packages/infrastructure/src/repositories/__tests__/inventory-alert.repository.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
