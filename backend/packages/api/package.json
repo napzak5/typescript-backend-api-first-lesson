@@ -47,8 +47,8 @@
   },
   "devDependencies": {
     "@beauty-salon-backend/database": "workspace:*",
+    "@beauty-salon-backend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
-    "@testcontainers/postgresql": "^12.2.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -57,7 +57,6 @@
     "drizzle-orm": "^0.45.4",
     "postgres": "^4.1.1",
     "supertest": "^7.3.2",
-    "testcontainers": "^12.2.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
