@@ -397,8 +397,8 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | ファイル | 役割 |
 |---|---|
 | `backend/packages/database/src/scripts/api-consistency-rules.ts` | どの API モデルがどのテーブルに対応するか（`modelRules`）。ドメインごとのブロックに分かれている |
-| `backend/packages/database/src/scripts/api-consistency.ts` | 比較の関数（副作用なし）。テストは `backend/packages/database/src/scripts/__tests__/api-consistency.test.ts` |
-| `backend/packages/database/src/scripts/check-api-consistency.ts` | ファイルを読み、比較し、結果を出力する |
+| `backend/packages/database/src/scripts/api-consistency.ts` | 比較の関数（副作用なし）。`checkModels` が、すべてのルールのモデルをテーブルと比べる。テストは `backend/packages/database/src/scripts/__tests__/api-consistency.test.ts` |
+| `backend/packages/database/src/scripts/commands/check-api-consistency.ts` | ファイルを読み、`checkModels` で比べ、結果を出力するコマンド。テストは `backend/packages/database/src/scripts/commands/__tests__/check-api-consistency.test.ts` |
 
 食い違いを許容する仕組み（ベースライン）はない。テーブルに対応するモデルはすべてルールに載っており、1 件でも食い違えば失敗する。
 

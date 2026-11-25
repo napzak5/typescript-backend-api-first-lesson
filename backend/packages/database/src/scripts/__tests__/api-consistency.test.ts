@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   type ApiProperty,
   type ColumnInfo,
+  checkModels,
   compareModel,
   describeFinding,
   type ModelKind,
@@ -466,6 +467,81 @@ describe('modelProperties', () => {
 
   it('returns null for a model the document does not define', () => {
     expect(modelProperties(schemas, 'Models.Unknown')).toBeNull()
+  })
+})
+
+describe('checkModels', () => {
+  const tables = new Map([['salons', columns]])
+  const schemas = {
+    'Models.SalonResponse': {
+      required: ['id', 'name', 'description', 'deletedAt'],
+      properties: {
+        id: {},
+        name: {},
+        description: { nullable: true },
+        deletedAt: { nullable: true },
+      },
+    },
+    'Models.SalonUpdateRequest': {
+      required: ['name'],
+      properties: { name: {} },
+    },
+  }
+
+  it('should find nothing when every model agrees with its table', () => {
+    // Act
+    const report = checkModels([rule()], tables, schemas)
+
+    // Assert
+    expect(report).toEqual({ unknownRules: [], findings: [] })
+  })
+
+  it('should find the differences of every model with its table', () => {
+    // Arrange
+    const rules = [
+      rule(),
+      rule({
+        model: 'Models.SalonUpdateRequest',
+        kind: 'update',
+        omittedColumns: ['id', 'description', 'deletedAt'],
+      }),
+    ]
+
+    // Act
+    const report = checkModels(rules, tables, schemas)
+
+    // Assert
+    expect(report).toEqual({
+      unknownRules: [],
+      findings: [
+        {
+          model: 'Models.SalonUpdateRequest',
+          property: 'name',
+          kind: 'shouldBeOptional',
+        },
+      ],
+    })
+  })
+
+  it('should name the rules whose table or model does not exist, and compare the others', () => {
+    // Arrange
+    const rules = [
+      rule({ table: 'shops' }),
+      rule({ model: 'Models.ShopResponse' }),
+      rule(),
+    ]
+
+    // Act
+    const report = checkModels(rules, tables, schemas)
+
+    // Assert
+    expect(report).toEqual({
+      unknownRules: [
+        'Models.SalonResponse: no table "shops" in schema.ts',
+        'Models.ShopResponse: no such model in the OpenAPI document',
+      ],
+      findings: [],
+    })
   })
 })
 

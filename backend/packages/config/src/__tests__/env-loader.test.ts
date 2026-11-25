@@ -1,10 +1,9 @@
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
-  getDatabaseUrl,
-  loadEnvConfig,
+  databaseUrlOf,
   loadEnvFile,
   loadEnvFileFrom,
   REPOSITORY_ROOT,
@@ -26,7 +25,6 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(directory, { recursive: true, force: true })
-  vi.unstubAllEnvs()
 })
 
 describe('loadEnvFileFrom', () => {
@@ -125,47 +123,16 @@ describe('loadEnvFile', () => {
   })
 })
 
-describe('loadEnvConfig', () => {
-  /** What the environment file put into `process.env`, taken out again. */
-  let before: Record<string, string | undefined> = {}
-
-  beforeEach(() => {
-    before = { ...process.env }
-  })
-
-  afterEach(() => {
-    for (const name of Object.keys(process.env)) {
-      if (!(name in before)) {
-        delete process.env[name]
-      }
-    }
-  })
-
-  it('should read the environment file into the variables of the process, and say its environment', () => {
-    // Arrange
-    vi.stubEnv('NODE_ENV', 'staging')
-    vi.stubEnv('MAIL_FROM', undefined)
-
-    // Act
-    const environment = loadEnvConfig()
-
-    // Assert
-    expect(environment).toBe('staging')
-    expect(process.env['MAIL_FROM']).toEqual(expect.any(String))
-  })
-})
-
-describe('getDatabaseUrl', () => {
+describe('databaseUrlOf', () => {
   it('should give DATABASE_URL when it is set', () => {
     // Arrange
-    vi.stubEnv(
-      'DATABASE_URL',
-      'postgres://owner:secret@db.salon.example:6543/salons',
-    )
-    vi.stubEnv('POSTGRES_USER', 'someone-else')
+    const variables = {
+      DATABASE_URL: 'postgres://owner:secret@db.salon.example:6543/salons',
+      POSTGRES_USER: 'someone-else',
+    }
 
     // Act
-    const url = getDatabaseUrl()
+    const url = databaseUrlOf(variables)
 
     // Assert
     expect(url).toBe('postgres://owner:secret@db.salon.example:6543/salons')
@@ -173,15 +140,17 @@ describe('getDatabaseUrl', () => {
 
   it('should put the URL together from its parts when DATABASE_URL is empty', () => {
     // Arrange
-    vi.stubEnv('DATABASE_URL', '')
-    vi.stubEnv('POSTGRES_USER', 'owner')
-    vi.stubEnv('POSTGRES_PASSWORD', 'secret')
-    vi.stubEnv('DB_HOST', 'db.salon.example')
-    vi.stubEnv('POSTGRES_PORT', '6543')
-    vi.stubEnv('POSTGRES_DB', 'salons')
+    const variables = {
+      DATABASE_URL: '',
+      POSTGRES_USER: 'owner',
+      POSTGRES_PASSWORD: 'secret',
+      DB_HOST: 'db.salon.example',
+      POSTGRES_PORT: '6543',
+      POSTGRES_DB: 'salons',
+    }
 
     // Act
-    const url = getDatabaseUrl()
+    const url = databaseUrlOf(variables)
 
     // Assert
     expect(url).toBe('postgres://owner:secret@db.salon.example:6543/salons')
@@ -189,19 +158,10 @@ describe('getDatabaseUrl', () => {
 
   it('should take the database of local development for every part that is not set', () => {
     // Arrange
-    for (const name of [
-      'DATABASE_URL',
-      'POSTGRES_USER',
-      'POSTGRES_PASSWORD',
-      'DB_HOST',
-      'POSTGRES_PORT',
-      'POSTGRES_DB',
-    ]) {
-      vi.stubEnv(name, undefined)
-    }
+    const variables = { NODE_ENV: 'development' }
 
     // Act
-    const url = getDatabaseUrl()
+    const url = databaseUrlOf(variables)
 
     // Assert
     expect(url).toBe('postgres://postgres:postgres@localhost:5432/beauty_salon')

@@ -284,3 +284,36 @@ export const modelProperties = (
     ]),
   )
 }
+
+/** What the comparison of the rules found. */
+export type ConsistencyReport = {
+  /** The rules whose table or model does not exist */
+  unknownRules: string[]
+  /** The differences between the models and their tables */
+  findings: Finding[]
+}
+
+/** Compares the model of every rule with its table. */
+export const checkModels = (
+  rules: readonly ModelRule[],
+  tables: ReadonlyMap<string, ReadonlyMap<string, ColumnInfo>>,
+  schemas: Readonly<Record<string, OpenApiSchema>>,
+): ConsistencyReport => {
+  const report: ConsistencyReport = { unknownRules: [], findings: [] }
+  for (const rule of rules) {
+    const columns = tables.get(rule.table)
+    const properties = modelProperties(schemas, rule.model)
+    if (columns === undefined) {
+      report.unknownRules.push(
+        `${rule.model}: no table "${rule.table}" in schema.ts`,
+      )
+    } else if (properties === null) {
+      report.unknownRules.push(
+        `${rule.model}: no such model in the OpenAPI document`,
+      )
+    } else {
+      report.findings.push(...compareModel(rule, columns, properties))
+    }
+  }
+  return report
+}

@@ -97,7 +97,7 @@ drizzle-kit は、マイグレーションの生成にも適用にも使わな�
 
 `db:introspect` は drizzle-kit の出力をそのまま使わず、宣言や制約の順序を正規化する（`backend/packages/database/src/scripts/canonicalize-introspection.ts`）。そのため、スキーマが変わっていなければ再生成しても差分は出ない。
 
-drizzle-kit の出力が DB と食い違う 2 点は、DB のカタログを読んで直す（`backend/packages/database/src/scripts/introspect.ts` の `readCatalogFacts`）。
+drizzle-kit の出力が DB と食い違う 2 点は、DB のカタログを読んで直す（`backend/packages/database/src/scripts/commands/introspect.ts` の `readCatalogFacts`）。
 
 - **一意制約のカラムの順序**: drizzle-kit はカラムを名前の順に並べる。`pg_constraint` の順序に戻す
 - **複数カラムのインデックスの演算子クラス**: drizzle-kit は、1 つ目のカラムの演算子クラスを、すべてのカラムに書く。`staff ("salonId", email)` のインデックスは `"email" uuid_ops` になり、PostgreSQL はこれを拒否するので（`operator class "uuid_ops" does not accept data type character varying`）、`sql/setup.sql` から DB を作れなくなる。`pg_index` の `indclass` から、カラムごとの演算子クラスに戻す。`schema.ts` のインデックスがカタログにない、または演算子クラスの数が合わないときは、`db:introspect` が失敗する

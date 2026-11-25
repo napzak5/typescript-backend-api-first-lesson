@@ -217,7 +217,7 @@ limit: request.limit ?? DEFAULT_LIMIT,
 const needsTimes = !isHoliday || openTime !== null || closeTime !== null
 ```
 
-アプリケーションコードで既定値に `||` を使っているのは、DB スクリプト用の `getDatabaseUrl`（`backend/packages/config/src/env-loader.ts`）だけです。この関数は、空文字列の環境変数も未設定として扱います。
+アプリケーションコードで既定値に `||` を使っているのは、データベースのコマンドが使う `databaseUrlOf`（`backend/packages/config/src/env-loader.ts`）だけです。この関数は、空文字列の環境変数も未設定として扱います。
 
 ### `null` と `undefined` は明示的に比較する
 

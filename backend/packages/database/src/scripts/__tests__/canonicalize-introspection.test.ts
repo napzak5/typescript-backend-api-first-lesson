@@ -186,6 +186,28 @@ describe('canonicalizeSchema', () => {
     expect(result).toEqual({ type: 'success', data: schemaHeader })
   })
 
+  it('should leave a list of constraints that does not end as it is', () => {
+    // Arrange
+    const unended = `${schemaHeader}export const visits = pgTable(
+  'visits',
+  {
+    id: uuid().primaryKey().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.id],
+      foreignColumns: [salons.id],
+      name: 'visits_salon_id_fk',
+    }),
+`
+
+    // Act
+    const result = canonicalizeSchema(unended, catalog)
+
+    // Assert
+    expect(result).toEqual({ type: 'success', data: unended })
+  })
+
   it('should give each index column the operator class the database has', () => {
     const result = canonicalizeSchema(schemaSource, catalog)
 
@@ -351,6 +373,14 @@ describe('canonicalizeRelations', () => {
     )
 
     expect(second).toEqual(first)
+  })
+
+  it('should return a source without relations unchanged', () => {
+    // Act
+    const result = canonicalizeRelations(relationsHeader)
+
+    // Assert
+    expect(result).toEqual({ type: 'success', data: relationsHeader })
   })
 
   it('should fail when a relation cannot be identified', () => {

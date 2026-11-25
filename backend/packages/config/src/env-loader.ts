@@ -70,14 +70,11 @@ export const loadEnvFile = (variables: Variables): LoadedEnvFile =>
   loadEnvFileFrom(REPOSITORY_ROOT, variables)
 
 /**
- * Reads the environment file into `process.env` and returns the environment
- * it belongs to.
+ * The connection URL of the database commands: `DATABASE_URL`, else one put
+ * together from its parts, each of which defaults to the database of local
+ * development.
  */
-export const loadEnvConfig = (): Environment =>
-  loadEnvFile(process.env).environment
-
-/** Connection URL for the database scripts. */
-export const getDatabaseUrl = (): string => {
+export const databaseUrlOf = (variables: Variables): string => {
   const {
     DATABASE_URL,
     POSTGRES_USER,
@@ -85,7 +82,7 @@ export const getDatabaseUrl = (): string => {
     DB_HOST,
     POSTGRES_PORT,
     POSTGRES_DB,
-  } = process.env
+  } = variables
 
   return (
     DATABASE_URL ||

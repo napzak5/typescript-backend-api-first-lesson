@@ -54,8 +54,9 @@ const splitBlocks = (
 const joinBlocks = (header: string, blocks: readonly string[]): string =>
   `${header}${blocks.join('\n\n')}\n`
 
+/** The name a block declares: every block starts with `export const `. */
 const blockName = (block: string): string =>
-  /^export const (\w+)/.exec(block)?.[1] ?? ''
+  block.replace(/^export const (\w*)[\s\S]*$/, '$1')
 
 /**
  * Splits the list that follows the first line accepted by `isOpening` into its
@@ -134,7 +135,7 @@ const constraintKey = (item: readonly string[]): Result<string, string> => {
 }
 
 const relationKey = (item: readonly string[]): Result<string, string> => {
-  const name = /^\s*(\w+):/.exec(item[0] ?? '')?.[1]
+  const name = /^\s*(\w+):/.exec(item.join('\n'))?.[1]
   if (name === undefined) {
     return Result.error(
       `Cannot identify the relation declared by:\n${item.join('\n')}`,
@@ -241,10 +242,11 @@ const restoreIndexOperatorClasses = (
       )
       return item
     }
-    return expected
+    // As many classes as the places they go into, as checked above
+    return afterEachClass
       .reduce(
-        (restored, operatorClass, position) =>
-          `${restored}.op('${operatorClass}')${afterEachClass[position] ?? ''}`,
+        (restored, after, position) =>
+          `${restored}.op('${expected[position]}')${after}`,
         start,
       )
       .split('\n')

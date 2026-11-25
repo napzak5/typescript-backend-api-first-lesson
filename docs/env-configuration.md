@@ -23,7 +23,7 @@
 | ファイル | 役割 |
 |----------|------|
 | `backend/packages/config/src/environment.ts` | 環境名（`production`、`staging`、`development`、`test`、`localhost`）の定義 |
-| `backend/packages/config/src/env-loader.ts` | `loadEnvFile(variables)`: リポジトリのルートの環境変数ファイルを、渡した変数（サーバーとスクリプトでは `process.env`）に読み込む。`getDatabaseUrl()`: スクリプト用の接続 URL |
+| `backend/packages/config/src/env-loader.ts` | `loadEnvFile(variables)`: リポジトリのルートの環境変数ファイルを、渡した変数（サーバーとスクリプトでは `process.env`）に読み込む。`databaseUrlOf(variables)`: データベースのコマンドの接続 URL を、渡した変数から決める |
 | `backend/packages/config/src/app-config.ts` | `parseAppConfig()`: 環境変数を検証して `AppConfig` にする |
 
 原則:
@@ -224,7 +224,7 @@ export const loadEnvFile = (variables: Variables): LoadedEnvFile =>
 `.env.*` ファイルには、上の 28 個のほかに次の 5 個だけが入っています。
 
 - **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
-- **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
+- **`databaseUrlOf()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
   `DB_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`
 
 どのコードも読まない変数は、環境ファイルに置きません。`config` パッケージのテスト
@@ -237,8 +237,9 @@ export const loadEnvFile = (variables: Variables): LoadedEnvFile =>
 
 ## データベーススクリプトとテストの接続先
 
-`pnpm db:migrate` などのデータベーススクリプト（`backend/packages/database/src/scripts/`）と drizzle-kit の設定は、
-サーバーと同じ規則でファイルを読み込んだあと、`getDatabaseUrl()` で接続先を決めます。
+`pnpm db:migrate` などのデータベースのコマンド（`backend/packages/database/src/scripts/`）は、
+サーバーと同じ規則でファイルを読み込んだあと、`databaseUrlOf(process.env)` で接続先を決めます。
+drizzle-kit には、`pnpm db:introspect` がその URL を `DATABASE_URL` で渡します。
 
 - `DATABASE_URL` があればそれを使います。各環境の `.env.<NODE_ENV>` ファイルはすべて `DATABASE_URL` を
   定義しています。
