@@ -1138,11 +1138,13 @@ The workflow step by step is in [CLAUDE.md](../CLAUDE.md) and the
 
 ### Start-up
 
-`backend/apps/server/src/index.ts` is the composition root: the only code that
-reads the environment or ends the process.
+`main` in `backend/apps/server/src/main.ts` is the composition root: the
+only code that reads the environment or ends the process. It takes the
+process it runs in, which `backend/apps/server/src/index.ts` gives it
+(`main(process)`), so that a test runs it with a stand-in.
 
-1. `loadEnvFile()` reads `.env`, or `.env.<NODE_ENV>` when there is no `.env`,
-   into the environment. Variables that are already set win.
+1. `loadEnvFile(process.env)` reads `.env`, or `.env.<NODE_ENV>` when there
+   is no `.env`, into the environment. Variables that are already set win.
 2. `parseAppConfig(process.env)` validates all variables and returns a
    `Result`. On an error the server logs every issue and exits.
 3. `createLogger(...)` creates the pino logger.
@@ -1153,7 +1155,8 @@ reads the environment or ends the process.
    (`TotpAuthenticator`, from `config.twoFactor.encryptionKey`), builds the
    application with
    `createApp({ database, logger, mailer, fileStorage, twoFactorAuthenticator, settings })`,
-   and listens. It
+   listens, and logs where it listens (`Server listening`, with the address
+   as Node.js says it). It
    returns a `Result`: the server does not start when the database is
    unreachable or the port cannot be bound. The SMTP server and the object
    storage are not contacted at start-up; the mailer connects when a mail

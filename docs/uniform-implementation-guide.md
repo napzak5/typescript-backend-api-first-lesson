@@ -541,8 +541,9 @@ async findById(
 Logging is structured, with pino. Application code never writes to `console`.
 
 - `createLogger` in `backend/packages/infrastructure/src/logging/logger.ts`
-  creates the logger in the server's entry point
-  (`backend/apps/server/src/index.ts`) from `LOG_LEVEL` and `LOG_FORMAT`. It
+  creates the logger in the server's composition root
+  (`main` in `backend/apps/server/src/main.ts`) from `LOG_LEVEL` and
+  `LOG_FORMAT`. It
   is passed to `createApp`, not imported as a global.
 - `requestLogging` in `backend/packages/api/src/middleware/request-logging.ts`
   gives every request `req.id` and `req.log`, a logger whose lines carry that

@@ -588,8 +588,8 @@ app.use(`${API_BASE_PATH}/salons/:salonId/service-categories`, createServiceCate
 // segment for an ID is mounted after the router of that segment (`/customers/me/...` before `/customers`)
 
 // 11. Composition root: the only code that reads the environment or ends the process
-// backend/apps/server/src/index.ts
-// loadEnvFile() → parseAppConfig(process.env) → createLogger(...) → startServer(config, logger)
+// backend/apps/server/src/main.ts, which backend/apps/server/src/index.ts runs as main(process)
+// loadEnvFile(process.env) → parseAppConfig(process.env) → createLogger(...) → startServer(config, logger)
 // backend/packages/config/src/app-config.ts
 export const parseAppConfig = (variables: Record<string, string | undefined>): Result<AppConfig, ConfigIssue[]>
 // backend/apps/server/src/server.ts

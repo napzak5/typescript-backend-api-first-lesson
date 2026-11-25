@@ -190,7 +190,7 @@ export default bundledLibrary(manifest, 'browser')
 `tsc` は import の指定子を書き換えず、出力された `dist/index.js` は Node.js がそのまま実行します。Node.js は相対 import の拡張子を補わないので、サーバーアプリの相対 import には `.js` を付けます。
 
 ```typescript
-// backend/apps/server/src/index.ts
+// backend/apps/server/src/main.ts
 import { startServer } from './server.js'
 ```
 

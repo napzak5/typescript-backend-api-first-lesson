@@ -23,33 +23,38 @@
 | ファイル | 役割 |
 |----------|------|
 | `backend/packages/config/src/environment.ts` | 環境名（`production`、`staging`、`development`、`test`、`localhost`）の定義 |
-| `backend/packages/config/src/env-loader.ts` | `loadEnvFile()`: 環境変数ファイルを `process.env` に読み込む。`getDatabaseUrl()`: スクリプト用の接続 URL |
+| `backend/packages/config/src/env-loader.ts` | `loadEnvFile(variables)`: リポジトリのルートの環境変数ファイルを、渡した変数（サーバーとスクリプトでは `process.env`）に読み込む。`getDatabaseUrl()`: スクリプト用の接続 URL |
 | `backend/packages/config/src/app-config.ts` | `parseAppConfig()`: 環境変数を検証して `AppConfig` にする |
 
 原則:
 
 - サーバーが読む変数は 28 個で、**すべて必須**です。コードの中に既定値はありません。
 - 検証は起動時に 1 回だけ行い、失敗したらサーバーは起動しません。
-- 環境変数を読むのはエントリーポイント（`backend/apps/server/src/index.ts`）だけです。それ以外の
-  アプリケーションコードは `process.env` を読まず、`AppConfig` の値を引数として受け取ります。
+- 環境変数を読むのはサーバーの `main`（`backend/apps/server/src/main.ts`）だけです。`main` は
+  動くプロセスを受け取り、エントリーポイント（`backend/apps/server/src/index.ts`）が Node.js の
+  プロセスを渡します。それ以外のアプリケーションコードは `process.env` を読まず、`AppConfig` の値を
+  引数として受け取ります。
 - 検証エラーに含まれるのは変数名と理由だけです。値は秘密情報の可能性があるので含めません。
 
 ### 起動時の流れ
 
-`loadEnvFile()` → `parseAppConfig(process.env)` → `createLogger(...)` → `startServer(config, logger)` の
-順に進みます。
+`loadEnvFile(process.env)` → `parseAppConfig(process.env)` → `createLogger(...)` →
+`startServer(config, logger)` の順に進みます。`main` の `serverProcess` は、本番では Node.js の
+`process` で、テストでは、その代わりのもの（シグナルと例外をテストが出し、終わりの状態を記録する）
+です。
 
 ```typescript
-// backend/apps/server/src/index.ts（抜粋）
-const { environment, file } = loadEnvFile()
+// backend/apps/server/src/main.ts（抜粋）
+const { environment, file } = loadEnvFile(serverProcess.env)
 
-const parsed = parseAppConfig(process.env)
+const parsed = parseAppConfig(serverProcess.env)
 if (parsed.type === 'error') {
-  createLogger({ level: 'info', format: 'json', environment }).fatal(
+  createLogger({ level: 'info', format: 'json', environment }, logTo).fatal(
     { issues: parsed.error },
     'Invalid configuration',
   )
-  process.exit(1)
+  serverProcess.exit(1)
+  return
 }
 ```
 
@@ -75,16 +80,27 @@ export const parseAppConfig = (
 
 ```typescript
 // backend/packages/config/src/env-loader.ts（抜粋）
-export const loadEnvFile = (): LoadedEnvFile => {
-  const { NODE_ENV } = process.env
+export const loadEnvFileFrom = (
+  directory: string,
+  variables: Variables,
+): LoadedEnvFile => {
+  const { NODE_ENV } = variables
   const environment = environmentSchema.catch('localhost').parse(NODE_ENV)
 
   return {
     environment,
-    file: loadFile('.env') ?? loadFile(`.env.${environment}`),
+    file:
+      loadFile(directory, '.env', variables) ??
+      loadFile(directory, `.env.${environment}`, variables),
   }
 }
+
+export const loadEnvFile = (variables: Variables): LoadedEnvFile =>
+  loadEnvFileFrom(REPOSITORY_ROOT, variables)
 ```
+
+`loadEnvFileFrom` が読むディレクトリを受け取るのは、テストのためです。テストは、一時的な
+ディレクトリに置いたファイルを読み、リポジトリの `.env` に左右されません。
 
 規則は 3 つです。
 
