@@ -3,7 +3,7 @@ import {
   takeAway,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, readAgain } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -160,7 +160,7 @@ describe('changing, voiding and giving back a sale, when something changes meanw
       await giveBack('staff', 'bio')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

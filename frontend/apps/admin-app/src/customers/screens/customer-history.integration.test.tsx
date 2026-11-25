@@ -15,6 +15,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -438,7 +439,7 @@ describe('removing customers, bringing them back, and their history, against the
       )
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theCustomer()
@@ -458,7 +459,7 @@ describe('removing customers, bringing them back, and their history, against the
       await giveBack('customer_versions')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theRemoved()
@@ -579,7 +580,7 @@ describe('removing customers, bringing them back, and their history, against the
       await giveBack('customer_versions')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await screen.findByRole('table', { name: '版の一覧' })
@@ -601,7 +602,7 @@ describe('removing customers, bringing them back, and their history, against the
       await giveBack('customer_versions')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(versionsShown()).toHaveLength(22))
@@ -697,7 +698,7 @@ describe('removing customers, bringing them back, and their history, against the
       await giveTheMomentBack()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await screen.findByRole('table', { name: '前の版から変えた項目' })
@@ -733,7 +734,7 @@ describe('removing customers, bringing them back, and their history, against the
       await giveBack('customer_versions')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(await screen.findByText(/^版 1・記録の開始・/)).toBeVisible()

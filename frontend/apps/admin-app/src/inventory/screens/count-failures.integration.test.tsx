@@ -5,6 +5,7 @@ import {
   takeAway,
   unreadable,
 } from '@beauty-salon-frontend/testing/api'
+import { readAgain } from '@beauty-salon-frontend/testing/screens'
 import { MANAGER, OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -56,7 +57,7 @@ describe('the count and the value of the stock, when something fails or changes 
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedCount()
@@ -75,7 +76,7 @@ describe('the count and the value of the stock, when something fails or changes 
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedCount()
@@ -134,7 +135,7 @@ describe('the count and the value of the stock, when something fails or changes 
     await giveBack('products', 'purchasePrice')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await openedValue()

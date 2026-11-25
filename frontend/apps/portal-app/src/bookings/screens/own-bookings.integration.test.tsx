@@ -13,6 +13,7 @@ import {
   firstSight,
   heading,
   optionsOf,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -633,9 +634,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('bookings')
-      await userEvent.click(
-        within(list).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(list) })
 
       // Assert
       expect(
@@ -659,9 +658,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('bookings')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -723,9 +720,7 @@ describe('the bookings of a customer, against the API', () => {
         `update salons set "businessHours" = null where name = $1`,
         [OSAKA],
       )
-      await userEvent.click(
-        within(list).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(list) })
 
       // Assert
       expect(await within(list).findByText(OSAKA)).toBeVisible()
@@ -751,9 +746,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('opening_hours')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -1448,9 +1441,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('staff_schedules')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(await offeredTimes()).toEqual(['10:00'])
@@ -1474,9 +1465,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('booking_services')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -1622,9 +1611,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Act
       await giveBack('opening_hours')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(await offeredTimes()).toEqual(['10:00'])

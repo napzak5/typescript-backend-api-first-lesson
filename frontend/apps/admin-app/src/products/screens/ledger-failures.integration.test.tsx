@@ -3,7 +3,7 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { readAgain, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -59,7 +59,7 @@ describe('the product ledger, when something fails or changes meanwhile, against
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await openedLedger()
@@ -88,7 +88,7 @@ describe('the product ledger, when something fails or changes meanwhile, against
 
     // Act
     await readable()
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await waitFor(() => expect(codesListed()).toHaveLength(27))

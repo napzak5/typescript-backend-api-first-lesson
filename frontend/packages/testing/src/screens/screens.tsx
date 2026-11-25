@@ -3,6 +3,7 @@ import {
   type RenderResult,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react'
 import { type ReactNode, useLayoutEffect } from 'react'
@@ -12,6 +13,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router'
+import { expect } from 'vitest'
 
 /*
  * What the tests of screens share: an application at an address, the
@@ -117,6 +119,34 @@ export const goBack = (): void => {
 /** The heading of a screen, once it is there. */
 export const heading = (name: string | RegExp): Promise<HTMLElement> =>
   screen.findByRole('heading', { level: 1, name })
+
+/** What presses a button: the user of a test, or `userEvent` itself */
+type Presser = { click: (element: Element) => Promise<void> }
+
+/** Where the button is, and what it is called in the language of the page */
+type ReadAgainAt = {
+  /** The screen, or the part of it that `within` gives */
+  inside?: Pick<typeof screen, 'getByRole'>
+  name?: string
+}
+
+/**
+ * Presses the button that reads again, once it takes a press. A screen of
+ * several reads says the first that failed while the others are on their
+ * way, and its button is busy, and does nothing, until they came.
+ */
+export const readAgain = async (
+  user: Presser,
+  { inside = screen, name = 'もう一度読み込む' }: ReadAgainAt = {},
+): Promise<void> => {
+  const button = await waitFor(() => {
+    const found = inside.getByRole('button', { name })
+    expect(found).not.toHaveAttribute('aria-busy')
+
+    return found
+  })
+  await user.click(button)
+}
 
 /** What the application says in its notifications. */
 export const notifications = (): string[] =>

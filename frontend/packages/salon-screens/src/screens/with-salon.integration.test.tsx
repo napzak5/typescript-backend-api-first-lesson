@@ -6,6 +6,7 @@ import {
 } from '@beauty-salon-frontend/testing/api'
 import {
   heading,
+  readAgain,
   renderApplicationAt,
 } from '@beauty-salon-frontend/testing/screens'
 import { TOKYO } from '@beauty-salon-frontend/testing/seed'
@@ -96,7 +97,7 @@ describe('a screen of the salon of the address, against the API', () => {
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(await heading(TOKYO)).toBeVisible()

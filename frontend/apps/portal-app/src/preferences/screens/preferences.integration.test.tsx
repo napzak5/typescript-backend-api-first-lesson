@@ -16,6 +16,7 @@ import {
   heading,
   optionsOf,
   queryClientOfATest,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -412,7 +413,7 @@ describe('the preferences of a customer, against the API', () => {
 
         // Act
         await giveBack(table)
-        await userEvent.click(button('もう一度読み込む'))
+        await readAgain(userEvent)
 
         // Assert
         expect(
@@ -532,9 +533,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Act
       await giveBack('customer_preferences')
-      await userEvent.click(
-        within(part).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(part) })
 
       // Assert
       await within(part).findByRole('link', { name: '好みの設定を変更する' })

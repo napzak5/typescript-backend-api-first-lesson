@@ -4,7 +4,7 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, readAgain } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -113,7 +113,7 @@ describe('a product, when something fails or changes meanwhile, against the API'
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await opened()

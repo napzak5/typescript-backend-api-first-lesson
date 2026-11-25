@@ -3,7 +3,11 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  readAgain,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -75,7 +79,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedStock()
@@ -104,7 +108,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
 
       // Act
       await readable()
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(codesListed().at(-1)).toBe('TREAT001'))
@@ -141,7 +145,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedStock()
@@ -235,7 +239,7 @@ describe('the stock and a new row, when something fails or changes meanwhile, ag
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedStockEntry()

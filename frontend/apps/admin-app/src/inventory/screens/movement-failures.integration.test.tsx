@@ -7,7 +7,11 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  readAgain,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import { MANAGER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -136,7 +140,7 @@ describe('the movements of a row, when something fails or changes meanwhile, aga
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedHistory()
@@ -164,7 +168,7 @@ describe('the movements of a row, when something fails or changes meanwhile, aga
 
       // Act
       await giveBack('inventory_transactions')
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(listed()).toBe(26))
@@ -226,7 +230,7 @@ describe('the movements of a row, when something fails or changes meanwhile, aga
       await giveBack('staff', 'bio')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedHistory()

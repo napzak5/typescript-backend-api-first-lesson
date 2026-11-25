@@ -11,7 +11,10 @@ import {
   testApi,
   unreadable,
 } from '@beauty-salon-frontend/testing/api'
-import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import {
+  queryClientOfATest,
+  readAgain,
+} from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { AppShell, NotificationProvider } from '@beauty-salon-frontend/ui'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -480,7 +483,7 @@ describe('the second factor of an account, against the API', () => {
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(await screen.findByLabelText('パスワード')).toBeVisible()

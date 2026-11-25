@@ -7,7 +7,11 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  readAgain,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -78,7 +82,7 @@ describe('the ledger of the sales, a page at a time and when a request fails, ag
 
     // Act
     await readable()
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await waitFor(async () =>
@@ -117,7 +121,7 @@ describe('the ledger of the sales, a page at a time and when a request fails, ag
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(

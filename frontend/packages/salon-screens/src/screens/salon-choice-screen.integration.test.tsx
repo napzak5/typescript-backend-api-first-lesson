@@ -7,6 +7,7 @@ import {
 import {
   address,
   heading,
+  readAgain,
   renderApplicationAt,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
@@ -155,7 +156,7 @@ describe('the choice of a salon, against the API', () => {
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     const seeded = await salonsOfTheDatabase()
@@ -200,7 +201,7 @@ describe('the choice of a salon, against the API', () => {
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await waitFor(() => expect(shownSalons()).toHaveLength(22))

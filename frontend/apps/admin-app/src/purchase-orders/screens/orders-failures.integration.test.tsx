@@ -6,7 +6,7 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { readAgain, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -76,7 +76,7 @@ describe('the purchase orders, a new one and the suggestions, when something fai
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedOrders()
@@ -105,7 +105,7 @@ describe('the purchase orders, a new one and the suggestions, when something fai
 
       // Act
       await readable()
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(21))
@@ -163,9 +163,7 @@ describe('the purchase orders, a new one and the suggestions, when something fai
         await readable()
 
         // Act
-        await user.click(
-          screen.getByRole('button', { name: 'もう一度読み込む' }),
-        )
+        await readAgain(user)
 
         // Assert
         await openedEntry()
@@ -214,7 +212,7 @@ describe('the purchase orders, a new one and the suggestions, when something fai
       await giveBack('purchase_order_items')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(await screen.findByText(SUGGESTED)).toBeVisible()
@@ -257,7 +255,7 @@ describe('the purchase orders, a new one and the suggestions, when something fai
       await giveBack('purchase_order_items')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

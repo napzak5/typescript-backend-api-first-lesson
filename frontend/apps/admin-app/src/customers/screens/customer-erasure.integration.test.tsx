@@ -8,7 +8,11 @@ import {
   takeAway,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  notifications,
+  readAgain,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -275,9 +279,7 @@ describe('the requests of a customer to have their data erased, against the API'
     await giveBack('customer_deletion_requests')
 
     // Act
-    await user.click(
-      within(erasure()).getByRole('button', { name: 'もう一度読み込む' }),
-    )
+    await readAgain(user, { inside: within(erasure()) })
 
     // Assert
     expect(

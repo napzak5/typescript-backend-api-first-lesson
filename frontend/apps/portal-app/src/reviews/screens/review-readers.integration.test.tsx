@@ -12,6 +12,7 @@ import {
   asTheApplicationKeeps,
   heading,
   queryClientOfATest,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -1090,9 +1091,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(
-        within(staff).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(staff) })
 
       // Assert
       await within(await personNamed(HIROSHI)).findByRole('img')
