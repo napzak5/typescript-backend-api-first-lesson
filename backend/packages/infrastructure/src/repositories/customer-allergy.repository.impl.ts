@@ -213,6 +213,7 @@ export class CustomerAllergyRepository implements ICustomerAllergyRepository {
                 .select({
                   severityType: customerAllergies.severityType,
                   createdAt: customerAllergies.createdAt,
+                  id: customerAllergies.id,
                 })
                 .from(customerAllergies)
                 .where(and(eq(customerAllergies.id, after), ofCustomer))
@@ -220,9 +221,9 @@ export class CustomerAllergyRepository implements ICustomerAllergyRepository {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${customerAllergies.severityType} < ${cursor.severityType}::allergy_severity or (${customerAllergies.severityType} = ${cursor.severityType}::allergy_severity and (${customerAllergies.createdAt}, ${customerAllergies.id}) > (${cursor.createdAt}::timestamptz, ${after}::uuid)))`
+            : sql`(${customerAllergies.severityType} < ${cursor.severityType}::allergy_severity or (${customerAllergies.severityType} = ${cursor.severityType}::allergy_severity and (${customerAllergies.createdAt}, ${customerAllergies.id}) > (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)))`
 
         const found = await tx
           .select()

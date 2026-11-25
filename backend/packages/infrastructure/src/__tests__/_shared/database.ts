@@ -5,7 +5,7 @@ import type postgres from 'postgres'
 import { createDatabase, type Database } from '../../database/index'
 
 /** A statement of a transaction that the test holds open. */
-type HeldStatement = (sql: postgres.ReservedSql) => Promise<unknown>
+export type HeldStatement = (sql: postgres.ReservedSql) => Promise<unknown>
 
 /** The database of each test of a file, and the failures a test arranges in it. */
 export interface TestDatabase {

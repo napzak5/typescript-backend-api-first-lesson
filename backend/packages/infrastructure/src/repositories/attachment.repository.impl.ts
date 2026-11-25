@@ -133,16 +133,19 @@ export class AttachmentRepository implements IAttachmentRepository {
         after === null
           ? []
           : await this.db
-              .select({ uploadedAt: attachments.uploadedAt })
+              .select({
+                uploadedAt: attachments.uploadedAt,
+                id: attachments.id,
+              })
               .from(attachments)
               .where(and(eq(attachments.id, after), filters))
       if (after !== null && cursor === undefined) {
         return null
       }
       const afterCursor =
-        after === null || cursor === undefined
+        cursor === undefined
           ? undefined
-          : sql`(${attachments.uploadedAt}, ${attachments.id}) < (${cursor.uploadedAt}::timestamptz, ${after}::uuid)`
+          : sql`(${attachments.uploadedAt}, ${attachments.id}) < (${cursor.uploadedAt}::timestamptz, ${cursor.id}::uuid)`
 
       const [found, counted] = await Promise.all([
         this.db
@@ -234,9 +237,15 @@ export class AttachmentRepository implements IAttachmentRepository {
             // Nothing was written: the row stays for the next run.
             return removed
           }
-          await tx.delete(attachments).where(eq(attachments.id, id))
+          const deleted = await tx
+            .delete(attachments)
+            .where(eq(attachments.id, id))
+            .returning({ id: attachments.id })
 
-          return Result.success({ type: 'purged' })
+          return Result.map(
+            rowWritten('Delete of purged attachment')(deleted),
+            (): AttachmentPurge => ({ type: 'purged' }),
+          )
         },
         WRITE,
       ),

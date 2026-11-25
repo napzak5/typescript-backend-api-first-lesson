@@ -207,6 +207,7 @@
 - 本文の規則は、作成と同じです。本文に書いた `services`、`nextRecommendedDate`、`nextRecommendedServices`、`materials` だけを、予約と、予約のサロンに照らします（[予約との関係](#予約との関係)）。書かない項目は確かめません。たとえば、施術記録の `services` に、あとで削除されたサービスがあっても、ほかの項目の更新は 200 です
 - 予約の状態は確かめません。施術記録のある予約は、施術中か完了で、完了のあとは状態が変わりません
 - `updatedAt` は、書いた時刻です（データベースの `clock_timestamp()`）。ロックを待った更新は、待ったあとの時刻です
+- 更新が答える施術記録は、書いた文が返した行と、書いたあとの使用商材と写真です。施術記録は読み直しません
 
 ## 削除
 
@@ -329,7 +330,8 @@
 - 作成と更新の時刻（`createdAt`、`updatedAt`）は、書いた時刻です（データベースの `clock_timestamp()`）。ロックを待った書き込みは、待ったあとの時刻です。作成した施術記録の `createdAt` と `updatedAt` は、時計を 1 回読んだ、同じ時刻です
 - **写真の追加と削除は、施術記録の行を `FOR NO KEY UPDATE`（`updatedAt` を書く更新のロック）でロックしてから、写真を読みます**（`READ COMMITTED` のトランザクション）。同じ施術記録の写真の追加と削除は 1 件ずつで、あとのものは、前のものが足した写真を数えます。追加が同時に届いても、施術記録の写真は 20 枚を超えず、同じ URL の写真は 1 枚です
 - 施術記録の更新と削除の途中の施術記録への、写真の追加と削除は、それを待ちます。施術記録が削除されれば 404 です。施術記録を外部キーで指す行の書き込み（`FOR KEY SHARE`）は待ちません
-- 写真の作成日時と、写真を足した施術記録の `updatedAt` は、ロックを待ったあとの時刻です（データベースの `clock_timestamp()`）
+- 写真の作成日時と、写真を足した施術記録の `updatedAt` は、ロックを待ったあとの時刻です（データベースの `clock_timestamp()`）。写真の作成日時は、`updatedAt` を書いた文が返した時刻です
+- ロックした施術記録への書き込み（更新と、写真の追加と削除が書く `updatedAt`）と、使用商材と写真の挿入が行を返さないのは、書き込みを飛ばすトリガーがあるときだけです。そのときはデータベースのエラー（500）です。何行かを書く挿入は、書いた行を、使用商材は一覧の順番で、写真は URL で、本文の 1 件ずつと組みにして確かめます
 - 取得、一覧、統計は、ロックを待ちません
 
 ## DB の制約
@@ -386,4 +388,4 @@ CHECK 制約に合わない行は、直しません。何であるべきだっ�
 | インフラ | `backend/packages/infrastructure/src/repositories/treatment-record.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/treatment-record/`（`/api/v1/treatments`） |
 | DB | `backend/packages/database/sql/migrations/202611171800_treatment_record_rules.sql`、`202611171900_treatment_photo_rules.sql`、`src/seeds/seed-data/treatment-records.ts` |
-| テスト | `backend/packages/domain/src/schemas/__tests__/treatment-record.schema.test.ts`、`treatment-photo.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/treatment-record.mapper.test.ts`、`backend/packages/domain/src/business-logic/treatment-record/__tests__/treatment-record.rules.test.ts`、`treatment-record.usecase.test.ts`、`treatment-photo.test.ts`（写真の規則とユースケース）、`treatment-statistics.test.ts`（統計のユースケース）、`backend/packages/api/src/routes/treatment-record/__tests__/treatment-record.integration.test.ts`、`treatment-photo.integration.test.ts`、`treatment-statistics.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/treatment-record.schema.test.ts`、`treatment-photo.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/treatment-record.mapper.test.ts`、`backend/packages/domain/src/business-logic/treatment-record/__tests__/treatment-record.rules.test.ts`、`treatment-record.usecase.test.ts`、`treatment-photo.test.ts`（写真の規則とユースケース）、`treatment-statistics.test.ts`（統計のユースケース）、`backend/packages/api/src/routes/treatment-record/__tests__/treatment-record.integration.test.ts`、`treatment-photo.integration.test.ts`、`treatment-statistics.integration.test.ts`、`backend/packages/infrastructure/src/repositories/__tests__/treatment-record.repository.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |

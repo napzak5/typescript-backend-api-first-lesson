@@ -1,4 +1,5 @@
 import {
+  attachments,
   bookingServices,
   bookings,
   customerAllergies,
@@ -25,6 +26,7 @@ import {
   serviceCategories,
   services,
   sessions,
+  shareLinks,
   staff,
   staffInvitations,
   staffSchedules,
@@ -920,6 +922,61 @@ export const insertDeletionRequest = async (
         reason: '使わなくなったため',
         requestedAt: '2026-01-05T03:00:00Z',
         scheduledAt: '2026-01-19T03:00:00Z',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/**
+ * A file of the salon in the table, uploaded by the account: a PDF of a
+ * kilobyte whose upload is pending and whose upload URL never runs out,
+ * unless the test says otherwise.
+ */
+export const insertAttachment = async (
+  db: Database,
+  uploadedBy: string,
+  overrides: Partial<typeof attachments.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(attachments)
+      .values({
+        filename: `カルテ ${nextNumber()}.pdf`,
+        contentType: 'application/pdf',
+        size: 1024,
+        uploadedBy,
+        uploadExpiresAt: '2999-12-31T00:00:00Z',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** The columns of a file whose upload was completed, on 1 December 2026. */
+export const UPLOADED: Partial<typeof attachments.$inferInsert> = {
+  status: 'uploaded',
+  uploadedAt: '2026-12-01T03:00:00Z',
+}
+
+/**
+ * A link to the file in the table, made by the account: without a
+ * password or a limit of downloads, made on 9 December 2026 and running
+ * out a week later, unless the test says otherwise.
+ */
+export const insertShareLink = async (
+  db: Database,
+  attachmentId: string,
+  createdBy: string,
+  overrides: Partial<typeof shareLinks.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(shareLinks)
+      .values({
+        attachmentId,
+        tokenHash: `token-hash-${nextNumber()}`,
+        createdBy,
+        createdAt: '2026-12-09T03:00:00Z',
+        expiresAt: '2026-12-16T03:00:00Z',
         ...overrides,
       })
       .returning(),
