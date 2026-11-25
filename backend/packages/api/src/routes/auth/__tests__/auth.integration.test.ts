@@ -7,7 +7,7 @@ import {
   users,
 } from '@beauty-salon-backend/database'
 import { Argon2PasswordHasher } from '@beauty-salon-backend/infrastructure'
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Express } from 'express'
 import type { Response } from 'supertest'
@@ -31,14 +31,22 @@ import {
   weakHash,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
+  databaseProblem,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   getTestDbClient,
   ISO_TIMESTAMP,
+  invalidCredentials,
+  invalidToken,
   request,
+  tokenExpired,
+  twoFactorRequired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 import {
@@ -110,26 +118,6 @@ const USER_PROPERTIES = [
   'updatedAt',
 ]
 
-const invalidCredentials = {
-  status: 401,
-  code: '1002',
-  type: 'invalid-credentials',
-}
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const twoFactorRequired = {
-  status: 401,
-  code: '1007',
-  type: 'two-factor-required',
-}
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
-
 /** The statuses of an account that may not sign in and whose sessions stop working. */
 const blockedStatuses: ('suspended' | 'inactive' | 'deleted')[] = [
   'suspended',
@@ -160,6 +148,18 @@ describe('Authentication API', () => {
 
   const me = (authorization: string) =>
     request(app).get(ME).set('Authorization', authorization)
+
+  /** The database refuses to delete a session, as a database that fails does. */
+  const refuseToEndSessions = async (): Promise<void> => {
+    await db.execute(
+      sql`create function refuse() returns trigger language plpgsql
+          as $$ begin raise exception 'refused by the test'; end $$`,
+    )
+    await db.execute(
+      sql`create trigger refuse before delete on sessions
+          for each row execute function refuse()`,
+    )
+  }
 
   const lockStateOf = async (id: string) => {
     const [state] = await db
@@ -1218,6 +1218,19 @@ describe('Authentication API', () => {
         links: { self: ME },
       })
     })
+
+    it('should answer 500 for a stored user that does not match the model', async () => {
+      // Arrange
+      const signedIn = await signedInUser(app, db)
+      await updateUser(db, signedIn.id, { lastLoginAt: 'infinity' })
+
+      // Act
+      const response = await me(signedIn.authorization)
+
+      // Assert
+      expectProblem(response, databaseProblem)
+      expect(JSON.stringify(response.body)).not.toContain('infinity')
+    })
   })
 
   describe('POST /api/v1/auth/logout', () => {
@@ -1238,6 +1251,22 @@ describe('Authentication API', () => {
       expectProblem(await me(ended.authorization), invalidToken)
       expectProblem(await refresh(app, ended.refreshToken), invalidToken)
       expect((await me(other.authorization)).status).toBe(200)
+    })
+
+    it('should answer 500 when the database does not end the session, and leave it', async () => {
+      // Arrange
+      const user = await insertUser(db)
+      const session = await signIn(app, user.email)
+      await refuseToEndSessions()
+
+      // Act
+      const response = await request(app)
+        .post(LOGOUT)
+        .set('Authorization', session.authorization)
+
+      // Assert
+      expectProblem(response, databaseProblem)
+      expect((await me(session.authorization)).status).toBe(200)
     })
   })
 
@@ -1261,6 +1290,24 @@ describe('Authentication API', () => {
       }
       expect((await me(someoneElse.authorization)).status).toBe(200)
       expect((await refresh(app, someoneElse.refreshToken)).status).toBe(200)
+    })
+
+    it('should answer 500 when the database does not end the sessions, and leave every one of them', async () => {
+      // Arrange
+      const user = await insertUser(db)
+      const first = await signIn(app, user.email)
+      const second = await signIn(app, user.email)
+      await refuseToEndSessions()
+
+      // Act
+      const response = await request(app)
+        .post(LOGOUT_ALL)
+        .set('Authorization', first.authorization)
+
+      // Assert
+      expectProblem(response, databaseProblem)
+      expect(await db.$count(sessions, eq(sessions.userId, user.id))).toBe(2)
+      expect((await me(second.authorization)).status).toBe(200)
     })
   })
 

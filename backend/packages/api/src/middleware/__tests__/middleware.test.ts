@@ -129,6 +129,29 @@ describe('request logging', () => {
 
     expect(logs).toMatchObject([{ level: 'warn', res: { statusCode: 404 } }])
   })
+
+  it('should log as an error a response that the route writes to after its end', async () => {
+    // Arrange
+    // A body too large to be handed to the connection at once: the write
+    // after the end fails before the response has finished.
+    const { app, logs } = createAppWith((_req, res) => {
+      res.status(200).end('x'.repeat(1024 * 1024))
+      res.write('more')
+    })
+
+    // Act
+    await request(app).get('/route')
+
+    // Assert
+    expect(logs).toEqual([
+      expect.objectContaining({
+        level: 'error',
+        msg: 'request errored',
+        res: { statusCode: 200 },
+        responseTime: expect.any(Number),
+      }),
+    ])
+  })
 })
 
 describe('the user on the line of a request', () => {

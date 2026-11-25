@@ -54,7 +54,10 @@ export const requestLogging = (logger: Logger): RequestHandler =>
     logger,
     genReqId: assignRequestId,
     autoLogging: {
-      ignore: (req) => req.url?.startsWith(SYSTEM_BASE_PATH) ?? false,
+      ignore: (req) =>
+        match(req.url)
+          .with(P.string.startsWith(SYSTEM_BASE_PATH), () => true)
+          .otherwise(() => false),
     },
     customLogLevel: (_req, res, error) =>
       match({ failed: error !== undefined, status: res.statusCode })
