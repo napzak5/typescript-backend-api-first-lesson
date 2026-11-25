@@ -1,16 +1,32 @@
 import {
   bookingServices,
   bookings,
+  customerAllergies,
+  customerDeletionRequests,
+  customerPoints,
+  customerPreferences,
   customers,
+  medicalCharts,
+  paymentMethods,
+  paymentTransactions,
+  products,
+  reviewHelpfulVotes,
+  reviews,
+  sales,
+  salesDetails,
   salons,
   serviceCategories,
   services,
   sessions,
   staff,
   staffInvitations,
+  treatmentMaterials,
+  treatmentPhotos,
+  treatmentRecords,
   users,
 } from '@beauty-salon-backend/database'
 import type {
+  DbNewCustomer,
   DbNewOpeningHours,
   DbNewSalon,
   DbNewService,
@@ -190,22 +206,54 @@ export const insertService = async (
       .returning(),
   )
 
+/** A customer to register, with nothing they may leave out: a regular customer without a referrer. */
+export const newCustomer = (
+  overrides: Partial<DbNewCustomer> = {},
+): DbNewCustomer => ({
+  firstName: '花子',
+  lastName: '山田',
+  firstNameKana: null,
+  lastNameKana: null,
+  email: `customer-${nextNumber()}@example.com`,
+  phoneNumber: '090-1234-5678',
+  alternativePhone: null,
+  postalCode: null,
+  prefecture: null,
+  city: null,
+  address: null,
+  building: null,
+  birthDate: null,
+  gender: null,
+  occupation: null,
+  membershipTier: 'regular',
+  preferences: null,
+  notes: null,
+  internalNotes: null,
+  tags: [],
+  referredBy: null,
+  referralCode: null,
+  allowMarketing: true,
+  allowSms: true,
+  allowEmail: true,
+  isActive: true,
+  hairType: null,
+  hairThickness: null,
+  scalpCondition: null,
+  customerStatus: 'active',
+  ...overrides,
+})
+
 /** A customer in the table. */
-export const insertCustomer = async (db: Database) => {
-  const number = nextNumber()
-  return theRow(
+export const insertCustomer = async (
+  db: Database,
+  overrides: Partial<typeof customers.$inferInsert> = {},
+) =>
+  theRow(
     await db
       .insert(customers)
-      .values({
-        firstName: '花子',
-        lastName: '山田',
-        email: `customer-${number}@example.com`,
-        phoneNumber: '090-1234-5678',
-        tags: [],
-      })
+      .values({ ...newCustomer(), ...overrides })
       .returning(),
   )
-}
 
 /** A member of the staff to create: a stylist who works at the salon and takes bookings. */
 export const newStaffMember = (
@@ -405,3 +453,293 @@ export const CANCELLED: Partial<typeof bookings.$inferInsert> = {
   status: 'cancelled',
   cancelledAt: '2026-12-06T09:00:00Z',
 }
+
+/** Who a sale is of: the salon, and the customer when the sale names one. */
+export type SaleParties = {
+  salonId: string
+  customerId: string | null
+}
+
+/** A sale in the table, of 6,600 yen on 7 December, unpaid unless the test says otherwise. */
+export const insertSale = async (
+  db: Database,
+  parties: SaleParties,
+  overrides: Partial<typeof sales.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(sales)
+      .values({
+        saleNumber: `SL-TEST-${String(nextNumber()).padStart(4, '0')}`,
+        ...parties,
+        saleDate: '2026-12-07',
+        saleTime: '2026-12-07T02:00:00Z',
+        subtotal: 6000,
+        taxAmount: 600,
+        totalAmount: 6600,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A line of the sale in the table: one cut. */
+export const insertSaleLine = async (
+  db: Database,
+  saleId: string,
+  overrides: Partial<typeof salesDetails.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(salesDetails)
+      .values({
+        saleId,
+        itemType: 'service',
+        itemName: 'カット',
+        quantity: 1,
+        unitPrice: 6000,
+        taxAmount: 600,
+        totalAmount: 6600,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A way of paying of the salon in the table: cash. */
+export const insertPaymentMethod = async (db: Database, salonId: string) =>
+  theRow(
+    await db
+      .insert(paymentMethods)
+      .values({ salonId, method: 'cash', displayName: '現金' })
+      .returning(),
+  )
+
+/** A payment of the sale in the table, of 6,600 yen, received unless the test says otherwise. */
+export const insertPayment = async (
+  db: Database,
+  saleId: string,
+  paymentMethodId: string,
+  overrides: Partial<typeof paymentTransactions.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(paymentTransactions)
+      .values({
+        saleId,
+        paymentMethodId,
+        transactionNumber: `TX-TEST-${String(nextNumber()).padStart(4, '0')}`,
+        amount: 6600,
+        status: 'completed',
+        processedAt: '2026-12-07T02:00:00Z',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** What a treatment record is of: the booking, its customer and staff member, and the service done. */
+export type TreatmentParties = {
+  bookingId: string
+  customerId: string
+  staffId: string
+  serviceId: string
+}
+
+/** A treatment record of the booking in the table. */
+export const insertTreatmentRecord = async (
+  db: Database,
+  { serviceId, ...parties }: TreatmentParties,
+  overrides: Partial<typeof treatmentRecords.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(treatmentRecords)
+      .values({ ...parties, services: [serviceId], ...overrides })
+      .returning(),
+  )
+
+/** A product of the salon in the table: a shampoo used in treatments. */
+export const insertProduct = async (
+  db: Database,
+  salonId: string,
+  overrides: Partial<typeof products.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(products)
+      .values({
+        salonId,
+        productCode: `P-TEST-${String(nextNumber()).padStart(4, '0')}`,
+        name: 'シャンプー',
+        unit: 'ml',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A product used in the treatment record in the table: 20 ml, first in the record. */
+export const insertTreatmentMaterial = async (
+  db: Database,
+  treatmentRecordId: string,
+  productId: string,
+  overrides: Partial<typeof treatmentMaterials.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(treatmentMaterials)
+      .values({
+        treatmentRecordId,
+        productId,
+        quantity: '20.00',
+        unit: 'ml',
+        sortOrder: 0,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A photo of the treatment record in the table, taken before the treatment. */
+export const insertTreatmentPhoto = async (
+  db: Database,
+  treatmentRecordId: string,
+  overrides: Partial<typeof treatmentPhotos.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(treatmentPhotos)
+      .values({
+        treatmentRecordId,
+        photoType: 'before',
+        photoUrl: `https://storage.example.com/photos/${nextNumber()}.jpg`,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** What a review is of: the booking, its salon and its customer. */
+export type ReviewParties = {
+  bookingId: string
+  salonId: string
+  customerId: string
+}
+
+/** A review of the booking in the table, of five stars. */
+export const insertReview = async (
+  db: Database,
+  parties: ReviewParties,
+  overrides: Partial<typeof reviews.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(reviews)
+      .values({ ...parties, overallRating: 5, ...overrides })
+      .returning(),
+  )
+
+/** A mark of the customer that the review in the table helped. */
+export const insertHelpfulVote = async (
+  db: Database,
+  reviewId: string,
+  customerId: string,
+  overrides: Partial<typeof reviewHelpfulVotes.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(reviewHelpfulVotes)
+      .values({ reviewId, customerId, ...overrides })
+      .returning(),
+  )
+
+/** A point transaction of the customer in the table: 100 points earned, the first the customer has. */
+export const insertPoints = async (
+  db: Database,
+  customerId: string,
+  overrides: Partial<typeof customerPoints.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(customerPoints)
+      .values({
+        customerId,
+        transactionType: 'earned',
+        points: 100,
+        balance: 100,
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** The medical chart of the customer in the table, with nothing written in it. */
+export const insertChart = async (
+  db: Database,
+  customerId: string,
+  overrides: Partial<typeof medicalCharts.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(medicalCharts)
+      .values({
+        customerId,
+        previousTreatments: [],
+        preferredProducts: [],
+        avoidProducts: [],
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** An allergy of the customer in the table: a moderate one to a dye. */
+export const insertAllergy = async (
+  db: Database,
+  customerId: string,
+  overrides: Partial<typeof customerAllergies.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(customerAllergies)
+      .values({
+        customerId,
+        allergyType: 'chemical',
+        allergenName: 'ジアミン',
+        severityType: 'moderate',
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** The preferences of the customer in the table, with nothing chosen. */
+export const insertPreferences = async (
+  db: Database,
+  customerId: string,
+  overrides: Partial<typeof customerPreferences.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(customerPreferences)
+      .values({
+        customerId,
+        preferredTimeSlots: [],
+        avoidStaffIds: [],
+        ...overrides,
+      })
+      .returning(),
+  )
+
+/** A request of the customer in the table to have their data erased: taken on 5 January 2026, and due since 19 January. */
+export const insertDeletionRequest = async (
+  db: Database,
+  customerId: string,
+  requestedBy: string,
+  overrides: Partial<typeof customerDeletionRequests.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(customerDeletionRequests)
+      .values({
+        customerId,
+        requestedBy,
+        reason: '使わなくなったため',
+        requestedAt: '2026-01-05T03:00:00Z',
+        scheduledAt: '2026-01-19T03:00:00Z',
+        ...overrides,
+      })
+      .returning(),
+  )
