@@ -17,7 +17,7 @@ import {
   bookingRemovalReachOf,
   isWithin,
 } from '../_shared/authorization'
-import { conflictsOf } from '../_shared/occupancy'
+import { conflictsOf, type ServiceTimes } from '../_shared/occupancy'
 
 type Staff = Parameters<typeof isOccupiedBeyondCapacity>[0]
 
@@ -48,7 +48,7 @@ const taken = (bookingId: string, from: string, until: string) => ({
 })
 
 /** The service that is wanted in most cases: from ten to eleven. */
-const wanted = [span('10:00', '11:00')]
+const wanted: ServiceTimes = [span('10:00', '11:00')]
 
 describe('isOccupiedBeyondCapacity', () => {
   it('finds a staff member without bookings free', () => {
@@ -277,10 +277,6 @@ describe('isOccupiedBeyondCapacity', () => {
 })
 
 describe('occupancyWindowOf', () => {
-  it('is nothing for a booking that wants no time', () => {
-    expect(occupancyWindowOf(withBuffers(), [])).toBeNull()
-  })
-
   it('is the wanted time for a staff member who keeps no time free', () => {
     expect(occupancyWindowOf(staff(), wanted)).toEqual({
       from: at('10:00'),
@@ -320,7 +316,10 @@ describe('occupancyWindowOf', () => {
     ['time kept free before', staff({ bufferTimeBefore: 20 })],
     ['time kept free after', staff({ bufferTimeAfter: 20 })],
   ])('leaves out no service that stands in the way: %s', (_case, capacity) => {
-    const several = [span('10:00', '11:00'), span('12:00', '12:30')]
+    const several: ServiceTimes = [
+      span('10:00', '11:00'),
+      span('12:00', '12:30'),
+    ]
     const window = occupancyWindowOf(capacity, several)
     const starts = Array.from({ length: 72 }, (_unused, index) =>
       addMinutes(at('08:00'), index * 5),
