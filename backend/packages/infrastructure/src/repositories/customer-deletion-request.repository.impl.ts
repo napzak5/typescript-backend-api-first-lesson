@@ -14,12 +14,13 @@ import {
   type ICustomerDeletionRequestRepository,
   type UserId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, desc, eq, isNull, lte, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 import { eraseCustomerOf } from './_shared/customer-erasure'
 
 /**
@@ -67,43 +68,41 @@ export class CustomerDeletionRequestRepository
     reason: string,
     requestedBy: UserId,
   ): Promise<Result<CustomerDeletionRequesting, DomainError>> {
-    return attempt('Failed to take the deletion request', () =>
-      this.db.transaction(async (tx): Promise<CustomerDeletionRequesting> => {
-        if (!(await holdCustomer(tx, customerId, true))) {
-          return { type: 'customerNotFound' }
-        }
-        const [pending] = await tx
-          .select()
-          .from(customerDeletionRequests)
-          .where(pendingOf(customerId))
-        if (pending !== undefined) {
-          return { type: 'alreadyRequested', request: pending }
-        }
+    const taken = await attempt('Failed to take the deletion request', () =>
+      this.db.transaction(
+        async (tx): Promise<CustomerDeletionRequesting | null> => {
+          if (!(await holdCustomer(tx, customerId, true))) {
+            return { type: 'customerNotFound' }
+          }
+          const [pending] = await tx
+            .select()
+            .from(customerDeletionRequests)
+            .where(pendingOf(customerId))
+          if (pending !== undefined) {
+            return { type: 'alreadyRequested', request: pending }
+          }
 
-        // The time is read once, after the customer is held, so that the
-        // request falls due exactly the grace period after it.
-        const [now] = await tx
-          .select({ at: sql<string>`(${CLOCK})::text` })
-          .from(customers)
-          .where(eq(customers.id, customerId))
-        if (now === undefined) {
-          return { type: 'customerNotFound' }
-        }
-        const [taken] = await tx
-          .insert(customerDeletionRequests)
-          .values({
-            customerId,
-            reason,
-            requestedBy,
-            requestedAt: now.at,
-            scheduledAt: sql`${now.at}::timestamptz + make_interval(hours => ${GRACE_PERIOD_HOURS})`,
-          })
-          .returning()
-        return taken === undefined
-          ? { type: 'customerNotFound' }
-          : { type: 'requested', request: taken }
-      }, WRITE),
+          // The time is read once, when the request is written after the
+          // customer is held, so that the request falls due exactly the
+          // grace period after it.
+          const [request] = await tx
+            .with(CLOCK_ONCE)
+            .insert(customerDeletionRequests)
+            .values({
+              customerId,
+              reason,
+              requestedBy,
+              requestedAt: ONE_MOMENT,
+              scheduledAt: sql`${ONE_MOMENT} + make_interval(hours => ${GRACE_PERIOD_HOURS})`,
+            })
+            .returning()
+          return request === undefined ? null : { type: 'requested', request }
+        },
+        WRITE,
+      ),
     )
+
+    return Result.flatMap(taken, written('Insert of customer deletion request'))
   }
 
   async latestOf(
@@ -184,8 +183,14 @@ export class CustomerDeletionRequestRepository
     id: DbCustomerDeletionRequest['id'],
     completedBy: UserId,
   ): Promise<Result<CustomerErasure, DomainError>> {
-    return attempt('Failed to erase the data of the customer', () =>
-      this.db.transaction((tx) => eraseCustomerOf(tx, id, completedBy), WRITE),
+    return Result.flatMap(
+      await attempt('Failed to erase the data of the customer', () =>
+        this.db.transaction(
+          (tx) => eraseCustomerOf(tx, id, completedBy),
+          WRITE,
+        ),
+      ),
+      (erasure) => erasure,
     )
   }
 }

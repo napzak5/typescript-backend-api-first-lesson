@@ -154,7 +154,7 @@ export class CustomerPreferencesRepository
 
           // The first change of a customer creates the row, with every
           // column stated; a later one writes the columns it names.
-          const [written] = await tx
+          const [stored] = await tx
             .insert(customerPreferences)
             .values({ customerId, ...after })
             .onConflictDoUpdate({
@@ -163,9 +163,9 @@ export class CustomerPreferencesRepository
             })
             .returning(preferenceColumns)
 
-          return written === undefined
+          return stored === undefined
             ? null
-            : { type: 'updated', preferences: written }
+            : { type: 'updated', preferences: stored }
         },
       ),
     )

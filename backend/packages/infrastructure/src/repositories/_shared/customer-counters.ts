@@ -1,5 +1,6 @@
 import { bookings, customers } from '@beauty-salon-backend/database'
-import { eq, sql } from 'drizzle-orm'
+import type { DbCustomer } from '@beauty-salon-backend/domain'
+import { eq, getTableColumns, sql } from 'drizzle-orm'
 import { CLOCK } from '../../database/clock'
 import type { DatabaseExecutor } from '../../database/index'
 
@@ -7,6 +8,8 @@ import type { DatabaseExecutor } from '../../database/index'
  * Sets what a customer has of visits, no-shows and cancellations to what
  * their bookings say: the numbers of the completed, the no_show and the
  * cancelled ones, and the first and the last day of a completed one.
+ * Resolves to the row of the customer as it was written: none when there is
+ * no customer of the ID, or a trigger skipped the write.
  *
  * The customer is locked before the bookings are counted. Without it, of
  * two changes to bookings of one customer that run at the same time, each
@@ -16,7 +19,7 @@ import type { DatabaseExecutor } from '../../database/index'
 export const countBookingsOf = async (
   tx: DatabaseExecutor,
   customerId: string,
-): Promise<void> => {
+): Promise<DbCustomer[]> => {
   await tx
     .select({ id: customers.id })
     .from(customers)
@@ -52,7 +55,7 @@ export const countBookingsOf = async (
     .where(eq(bookings.customerId, customerId))
     .as('counted')
 
-  await tx
+  return tx
     .update(customers)
     .set({
       visitCount: sql`${counted.visits}`,
@@ -64,4 +67,5 @@ export const countBookingsOf = async (
     })
     .from(counted)
     .where(eq(customers.id, customerId))
+    .returning(getTableColumns(customers))
 }

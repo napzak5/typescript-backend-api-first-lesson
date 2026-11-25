@@ -18,6 +18,7 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type CustomerErasure,
+  type DomainError,
   ERASED_BOOKING,
   ERASED_BOOKING_LINE,
   ERASED_TREATMENT_RECORD,
@@ -26,9 +27,11 @@ import {
   forfeitOf,
   type UserId,
 } from '@beauty-salon-backend/domain'
+import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 import { CLOCK } from '../../database/clock'
 import type { DatabaseExecutor } from '../../database/index'
+import { rowWritten } from '../../database/written'
 import { recordVersions } from './customer-version-record'
 import { countMarksOf } from './review-marks'
 import { countReviewsOf } from './salon-review-counts'
@@ -87,13 +90,13 @@ export const eraseCustomerOf = async (
   tx: DatabaseExecutor,
   requestId: string,
   completedBy: UserId,
-): Promise<CustomerErasure> => {
+): Promise<Result<CustomerErasure, DomainError>> => {
   const [named] = await tx
     .select({ customerId: customerDeletionRequests.customerId })
     .from(customerDeletionRequests)
     .where(eq(customerDeletionRequests.id, requestId))
   if (named === undefined) {
-    return { type: 'notDue' }
+    return Result.success({ type: 'notDue' })
   }
   const { customerId } = named
   await holdWhatNames(tx, customerId)
@@ -117,7 +120,7 @@ export const eraseCustomerOf = async (
     )
     .for('update')
   if (customer === undefined || request === undefined) {
-    return { type: 'notDue' }
+    return Result.success({ type: 'notDue' })
   }
 
   // The accounts: one that names the customer, and the one a customer
@@ -228,31 +231,35 @@ export const eraseCustomerOf = async (
   }
 
   // A customer deleted before keeps the time of the deletion.
-  const [erased] = await tx
-    .update(customers)
-    .set({
-      ...erasedLedgerOf(customer),
-      deletedAt: sql`coalesce(${customers.deletedAt}, ${CLOCK})`,
-      updatedAt: CLOCK,
-    })
-    .where(eq(customers.id, customerId))
-    .returning()
-  if (erased === undefined) {
-    return { type: 'notDue' }
+  const erased = rowWritten('Update of erased customer')(
+    await tx
+      .update(customers)
+      .set({
+        ...erasedLedgerOf(customer),
+        deletedAt: sql`coalesce(${customers.deletedAt}, ${CLOCK})`,
+        updatedAt: CLOCK,
+      })
+      .where(eq(customers.id, customerId))
+      .returning(),
+  )
+  if (erased.type === 'error') {
+    return erased
   }
   // The versions hold what the ledger held of the customer: they go, and
   // the erasure is the one version left.
   await tx
     .delete(customerVersions)
     .where(eq(customerVersions.customerId, customerId))
-  await recordVersions(tx, [erased], 'erase', completedBy)
+  await recordVersions(tx, [erased.data], 'erase', completedBy)
 
-  const [done] = await tx
-    .update(customerDeletionRequests)
-    .set({ status: 'completed', completedBy, completedAt: CLOCK })
-    .where(eq(customerDeletionRequests.id, requestId))
-    .returning()
-  return done === undefined
-    ? { type: 'notDue' }
-    : { type: 'erased', request: done }
+  return Result.map(
+    rowWritten('Update of completed deletion request')(
+      await tx
+        .update(customerDeletionRequests)
+        .set({ status: 'completed', completedBy, completedAt: CLOCK })
+        .where(eq(customerDeletionRequests.id, requestId))
+        .returning(),
+    ),
+    (done): CustomerErasure => ({ type: 'erased', request: done }),
+  )
 }

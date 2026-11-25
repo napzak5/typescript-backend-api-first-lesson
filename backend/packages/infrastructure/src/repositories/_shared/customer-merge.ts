@@ -29,8 +29,9 @@ import {
 import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { match } from 'ts-pattern'
-import { CLOCK } from '../../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../../database/clock'
 import type { DatabaseExecutor } from '../../database/index'
+import { rowWritten } from '../../database/written'
 import { countBookingsOf } from './customer-counters'
 import { recordVersions } from './customer-version-record'
 import { transactionsInOrder } from './point-transactions'
@@ -366,22 +367,30 @@ export const mergeCustomers = async (
     await tx
       .insert(customerPoints)
       .values({ ...transfer.from, createdAt: CLOCK })
-    // One moment after the other, in the order of the plan: the latest
-    // transfer is the one whose balance the primary has.
-    await tx.insert(customerPoints).values(
-      transfer.to.map((write, index) => ({
-        ...write,
-        createdAt: sql`${CLOCK} + (${index}::integer * interval '1 microsecond')`,
-      })),
-    )
+    // The clock is read once, and each lot is a microsecond after the one
+    // before, in the order of the plan: the latest transfer is the one whose
+    // balance the primary has, however close together the rows are written.
+    await tx
+      .with(CLOCK_ONCE)
+      .insert(customerPoints)
+      .values(
+        transfer.to.map((write, index) => ({
+          ...write,
+          createdAt: sql`${ONE_MOMENT} + (${index}::integer * interval '1 microsecond')`,
+        })),
+      )
     await tx
       .update(customers)
       .set({ loyaltyPoints: transfer.from.balance, updatedAt: CLOCK })
       .where(eq(customers.id, secondary.id))
+    // The primary has what it had and what each lot of the transfer added.
     await tx
       .update(customers)
       .set({
-        loyaltyPoints: transfer.to.at(-1)?.balance ?? primary.loyaltyPoints,
+        loyaltyPoints: transfer.to.reduce(
+          (balance, { points }) => balance + points,
+          primary.loyaltyPoints,
+        ),
         updatedAt: CLOCK,
       })
       .where(eq(customers.id, primary.id))
@@ -441,21 +450,20 @@ export const mergeCustomers = async (
   }
 
   // The bookings of the secondary are the primary's: the visits are
-  // counted again for both, the secondary's to none.
-  await countBookingsOf(tx, primary.id)
-  await countBookingsOf(tx, secondary.id)
+  // counted again for both, the secondary's to none. These are the last
+  // writes of the two customers, and their rows are what the merge made of
+  // them.
+  const kept = await countBookingsOf(tx, primary.id)
+  const mergedAway = await countBookingsOf(tx, secondary.id)
+  await recordVersions(
+    tx,
+    [...kept, ...mergedAway, ...referred],
+    'merge',
+    changedBy,
+  )
 
-  const merged = await tx
-    .select()
-    .from(customers)
-    .where(inArray(customers.id, both))
-  await recordVersions(tx, [...merged, ...referred], 'merge', changedBy)
-
-  const kept = merged.find(({ id }) => id === primary.id)
-  // The primary is held from the start, so it is there.
-  return Result.success(
-    kept === undefined
-      ? { type: 'customersNotFound', missing: ['primaryCustomerId'] }
-      : { type: 'merged', customer: kept },
+  return Result.map(
+    rowWritten('Update of the kept customer')(kept),
+    (customer): CustomerMerge => ({ type: 'merged', customer }),
   )
 }
