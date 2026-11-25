@@ -93,7 +93,9 @@ backend or the frontend.
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
-| File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached | Integration against a SeaweedFS container, with real uploads and downloads | `backend/packages/infrastructure/src/storage/__tests__/` |
+| File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached; what is read of an answer and of a failure that SeaweedFS never gives (the whole file for a range, a failure without a status) | Integration against a SeaweedFS container, with real uploads and downloads; unit for the answers it never gives | `backend/packages/infrastructure/src/storage/__tests__/` |
+| The parts of the database access: the connection and its probe, the clock of the database (`CLOCK`, `CLOCK_ONCE`), the reads of one moment (`AT_ONE_MOMENT`), a count, a write that returned no row, a pattern of `LIKE`, a failure turned into a `database` error | Unit; integration against PostgreSQL | `backend/packages/infrastructure/src/database/__tests__/` |
+| Repositories: every method and every path of it, against a real PostgreSQL: what is written and read, a list and its next page, every refusal, a write that a trigger skipped, a database that is gone | Integration against PostgreSQL, a database for each test | `backend/packages/infrastructure/src/repositories/__tests__/salon.repository.integration.test.ts`, `service-category.repository.integration.test.ts`, `service.repository.integration.test.ts`; what the repositories share, in `backend/packages/infrastructure/src/repositories/_shared/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/routes/service-category/_shared/__tests__/`, `backend/packages/api/src/routes/service/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
 | Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts`, `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts`, `backend/packages/api/src/routes/service-category/__tests__/service-category.integration.test.ts` (routes below a salon), `backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` (a bulk operation, a soft delete below a salon) |
 | The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts` |
@@ -105,15 +107,23 @@ backend or the frontend.
 | Configuration: every variable, and every environment file in the repository (the local ones allow the origins of the frontend applications) | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
 | Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
-The repository implementations
-(`backend/packages/infrastructure/src/repositories/`) have no test files of
-their own. Their behaviour — transactions, the unique violation that becomes
-`alreadyExists`, soft delete, keyset pagination, a refresh token that only one
-of several parallel requests can use — is required to be covered through the
-endpoint tests, against a real database.
+The repositories of the salons, the service categories and the services
+are tested in the `infrastructure` package, in the `__tests__` of the folder
+of each, method by method. Each test has a database of its own
+(`useTestDatabase` in `backend/packages/infrastructure/src/__tests__/_shared/database.ts`:
+`useTestDatabases` of `@beauty-salon-backend/testing` with the schema of
+`sql/setup.sql`), and puts in the rows it reads with the builders of
+`backend/packages/infrastructure/src/repositories/__tests__/_shared/rows.ts`.
+A failure is produced by real means there too: a database whose connection
+has ended (`gone`), and a trigger that skips the writes of a table
+(`skipWrites`, `BEFORE … RETURN NULL`), for a write that returns no row.
+The other repository implementations are covered through the endpoint tests,
+against a real database: transactions, the unique violation that becomes
+`alreadyExists`, soft delete, keyset pagination, a refresh token that only
+one of several parallel requests can use.
 `backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` also calls
-`ServiceRepository` directly, method by method, and writes rows past it to
-show what the constraints of `services` and `service_options` refuse.
+`ServiceRepository` directly, and writes rows past it to show what the
+constraints of `services` and `service_options` refuse.
 
 ### Frontend
 

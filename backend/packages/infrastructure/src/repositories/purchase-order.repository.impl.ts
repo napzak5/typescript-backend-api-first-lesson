@@ -52,6 +52,7 @@ import type {
 } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 /** The orders of the salons the reach covers. */
@@ -300,7 +301,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           tx,
           page.map(({ id }) => id),
         )
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(purchaseOrders)
           .where(filters)
@@ -311,7 +312,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             order,
             items: items.get(order.id) ?? [],
           })),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),
@@ -657,7 +658,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           .orderBy(asc(products.productCode), asc(products.id))
           // One extra product tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(products)
           .innerJoin(stock, eq(stock.productId, products.id))
@@ -667,7 +668,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
         return {
           type: 'listed',
           suggestions: found.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

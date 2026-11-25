@@ -33,6 +33,7 @@ import {
 import type { AnyPgColumn, PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 
@@ -221,7 +222,7 @@ export class MedicalChartRepository implements IMedicalChartRepository {
           .orderBy(desc(medicalCharts.createdAt), desc(medicalCharts.id))
           // One extra chart tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(medicalCharts)
           .where(filters)
@@ -229,7 +230,7 @@ export class MedicalChartRepository implements IMedicalChartRepository {
         return {
           type: 'listed',
           charts: found.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

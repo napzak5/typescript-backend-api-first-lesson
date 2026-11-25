@@ -11,10 +11,10 @@ import {
   type DbServiceChanges,
   type DbServiceOption,
   type DomainError,
-  DomainErrors,
   type IServiceRepository,
   type SalonId,
   type ServiceBulkUpdate,
+  type ServiceChangeRefusal,
   type ServiceCreation,
   type ServiceDeletion,
   type ServiceId,
@@ -42,7 +42,9 @@ import {
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 import { hasLineOfUnfinishedBooking } from './_shared/unfinished-bookings'
 
 const notDeleted = isNull(services.deletedAt)
@@ -67,14 +69,12 @@ const insertOptions = async (
   serviceIds: string[],
   rows: DbNewServiceOption[],
 ): Promise<void> => {
-  if (serviceIds.length > 0 && rows.length > 0) {
-    await executor
-      .insert(serviceOptions)
-      .values(
-        serviceIds.flatMap((serviceId) =>
-          rows.map((row) => ({ ...row, serviceId })),
-        ),
-      )
+  const options = serviceIds.flatMap((serviceId) =>
+    rows.map((row) => ({ ...row, serviceId })),
+  )
+  // An insert of no rows is no statement.
+  if (options.length > 0) {
+    await executor.insert(serviceOptions).values(options)
   }
 }
 
@@ -130,22 +130,19 @@ const lockServices = async (
   salonId: SalonId,
   ids: string[],
 ): Promise<Map<string, LockedService>> => {
-  const rows =
-    ids.length === 0
-      ? []
-      : await executor
-          .select({
-            id: services.id,
-            price: services.price,
-            discountPrice: services.discountPrice,
-            isPackage: services.isPackage,
-            packageServiceIds: services.packageServiceIds,
-            deletedAt: services.deletedAt,
-          })
-          .from(services)
-          .where(and(eq(services.salonId, salonId), inArray(services.id, ids)))
-          .orderBy(asc(services.id))
-          .for('update')
+  const rows = await executor
+    .select({
+      id: services.id,
+      price: services.price,
+      discountPrice: services.discountPrice,
+      isPackage: services.isPackage,
+      packageServiceIds: services.packageServiceIds,
+      deletedAt: services.deletedAt,
+    })
+    .from(services)
+    .where(and(eq(services.salonId, salonId), inArray(services.id, ids)))
+    .orderBy(asc(services.id))
+    .for('update')
 
   return new Map(rows.map((row) => [row.id, row]))
 }
@@ -172,6 +169,9 @@ const memberRefusal = (
   return null
 }
 
+/** The services a change was applied to, as they were written. */
+type Applied = { type: 'applied'; services: DbService[] }
+
 /**
  * Applies the same changes to the named services, to all or to none. The
  * caller's transaction holds the locks until the write is committed.
@@ -182,7 +182,7 @@ const applyChanges = async (
   ids: ServiceId[],
   changes: DbServiceChanges,
   optionsChange: ServiceOptionsChange,
-): Promise<ServiceBulkUpdate> => {
+): Promise<Applied | ServiceChangeRefusal> => {
   const { categoryId, packageServiceIds } = changes
   const categoryMissing =
     categoryId !== undefined &&
@@ -249,10 +249,11 @@ const applyChanges = async (
     }
   }
 
-  await tx
+  const changed = await tx
     .update(services)
     .set({ ...changes, updatedAt: CLOCK })
     .where(and(eq(services.salonId, salonId), inArray(services.id, ids)))
+    .returning()
 
   await match(optionsChange)
     .with({ type: 'keep' }, async () => undefined)
@@ -264,7 +265,7 @@ const applyChanges = async (
     })
     .exhaustive()
 
-  return { type: 'updated' }
+  return { type: 'applied', services: changed }
 }
 
 export class ServiceRepository implements IServiceRepository {
@@ -308,13 +309,7 @@ export class ServiceRepository implements IServiceRepository {
       }),
     )
 
-    return Result.flatMap(created, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database('Insert of service returned no row', null),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(created, written('Insert of service'))
   }
 
   async findById(
@@ -365,7 +360,7 @@ export class ServiceRepository implements IServiceRepository {
           ? undefined
           : sql`(${services.sortOrder}, ${services.id}) > (${cursor.sortOrder}::integer, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(services)
@@ -390,7 +385,7 @@ export class ServiceRepository implements IServiceRepository {
           service,
           options: optionsOf.get(service.id) ?? [],
         })),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
@@ -402,23 +397,21 @@ export class ServiceRepository implements IServiceRepository {
     changes: DbServiceChanges,
     options: ServiceOptionsChange,
   ): Promise<Result<ServiceUpdate, DomainError>> {
-    return attempt('Failed to update service', () =>
-      this.db.transaction(async (tx): Promise<ServiceUpdate> => {
+    const updated = await attempt('Failed to update service', () =>
+      this.db.transaction(async (tx): Promise<ServiceUpdate | null> => {
         const applied = await applyChanges(tx, salonId, [id], changes, options)
-        if (applied.type !== 'updated') {
+        if (applied.type !== 'applied') {
           return applied
         }
 
-        const [updated] = await tx
-          .select()
-          .from(services)
-          .where(ofSalon(salonId, id))
-
-        return updated === undefined
-          ? { type: 'notFound', id }
-          : { type: 'updated', service: await withOptions(tx, updated) }
+        const [service] = applied.services
+        return service === undefined
+          ? null
+          : { type: 'updated', service: await withOptions(tx, service) }
       }),
     )
+
+    return Result.flatMap(updated, written('Update of service'))
   }
 
   async updateMany(
@@ -428,9 +421,10 @@ export class ServiceRepository implements IServiceRepository {
     options: ServiceOptionsChange,
   ): Promise<Result<ServiceBulkUpdate, DomainError>> {
     return attempt('Failed to update services', () =>
-      this.db.transaction((tx) =>
-        applyChanges(tx, salonId, ids, changes, options),
-      ),
+      this.db.transaction(async (tx): Promise<ServiceBulkUpdate> => {
+        const applied = await applyChanges(tx, salonId, ids, changes, options)
+        return applied.type === 'applied' ? { type: 'updated' } : applied
+      }),
     )
   }
 

@@ -1,16 +1,15 @@
 import { attachments, shareLinks } from '@beauty-salon-backend/database'
-import {
-  type DbNewShareLink,
-  type DbShareLink,
-  type DomainError,
-  DomainErrors,
-  type IShareLinkRepository,
-  type LedgerReach,
-  type SharedAttachment,
-  type ShareLinkId,
-  type ShareLinkList,
-  type ShareLinkListCriteria,
-  type ShareLinkLockRule,
+import type {
+  DbNewShareLink,
+  DbShareLink,
+  DomainError,
+  IShareLinkRepository,
+  LedgerReach,
+  SharedAttachment,
+  ShareLinkId,
+  ShareLinkList,
+  ShareLinkListCriteria,
+  ShareLinkLockRule,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import {
@@ -28,7 +27,9 @@ import {
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
+import { rowWritten } from '../database/written'
 
 /**
  * The attachment of a link, when it is one that exists: a link goes with
@@ -73,13 +74,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
       this.db.insert(shareLinks).values(shareLink).returning(),
     )
 
-    return Result.flatMap(created, ([inserted]) =>
-      inserted === undefined
-        ? Result.error(
-            DomainErrors.database('Insert of share link returned no row', null),
-          )
-        : Result.success(inserted),
-    )
+    return Result.flatMap(created, rowWritten('Insert of share link'))
   }
 
   async findById(
@@ -126,7 +121,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
           ? undefined
           : sql`(${shareLinks.createdAt}, ${shareLinks.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
 
-      const [found, [matching]] = await Promise.all([
+      const [found, counted] = await Promise.all([
         this.db
           .select()
           .from(shareLinks)
@@ -139,7 +134,7 @@ export class ShareLinkRepository implements IShareLinkRepository {
 
       return {
         shareLinks: found.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: found.length > limit,
       }
     })

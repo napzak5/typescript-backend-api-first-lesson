@@ -86,6 +86,7 @@ import type { PgColumn } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { bookingsWithServices } from './_shared/booking-services'
 import { countBookingsOf } from './_shared/customer-counters'
@@ -1256,7 +1257,7 @@ export class BookingRepository implements IBookingRepository {
         // One extra row tells whether another page follows.
         .limit(limit + 1)
         .as('page')
-      const [rows, [matching]] = await Promise.all([
+      const [rows, counted] = await Promise.all([
         this.db
           .select()
           .from(page)
@@ -1277,7 +1278,7 @@ export class BookingRepository implements IBookingRepository {
 
       return {
         bookings: found.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: found.length > limit,
       }
     })

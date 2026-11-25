@@ -20,22 +20,20 @@ import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, count, eq, ilike, isNull, or, sql } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database } from '../database/index'
 import { containing } from '../database/like'
+import { rowWritten } from '../database/written'
+import { uniqueViolation } from './_shared/unique-violation'
 
-const codeUniqueViolation = {
-  code: '23505',
-  constraint_name: 'products_code_salon_unique',
-}
+const codeUniqueViolation = uniqueViolation('products_code_salon_unique')
 
 /**
  * Turns a failed write into a domain error. The unique index on the product
  * code, which covers the products of a salon that are not deleted, is the
- * only expected failure, and only of a write that names a code; drizzle
- * wraps the driver error, so the violation is looked for on the error and
- * on its cause. Anything else is unexpected and keeps a description that is
- * safe to log.
+ * only expected failure, and only of a write that names a code. Anything
+ * else is unexpected and keeps a description that is safe to log.
  */
 const toDomainError =
   (message: string, productCode: string | undefined) =>
@@ -44,7 +42,7 @@ const toDomainError =
       .with(
         {
           productCode: P.string,
-          cause: P.union(codeUniqueViolation, { cause: codeUniqueViolation }),
+          cause: codeUniqueViolation,
         },
         (violation) =>
           DomainErrors.alreadyExists(
@@ -98,13 +96,7 @@ export class ProductRepository implements IProductRepository {
           .returning(),
     )
 
-    return Result.flatMap(created, ([inserted]) =>
-      inserted === undefined
-        ? Result.error(
-            DomainErrors.database('Insert of product returned no row', null),
-          )
-        : Result.success(inserted),
-    )
+    return Result.flatMap(created, rowWritten('Insert of product'))
   }
 
   async findById(
@@ -170,7 +162,7 @@ export class ProductRepository implements IProductRepository {
           ? undefined
           : sql`(${products.productCode}, ${products.id}) > (${cursor.productCode}::varchar, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(products)
@@ -183,7 +175,7 @@ export class ProductRepository implements IProductRepository {
 
       return {
         products: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

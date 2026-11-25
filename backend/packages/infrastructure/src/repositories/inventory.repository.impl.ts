@@ -49,25 +49,26 @@ import {
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
+import { uniqueViolation } from './_shared/unique-violation'
 
 /**
  * The two ways the salon, the product and the lot number of a row repeat
  * another's: `inventory_unique` among the rows with a lot number, and
  * `inventory_unique_without_lot` among those without one.
  */
-const lotUniqueViolation = {
-  code: '23505',
-  constraint_name: P.union('inventory_unique', 'inventory_unique_without_lot'),
-}
+const lotUniqueViolation = uniqueViolation(
+  P.union('inventory_unique', 'inventory_unique_without_lot'),
+)
 
 /**
  * Turns a failed write into a domain error. A repeated lot is the only
  * expected failure, and only of a write that names a lot number (null is a
- * lot number a write names); drizzle wraps the driver error, so the
- * violation is looked for on the error and on its cause. Anything else is
- * unexpected and keeps a description that is safe to log.
+ * lot number a write names). Anything else is unexpected and keeps a
+ * description that is safe to log.
  */
 const toDomainError =
   (message: string, lotNumber: string | null | undefined) =>
@@ -76,7 +77,7 @@ const toDomainError =
       .with(
         {
           lotNumber: P.union(P.string, null),
-          cause: P.union(lotUniqueViolation, { cause: lotUniqueViolation }),
+          cause: lotUniqueViolation,
         },
         (violation) =>
           DomainErrors.alreadyExists(
@@ -154,13 +155,6 @@ const STOCK_LIST_ORDER = [
 /** A write that found the database other than its constraints keep it. */
 type Unwritten = { type: 'unwritten'; reason: string }
 
-const creationOf = (
-  outcome: InventoryCreation | Unwritten,
-): Result<InventoryCreation, DomainError> =>
-  outcome.type === 'unwritten'
-    ? Result.error(DomainErrors.database(outcome.reason, null))
-    : Result.success(outcome)
-
 const updateOf = (
   outcome: InventoryUpdate | Unwritten,
 ): Result<InventoryUpdate, DomainError> =>
@@ -210,12 +204,12 @@ export class InventoryRepository implements IInventoryRepository {
   async create(
     row: DbNewInventory,
   ): Promise<Result<InventoryCreation, DomainError>> {
-    const written = await attempt(
+    const created = await attempt(
       'Failed to create stock row',
       row.lotNumber,
       () =>
         this.db.transaction(
-          async (tx): Promise<InventoryCreation | Unwritten> => {
+          async (tx): Promise<InventoryCreation | null> => {
             // The lock is the one a delete or a change of the product waits
             // for and is waited for by: a product that is being deleted is
             // gone by the time this statement returns, and one that is being
@@ -253,17 +247,14 @@ export class InventoryRepository implements IInventoryRepository {
               .returning()
 
             return inserted === undefined
-              ? {
-                  type: 'unwritten',
-                  reason: 'Insert of stock row returned no row',
-                }
+              ? null
               : { type: 'created', row: inserted }
           },
           { isolationLevel: 'read committed' },
         ),
     )
 
-    return Result.flatMap(written, creationOf)
+    return Result.flatMap(created, written('Insert of stock row'))
   }
 
   async findById(
@@ -308,7 +299,7 @@ export class InventoryRepository implements IInventoryRepository {
         return null
       }
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select(inventoryColumns)
           .from(inventory)
@@ -322,7 +313,7 @@ export class InventoryRepository implements IInventoryRepository {
 
       return {
         rows: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
@@ -364,7 +355,7 @@ export class InventoryRepository implements IInventoryRepository {
         return null
       }
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select(inventoryColumns)
           .from(inventory)
@@ -383,7 +374,7 @@ export class InventoryRepository implements IInventoryRepository {
 
       return {
         rows: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
@@ -427,7 +418,7 @@ export class InventoryRepository implements IInventoryRepository {
           ? undefined
           : sql`(${inventory.expiryDate}, ${inventory.id}) > (${cursor.expiryDate}::date, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(inventory)
@@ -439,7 +430,7 @@ export class InventoryRepository implements IInventoryRepository {
 
       return {
         rows: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
@@ -450,7 +441,7 @@ export class InventoryRepository implements IInventoryRepository {
     id: InventoryId,
     changes: DbInventoryChanges,
   ): Promise<Result<InventoryUpdate, DomainError>> {
-    const written = await attempt(
+    const changed = await attempt(
       'Failed to update stock row',
       changes.lotNumber,
       () =>
@@ -504,7 +495,7 @@ export class InventoryRepository implements IInventoryRepository {
         ),
     )
 
-    return Result.flatMap(written, updateOf)
+    return Result.flatMap(changed, updateOf)
   }
 
   async delete(
@@ -691,7 +682,7 @@ export class InventoryRepository implements IInventoryRepository {
           )
           // One extra row tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(inventoryTransactions)
           .where(filters)
@@ -699,7 +690,7 @@ export class InventoryRepository implements IInventoryRepository {
         return {
           type: 'listed',
           transactions: found.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),
@@ -776,7 +767,7 @@ export class InventoryRepository implements IInventoryRepository {
             // The reserved stock stays, so what is available is what was
             // counted less it. A row that does not differ is written too:
             // it was counted.
-            const written = await tx
+            const countedRows = await tx
               .update(inventory)
               .set({
                 currentStock: counted,
@@ -794,9 +785,9 @@ export class InventoryRepository implements IInventoryRepository {
                 expiryDate: inventory.expiryDate,
                 countedAt: inventory.lastCountedAt,
               })
-            const [first] = written
+            const [first] = countedRows
             if (
-              written.length !== items.length ||
+              countedRows.length !== items.length ||
               first === undefined ||
               first.countedAt === null
             ) {
@@ -808,7 +799,7 @@ export class InventoryRepository implements IInventoryRepository {
             const at = first.countedAt
 
             const differing = found.filter(({ differs }) => differs)
-            const writtenById = new Map(written.map((row) => [row.id, row]))
+            const writtenById = new Map(countedRows.map((row) => [row.id, row]))
             const adjustments: (typeof inventoryTransactions.$inferInsert)[] =
               differing.flatMap(
                 ({ inventoryId, expected, counted, difference }) => {

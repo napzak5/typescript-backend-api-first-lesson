@@ -22,22 +22,19 @@ import { and, asc, count, eq, isNull, sql } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database } from '../database/index'
+import { written } from '../database/written'
 import {
   hasLineOfUnfinishedBooking,
   hasUnfinishedBooking,
 } from './_shared/unfinished-bookings'
+import { uniqueViolation } from './_shared/unique-violation'
 
-const emailTaken = {
-  code: '23505',
-  constraint_name: 'staff_email_salon_unique',
-}
+const emailTaken = uniqueViolation('staff_email_salon_unique')
 
-const staffCodeTaken = {
-  code: '23505',
-  constraint_name: 'staff_code_salon_unique',
-}
+const staffCodeTaken = uniqueViolation('staff_code_salon_unique')
 
 /** The values of a write that no other staff member of the salon may have. */
 type UniqueValues = {
@@ -49,9 +46,8 @@ type UniqueValues = {
  * Turns a failed write into a domain error. Two failures are expected: the
  * unique index on the salon and `email`, which covers the staff members
  * that are not deleted, and the unique constraint on the salon and
- * `staffCode`, which covers every staff member. drizzle wraps the driver
- * error, so a violation is looked for on the error and on its cause.
- * Anything else is unexpected and keeps a description that is safe to log.
+ * `staffCode`, which covers every staff member. Anything else is unexpected
+ * and keeps a description that is safe to log.
  */
 const toDomainError =
   (message: string, unique: UniqueValues) =>
@@ -60,7 +56,7 @@ const toDomainError =
       .with(
         {
           email: P.string,
-          cause: P.union(emailTaken, { cause: emailTaken }),
+          cause: emailTaken,
         },
         ({ email }) =>
           DomainErrors.alreadyExists(
@@ -72,7 +68,7 @@ const toDomainError =
       .with(
         {
           staffCode: P.string,
-          cause: P.union(staffCodeTaken, { cause: staffCodeTaken }),
+          cause: staffCodeTaken,
         },
         ({ staffCode }) =>
           DomainErrors.alreadyExists(
@@ -120,16 +116,7 @@ export class StaffRepository implements IStaffRepository {
       },
     )
 
-    return Result.flatMap(created, (row) =>
-      row === null
-        ? Result.error(
-            DomainErrors.database(
-              'Insert of staff member returned no row',
-              null,
-            ),
-          )
-        : Result.success(row),
-    )
+    return Result.flatMap(created, written('Insert of staff member'))
   }
 
   async findById(
@@ -173,7 +160,7 @@ export class StaffRepository implements IStaffRepository {
           ? undefined
           : sql`(${staff.createdAt}, ${staff.id}) > (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(staff)
@@ -186,7 +173,7 @@ export class StaffRepository implements IStaffRepository {
 
       return {
         staff: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

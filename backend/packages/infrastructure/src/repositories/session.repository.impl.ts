@@ -1,21 +1,22 @@
 import { salons, sessions, staff, users } from '@beauty-salon-backend/database'
-import {
-  type DbNewSession,
-  type DbSession,
-  type DomainError,
-  DomainErrors,
-  type ISessionRepository,
-  type SessionId,
-  type SessionList,
-  type SessionListCriteria,
-  type SessionRotation,
-  type SessionWithAccount,
-  type UserId,
+import type {
+  DbNewSession,
+  DbSession,
+  DomainError,
+  ISessionRepository,
+  SessionId,
+  SessionList,
+  SessionListCriteria,
+  SessionRotation,
+  SessionWithAccount,
+  UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import { and, count, desc, eq, gt, lte, type SQL, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
+import { written } from '../database/written'
 import {
   accountColumns,
   salonOfStaff,
@@ -42,13 +43,7 @@ export class SessionRepository implements ISessionRepository {
       }),
     )
 
-    return Result.flatMap(created, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database('Insert of session returned no row', null),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(created, written('Insert of session'))
   }
 
   async findByTokenHash(
@@ -107,7 +102,7 @@ export class SessionRepository implements ISessionRepository {
           ? undefined
           : sql`(${sessions.createdAt}, ${sessions.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(sessions)
@@ -120,7 +115,7 @@ export class SessionRepository implements ISessionRepository {
 
       return {
         sessions: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

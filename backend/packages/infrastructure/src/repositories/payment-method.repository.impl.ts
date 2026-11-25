@@ -7,7 +7,6 @@ import {
   type DbPaymentMethod,
   type DbPaymentMethodChanges,
   type DomainError,
-  DomainErrors,
   type IPaymentMethodRepository,
   limitsAfter,
   limitsAreInOrder,
@@ -22,7 +21,9 @@ import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, eq, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
+import { rowWritten } from '../database/written'
 
 const ofSalon = (salonId: SalonId, id: PaymentMethodId) =>
   and(eq(paymentMethods.id, id), eq(paymentMethods.salonId, salonId))
@@ -41,16 +42,7 @@ export class PaymentMethodRepository implements IPaymentMethodRepository {
         .returning(),
     )
 
-    return Result.flatMap(created, ([inserted]) =>
-      inserted === undefined
-        ? Result.error(
-            DomainErrors.database(
-              'Insert of payment method returned no row',
-              null,
-            ),
-          )
-        : Result.success(inserted),
-    )
+    return Result.flatMap(created, rowWritten('Insert of payment method'))
   }
 
   async findById(
@@ -105,7 +97,7 @@ export class PaymentMethodRepository implements IPaymentMethodRepository {
           ? undefined
           : sql`(${paymentMethods.sortOrder}, ${paymentMethods.id}) > (${cursor.sortOrder}::integer, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(paymentMethods)
@@ -118,7 +110,7 @@ export class PaymentMethodRepository implements IPaymentMethodRepository {
 
       return {
         paymentMethods: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })

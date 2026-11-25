@@ -56,6 +56,7 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { detailsOf } from './_shared/treatment-details'
 
@@ -527,7 +528,7 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
           tx,
           page.map(({ id }) => id),
         )
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(treatmentRecords)
           .where(filters)
@@ -539,7 +540,7 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
             materials: materials.get(record.id) ?? [],
             photos: photos.get(record.id) ?? [],
           })),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

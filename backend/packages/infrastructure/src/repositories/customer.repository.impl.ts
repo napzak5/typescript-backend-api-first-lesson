@@ -52,10 +52,12 @@ import {
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 import { AT_ONE_MOMENT } from '../database/snapshot'
+import { written } from '../database/written'
 import { userNotDeleted } from './_shared/account'
 import { customerDataOf } from './_shared/customer-data'
 import { mergeCustomers } from './_shared/customer-merge'
@@ -64,16 +66,11 @@ import {
   customersOfUnfinishedBookings,
   hasUnfinishedBooking,
 } from './_shared/unfinished-bookings'
+import { uniqueViolation } from './_shared/unique-violation'
 
-const emailTaken = {
-  code: '23505',
-  constraint_name: 'customers_email_unique',
-}
+const emailTaken = uniqueViolation('customers_email_unique')
 
-const referralCodeTaken = {
-  code: '23505',
-  constraint_name: 'customers_referral_code_unique',
-}
+const referralCodeTaken = uniqueViolation('customers_referral_code_unique')
 
 /** The values of a write that no other customer may have. */
 type UniqueValues = {
@@ -85,9 +82,7 @@ type UniqueValues = {
  * Turns a failed write into a domain error. Two failures are expected: the
  * unique index on `email`, which covers the customers that are not deleted,
  * and the unique constraint on `referralCode`, which covers every customer.
- * drizzle wraps the driver error, so a violation is looked for on the error
- * and on its cause. Anything else is unexpected and keeps a description
- * that is safe to log.
+ * Anything else is unexpected and keeps a description that is safe to log.
  */
 const toDomainError =
   (message: string, unique: () => UniqueValues) =>
@@ -96,7 +91,7 @@ const toDomainError =
       .with(
         {
           email: P.string,
-          cause: P.union(emailTaken, { cause: emailTaken }),
+          cause: emailTaken,
         },
         ({ email }) =>
           DomainErrors.alreadyExists(entityMessages.customer, 'email', email),
@@ -104,7 +99,7 @@ const toDomainError =
       .with(
         {
           referralCode: P.string,
-          cause: P.union(referralCodeTaken, { cause: referralCodeTaken }),
+          cause: referralCodeTaken,
         },
         ({ referralCode }) =>
           DomainErrors.alreadyExists(
@@ -134,7 +129,7 @@ const attemptWrite = async <T>(
  */
 const toProfileError = (cause: unknown): DomainError =>
   match(cause)
-    .with(P.union(emailTaken, { cause: emailTaken }), () =>
+    .with(emailTaken, () =>
       DomainErrors.conflict(customerMessages.registeredAtSameMoment),
     )
     .otherwise(() =>
@@ -302,13 +297,7 @@ export class CustomerRepository implements ICustomerRepository {
         }),
     )
 
-    return Result.flatMap(created, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database('Insert of customer returned no row', null),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(created, written('Insert of customer'))
   }
 
   async findById(
@@ -351,7 +340,7 @@ export class CustomerRepository implements ICustomerRepository {
           ? undefined
           : sql`(${customers.createdAt}, ${customers.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(customers)
@@ -364,7 +353,7 @@ export class CustomerRepository implements ICustomerRepository {
 
       return {
         customers: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
@@ -557,12 +546,12 @@ export class CustomerRepository implements ICustomerRepository {
         }
         // Counted at the moment of the rows, so that the number told is
         // more than a file holds.
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(customers)
           .where(filters)
 
-        return { type: 'tooMany', matching: matching?.total ?? found.length }
+        return { type: 'tooMany', matching: totalOf(counted) }
       }, AT_ONE_MOMENT),
     )
   }
@@ -778,15 +767,9 @@ export class CustomerRepository implements ICustomerRepository {
       ),
     )
 
-    return Result.flatMap(Result.mapError(created, toProfileError), (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database(
-              'Write of customer profile returned no row',
-              null,
-            ),
-          )
-        : Result.success(data),
+    return Result.flatMap(
+      Result.mapError(created, toProfileError),
+      written('Write of customer profile'),
     )
   }
 }

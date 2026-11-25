@@ -14,6 +14,7 @@ import { and, asc, count, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { countReportsOf } from './_shared/review-report-count'
 
@@ -135,7 +136,7 @@ export class ReviewReportRepository implements IReviewReportRepository {
           .orderBy(asc(reviewReports.createdAt), asc(reviewReports.id))
           // One extra row tells whether another page follows.
           .limit(limit + 1)
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(reviewReports)
           .innerJoin(reviews, ofReport)
@@ -144,7 +145,7 @@ export class ReviewReportRepository implements IReviewReportRepository {
 
         return {
           reports: page.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: page.length > limit,
         }
       }, AT_ONE_MOMENT),

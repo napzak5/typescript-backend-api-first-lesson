@@ -5,8 +5,9 @@ import {
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import { createTransport } from 'nodemailer'
-import { match, P } from 'ts-pattern'
+import { match } from 'ts-pattern'
 import type { Logger } from '../logging/logger'
+import { describeMailFailure } from './failure'
 
 export type SmtpSettings = {
   host: string
@@ -37,25 +38,6 @@ const encryptionOf = (tls: SmtpSettings['tls']) =>
     .with('starttls', () => ({ secure: false, requireTLS: true }))
     .with('none', () => ({ secure: false, ignoreTLS: true }))
     .exhaustive()
-
-/**
- * What a failed delivery leaves for the log: the stage of the SMTP dialogue
- * and the server's verdict, never the message or its recipient.
- */
-const describeFailure = (error: unknown) => ({
-  message: match(error)
-    .with({ message: P.string }, ({ message }) => message)
-    .otherwise(() => 'Mail delivery failed'),
-  code: match(error)
-    .with({ code: P.string }, ({ code }) => code)
-    .otherwise(() => null),
-  command: match(error)
-    .with({ command: P.string }, ({ command }) => command)
-    .otherwise(() => null),
-  responseCode: match(error)
-    .with({ responseCode: P.number }, ({ responseCode }) => responseCode)
-    .otherwise(() => null),
-})
 
 /**
  * Sends mail through an SMTP server. `deliver` returns at once and the
@@ -118,7 +100,7 @@ export class SmtpMailer implements IMailer {
 
     if (sent.type === 'error') {
       this.logger.error(
-        { ...logged, failure: describeFailure(sent.error) },
+        { ...logged, failure: describeMailFailure(sent.error) },
         'Failed to deliver mail',
       )
       return

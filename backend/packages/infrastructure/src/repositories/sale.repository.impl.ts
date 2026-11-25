@@ -57,6 +57,7 @@ import {
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { type HeldSale, heldSaleOf, within } from './_shared/held-sale'
 import { salesWithDetails } from './_shared/sale-details'
@@ -632,14 +633,14 @@ export class SaleRepository implements ISaleRepository {
           tx,
           rows.map((row) => ({ sale: row.page, detail: row.sales_details })),
         )
-        const [matching] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(sales)
           .where(filters)
 
         return {
           sales: found.slice(0, limit),
-          total: matching?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

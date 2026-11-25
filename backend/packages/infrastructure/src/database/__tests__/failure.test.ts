@@ -78,6 +78,47 @@ describe('describeDatabaseError', () => {
     })
   })
 
+  it('should describe an error of drizzle that carries no error of the driver as one whose driver error is gone', () => {
+    // Arrange
+    const withoutCause = Object.assign(
+      new Error(
+        'Failed query: insert into "salons" ("email") values ($1)\nparams: owner@salon.example',
+      ),
+      {
+        query: 'insert into "salons" ("email") values ($1)',
+        params: ['owner@salon.example'],
+      },
+    )
+
+    // Act
+    const description = describeDatabaseError(withoutCause)
+
+    // Assert
+    expect(description).toEqual(describeDatabaseError(failedQuery(undefined)))
+    expect(JSON.stringify(description)).not.toContain('owner@salon.example')
+  })
+
+  it('should name the column whose value a statement was refused for', () => {
+    // Arrange
+    const notNullViolation = Object.assign(
+      new Error(
+        'null value in column "name" of relation "salons" violates not-null constraint',
+      ),
+      { code: '23502', table_name: 'salons', column_name: 'name' },
+    )
+
+    // Act
+    const description = describeDatabaseError(failedQuery(notNullViolation))
+
+    // Assert
+    expect(description).toMatchObject({
+      code: '23502',
+      table: 'salons',
+      column: 'name',
+      constraint: null,
+    })
+  })
+
   it('should describe something that is not an error', () => {
     expect(describeDatabaseError('boom')).toEqual({
       message: 'Database query failed',

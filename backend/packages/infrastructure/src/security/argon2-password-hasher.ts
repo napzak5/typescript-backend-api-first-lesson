@@ -1,4 +1,9 @@
-import { argon2, randomBytes, timingSafeEqual } from 'node:crypto'
+import {
+  type Argon2Parameters,
+  argon2,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto'
 import { promisify } from 'node:util'
 import {
   type DomainError,
@@ -8,7 +13,16 @@ import {
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 
-const deriveKey = promisify(argon2)
+/**
+ * Derives the tag of a password with Argon2id: `crypto.argon2`, unless a
+ * test gives one that fails, as a machine without the memory does.
+ */
+type Derivation = (
+  algorithm: 'argon2id',
+  parameters: Argon2Parameters,
+) => Promise<Buffer>
+
+const deriveKey: Derivation = promisify(argon2)
 
 /** Cost of one hash, in the units of the PHC string: `m` in KiB, `t`, `p`. */
 type Cost = {
@@ -64,18 +78,23 @@ const parsePhcString = (passwordHash: string): StoredHash | null => {
 }
 
 /**
- * The limits `crypto.argon2` sets on its input. A stored value outside them
- * is no hash Argon2id could have made, so it matches no password; without
- * this check the failed derivation would surface as a server error, and tell
- * a caller that the account exists.
+ * Whether a stored value is a hash the server verifies: one Argon2id can
+ * make (the lower limits `crypto.argon2` sets on its input), which costs no
+ * more than a new hash. Every hash the server stores is made with the
+ * current cost or was made with a lighter one; a heavier cost is work the
+ * server never agreed to do, and the memory a stored value names is taken
+ * when it is verified (4 TiB of it ends the process). Any other value
+ * matches no password; without this check a derivation that cannot be made
+ * would surface as a server error, and tell a caller that the account
+ * exists.
  */
-const isDerivable = ({ cost, salt, tag }: StoredHash): boolean =>
+const isVerifiable = ({ cost, salt, tag }: StoredHash): boolean =>
   cost.parallelism >= 1 &&
-  cost.parallelism <= 2 ** 24 - 1 &&
+  cost.parallelism <= CURRENT_COST.parallelism &&
   cost.passes >= 1 &&
-  cost.passes <= 2 ** 32 - 1 &&
+  cost.passes <= CURRENT_COST.passes &&
   cost.memory >= 8 * cost.parallelism &&
-  cost.memory <= 2 ** 32 - 1 &&
+  cost.memory <= CURRENT_COST.memory &&
   salt.length >= 8 &&
   tag.length >= 4
 
@@ -87,6 +106,7 @@ const isCurrent = ({ cost, salt, tag }: StoredHash): boolean =>
   tag.length === TAG_BYTES
 
 const derive = async (
+  derivation: Derivation,
   password: string,
   cost: Cost,
   salt: Buffer,
@@ -94,7 +114,7 @@ const derive = async (
 ): Promise<Result<Buffer, DomainError>> =>
   Result.mapError(
     await Result.fromPromise(
-      deriveKey('argon2id', {
+      derivation('argon2id', {
         message: password,
         nonce: salt,
         tagLength,
@@ -108,15 +128,17 @@ const derive = async (
 
 /**
  * Argon2id from Node's own `node:crypto`. A hash carries its salt and cost,
- * so hashes made with an older cost keep verifying and are reported as
- * needing a rehash.
+ * so hashes made with an older, lighter cost keep verifying and are
+ * reported as needing a rehash; one with a heavier cost matches no password.
  */
 export class Argon2PasswordHasher implements IPasswordHasher {
+  constructor(private readonly derivation: Derivation = deriveKey) {}
+
   async hash(password: string): Promise<Result<string, DomainError>> {
     const salt = randomBytes(SALT_BYTES)
 
     return Result.map(
-      await derive(password, CURRENT_COST, salt, TAG_BYTES),
+      await derive(this.derivation, password, CURRENT_COST, salt, TAG_BYTES),
       (tag) => toPhcString(CURRENT_COST, salt, tag),
     )
   }
@@ -126,12 +148,18 @@ export class Argon2PasswordHasher implements IPasswordHasher {
     passwordHash: string,
   ): Promise<Result<PasswordVerification, DomainError>> {
     const stored = parsePhcString(passwordHash)
-    if (stored === null || !isDerivable(stored)) {
+    if (stored === null || !isVerifiable(stored)) {
       return Result.success({ type: 'mismatch' })
     }
 
     return Result.map(
-      await derive(password, stored.cost, stored.salt, stored.tag.length),
+      await derive(
+        this.derivation,
+        password,
+        stored.cost,
+        stored.salt,
+        stored.tag.length,
+      ),
       (tag) =>
         timingSafeEqual(tag, stored.tag)
           ? { type: 'match', needsRehash: !isCurrent(stored) }

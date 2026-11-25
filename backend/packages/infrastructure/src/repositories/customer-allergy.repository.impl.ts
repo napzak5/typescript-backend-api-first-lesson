@@ -16,24 +16,23 @@ import {
 import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, desc, eq, exists, isNull, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
-import { match, P } from 'ts-pattern'
+import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
+import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { uniqueViolation } from './_shared/unique-violation'
 
-const allergenUniqueViolation = {
-  code: '23505',
-  constraint_name: 'customer_allergies_customer_allergen_unique',
-}
+const allergenUniqueViolation = uniqueViolation(
+  'customer_allergies_customer_allergen_unique',
+)
 
 /**
  * Runs a change of an allergy. The unique constraint on the allergen of a
  * customer is the one expected failure, of a change that renames the
- * allergen to that of another allergy, and becomes `allergenExists`;
- * drizzle wraps the driver error, so the violation is looked for on the
- * error and on its cause. Anything else is unexpected and keeps a
- * description that is safe to log.
+ * allergen to that of another allergy, and becomes `allergenExists`.
+ * Anything else is unexpected and keeps a description that is safe to log.
  */
 const attemptChange = async (
   run: () => Promise<CustomerAllergyChange>,
@@ -45,9 +44,8 @@ const attemptChange = async (
   const cause: unknown = outcome.error
   return match(cause)
     .returnType<Result<CustomerAllergyChange, DomainError>>()
-    .with(
-      P.union(allergenUniqueViolation, { cause: allergenUniqueViolation }),
-      () => Result.success({ type: 'allergenExists' }),
+    .with(allergenUniqueViolation, () =>
+      Result.success({ type: 'allergenExists' }),
     )
     .otherwise(() =>
       Result.error(
@@ -238,7 +236,7 @@ export class CustomerAllergyRepository implements ICustomerAllergyRepository {
           )
           // One extra allergy tells whether another page follows.
           .limit(limit + 1)
-        const [counted] = await tx
+        const counted = await tx
           .select({ total: count() })
           .from(customerAllergies)
           .where(ofCustomer)
@@ -246,7 +244,7 @@ export class CustomerAllergyRepository implements ICustomerAllergyRepository {
         return {
           type: 'listed',
           allergies: found.slice(0, limit),
-          total: counted?.total ?? 0,
+          total: totalOf(counted),
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),

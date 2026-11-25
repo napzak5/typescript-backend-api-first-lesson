@@ -5,7 +5,6 @@ import {
   type DbServiceCategory,
   type DbServiceCategoryChanges,
   type DomainError,
-  DomainErrors,
   type IServiceCategoryRepository,
   isWithinSubtree,
   type SalonId,
@@ -18,7 +17,9 @@ import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, eq, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
+import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 
 const ofSalon = (salonId: SalonId, id: string) =>
   and(eq(serviceCategories.id, id), eq(serviceCategories.salonId, salonId))
@@ -81,16 +82,7 @@ export class ServiceCategoryRepository implements IServiceCategoryRepository {
       ),
     )
 
-    return Result.flatMap(created, (data) =>
-      data === null
-        ? Result.error(
-            DomainErrors.database(
-              'Insert of service category returned no row',
-              null,
-            ),
-          )
-        : Result.success(data),
-    )
+    return Result.flatMap(created, written('Insert of service category'))
   }
 
   async findById(
@@ -142,7 +134,7 @@ export class ServiceCategoryRepository implements IServiceCategoryRepository {
           ? undefined
           : sql`(${serviceCategories.displayOrder}, ${serviceCategories.id}) > (${cursor.displayOrder}::integer, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const [page, counted] = await Promise.all([
         this.db
           .select()
           .from(serviceCategories)
@@ -161,7 +153,7 @@ export class ServiceCategoryRepository implements IServiceCategoryRepository {
 
       return {
         categories: page.slice(0, limit),
-        total: matching?.total ?? 0,
+        total: totalOf(counted),
         hasMore: page.length > limit,
       }
     })
