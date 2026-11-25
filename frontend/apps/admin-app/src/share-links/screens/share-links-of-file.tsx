@@ -6,7 +6,7 @@ import {
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import { moreOf } from '@beauty-salon-frontend/ui'
 import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
@@ -14,6 +14,7 @@ import { match } from 'ts-pattern'
 import type { UploadedAttachment } from '../../attachments/api/attachments-api'
 import { shareLinkEntryHrefOf, shareLinkHrefOf } from '../../navigation'
 import { readShareLinkPage, shareLinksKeyOf } from '../api/share-links-api'
+import { NotTheirsToShare } from '../components/not-theirs-to-share/not-theirs-to-share'
 import {
   ShareLinkList,
   type ShareLinkListing,
@@ -95,20 +96,11 @@ export const ShareLinksOfFile = ({
   salon,
   attachment,
 }: ShareLinksOfFileProps) => {
-  const session = useSession()
-  const role = session.type === 'signedIn' ? session.user.role : ''
+  const user = useSignedInUser()
 
-  return sharesFiles(role) ? (
+  return user !== undefined && sharesFiles(user.role) ? (
     <ListedShareLinks salon={salon} attachment={attachment} />
   ) : (
-    <ShareLinkList
-      listing={{ type: 'notShared', note: adminShareLinkMessages.sharers }}
-      timezone={salon.timezone}
-      now={new Date()}
-      entryHref={shareLinkEntryHrefOf(salon.id, attachment.id)}
-      shareLinkHref={(id) => shareLinkHrefOf(salon.id, attachment.id, id)}
-      onRetry={() => undefined}
-      onMore={() => undefined}
-    />
+    <NotTheirsToShare />
   )
 }

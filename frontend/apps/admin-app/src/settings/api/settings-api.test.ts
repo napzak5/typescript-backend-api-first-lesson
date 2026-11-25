@@ -137,6 +137,21 @@ describe('addSalon', () => {
     expect(await sent(fetched)).toEqual([NEW_SALON_REQUEST])
   })
 
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'email', rule: 'invalid_format' }]))
+
+    // Act
+    const added = await addSalon(NEW_SALON_REQUEST)
+
+    // Assert
+    expect(added).toEqual({
+      type: 'invalid',
+      values: [{ field: 'email', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, Answer, string]>([
     ['an account that does not add salons', () => problem(403), 'forbidden'],
     ['a body that is too large', () => problem(413), 'failed'],

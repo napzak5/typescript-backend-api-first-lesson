@@ -1,7 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { dayAfter, dayAt } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, whenAskedFor } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
@@ -530,6 +530,15 @@ describe('the screen of the alerts of the stock', () => {
   })
 
   it('should say to the stylist of another salon that its alerts are not theirs', async () => {
+    // Arrange: the list is refused after the count, which then says nothing
+    whenAskedFor('GET /inventory-alerts', () =>
+      waitFor(() =>
+        expect(
+          screen.queryByText('アラートの件数を読み込んでいます'),
+        ).toBeNull(),
+      ),
+    )
+
     // Act
     await openAs(stockAlertsHrefOf(await salonIdOf(OSAKA)), STYLIST)
 

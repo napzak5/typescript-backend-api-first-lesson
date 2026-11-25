@@ -1,6 +1,13 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  giveBack,
+  refuse,
+  salonIdOf,
+  signInAs,
+  takeAway,
+} from '@beauty-salon-frontend/testing/api'
+import { readAgain } from '@beauty-salon-frontend/testing/screens'
 import {
   OPERATOR,
   OWNER,
@@ -278,6 +285,48 @@ describe('the own profile, against the API', () => {
       specialties: ['カット'],
       bio: 'サロンが書き直した紹介文です。',
     })
+  })
+
+  it('should say that the profile could not be saved when the database fails, and keep what was written', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openProfileAs(STYLIST)
+    await recordHeading()
+    await rewrite(user, '紹介文', '週末は指名のお客様が中心です。')
+    await refuse('update', 'staff')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: '保存する' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'プロフィールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      ),
+    ).toBeVisible()
+    expect(text('紹介文')).toHaveValue('週末は指名のお客様が中心です。')
+    expect(await storedMemberOf(STYLIST)).not.toMatchObject({
+      bio: '週末は指名のお客様が中心です。',
+    })
+  })
+
+  it('should say that the profile could not be read, and show it when asked again', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await takeAway('staff', 'bio')
+    await openProfileAs(STYLIST)
+    expect(
+      await screen.findByText(
+        'プロフィールを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      ),
+    ).toBeVisible()
+    await giveBack('staff', 'bio')
+
+    // Act
+    await readAgain(user)
+
+    // Assert
+    expect(await recordHeading()).toBeVisible()
   })
 
   it('should say the profile is not available once the member was made inactive meanwhile', async () => {

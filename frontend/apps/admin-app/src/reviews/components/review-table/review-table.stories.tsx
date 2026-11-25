@@ -31,6 +31,11 @@ export const StaffUnread: Story = {
   args: { staff: undefined },
 }
 
+/** The member a review rates left the staff of the salon */
+export const StaffRemoved: Story = {
+  args: { staff: staff.slice(0, 1) },
+}
+
 /** The first page of more reviews than it shows */
 export const More: Story = {
   args: {

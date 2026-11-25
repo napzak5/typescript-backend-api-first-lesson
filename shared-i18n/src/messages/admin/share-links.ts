@@ -64,11 +64,6 @@ export const adminShareLinkMessages = {
       en: `${filename} (${salonName})`,
       ja: `${filename}（${salonName}）`,
     }),
-  /** Said of a file whose upload was not finished */
-  notUploaded: text({
-    en: 'A file whose upload is not finished cannot be shared. Issue a share link once the upload is finished.',
-    ja: 'アップロードが済んでいないファイルは、共有できません。アップロードが済んでから、共有リンクを発行してください。',
-  }),
   /** What a share link is, said above the links of a file */
   about: text({
     en: 'A link that shows this file to people who have no account (customers, business partners). Until it expires, whoever knows the link can download the file.',

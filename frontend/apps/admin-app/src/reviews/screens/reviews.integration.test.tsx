@@ -28,6 +28,12 @@ import {
   storedReportsOf,
   storedReviewOf,
 } from '../__tests__/arrangements'
+import {
+  listed,
+  openResponseAs,
+  openReviewAs,
+  reviewAt,
+} from '../__tests__/screens'
 
 /*
  * The reviews of a salon against the API: what they come to, the list,
@@ -41,32 +47,6 @@ const GOOD = 'Good but could be better'
 
 const ANSWER_OF_THE_SEED =
   'Thank you for your wonderful review! We look forward to seeing you again.'
-
-/** The address of a review of the salon in Tokyo, by its title */
-const reviewAt = async (title: string, salon = TOKYO): Promise<string> =>
-  reviewHrefOf(await salonIdOf(salon), await reviewIdOf(title))
-
-/** Opens a review, and waits for its record. */
-const openReviewAs = async (title: string, email: string): Promise<void> => {
-  await openAs(await reviewAt(title), email)
-  await heading(title)
-  await screen.findByRole('link', { name: '来店の予約' })
-}
-
-/** Opens the answer to a review, and waits for its form. */
-const openResponseAs = async (title: string, email: string): Promise<void> => {
-  await openAs(
-    reviewResponseHrefOf(await salonIdOf(TOKYO), await reviewIdOf(title)),
-    email,
-  )
-  await screen.findByRole('textbox', { name: '返信' })
-}
-
-/** The titles of the reviews of the list, in its order */
-const listed = (): string[] =>
-  within(screen.getByRole('table'))
-    .getAllByRole('rowheader')
-    .map(({ textContent }) => textContent ?? '')
 
 /** Each term of the record of the review with its description */
 const detailsOf = (name = 'レビュー'): string[][] => {

@@ -2,29 +2,42 @@ import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import type { NavigationOf } from '@beauty-salon-frontend/app-frame'
 import { describe, expect, it } from 'vitest'
 import {
+  allergyChangeHrefOf,
+  allergyEntryHrefOf,
   attachmentHrefOf,
   attachmentsHrefOf,
+  bookingHrefOf,
+  bookingMoveHrefOf,
   bookingOfCustomerHrefOf,
   bookingsHrefOf,
   categoryChangeHrefOf,
   categoryEntryHrefOf,
+  chartChangeHrefOf,
+  chartEntryHrefOf,
+  chartHrefOf,
+  chartSearchHrefOf,
+  checkoutHrefOf,
   customerChangeHrefOf,
   customerEntryHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
   customerImportHrefOf,
+  customerMergeHrefOf,
   customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
   customerVersionHrefOf,
   hoursChangeHrefOf,
   inventoryHrefOf,
+  lineEntryHrefOf,
+  lineHrefOf,
   navigationFor as linksFor,
   menuHrefOf,
   movementEntryHrefOf,
   OPERATIONS_PATH,
   orderChangeHrefOf,
   orderReceiptHrefOf,
+  paymentEntryHrefOf,
   paymentMethodChangeHrefOf,
   paymentMethodEntryHrefOf,
   paymentMethodHrefOf,
@@ -45,6 +58,7 @@ import {
   reviewsHrefOf,
   SALON_ENTRY_PATH,
   saleChangeHrefOf,
+  saleHrefOf,
   salesHrefOf,
   salonChangeHrefOf,
   scheduleChangeHrefOf,
@@ -858,4 +872,85 @@ describe('navigationFor', () => {
       `${BOOKINGS}/new?date=2026-11-20&customerId=customer`,
     )
   })
+
+  it('should write the addresses of a booking, its lines and its checkout below it', () => {
+    // Act
+    const addresses = [
+      bookingHrefOf(SALON_ID, 'booking'),
+      bookingMoveHrefOf(SALON_ID, 'booking'),
+      lineEntryHrefOf(SALON_ID, 'booking'),
+      lineHrefOf(SALON_ID, 'booking', 'line'),
+      checkoutHrefOf(SALON_ID, 'booking'),
+    ]
+
+    // Assert
+    expect(addresses).toEqual([
+      `${BOOKINGS}/booking`,
+      `${BOOKINGS}/booking/reschedule`,
+      `${BOOKINGS}/booking/services/new`,
+      `${BOOKINGS}/booking/services/line`,
+      `${BOOKINGS}/booking/checkout`,
+    ])
+  })
+
+  it('should write the address that records a payment below its sale', () => {
+    // Act
+    const addresses = [
+      saleHrefOf(SALON_ID, 'sale'),
+      paymentEntryHrefOf(SALON_ID, 'sale'),
+    ]
+
+    // Assert
+    expect(addresses).toEqual([`${SALES}/sale`, `${SALES}/sale/payments/new`])
+  })
+
+  it('should write the addresses of the chart of a customer, its allergies below it, and the search of the charts', () => {
+    // Act
+    const addresses = [
+      chartHrefOf(SALON_ID, 'customer'),
+      chartEntryHrefOf(SALON_ID, 'customer'),
+      chartChangeHrefOf(SALON_ID, 'customer'),
+      allergyEntryHrefOf(SALON_ID, 'customer'),
+      allergyChangeHrefOf(SALON_ID, 'customer', 'allergy'),
+      chartSearchHrefOf(SALON_ID),
+    ]
+
+    // Assert
+    expect(addresses).toEqual([
+      `${CUSTOMERS}/customer/chart`,
+      `${CUSTOMERS}/customer/chart/new`,
+      `${CUSTOMERS}/customer/chart/edit`,
+      `${CUSTOMERS}/customer/chart/allergies/new`,
+      `${CUSTOMERS}/customer/chart/allergies/allergy/edit`,
+      `${CUSTOMERS}/charts`,
+    ])
+  })
+
+  it.each<[string, Parameters<typeof customerMergeHrefOf>[2], string]>([
+    ['nothing searched for', undefined, ''],
+    [
+      'what was searched for',
+      { keyword: 'さくら', otherId: undefined },
+      '?keyword=%E3%81%95%E3%81%8F%E3%82%89',
+    ],
+    [
+      'the customer chosen',
+      { keyword: undefined, otherId: 'other' },
+      '?with=other',
+    ],
+    [
+      'what was searched for and the customer chosen',
+      { keyword: 'さくら', otherId: 'other' },
+      '?keyword=%E3%81%95%E3%81%8F%E3%82%89&with=other',
+    ],
+  ])(
+    'should write the address of the merge of a customer with %s',
+    (_case, choice, search) => {
+      // Act
+      const address = customerMergeHrefOf(SALON_ID, 'customer', choice)
+
+      // Assert
+      expect(address).toBe(`${CUSTOMERS}/customer/merge${search}`)
+    },
+  )
 })

@@ -71,6 +71,14 @@ describe('speaksForTheSalon, withdrawsAnswers and reviewActionNoteOf', () => {
       expect(reviewActionNoteOf(role)).toEqual(note)
     },
   )
+
+  it('should say to no role what it says to a role of no operation', () => {
+    // Act
+    const note = reviewActionNoteOf(undefined)
+
+    // Assert
+    expect(note).toEqual(reviewActionNoteOf('staff'))
+  })
 })
 
 describe('readResponse', () => {
@@ -274,6 +282,20 @@ describe('afterReporting', () => {
     ).toEqual({
       message: CHECK_THE_VALUES,
       errors: {},
+    })
+  })
+
+  it('should say at the reason alone that the API refused the reason alone', () => {
+    // Act
+    const said = afterReporting({
+      type: 'invalid',
+      values: [{ field: 'reason', rule: 'invalid_value' }],
+    })
+
+    // Assert
+    expect(said).toEqual({
+      message: undefined,
+      errors: { reason: REASON_MISSING },
     })
   })
 

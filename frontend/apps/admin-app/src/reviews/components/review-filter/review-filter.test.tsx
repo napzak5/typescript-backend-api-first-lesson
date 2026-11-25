@@ -60,6 +60,16 @@ describe('ReviewFilter', () => {
     expect(screen.getByRole('link', { name: '条件を外す' })).toBeVisible()
   })
 
+  it('should hold the lowest rating the reviews are narrowed to', async () => {
+    // Act
+    await stories.FromFour.run()
+
+    // Assert
+    expect(box('評価の下限')).toHaveValue('4')
+    expect(box('評価の上限')).toHaveValue('')
+    expect(screen.getByRole('link', { name: '条件を外す' })).toBeVisible()
+  })
+
   it('should hand over the conditions that were chosen', async () => {
     // Arrange
     await stories.Every.run()

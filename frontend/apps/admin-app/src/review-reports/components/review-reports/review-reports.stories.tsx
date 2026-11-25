@@ -1,16 +1,12 @@
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { adminReviewReportMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
-import { REPORTS } from '../examples'
+import { REPORTS, waitingReport } from '../examples'
 import { ReportTable } from '../report-table/report-table'
 import { ReviewReports } from './review-reports'
 
 const { dismissal } = adminReviewReportMessages
-
-/** When the report the dialog asks of was received: 「2026年11月20日（金） 10:30」 */
-const RECEIVED = momentNameAt('2026-11-20T01:30:00.000Z', salon.timezone)
 
 const meta: Meta<typeof ReviewReports> = {
   title: 'Admin/ReviewReports/ReviewReports',
@@ -27,6 +23,7 @@ const meta: Meta<typeof ReviewReports> = {
         onMore={fn()}
       />
     ),
+    timezone: salon.timezone,
     onClose: fn(),
     onDismiss: fn(),
   },
@@ -44,15 +41,15 @@ export const NoReports: Story = {
   args: { children: <p>このレビューへの通報はありません。</p> },
 }
 
-/** The dialog asks before a report is dismissed */
+/** The dialog asks before a report received at 10:30 is dismissed */
 export const Asking: Story = {
-  args: { asking: RECEIVED },
+  args: { asking: waitingReport },
 }
 
 /** The last attempt did not reach the API */
 export const Failed: Story = {
   args: {
-    asking: RECEIVED,
+    asking: waitingReport,
     message: dismissal.failed,
   },
 }

@@ -3,6 +3,7 @@ import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { waitingReport } from '../examples'
 import * as reviewReportsStories from './review-reports.stories'
 
 const stories = composeStories(reviewReportsStories)
@@ -45,7 +46,7 @@ describe('ReviewReports', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: '戻る' }))
 
     // Assert
-    expect(onDismiss).toHaveBeenCalledOnce()
+    expect(onDismiss).toHaveBeenCalledExactlyOnceWith(waitingReport)
     expect(onClose).toHaveBeenCalledOnce()
   })
 

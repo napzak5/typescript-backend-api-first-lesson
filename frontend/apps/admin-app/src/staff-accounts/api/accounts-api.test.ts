@@ -146,19 +146,25 @@ describe('attemptInvitation', () => {
     },
   )
 
-  it('should take a member removed after the refusal as removed', async () => {
-    // Arrange
-    refusing(
-      () => problem(404),
-      () => problem(404),
-    )
+  it.each<[string, number, string]>([
+    ['removed', 404, 'notFound'],
+    ['out of the reach of the account', 403, 'forbidden'],
+  ])(
+    'should take a member %s after the refusal as the API says',
+    async (_, status, type) => {
+      // Arrange
+      refusing(
+        () => problem(404),
+        () => problem(status),
+      )
 
-    // Act
-    const attempt = await attemptInvitation(SALON, MEMBER, 'staff')
+      // Act
+      const attempt = await attemptInvitation(SALON, MEMBER, 'staff')
 
-    // Assert
-    expect(attempt).toEqual({ type: 'notFound' })
-  })
+      // Assert
+      expect(attempt).toEqual({ type })
+    },
+  )
 
   it('should take a refusal for an account first, as the API checks it first', async () => {
     // Arrange

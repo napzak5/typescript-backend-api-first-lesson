@@ -110,13 +110,7 @@ const ShareLinkEntry = ({ salon, attachment }: ShareLinkEntryProps) => {
         })
         .with(
           {
-            type: P.union(
-              'invalid',
-              'notUploaded',
-              'forbidden',
-              'tooManyRequests',
-              'failed',
-            ),
+            type: P.union('invalid', 'forbidden', 'tooManyRequests', 'failed'),
           },
           (refused) => setSaid(afterIssuing(refused)),
         )

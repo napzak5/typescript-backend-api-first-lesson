@@ -230,6 +230,37 @@ const businessHoursOf = (
         effectivePeriod,
       }
 
+/** A date as the API keeps it: the times of a date the salon opens on, else a holiday without times. */
+const openingHoursOf = (
+  date: string,
+  { openTime, closeTime }: Times,
+  opens: boolean,
+  {
+    isHoliday,
+    holidayName,
+    notes,
+  }: Omit<ModelsOpeningHours, 'dayOfWeek' | 'date' | 'openTime' | 'closeTime'>,
+): ModelsOpeningHours =>
+  opens && openTime !== undefined && closeTime !== undefined
+    ? {
+        dayOfWeek: weekdayOf(date),
+        date,
+        openTime,
+        closeTime,
+        isHoliday,
+        holidayName,
+        notes,
+      }
+    : {
+        dayOfWeek: weekdayOf(date),
+        date,
+        openTime: null,
+        closeTime: null,
+        isHoliday: true,
+        holidayName,
+        notes,
+      }
+
 /** The values of an entry of the week, in one order whatever the order of its properties. */
 const weekValuesOf = (entry: ModelsBusinessHours): unknown[] => [
   entry.dayOfWeek,
@@ -383,23 +414,8 @@ export const readHoursChange = (
   )
   const openingHours = [
     ...calendar.past,
-    ...dated.map(
-      ({
-        date,
-        opens,
-        times,
-        isHoliday,
-        holidayName,
-        notes,
-      }): ModelsOpeningHours => ({
-        dayOfWeek: weekdayOf(date),
-        date,
-        openTime: opens ? (times.openTime ?? null) : null,
-        closeTime: opens ? (times.closeTime ?? null) : null,
-        isHoliday: opens ? isHoliday : true,
-        holidayName,
-        notes,
-      }),
+    ...dated.map(({ date, opens, times, isHoliday, holidayName, notes }) =>
+      openingHoursOf(date, times, opens, { isHoliday, holidayName, notes }),
     ),
   ].toSorted(byDate)
   const weekAsShown = parts.map((part) =>

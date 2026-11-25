@@ -61,3 +61,32 @@ export const storedReportsOf = async (title: string) =>
 export const reviewRemovedMeanwhile = async (title: string): Promise<void> => {
   await testApi().query('delete from reviews where title = $1', [title])
 }
+
+/**
+ * A review of each of the bookings the test arranged (`arrangeMany` of the
+ * bookings), of four, titled after its booking, written a minute apart in
+ * the order of the bookings and before the reviews of the seed data.
+ */
+export const reviewMany = (): Promise<unknown> =>
+  testApi().query(
+    `insert into reviews ("salonId", "customerId", "bookingId", "staffId", "overallRating",
+                          title, "createdAt", "updatedAt")
+     select bookings."salonId", bookings."customerId", bookings.id, bookings."staffId", 4,
+            'Review of ' || bookings."bookingNumber",
+            now() - make_interval(mins => 1000 - row_number() over (order by bookings."bookingNumber")::int),
+            now() - make_interval(mins => 1000 - row_number() over (order by bookings."bookingNumber")::int)
+     from bookings where bookings."bookingNumber" like 'BK-MANY-%'`,
+  )
+
+/** The ID of the review of a salon written first: the last of the list, which shows the latest first. */
+export const firstReviewId = (salon: string): Promise<string> =>
+  idOf(
+    `select id::text from reviews
+     where "salonId" = (select id from salons where name = $1)
+     order by "createdAt", id limit 1`,
+    [salon],
+  )
+
+/** Lets the salons have no review. */
+export const everyReviewRemoved = (): Promise<unknown> =>
+  testApi().query('delete from reviews')

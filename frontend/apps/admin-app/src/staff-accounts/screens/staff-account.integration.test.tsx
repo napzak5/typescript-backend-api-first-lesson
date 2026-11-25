@@ -14,11 +14,11 @@ import {
   THERAPIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../../__tests__/screens'
-import { staffAccountHrefOf, staffMemberHrefOf } from '../../navigation'
+import { staffMemberHrefOf } from '../../navigation'
 import {
   arrangeInactive,
   arrangeOwnerAccount,
@@ -36,38 +36,13 @@ import {
   unlinkedMeanwhile,
   WATANABE,
 } from '../__tests__/arrangements'
+import { cardHeading, expectFocusOn, openAccountOf } from '../__tests__/screens'
 
 /*
  * The accounts of the members of the salon in Tokyo, as its owner keeps
  * them: Yui Watanabe, who has none and is invited, and the accounts of the
  * seed data. Somebody did something meanwhile where a test says so.
  */
-
-/** Opens the account of a member of the salon in Tokyo, signed in as an account of the seed data. */
-const openAccountOf = async (
-  staffCode: string,
-  as = OWNER,
-  language: 'ja' | 'en' = 'ja',
-): Promise<void> => {
-  renderAt(
-    staffAccountHrefOf(await salonIdOf(TOKYO), await staffIdOf(staffCode)),
-  )
-  await signInAs(as, language)
-}
-
-const cardHeading = (name: string) =>
-  screen.findByRole('heading', { level: 2, name })
-
-/**
- * Waits until the heading of a card has the focus. It takes the focus once
- * the part a write left is shown, which can be a moment after the heading
- * itself: what was read anew reaches the screen after the write is done.
- */
-const expectFocusOn = async (name: string): Promise<void> => {
-  await waitFor(() => {
-    expect(screen.getByRole('heading', { level: 2, name })).toHaveFocus()
-  })
-}
 
 /** The roles a form offers, and whether each is chosen. */
 const rolesOffered = (label = 'ロール'): [string, boolean][] =>

@@ -221,14 +221,6 @@ describe('afterIssuing', () => {
 
   it.each<[string, Parameters<typeof afterIssuing>[0], unknown]>([
     [
-      'a file whose upload was not finished',
-      { type: 'notUploaded' },
-      {
-        en: 'A file whose upload is not finished cannot be shared. Issue a share link once the upload is finished.',
-        ja: 'アップロードが済んでいないファイルは、共有できません。アップロードが済んでから、共有リンクを発行してください。',
-      },
-    ],
-    [
       'a role that shares no file',
       { type: 'forbidden' },
       {

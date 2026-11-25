@@ -11,7 +11,7 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession, useSignedInUser } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   Button,
@@ -104,8 +104,12 @@ type PartProps = {
   description: LocalizedText
   /** The heading of the first card, which takes the focus when a write changed what is shown */
   headingRef: Ref<HTMLHeadingElement> | undefined
-  /** What changed is shown: the heading of the first card takes the focus, and what happened meanwhile is said above */
-  onMoved: (said?: LocalizedText) => void
+  /**
+   * What changed is shown: the heading of the first card takes the focus,
+   * and what happened meanwhile is said above. The member is as the write
+   * left them: made inactive meanwhile, or as they were.
+   */
+  onMoved: (now: ModelsStaffResponse, said?: LocalizedText) => void
 }
 
 /** Reads what the member has to sign in with anew, after the API said it was not what was shown. */
@@ -152,7 +156,7 @@ const InvitationForm = ({
           const read: InvitationRead = { type: 'found', invitation: mailed }
           queryClient.setQueryData(invitationKeyOf(member.id), read)
           notify({ tone: 'success', message })
-          onMoved()
+          onMoved(member)
         })
         .with({ type: 'accepted' }, ({ account, message }) => {
           const read: AccountRead = { type: 'found', account }
@@ -162,12 +166,12 @@ const InvitationForm = ({
           void queryClient.invalidateQueries({
             queryKey: staffKeyOf(member.id),
           })
-          onMoved(message)
+          onMoved(member, message)
         })
         .with({ type: 'inactive' }, ({ member: now, message }) => {
           const read: StaffRead = { type: 'found', member: now }
           queryClient.setQueryData(staffKeyOf(member.id), read)
-          onMoved(message)
+          onMoved(now, message)
         })
         .with({ type: 'recent' }, async ({ says }) => {
           setSaid(says)
@@ -267,12 +271,12 @@ const InvitationPart = ({ invitation, ...props }: InvitationPartProps) => {
         .with({ type: 'done' }, ({ message: done }) => {
           queryClient.setQueryData(invitationKeyOf(member.id), NOT_FOUND)
           notify({ tone: 'success', message: done })
-          onMoved()
+          onMoved(member)
         })
         .with({ type: 'gone' }, async ({ message: gone }) => {
           await readAnew(queryClient, member.id)
           setRevoking(false)
-          onMoved(gone)
+          onMoved(member, gone)
         })
         .with({ type: 'again' }, ({ message: again }) => setMessage(again))
         .exhaustive(),
@@ -362,7 +366,7 @@ const RoleChangeForm = ({
         })
         .with({ type: 'gone' }, async ({ message }) => {
           await readAnew(queryClient, member.id)
-          onMoved(message)
+          onMoved(member, message)
         })
         .with({ type: 'again' }, ({ says }) => setSaid(says))
         .exhaustive(),
@@ -435,12 +439,12 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
           })
           queryClient.removeQueries({ queryKey: STAFF_LISTS })
           notify({ tone: 'success', message: done })
-          onMoved()
+          onMoved(member)
         })
         .with({ type: 'gone' }, async ({ message: gone }) => {
           await readAnew(queryClient, member.id)
           setUnlinking(false)
-          onMoved(gone)
+          onMoved(member, gone)
         })
         .with({ type: 'again' }, ({ message: again }) => setMessage(again))
         .exhaustive(),
@@ -535,8 +539,7 @@ type Moved = { count: number; part: string }
  */
 const LoginPart = ({ salon, member }: LoginPartProps) => {
   const say = useSay()
-  const session = useSession()
-  const role = session.type === 'signedIn' ? session.user.role : ''
+  const role = useSignedInUser()?.role
   const account = useQuery({
     queryKey: accountKeyOf(member.id),
     queryFn: () => readAccount(salon.id, member.id),
@@ -576,15 +579,14 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
     roles: rolesGivenBy(role),
     description: roleDescriptionFor(role),
     headingRef: heading,
-    onMoved: (meanwhile) => {
+    onMoved: (now, meanwhile) => {
       setSaid(meanwhile)
-      const now = queryClient.getQueryData<StaffRead>(staffKeyOf(member.id))
       const left = partOf(
         loginOf(
           queryClient.getQueryData<AccountRead>(accountKeyOf(member.id)),
           queryClient.getQueryData<InvitationRead>(invitationKeyOf(member.id)),
         ),
-        now?.type === 'found' ? now.member : member,
+        now,
       )
       setMoved(({ count }) => ({ count: count + 1, part: left }))
     },

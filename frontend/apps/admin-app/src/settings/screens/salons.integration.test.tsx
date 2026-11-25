@@ -1,6 +1,11 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { countOf, salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  countOf,
+  refuse,
+  salonIdOf,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
@@ -20,6 +25,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { openAs } from '../../__tests__/screens'
+import { salonRemovedMeanwhile } from '../../bookings/__tests__/arrangements'
 import { SALON_ENTRY_PATH, settingsHrefOf } from '../../navigation'
 import { storedSalonOf } from '../__tests__/arrangements'
 
@@ -396,15 +402,38 @@ describe('removing a salon, against the API', () => {
     expect(await isRemoved(OSAKA)).toBe(false)
   })
 
+  it('should say in the dialog that the salon could not be removed when the database fails, keep it, and close the dialog when asked', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await bookingsFinished(OSAKA)
+    await openAs(settingsHrefOf(await salonIdOf(OSAKA)), OPERATOR)
+    const dialog = await askToRemove(OSAKA)
+    await refuse('update', 'salons')
+    await user.click(within(dialog).getByRole('button', { name: '削除する' }))
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'サロンを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: '戻る' }))
+
+    // Assert
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(await isRemoved(OSAKA)).toBe(false)
+
+    // Act
+    const opened = await askToRemove(OSAKA)
+
+    // Assert: what went wrong is said no more
+    expect(within(opened).queryByRole('alert')).toBeNull()
+  })
+
   it('should show a salon removed meanwhile as not found', async () => {
     // Arrange
     const user = userEvent.setup()
     await openAs(settingsHrefOf(await salonIdOf(OSAKA)), OPERATOR)
     const dialog = await askToRemove(OSAKA)
-    await testApi().query(
-      'update salons set "deletedAt" = now() where name = $1',
-      [OSAKA],
-    )
+    await salonRemovedMeanwhile(OSAKA)
 
     // Act
     await user.click(within(dialog).getByRole('button', { name: '削除する' }))
