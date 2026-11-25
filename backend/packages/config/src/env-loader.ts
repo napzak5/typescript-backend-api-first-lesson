@@ -9,7 +9,7 @@ import { type Environment, environmentSchema } from './environment'
  * URL because drizzle-kit loads this file through a bundler that provides
  * nothing else of `import.meta`.
  */
-const rootPath = path.resolve(
+export const REPOSITORY_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
   '..',
@@ -17,40 +17,64 @@ const rootPath = path.resolve(
   '..',
 )
 
+/** The variables of the environment of a process, as `process.env` holds them. */
+type Variables = Record<string, string | undefined>
+
 export type LoadedEnvFile = {
   environment: Environment
   /** Name of the file that was read; null when none exists. */
   file: string | null
 }
 
-const loadFile = (file: string): string | null => {
-  const filePath = path.join(rootPath, file)
+const loadFile = (
+  directory: string,
+  file: string,
+  variables: Variables,
+): string | null => {
+  const filePath = path.join(directory, file)
   if (!fs.existsSync(filePath)) {
     return null
   }
-  dotenv.config({ path: filePath, quiet: true })
+  dotenv.config({ path: filePath, processEnv: variables, quiet: true })
   return file
 }
 
 /**
- * Reads the environment file into `process.env`. Variables that are already
- * set win, so a deployment configures the process directly and needs no file.
+ * Reads the environment file of a directory into the variables. Variables
+ * that are already set win, so a deployment configures the process directly
+ * and needs no file.
  *
  * The environment is `NODE_ENV`, or `localhost` when that is unset or
  * unknown. `.env` is read when it exists; otherwise `.env.<environment>`.
  */
-export const loadEnvFile = (): LoadedEnvFile => {
-  const { NODE_ENV } = process.env
+export const loadEnvFileFrom = (
+  directory: string,
+  variables: Variables,
+): LoadedEnvFile => {
+  const { NODE_ENV } = variables
   const environment = environmentSchema.catch('localhost').parse(NODE_ENV)
 
   return {
     environment,
-    file: loadFile('.env') ?? loadFile(`.env.${environment}`),
+    file:
+      loadFile(directory, '.env', variables) ??
+      loadFile(directory, `.env.${environment}`, variables),
   }
 }
 
-/** Reads the environment file and returns the environment it belongs to. */
-export const loadEnvConfig = (): Environment => loadEnvFile().environment
+/**
+ * Reads the environment file of the repository into the variables: those of
+ * the process (`process.env`) when the server or a database script starts.
+ */
+export const loadEnvFile = (variables: Variables): LoadedEnvFile =>
+  loadEnvFileFrom(REPOSITORY_ROOT, variables)
+
+/**
+ * Reads the environment file into `process.env` and returns the environment
+ * it belongs to.
+ */
+export const loadEnvConfig = (): Environment =>
+  loadEnvFile(process.env).environment
 
 /** Connection URL for the database scripts. */
 export const getDatabaseUrl = (): string => {
