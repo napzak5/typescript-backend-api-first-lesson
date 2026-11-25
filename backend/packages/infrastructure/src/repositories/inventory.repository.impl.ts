@@ -52,6 +52,7 @@ import { CLOCK } from '../database/clock'
 import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 import { uniqueViolation } from './_shared/unique-violation'
 
 /**
@@ -154,13 +155,6 @@ const STOCK_LIST_ORDER = [
 /** A write that found the database other than its constraints keep it. */
 type Unwritten = { type: 'unwritten'; reason: string }
 
-const creationOf = (
-  outcome: InventoryCreation | Unwritten,
-): Result<InventoryCreation, DomainError> =>
-  outcome.type === 'unwritten'
-    ? Result.error(DomainErrors.database(outcome.reason, null))
-    : Result.success(outcome)
-
 const updateOf = (
   outcome: InventoryUpdate | Unwritten,
 ): Result<InventoryUpdate, DomainError> =>
@@ -210,12 +204,12 @@ export class InventoryRepository implements IInventoryRepository {
   async create(
     row: DbNewInventory,
   ): Promise<Result<InventoryCreation, DomainError>> {
-    const written = await attempt(
+    const created = await attempt(
       'Failed to create stock row',
       row.lotNumber,
       () =>
         this.db.transaction(
-          async (tx): Promise<InventoryCreation | Unwritten> => {
+          async (tx): Promise<InventoryCreation | null> => {
             // The lock is the one a delete or a change of the product waits
             // for and is waited for by: a product that is being deleted is
             // gone by the time this statement returns, and one that is being
@@ -253,17 +247,14 @@ export class InventoryRepository implements IInventoryRepository {
               .returning()
 
             return inserted === undefined
-              ? {
-                  type: 'unwritten',
-                  reason: 'Insert of stock row returned no row',
-                }
+              ? null
               : { type: 'created', row: inserted }
           },
           { isolationLevel: 'read committed' },
         ),
     )
 
-    return Result.flatMap(written, creationOf)
+    return Result.flatMap(created, written('Insert of stock row'))
   }
 
   async findById(
@@ -450,7 +441,7 @@ export class InventoryRepository implements IInventoryRepository {
     id: InventoryId,
     changes: DbInventoryChanges,
   ): Promise<Result<InventoryUpdate, DomainError>> {
-    const written = await attempt(
+    const changed = await attempt(
       'Failed to update stock row',
       changes.lotNumber,
       () =>
@@ -504,7 +495,7 @@ export class InventoryRepository implements IInventoryRepository {
         ),
     )
 
-    return Result.flatMap(written, updateOf)
+    return Result.flatMap(changed, updateOf)
   }
 
   async delete(
@@ -776,7 +767,7 @@ export class InventoryRepository implements IInventoryRepository {
             // The reserved stock stays, so what is available is what was
             // counted less it. A row that does not differ is written too:
             // it was counted.
-            const written = await tx
+            const countedRows = await tx
               .update(inventory)
               .set({
                 currentStock: counted,
@@ -794,9 +785,9 @@ export class InventoryRepository implements IInventoryRepository {
                 expiryDate: inventory.expiryDate,
                 countedAt: inventory.lastCountedAt,
               })
-            const [first] = written
+            const [first] = countedRows
             if (
-              written.length !== items.length ||
+              countedRows.length !== items.length ||
               first === undefined ||
               first.countedAt === null
             ) {
@@ -808,7 +799,7 @@ export class InventoryRepository implements IInventoryRepository {
             const at = first.countedAt
 
             const differing = found.filter(({ differs }) => differs)
-            const writtenById = new Map(written.map((row) => [row.id, row]))
+            const writtenById = new Map(countedRows.map((row) => [row.id, row]))
             const adjustments: (typeof inventoryTransactions.$inferInsert)[] =
               differing.flatMap(
                 ({ inventoryId, expected, counted, difference }) => {
