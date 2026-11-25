@@ -1398,6 +1398,56 @@ beside it `attachment-failures`; `src/charts/screens/`: `charts`,
   it is**: after the 409 of photos added meanwhile, the screen says how
   many it may add, and asks the API nothing.
 
+The reviews and their reports, the share links, and the accounts of the
+staff and of the users
+(`frontend/apps/admin-app/src/reviews/screens/`: `reviews`, and beside it
+`review-failures`; `src/review-reports/screens/`: `review-reports`,
+`report-failures`; `src/share-links/screens/`: `share-links`,
+`share-link-failures`; `src/staff-accounts/screens/`: `staff-account`,
+`account-failures`; `src/user-accounts/screens/`: `user-accounts`,
+`user-account-failures`) add:
+
+- **The tests of each area open a screen alike**
+  (`reviews/__tests__/screens.ts`: `reviewAt`, `openReviewAs`,
+  `responseAt`, `openResponseAs`, `listed`, with `REVIEWS_UNREAD`;
+  `review-reports/__tests__/screens.ts`: `openReviewAs`, `reportsPart`,
+  `removalPart`, `askToRemove`, with `GREAT`;
+  `share-links/__tests__/screens.ts`: `consentOfTokyo`, `openFileAs`,
+  `openFormAs`, `linksPart`; `staff-accounts/__tests__/screens.ts`:
+  `openAccountOf`, `cardHeading`, `expectFocusOn`;
+  `user-accounts/__tests__/screens.ts`: `openAccountOf`, `askToReset`).
+- **The rows of a list that goes on are written by the test, a moment
+  apart**: `reviewMany()` reviews the visits of `arrangeMany` of
+  `bookings/__tests__/arrangements.ts`, `reportedByMany(title, count)`
+  reports a review by as many accounts, and
+  `arrangeShareLinks(attachmentId, issuedBy, count)` issues the links of
+  a file and answers the one issued first, the last of the list. What is
+  made unreadable is the moment such a row was changed (`updatedAt`); a
+  link read through its file is made unreadable by its file
+  (`unreadable('attachments', 'uploadExpiresAt', id)`).
+- **An answer that holds no moment is made unreadable by a column taken
+  away**: the own profile (`takeAway('staff', 'bio')`) and what the
+  reviews come to (`takeAway('reviews', 'overallRating')`). Where the
+  same screen reads the column again in another request, it is given
+  back as that request is asked for
+  (`whenAskedFor('GET /reviews', … giveBack('reviews', 'overallRating'))`).
+- **A role changed meanwhile is a change of `users`**
+  (`madeStaffMeanwhile` of `customers/__tests__/arrangements.ts`): the
+  API reads the role of the account at every request, so an owner or an
+  administrator made staff before a write, or as a read is asked for
+  (`whenAskedFor('GET /admin/auth/users/<id>', () => madeStaffMeanwhile(OPERATOR))`),
+  is refused as the screen shows. A salon removed meanwhile is changed as
+  an administrator: the API takes the staff of a removed salon for an
+  account of no salon, and refuses an owner or a manager (403) before it
+  looks for the salon. The form of the hours reads the salon again before
+  it sends, and finds it gone whoever signed in.
+- **A read is held until the screen has drawn what the answer before it
+  made it draw**: the list of the alerts waits until the count of the
+  alerts is no more being read
+  (`whenAskedFor('GET /inventory-alerts', () => waitFor(…))`), so the
+  refusal of the count is drawn in every run, whichever answer comes
+  first.
+
 The ledger of the customers
 (`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)
 adds:
@@ -1969,8 +2019,7 @@ so is `@testing-library/user-event` when its tests work a screen.
 
 `full: true` says that the tests of the package cover all of it; from then
 on `pnpm test:coverage` and the job Coverage of CI fail below 100%. Every
-shared package, the dashboard and the portal say so; the admin
-application does not yet. What is measured and
+shared package and every application say so. What is measured and
 what is not, and what is done about what no test reached, is in
 [Coverage](../../../docs/testing-requirements.md#coverage) of the testing
 requirements.

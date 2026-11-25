@@ -280,9 +280,10 @@ cover all of it says so with `full: true` in its `vitest.config.ts`, and from
 then on a run that covers less fails; until then its coverage is reported,
 and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
-(`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`)
-and the `utility` package of the backend say so; the admin application and
-the other packages of the backend do not yet.
+(`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
+the admin application (`frontend/apps/admin-app`) and the `utility`
+package of the backend say so; the other packages of the backend do not
+yet.
 
 | Where | How |
 |---|---|
