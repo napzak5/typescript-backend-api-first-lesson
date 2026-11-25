@@ -39,6 +39,7 @@ import {
   unlockedMeanwhile,
   userIdOf,
 } from '../__tests__/arrangements'
+import { askToReset, openAccountOf } from '../__tests__/screens'
 import { lockNameOf } from '../utils/user-accounts'
 
 const { nothingToDo: NOTHING_TO_DO, own: OWN_ACCOUNT } =
@@ -52,17 +53,6 @@ const ADMINISTRATORS_ONLY = adminUserAccountMessages.administratorsOnly.ja
  * about. The accounts of the seed data are neither locked nor set up with
  * two factors; `__tests__/arrangements.ts` makes them so.
  */
-
-/** Opens the account of an address as the administrator, and waits for its record. */
-const openAccountOf = async (
-  email: string,
-  language: 'ja' | 'en' = 'ja',
-): Promise<void> => {
-  await openAs(userAccountHrefOf(await userIdOf(email)), OPERATOR, language)
-  await screen.findByRole('region', {
-    name: language === 'ja' ? 'アカウントの状態' : 'State of the account',
-  })
-}
 
 /** Each term of the record of the account with its description */
 const detailsOf = (name = 'アカウントの状態'): string[][] => {
@@ -92,20 +82,6 @@ const RESET_MAIL = '2 要素認証が管理者によって無効にされまし�
 
 /** The time zone of the device the tests run on, which the screen shows its moments in */
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-
-/** Opens the dialog of the reset of the second factor of the account of the address. */
-const askToReset = async (
-  user: ReturnType<typeof userEvent.setup>,
-  email: string,
-) => {
-  await user.click(
-    await screen.findByRole('button', { name: '2 要素認証をリセットする' }),
-  )
-
-  return screen.findByRole('dialog', {
-    name: `${email} の 2 要素認証をリセットしますか？`,
-  })
-}
 
 describe('the accounts of the users, against the API', () => {
   beforeEach(() => {

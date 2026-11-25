@@ -29,11 +29,13 @@ export const roleNameOf = (role: ModelsSalonRoleType): LocalizedText =>
   ROLE_NAMES[role]
 
 /** The roles an account of the role may give: that of an owner only an administrator gives. */
-export const rolesGivenBy = (role: string): ModelsSalonRoleType[] =>
+export const rolesGivenBy = (
+  role: string | undefined,
+): ModelsSalonRoleType[] =>
   role === 'admin' ? ['owner', 'manager', 'staff'] : ['manager', 'staff']
 
 /** What the roles let an account do, and, to an account that may not give it, who gives that of an owner. */
-export const roleDescriptionFor = (role: string): LocalizedText =>
+export const roleDescriptionFor = (role: string | undefined): LocalizedText =>
   role === 'admin' ? ROLE_WORDS.forAdministrators : ROLE_WORDS.forOthers
 
 /** The roles an account may give, as the choices of a form. */

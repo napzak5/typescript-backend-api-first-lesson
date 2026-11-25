@@ -41,6 +41,15 @@ describe('rolesGivenBy and roleDescriptionFor', () => {
       ),
     })
   })
+
+  it('should let no role give what an owner gives', () => {
+    // Act
+    const roles = rolesGivenBy(undefined)
+
+    // Assert
+    expect(roles).toEqual(rolesGivenBy('owner'))
+    expect(roleDescriptionFor(undefined)).toEqual(roleDescriptionFor('owner'))
+  })
 })
 
 describe('sameAddress', () => {
