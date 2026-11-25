@@ -11,6 +11,8 @@
     "build:prod": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
     "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
     "test:integration": "vitest run --project integration",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"

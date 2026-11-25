@@ -1,3 +1,3 @@
 import { backendTests } from '@beauty-salon-shared/config/vitest'
 
-export default backendTests({ integration: {} })
+export default backendTests({ full: true, unit: {}, integration: {} })

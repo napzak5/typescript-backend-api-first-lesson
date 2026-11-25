@@ -4,6 +4,9 @@ import pretty from 'pino-pretty'
 
 export type { Logger }
 
+/** Where the lines of a logger go: standard output, unless a test reads them. */
+export type LogDestination = DestinationStream
+
 export type LoggerSettings = {
   level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent'
   /** `json` writes one object per line; `pretty` is for reading in a terminal. */
@@ -13,7 +16,7 @@ export type LoggerSettings = {
 }
 
 /** Written synchronously, so that the last lines before an exit are not lost. */
-const standardOutput = (format: LoggerSettings['format']): DestinationStream =>
+const standardOutput = (format: LoggerSettings['format']): LogDestination =>
   format === 'pretty'
     ? pretty({ colorize: true, sync: true })
     : pino.destination({ dest: 1, sync: true })
@@ -24,7 +27,7 @@ const standardOutput = (format: LoggerSettings['format']): DestinationStream =>
  */
 export const createLogger = (
   { level, format, environment }: LoggerSettings,
-  destination: DestinationStream = standardOutput(format),
+  destination: LogDestination = standardOutput(format),
 ): Logger =>
   pino(
     {

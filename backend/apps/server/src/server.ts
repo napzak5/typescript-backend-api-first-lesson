@@ -11,7 +11,6 @@ import {
   TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
 import { Result } from '@beauty-salon-backend/utility'
-import { match, P } from 'ts-pattern'
 
 /**
  * How long requests in flight get to finish once the server stops. What is
@@ -20,8 +19,6 @@ import { match, P } from 'ts-pattern'
 const SHUTDOWN_GRACE_MS = 10_000
 
 export type RunningServer = {
-  /** The port the server listens on. */
-  port: number
   /**
    * Stops accepting requests, lets the ones in flight finish, waits for the
    * mails they handed over and closes the database connections. Resolves
@@ -45,11 +42,6 @@ const listen = (
     server.listen(port, host)
   })
 
-const portOf = (server: Server): number =>
-  match(server.address())
-    .with({ port: P.number }, ({ port }) => port)
-    .otherwise(() => 0)
-
 const close = (
   server: Server,
   logger: Logger,
@@ -69,27 +61,22 @@ const close = (
   })
 
 /**
- * Starts the API server: checks that the database answers, then listens.
- * A server that cannot do its work does not start, so that a deployment
- * fails visibly instead of serving errors.
+ * Starts the API server: checks that the database answers, then listens,
+ * and logs where it listens. A server that cannot do its work does not
+ * start, so that a deployment fails visibly instead of serving errors.
  */
 export const startServer = async (
   config: AppConfig,
   logger: Logger,
   shutdownGraceMs: number = SHUTDOWN_GRACE_MS,
 ): Promise<Result<RunningServer, StartFailure>> => {
+  // Its close resolves whatever the connections are doing: postgres.js
+  // waits for the queries that run, and cuts them off after a time.
   const connection = connectDatabase(config.database)
-
-  const closeDatabase = async (): Promise<void> => {
-    const closed = await Result.fromPromise(connection.close())
-    if (closed.type === 'error') {
-      logger.error({ err: closed.error }, 'Failed to close the database')
-    }
-  }
 
   const reachable = await pingDatabase(connection.database)
   if (reachable.type === 'error') {
-    await closeDatabase()
+    await connection.close()
     return Result.error({
       type: 'databaseUnreachable',
       error: reachable.error,
@@ -123,19 +110,21 @@ export const startServer = async (
   if (listening.type === 'error') {
     await mailer.close()
     fileStorage.close()
-    await closeDatabase()
+    await connection.close()
     return Result.error({ type: 'listenFailed', error: listening.error })
   }
 
   const server = listening.data
+  // As Node.js tells it: the port that was asked for, or the one the
+  // system chose when that was 0.
+  logger.info({ address: server.address() }, 'Server listening')
 
   return Result.success({
-    port: portOf(server),
     stop: async () => {
       await close(server, logger, shutdownGraceMs)
       await mailer.close()
       fileStorage.close()
-      await closeDatabase()
+      await connection.close()
     },
   })
 }

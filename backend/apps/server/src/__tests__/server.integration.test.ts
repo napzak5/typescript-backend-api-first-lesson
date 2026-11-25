@@ -105,17 +105,41 @@ const openConnections = async (connectionName: string): Promise<number> => {
   return rows[0]?.count ?? 0
 }
 
+/** A server that started, and the port it logged that it listens on. */
+type StartedServer = RunningServer & { port: number }
+
+const portLoggedIn = (logs: unknown[]): number => {
+  const port = logs
+    .map((line) =>
+      match(line)
+        .with(
+          { msg: 'Server listening', address: { port: P.select(P.number) } },
+          (logged) => logged,
+        )
+        .otherwise(() => undefined),
+    )
+    .find((logged) => logged !== undefined)
+
+  if (port === undefined) {
+    throw new Error('The server logged no address')
+  }
+  return port
+}
+
 const start = async (
   config: AppConfig,
   shutdownGraceMs?: number,
-): Promise<{ server: RunningServer; logs: unknown[] }> => {
+): Promise<{ server: StartedServer; logs: unknown[] }> => {
   const { logger, logs } = createRecordingLogger()
   const started = await startServer(config, logger, shutdownGraceMs)
 
   if (started.type === 'error') {
     throw new Error(`Server did not start: ${started.error.type}`)
   }
-  return { server: started.data, logs }
+  return {
+    server: { port: portLoggedIn(logs), stop: () => started.data.stop() },
+    logs,
+  }
 }
 
 /** Sends the head and the first part of a body, and leaves the request open. */
@@ -176,16 +200,23 @@ const createSchemaDatabase = async (): Promise<{
 }
 
 describe('startServer', () => {
-  it('should listen and answer once the database has answered', async () => {
+  it('should listen and answer once the database has answered, and log where it listens', async () => {
     const { config } = createConfig()
 
-    const { server } = await start(config)
+    const { server, logs } = await start(config)
     const response = await fetch(
       `http://127.0.0.1:${server.port}/api/system/ready`,
     )
     await server.stop()
 
     expect(server.port).toBeGreaterThan(0)
+    expect(logs).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'Server listening',
+        address: { address: '127.0.0.1', family: 'IPv4', port: server.port },
+      }),
+    )
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ ready: true, reason: null })
   })
