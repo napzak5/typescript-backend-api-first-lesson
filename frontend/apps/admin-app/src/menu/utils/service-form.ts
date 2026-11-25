@@ -267,7 +267,11 @@ const readWhole = (
   const imagesError = webAddressLinesError(textOf(values, 'imageUrls'), null)
   const isPackage = values.has('isPackage')
   const packaged = isPackage ? packagedRowsIn(values, 0) : []
-  const options = optionRowsIn(values, 0)
+  const optionRows = optionRowsIn(values, 0)
+  // The options that were read, and what is wrong with the others: a form with one wrong is not sent
+  const options = optionRows.flatMap((option) =>
+    option.type === 'valid' ? [option.option] : [],
+  )
   const errors: FormErrors<LocalizedText> = Object.fromEntries([
     ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ...errorAt(
@@ -311,7 +315,7 @@ const readWhole = (
     ...errorAt('imageUrl', webAddressError(imageUrl)),
     ...errorAt('imageUrls', imagesError),
     ...packagedErrorsOf(isPackage, packaged),
-    ...options.flatMap((option) =>
+    ...optionRows.flatMap((option) =>
       option.type === 'invalid' ? option.errors : [],
     ),
   ])
@@ -359,9 +363,7 @@ const readWhole = (
       serviceStatus,
       availability,
       isActive: values.has('isActive'),
-      options: options.flatMap((option) =>
-        option.type === 'valid' ? [option.option] : [],
-      ),
+      options,
     },
   }
 }
@@ -489,7 +491,7 @@ const CONTROLS: Readonly<Record<string, LocalizedText>> = {
   shortDescription: SHORT_DESCRIPTION_ERROR,
   duration: DURATION_ERROR,
   price: WORDS.price,
-  discountPrice: WORDS.discountAbovePrice,
+  discountPrice: WORDS.pricesChanged,
   pricingStrategy: WORDS.pricing,
   sortOrder: WORDS.displayOrder,
   serviceStatus: WORDS.status,
@@ -540,21 +542,6 @@ const saidOf = ({
 
   return said === undefined ? undefined : [field, said]
 }
-
-/**
- * Whether a refusal is of a choice the lists of the menu offer (the
- * category, the services of the package): they are read again, to choose
- * from what there is now.
- */
-export const refusesChoice = (
-  outcome: Extract<ServiceWrite, { type: 'invalid' }>,
-): boolean =>
-  outcome.values.some(
-    ({ field }) =>
-      field === 'categoryId' ||
-      field === 'isPackage' ||
-      field.startsWith('packageServiceIds'),
-  )
 
 /** Which write a form makes: the words of its failure differ. */
 export type ServiceWriteKind = keyof typeof FAILED_WRITES

@@ -1,3 +1,4 @@
+import type { ModelsServiceUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
@@ -14,7 +15,6 @@ import {
   inUseMessageOf,
   readServiceChange,
   readServiceEntry,
-  refusesChoice,
 } from './service-form'
 
 /** The cut, as the form opens with it: a checkbox that is not checked is not handed over */
@@ -547,6 +547,95 @@ describe('readServiceChange', () => {
     })
   })
 
+  it.each<
+    [
+      string,
+      Record<string, string | undefined>,
+      readonly [string, string][],
+      ModelsServiceUpdateRequest,
+    ]
+  >([
+    [
+      'the description',
+      { description: 'シャンプーとカット。' },
+      [],
+      { description: 'シャンプーとカット。' },
+    ],
+    [
+      'the short description',
+      { shortDescription: '似合わせ' },
+      [],
+      { shortDescription: '似合わせ' },
+    ],
+    ['the duration', { duration: '75' }, [], { duration: 75 }],
+    [
+      'whether the price includes the tax',
+      { taxIncluded: undefined },
+      [],
+      { taxIncluded: false },
+    ],
+    [
+      'how the price is decided',
+      { pricingStrategy: 'variable' },
+      [],
+      { pricingStrategy: 'variable' },
+    ],
+    ['the image', { imageUrl: '' }, [], { imageUrl: null }],
+    [
+      'the other images',
+      { imageUrls: 'https://photos.example.com/menu/cut-2.jpg' },
+      [],
+      { imageUrls: ['https://photos.example.com/menu/cut-2.jpg'] },
+    ],
+    [
+      'the most bookings of a day',
+      { maxBookingsPerDay: '4' },
+      [],
+      { maxBookingsPerDay: 4 },
+    ],
+    [
+      'whether a consultation is needed',
+      { requiresConsultation: 'on' },
+      [],
+      { requiresConsultation: true },
+    ],
+    [
+      'whether it is booked online',
+      { allowOnlineBooking: undefined },
+      [],
+      { allowOnlineBooking: false },
+    ],
+    [
+      'what a booking needs',
+      {},
+      [['bookingRequirements', 'deposit_required']],
+      { bookingRequirements: ['deposit_required'] },
+    ],
+    ['the place in the order', { sortOrder: '2' }, [], { sortOrder: 2 }],
+    [
+      'the state',
+      { serviceStatus: 'inactive' },
+      [],
+      { serviceStatus: 'inactive' },
+    ],
+    [
+      'when it is offered',
+      { availability: 'weekdays_only' },
+      [],
+      { availability: 'weekdays_only' },
+    ],
+    ['whether it is active', { isActive: undefined }, [], { isActive: false }],
+  ])(
+    'should send %s alone when it alone was changed',
+    (_, changes, more, value) => {
+      // Act
+      const read = readServiceChange(formWith(changes, more), aService())
+
+      // Assert
+      expect(read).toEqual({ type: 'valid', value })
+    },
+  )
+
   it('should send every option when one of them was changed', () => {
     // Act
     const read = readServiceChange(
@@ -688,8 +777,8 @@ describe('afterServiceWrite', () => {
       'too_big',
       'discountPrice',
       {
-        en: 'The discounted price can be at most the price.',
-        ja: '割引後の料金は、料金以下にしてください。',
+        en: 'The price or the discounted price was changed meanwhile, and the discounted price would be above the price. Check the prices on the page of the service.',
+        ja: 'その間に、料金か割引後の料金が変わっていて、割引後の料金が料金を上回ります。サービスの画面で、いまの料金を確かめてください。',
       },
     ],
     [
@@ -790,22 +879,29 @@ describe('afterServiceWrite', () => {
     expect(said).toEqual({ message: undefined, errors: { [control]: error } })
   })
 
-  it('should ask to check the form again when the API refused a value it has no control of', () => {
-    // Act
-    const said = afterServiceWrite(
-      refused('salonId', 'unrecognized_keys'),
-      'entry',
-    )
+  it.each<[string, string, string]>([
+    ['a value it has no control of', 'salonId', 'unrecognized_keys'],
+    [
+      'a value of an option it has no words for',
+      'options.0.description',
+      'too_big',
+    ],
+  ])(
+    'should ask to check the form again when the API refused %s',
+    (_, field, rule) => {
+      // Act
+      const said = afterServiceWrite(refused(field, rule), 'entry')
 
-    // Assert
-    expect(said).toEqual({
-      message: {
-        en: 'Check what you entered and try again.',
-        ja: '入力した内容を確かめて、もう一度お試しください。',
-      },
-      errors: {},
-    })
-  })
+      // Assert
+      expect(said).toEqual({
+        message: {
+          en: 'Check what you entered and try again.',
+          ja: '入力した内容を確かめて、もう一度お試しください。',
+        },
+        errors: {},
+      })
+    },
+  )
 
   it.each<[Parameters<typeof afterServiceWrite>, LocalizedText]>([
     [
@@ -842,21 +938,6 @@ describe('afterServiceWrite', () => {
 
     // Assert
     expect(said).toEqual({ message, errors: {} })
-  })
-})
-
-describe('refusesChoice', () => {
-  it.each<[string, boolean]>([
-    ['categoryId', true],
-    ['packageServiceIds', true],
-    ['packageServiceIds.0', true],
-    ['isPackage', true],
-    ['name', false],
-    ['options.0.name', false],
-  ])('should read the lists again after %s was refused: %s', (field, again) => {
-    expect(
-      refusesChoice({ type: 'invalid', values: [{ field, rule: 'custom' }] }),
-    ).toBe(again)
   })
 })
 

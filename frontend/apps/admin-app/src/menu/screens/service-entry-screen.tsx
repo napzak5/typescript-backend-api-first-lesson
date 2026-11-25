@@ -34,11 +34,7 @@ import {
 } from '../api/menu-api'
 import { ServiceForm } from '../components/service-form/service-form'
 import { nextSortOrderOf } from '../utils/menu-format'
-import {
-  afterServiceWrite,
-  readServiceEntry,
-  refusesChoice,
-} from '../utils/service-form'
+import { afterServiceWrite, readServiceEntry } from '../utils/service-form'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
 const { names, services: WORDS, titles, words } = adminMenuMessages
@@ -47,8 +43,12 @@ type ServiceEntryProps = {
   salon: ModelsSalonResponse
   categories: readonly ModelsServiceCategoryResponse[]
   services: readonly ModelsServiceResponse[]
-  /** Reads the menu anew, after the API refused a choice it offered */
-  onChoiceRefused: () => void
+  /**
+   * Reads the menu anew after the API refused a value: the form checks
+   * every value first, so the API refuses one only when the menu changed
+   * meanwhile (the category, or a service of the package, was removed)
+   */
+  readMenuAgain: () => void
 }
 
 /**
@@ -61,7 +61,7 @@ const ServiceEntry = ({
   salon,
   categories,
   services,
-  onChoiceRefused,
+  readMenuAgain,
 }: ServiceEntryProps) => {
   const say = useSay()
   const queryClient = useQueryClient()
@@ -85,9 +85,7 @@ const ServiceEntry = ({
           queryClient.setQueryData(salonKeyOf(salon.id), NOT_FOUND),
         )
         .with({ type: 'invalid' }, (refused) => {
-          if (refusesChoice(refused)) {
-            onChoiceRefused()
-          }
+          readMenuAgain()
           setSaid(afterServiceWrite(refused, 'entry'))
         })
         .with(
@@ -175,7 +173,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
             salon={salon}
             categories={menu.categories}
             services={menu.services}
-            onChoiceRefused={readAgain}
+            readMenuAgain={readAgain}
           />
         ))
         .exhaustive()}

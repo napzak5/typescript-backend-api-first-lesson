@@ -42,6 +42,7 @@ import {
   removeService,
   type ServiceRead,
   serviceKeyOf,
+  servicesIn,
 } from '../api/menu-api'
 import { ServiceForm } from '../components/service-form/service-form'
 import { packagesOf } from '../utils/menu-format'
@@ -50,7 +51,6 @@ import {
   afterServiceWrite,
   inUseMessageOf,
   readServiceChange,
-  refusesChoice,
 } from '../utils/service-form'
 import { MenuForbidden, MenuPartNotFound, useKeepsMenu } from './keeps-menu'
 
@@ -61,8 +61,14 @@ type ServiceChangeProps = {
   service: ModelsServiceResponse
   categories: readonly ModelsServiceCategoryResponse[]
   services: readonly ModelsServiceResponse[]
-  /** Reads the menu anew: after the API refused a choice it offered, and before a refused removal is explained */
-  readMenuAgain: () => Promise<readonly ModelsServiceResponse[] | undefined>
+  /**
+   * Reads the menu anew, and gives its services: after the API refused a
+   * value (the form checks every value first, so the API refuses one only
+   * when the menu changed meanwhile: the category or a service of the
+   * package was removed, or the price was changed), and before a refused
+   * removal is explained
+   */
+  readMenuAgain: () => Promise<readonly ModelsServiceResponse[]>
 }
 
 /**
@@ -112,9 +118,7 @@ const ServiceChange = ({
         })
         .with({ type: 'notFound' }, gone)
         .with({ type: 'invalid' }, (refused) => {
-          if (refusesChoice(refused)) {
-            void readMenuAgain()
-          }
+          void readMenuAgain()
           setSaid(afterServiceWrite(refused, 'change'))
         })
         .with(
@@ -139,10 +143,7 @@ const ServiceChange = ({
           setRemoving(false)
           setSaid(
             aboutTheAttempt(
-              inUseMessageOf(
-                service.name,
-                packagesOf(now ?? services, service.id),
-              ),
+              inUseMessageOf(service.name, packagesOf(now, service.id)),
             ),
           )
         })
@@ -262,13 +263,10 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
   }
   const retrying =
     service.isFetching || categories.isFetching || services.isFetching
-  const readMenuAgain = async (): Promise<
-    readonly ModelsServiceResponse[] | undefined
-  > => {
+  const readMenuAgain = async (): Promise<readonly ModelsServiceResponse[]> => {
     void categories.refetch()
-    const now = await services.refetch()
 
-    return now.data?.type === 'found' ? now.data.items : undefined
+    return servicesIn((await services.refetch()).data)
   }
   const shown = service.isFetchedAfterMount ? service.data : undefined
   const menu = menuOf(

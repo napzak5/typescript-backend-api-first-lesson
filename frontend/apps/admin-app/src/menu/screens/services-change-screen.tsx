@@ -35,7 +35,6 @@ import {
   afterServicesChange,
   changedMessageOf,
   readServicesChange,
-  refusesCategory,
 } from '../utils/services-change'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
@@ -45,7 +44,12 @@ type ServicesChangeProps = {
   salon: ModelsSalonResponse
   categories: readonly ModelsServiceCategoryResponse[]
   services: readonly ModelsServiceResponse[]
-  /** Reads the menu anew, after the API refused a service or a category it offered */
+  /**
+   * Reads the menu anew after the API refused the change: the form checks
+   * every value first, so the API refuses one only when the menu changed
+   * meanwhile (a service or the category was removed, or a price was
+   * changed)
+   */
   readMenuAgain: () => void
 }
 
@@ -77,14 +81,8 @@ const ServicesChange = ({
           notify({ tone: 'success', message: changedMessageOf(updated) })
           void navigate(menu)
         })
-        .with({ type: 'servicesGone' }, (refused) => {
+        .with({ type: P.union('servicesGone', 'invalid') }, (refused) => {
           readMenuAgain()
-          setSaid(afterServicesChange(refused))
-        })
-        .with({ type: 'invalid' }, (refused) => {
-          if (refusesCategory(refused)) {
-            readMenuAgain()
-          }
           setSaid(afterServicesChange(refused))
         })
         .with(
