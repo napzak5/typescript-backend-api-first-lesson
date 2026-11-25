@@ -168,11 +168,6 @@ const refusalAt = (field: string, rule: string): LocalizedText =>
     )
     .otherwise(() => REFUSED_VALUE_MESSAGE)
 
-/** Whether a refusal is of the parent: the categories are read again, to choose from what there is now. */
-export const refusesParent = (
-  outcome: Extract<CategoryWrite, { type: 'invalid' }>,
-): boolean => outcome.values.some(({ field }) => field === 'parentId')
-
 /** What the form says after the API did not take it. */
 export const afterCategoryWrite = (
   outcome:

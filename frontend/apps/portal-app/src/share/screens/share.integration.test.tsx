@@ -9,7 +9,12 @@ import {
 } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { giveBack, takeAway, testApi } from '@beauty-salon-frontend/testing/api'
-import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  address,
+  goTo,
+  heading,
+  readAgain,
+} from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -478,9 +483,7 @@ describe('the screen of a share link, against the API', () => {
       await giveBack('share_links')
 
       // Act
-      await userEvent.click(
-        main().getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: main() })
 
       // Assert
       expect(await heading(PHOTO)).toBeVisible()
@@ -519,9 +522,7 @@ describe('the screen of a share link, against the API', () => {
       })
 
       // Act
-      await userEvent.click(
-        within(part()).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(part()) })
 
       // Assert
       await waitFor(async () =>

@@ -18,6 +18,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -387,7 +388,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveTheRowBack()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theLedger()
@@ -408,7 +409,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveBack('customers')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(rowsOf('条件に合うお客様')).toHaveLength(21))
@@ -577,11 +578,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveBack('customers')
 
       // Act
-      await user.click(
-        within(referrerDialog()).getByRole('button', {
-          name: 'もう一度読み込む',
-        }),
-      )
+      await readAgain(user, { inside: within(referrerDialog()) })
 
       // Assert
       expect(
@@ -621,11 +618,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveBack('customers')
 
       // Act
-      await user.click(
-        within(referrerDialog()).getByRole('button', {
-          name: 'もう一度読み込む',
-        }),
-      )
+      await readAgain(user, { inside: within(referrerDialog()) })
 
       // Assert
       await waitFor(() => expect(found()).toHaveLength(21))
@@ -833,7 +826,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveTheRowBack()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theCustomer()
@@ -862,16 +855,8 @@ describe('the ledger of the customers, against the API', () => {
       await giveBack('payment_transactions')
 
       // Act
-      await user.click(
-        within(part('好み設定')).getByRole('button', {
-          name: 'もう一度読み込む',
-        }),
-      )
-      await user.click(
-        within(part('このサロンでの利用')).getByRole('button', {
-          name: 'もう一度読み込む',
-        }),
-      )
+      await readAgain(user, { inside: within(part('好み設定')) })
+      await readAgain(user, { inside: within(part('このサロンでの利用')) })
 
       // Assert
       await within(part('好み設定')).findAllByRole('term')
@@ -1403,7 +1388,7 @@ describe('the ledger of the customers, against the API', () => {
       await giveTheRowBack()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

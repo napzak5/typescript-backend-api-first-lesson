@@ -246,6 +246,14 @@ export const menuServiceFormMessages = {
       en: 'Enter the most to choose as a whole number of 1 or more.',
       ja: '選べる数は、1 以上の整数で入力してください。',
     }),
+    /**
+     * The API found the discounted price above the price: the form checks
+     * the two it sends, so one of them was changed meanwhile
+     */
+    pricesChanged: text({
+      en: 'The price or the discounted price was changed meanwhile, and the discounted price would be above the price. Check the prices on the page of the service.',
+      ja: 'その間に、料金か割引後の料金が変わっていて、割引後の料金が料金を上回ります。サービスの画面で、いまの料金を確かめてください。',
+    }),
     /** The category that was chosen was removed meanwhile */
     categoryGone: text({
       en: 'This category was removed meanwhile. Choose the category again.',

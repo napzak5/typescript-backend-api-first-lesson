@@ -14,6 +14,7 @@ import {
   heading,
   notifications,
   optionsOf,
+  readAgain,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -436,7 +437,7 @@ describe('the preferences of a customer, changed by a salon against the API', ()
     await giveBack('customer_preferences')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(

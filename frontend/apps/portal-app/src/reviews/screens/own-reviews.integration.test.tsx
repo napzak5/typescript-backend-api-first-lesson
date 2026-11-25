@@ -12,6 +12,7 @@ import {
   asTheApplicationKeeps,
   firstSight,
   heading,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -310,7 +311,7 @@ describe('what a customer wrote, against the API', () => {
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(button('もう一度読み込む'))
+      await readAgain(userEvent)
 
       // Assert
       await waitFor(async () => expect(await listed()).toHaveLength(13))
@@ -330,7 +331,7 @@ describe('what a customer wrote, against the API', () => {
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(button('もう一度読み込む'))
+      await readAgain(userEvent)
 
       // Assert
       expect(await listed()).toHaveLength(1)
@@ -349,7 +350,7 @@ describe('what a customer wrote, against the API', () => {
 
       // Act
       await giveBack('customers')
-      await userEvent.click(button('もう一度読み込む'))
+      await readAgain(userEvent)
 
       // Assert
       expect(await listed()).toHaveLength(1)
@@ -848,7 +849,7 @@ describe('what a customer wrote, against the API', () => {
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(button('もう一度読み込む'))
+      await readAgain(userEvent)
 
       // Assert
       await overall()

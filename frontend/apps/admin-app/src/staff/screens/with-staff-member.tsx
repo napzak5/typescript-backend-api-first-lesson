@@ -49,13 +49,6 @@ export const useKeepsStaffLedger = (): boolean => {
   return session.type === 'signedIn' && mayKeepStaffLedger(session.user.role)
 }
 
-/** The account the session is of: the member it is linked to is the account's own. */
-export const useSignedInUserId = (): string | undefined => {
-  const session = useSession()
-
-  return session.type === 'signedIn' ? session.user.id : undefined
-}
-
 type StaffNotFoundProps = { salon: ModelsSalonResponse }
 
 /** What a screen of a member says when there is none to show. */

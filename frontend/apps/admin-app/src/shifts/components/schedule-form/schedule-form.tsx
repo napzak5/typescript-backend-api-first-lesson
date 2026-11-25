@@ -1,7 +1,4 @@
-import type {
-  ModelsDayOfWeekType,
-  ModelsStaffSchedule,
-} from '@beauty-salon-frontend/api-client'
+import type { ModelsStaffSchedule } from '@beauty-salon-frontend/api-client'
 import {
   Button,
   Checkbox,
@@ -139,15 +136,13 @@ export const ScheduleForm = ({
   const say = useSay()
   const said = useSaidForm(message, errors)
   const parts = partsOf(schedule, today)
-  const [weekly, setWeekly] = useState<
-    Partial<Record<ModelsDayOfWeekType, boolean>>
-  >(() =>
-    Object.fromEntries(
-      parts.weekly.map(({ weekday, row }) => [
-        weekday,
-        row?.isAvailable ?? false,
-      ]),
-    ),
+  // Every day of the week, and whether the member works on it: the times of a day are asked for while they do
+  const [weekly, setWeekly] = useState(() =>
+    parts.weekly.map(({ weekday, row }) => ({
+      weekday,
+      row,
+      works: row?.isAvailable ?? false,
+    })),
   )
   const dates = useRepeatedRows<DateRow, LocalizedText>(
     () => parts.dates.map((shown) => ({ shown, works: shown.isAvailable })),
@@ -165,10 +160,9 @@ export const ScheduleForm = ({
       onSubmit={onSubmit}
     >
       <FormPart label={say(form.week)} description={say(form.weekDescription)}>
-        {parts.weekly.map(({ weekday, row }) => {
+        {weekly.map(({ weekday, row, works }) => {
           const nameOf = (property: ScheduleProperty): string =>
             weeklyControlOf(weekday, property)
-          const works = weekly[weekday] ?? false
 
           return (
             <FormRow key={weekday} label={say(termMessages.dayOfWeek[weekday])}>
@@ -181,10 +175,13 @@ export const ScheduleForm = ({
                 ]}
                 value={works ? WORKS : OFF}
                 onChange={(event) =>
-                  setWeekly({
-                    ...weekly,
-                    [weekday]: event.target.value === WORKS,
-                  })
+                  setWeekly(
+                    weekly.map((day) =>
+                      day.weekday === weekday
+                        ? { ...day, works: event.target.value === WORKS }
+                        : day,
+                    ),
+                  )
                 }
               />
               {works && (

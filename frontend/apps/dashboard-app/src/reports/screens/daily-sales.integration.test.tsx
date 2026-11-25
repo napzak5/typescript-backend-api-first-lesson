@@ -11,6 +11,7 @@ import {
 import {
   firstSight,
   heading,
+  readAgain,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -238,7 +239,7 @@ describe('the sales of one day, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(await termsOnceThere(salesOf(await dayFromToday(0)))).toEqual(
@@ -493,7 +494,7 @@ describe('the sales of one day on a page in English, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'Load again' }))
+    await readAgain(user, { name: 'Load again' })
 
     // Assert
     expect(

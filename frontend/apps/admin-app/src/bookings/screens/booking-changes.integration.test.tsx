@@ -17,6 +17,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -587,7 +588,7 @@ describe('moving a booking and changing its lines, against the API', () => {
       await giveBack('services')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(
@@ -1130,7 +1131,7 @@ describe('moving a booking and changing its lines, against the API', () => {
       await giveBack('booking_services')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

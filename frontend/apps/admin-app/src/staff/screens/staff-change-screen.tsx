@@ -5,6 +5,7 @@ import type {
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
@@ -29,7 +30,7 @@ import {
 import { StaffForm } from '../components/staff-form/staff-form'
 import { afterStaffWrite, readStaffChange } from '../utils/staff-form'
 import { isOwnStaffRecord } from '../utils/staff-format'
-import { useSignedInUserId, WithStaffMember } from './with-staff-member'
+import { WithStaffMember } from './with-staff-member'
 
 const { change: CHANGE, titles, words } = adminStaffMessages
 
@@ -52,7 +53,7 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
   const { notify } = useNotifications()
   const say = useSay()
   const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
-  const userId = useSignedInUserId()
+  const userId = useSignedInUser()?.id
   const own = isOwnStaffRecord(member, userId)
   const key = staffKeyOf(member.id)
   const back = staffMemberHrefOf(salon.id, member.id)

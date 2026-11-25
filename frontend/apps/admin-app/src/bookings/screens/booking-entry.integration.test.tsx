@@ -17,6 +17,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -279,7 +280,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await giveBack('customers')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(
@@ -302,7 +303,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await giveBack('customers')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(() => expect(crowd()).toHaveLength(21))
@@ -695,7 +696,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await giveBack('services')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(
@@ -887,7 +888,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await giveBack('bookings')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

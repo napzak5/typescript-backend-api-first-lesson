@@ -720,7 +720,12 @@ address.
   the functions of `@beauty-salon-frontend/testing/api`.
   `takeAway('reviews')` renames the table, and the API answers 500 where it
   reads it; `giveBack('reviews')` lets the next request through: the test
-  presses 「もう一度読み込む」 and sees the content. A column
+  presses 「もう一度読み込む」 with `readAgain(user)` of the screen tools
+  (`readAgain(user, { inside: within(part) })` for the button of a part,
+  `{ name: 'Load again' }` on a page in English) and sees the content.
+  `readAgain` waits until the button takes a press: a screen of several
+  reads says the first that failed while the others are on their way, and
+  its button is busy, and does nothing, until they came. A column
   (`takeAway('staff', 'bio')`) leaves what reads the others as it was: the
   sign-in reads a few columns of `staff`, the profile of a member all of
   them. Where the sign-in reads the whole row (`users`, `sessions`), a
@@ -1308,6 +1313,48 @@ change and its receipt) add:
   screens that read every product read them together with something
   else, so the salon removed between the two is the 404 of `readProducts`
   in `products-api.test.ts`.
+
+The menu, the staff ledger and the shifts of a salon
+(`frontend/apps/admin-app/src/menu/screens/`: `menu`, `services`,
+`services-change`, and beside them `menu-failures` for the menu, a service
+and the forms of what is new, `category-failures` and `service-failures`;
+`src/staff/screens/`: `staff`, and beside it `staff-failures`;
+`src/shifts/screens/`: `shifts`, and beside it `shifts-failures`) add:
+
+- **The tests of each area wait for a screen alike**
+  (`menu/__tests__/screens.ts`: `openedMenu`, `openedCategoryForm`,
+  `openedServiceForm`, `openedServicesForm`, `serviceText`,
+  `serviceField`, with `MENU_UNREAD`, `CATEGORIES_UNREAD`,
+  `SERVICE_UNREAD`, `NOT_KEEPER` and `NOT_THEIRS`;
+  `staff/__tests__/screens.ts`: `NEW_MEMBER`, `fillRequired`,
+  `openedMemberForm`, with `LEDGER_NOT_THEIRS` and `STAFF_UNREAD`;
+  `shifts/__tests__/screens.ts`: `group`, `writeTime`, `openChange`, with
+  `SHIFTS_UNREAD` and `SCHEDULE_UNREAD`).
+- **A menu or a ledger without what it lists is a statement**
+  (`everyCategoryRemoved(salon)`, `everyServiceRemoved(salon)`,
+  `everyMemberRemoved()`: every row removed as the API removes one), and
+  so is a price changed meanwhile (`pricedMeanwhile(id, price)`), which
+  the API then compares with a discounted price sent alone.
+- **A service a test removes is one that no package and no booking not
+  over yet holds** (Highlights): the cut for men is on bookings not over
+  yet, and the API refuses its removal (409) before the write the test
+  refuses.
+- **A member of the salon is refused a salon removed meanwhile (403)**:
+  that the salon is not found is asserted as an administrator
+  (`OPERATOR`).
+- **The week reads the profiles, then a schedule for each member**: what
+  breaks the profiles alone is a column of the ledger
+  (`takeAway('staff', 'bio')`), what breaks the schedules their table
+  (`takeAway('staff_schedules')`). A member removed as their schedule is
+  read (`whenAskedFor('GET /salons/<id>/staff/<id>/schedules', () => removedMeanwhile(id))`)
+  is left out of the week, and a member of another salon is the first of
+  Osaka (`firstMemberOf(OSAKA)` of `shifts/__tests__/arrangements.ts`).
+- **An account linked to a member meanwhile is a statement**
+  (`linkedMeanwhile(email, staffId)` of `staff/__tests__/arrangements.ts`):
+  the API reads the account at every request, so a form opened before
+  meets the 409 (`3003`) of a member that is the account's own. The ledger
+  that a 409 of a registration has the screen read is changed when it is
+  asked for (`whenAskedFor('GET /salons/<id>/staff', () => madeStaffMeanwhile(OWNER))`).
 
 The ledger of the customers
 (`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)

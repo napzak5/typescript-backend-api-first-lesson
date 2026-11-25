@@ -11,6 +11,7 @@ import {
   columnsOf,
   heading,
   notifications,
+  readAgain,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -325,7 +326,7 @@ describe('merging two records of one customer, against the API', () => {
     await giveTheRowBack()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(

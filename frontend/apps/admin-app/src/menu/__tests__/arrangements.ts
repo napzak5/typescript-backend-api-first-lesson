@@ -51,6 +51,24 @@ export const arrangeChild = async (
 export const removedMeanwhile = (id: string): Promise<unknown> =>
   testApi().query('delete from service_categories where id = $1', [id])
 
+/** Lets every category of a salon have been removed: its services are of none. */
+export const everyCategoryRemoved = (salon: string): Promise<unknown> =>
+  testApi().query(
+    `delete from service_categories c using salons s
+      where s.id = c."salonId" and s.name = $1`,
+    [salon],
+  )
+
+/** Lets every service of a salon have been removed from the menu. */
+export const everyServiceRemoved = (salon: string): Promise<unknown> =>
+  testApi().query(
+    `update services v set "deletedAt" = now(),
+       "updatedAt" = greatest(now(), v."updatedAt" + interval '1 millisecond')
+     from salons s
+     where s.id = v."salonId" and s.name = $1 and v."deletedAt" is null`,
+    [salon],
+  )
+
 /** Lets somebody else have described a category meanwhile. */
 export const describedMeanwhile = (
   id: string,
@@ -120,6 +138,15 @@ export const serviceDescribedMeanwhile = (
        "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
      where id = $1`,
     [id, description],
+  )
+
+/** Lets somebody else have changed the price of a service meanwhile. */
+export const pricedMeanwhile = (id: string, price: number): Promise<unknown> =>
+  testApi().query(
+    `update services set price = $2,
+       "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
+     where id = $1`,
+    [id, price],
   )
 
 /** Lets somebody else have removed a service from the menu meanwhile. */

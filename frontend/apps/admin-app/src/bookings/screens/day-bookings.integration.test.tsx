@@ -15,6 +15,7 @@ import {
   address,
   goBack,
   heading,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -605,7 +606,7 @@ describe('the bookings of a salon, against the API', () => {
       await giveBack('services')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect((await rowsOfDay(day))[0]?.[3]).toBe('Ladies Cut')
@@ -625,7 +626,7 @@ describe('the bookings of a salon, against the API', () => {
       await giveBack('bookings')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect((await rowsOfDay(day)).map((row) => row.at(-1))).toEqual([
@@ -651,7 +652,7 @@ describe('the bookings of a salon, against the API', () => {
       await restore()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect((await rowsOfDay(day)).map((row) => row[1])).toEqual([YUKI.name])
@@ -679,7 +680,7 @@ describe('the bookings of a salon, against the API', () => {
       await restore()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(async () => expect(await rowsOfDay(day)).toHaveLength(51))
@@ -700,7 +701,7 @@ describe('the bookings of a salon, against the API', () => {
       await giveBack('bookings')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await waitFor(async () => expect(await rowsOfDay(day)).toHaveLength(55))
@@ -725,7 +726,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(await rowsOfDay(day)).toHaveLength(50)
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(

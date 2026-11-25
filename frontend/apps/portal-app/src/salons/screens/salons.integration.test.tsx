@@ -7,7 +7,11 @@ import {
   takeAway,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
-import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  address,
+  heading,
+  readAgain,
+} from '@beauty-salon-frontend/testing/screens'
 import { OSAKA, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -385,9 +389,7 @@ describe('the screens of the salons, against the API', () => {
       await giveBack('salons')
 
       // Act
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(namesIn(await results())).toHaveLength(2)
@@ -411,9 +413,7 @@ describe('the screens of the salons, against the API', () => {
       await giveBack('salons')
 
       // Act
-      await user.click(
-        within(region).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(user, { inside: within(region) })
 
       // Assert
       await screen.findByText('27 件のサロンが見つかりました')
@@ -903,9 +903,7 @@ describe('the screens of the salons, against the API', () => {
       await giveBack('reviews')
 
       // Act
-      await user.click(
-        within(reviews).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(user, { inside: within(reviews) })
 
       // Assert
       await waitFor(() => {
@@ -1039,9 +1037,7 @@ describe('the screens of the salons, against the API', () => {
       )
 
       // Act
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(await heading(TOKYO)).toBeVisible()
@@ -1084,9 +1080,7 @@ describe('the screens of the salons, against the API', () => {
         })[0] ?? reviews,
       )
       await within(reviews).findByRole('img', { name: '5 段階中 4.0（3 件）' })
-      await user.click(
-        within(reviews).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(user, { inside: within(reviews) })
 
       // Assert
       expect(
@@ -1112,9 +1106,7 @@ describe('the screens of the salons, against the API', () => {
       await giveBack('services')
 
       // Act
-      await userEvent.click(
-        within(menu).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(menu) })
 
       // Assert
       expect(
@@ -1140,9 +1132,7 @@ describe('the screens of the salons, against the API', () => {
       await giveBack('staff', 'bio')
 
       // Act
-      await userEvent.click(
-        within(staff).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(staff) })
 
       // Assert
       expect(

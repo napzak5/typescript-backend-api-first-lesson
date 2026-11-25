@@ -6,7 +6,11 @@ import {
   testApi,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  readAgain,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -77,7 +81,7 @@ describe('the checkout of a booking, when a request fails or something changes m
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(
@@ -125,7 +129,7 @@ describe('the checkout of a booking, when a request fails or something changes m
 
     // Act
     await giveBack('payment_methods')
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await theAmounts()

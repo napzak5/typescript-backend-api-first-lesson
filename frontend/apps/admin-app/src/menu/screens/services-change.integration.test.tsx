@@ -21,6 +21,11 @@ import {
   serviceRemovedMeanwhile,
   storedStatesOf,
 } from '../__tests__/arrangements'
+import {
+  NOT_KEEPER,
+  NOT_THEIRS,
+  openedServicesForm,
+} from '../__tests__/screens'
 
 /*
  * Several services of the menu changed at once against the API. The salon
@@ -31,12 +36,6 @@ import {
  * the owner keep its menu. Somebody did something meanwhile where a test
  * says so.
  */
-
-/** Waits for the form: its heading comes first, the form once the menu was read. */
-const openedForm = async (): Promise<void> => {
-  await heading('サービスをまとめて変える')
-  await screen.findByRole('group', { name: '変えるサービス' })
-}
 
 const service = (name: string): HTMLElement =>
   screen.getByRole('checkbox', { name })
@@ -62,7 +61,7 @@ describe('several services of the menu changed at once, against the API', () => 
     await user.click(
       await screen.findByRole('link', { name: 'まとめて変える' }),
     )
-    await openedForm()
+    await openedServicesForm()
 
     // Act
     await user.click(service('Ladies Cut（Hair Cut）'))
@@ -94,7 +93,7 @@ describe('several services of the menu changed at once, against the API', () => 
     const user = userEvent.setup()
     const before = await storedStatesOf(TOKYO)
     await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), OWNER)
-    await openedForm()
+    await openedServicesForm()
 
     // Act
     await user.click(service('Highlights（Hair Color）'))
@@ -124,7 +123,7 @@ describe('several services of the menu changed at once, against the API', () => 
     const user = userEvent.setup()
     const before = await storedStatesOf(TOKYO)
     await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), MANAGER)
-    await openedForm()
+    await openedServicesForm()
 
     // Act
     await user.click(screen.getByRole('button', { name: '変える' }))
@@ -155,7 +154,7 @@ describe('several services of the menu changed at once, against the API', () => 
     // Arrange
     const user = userEvent.setup()
     await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), MANAGER)
-    await openedForm()
+    await openedServicesForm()
     await user.click(service('Ladies Cut（Hair Cut）'))
     await user.click(service('Mens Cut（Hair Cut）'))
     await user.selectOptions(choice('有効'), '無効にする')
@@ -184,7 +183,7 @@ describe('several services of the menu changed at once, against the API', () => 
     // Arrange
     const user = userEvent.setup()
     await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), MANAGER)
-    await openedForm()
+    await openedServicesForm()
     await user.click(service('Ladies Cut（Hair Cut）'))
     await user.selectOptions(choice('カテゴリー'), 'Styling')
     await removedMeanwhile(await categoryIdOf(TOKYO, 'Styling'))
@@ -212,11 +211,7 @@ describe('several services of the menu changed at once, against the API', () => 
     await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), STYLIST)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(NOT_KEEPER)).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 
@@ -225,7 +220,7 @@ describe('several services of the menu changed at once, against the API', () => 
     const user = userEvent.setup()
     const before = await storedStatesOf(OSAKA)
     await openAs(servicesChangeHrefOf(await salonIdOf(OSAKA)), MANAGER)
-    await openedForm()
+    await openedServicesForm()
     await user.click(service('Signature Cut（Hair Cut）'))
     await user.selectOptions(choice('有効'), '無効にする')
 
@@ -233,9 +228,7 @@ describe('several services of the menu changed at once, against the API', () => 
     await user.click(screen.getByRole('button', { name: '変える' }))
 
     // Assert
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(NOT_THEIRS)
     expect(await storedStatesOf(OSAKA)).toEqual(before)
   })
 
@@ -245,7 +238,7 @@ describe('several services of the menu changed at once, against the API', () => 
     await signInAs(OWNER)
 
     // Act
-    await openedForm()
+    await openedServicesForm()
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])

@@ -30,11 +30,7 @@ import {
   readCategories,
 } from '../api/menu-api'
 import { CategoryForm } from '../components/category-form/category-form'
-import {
-  afterCategoryWrite,
-  readCategoryEntry,
-  refusesParent,
-} from '../utils/category-form'
+import { afterCategoryWrite, readCategoryEntry } from '../utils/category-form'
 import { nextDisplayOrderOf } from '../utils/menu-format'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
@@ -43,8 +39,12 @@ const { categories: WORDS, names, titles, words } = adminMenuMessages
 type CategoryEntryProps = {
   salon: ModelsSalonResponse
   categories: readonly ModelsServiceCategoryResponse[]
-  /** Reads the categories anew, after the API refused the parent that was chosen */
-  onParentRefused: () => void
+  /**
+   * Reads the categories anew after the API refused a value: the form
+   * checks every value first, so the API refuses one only when the menu
+   * changed meanwhile (the parent was removed, or put below this category)
+   */
+  readCategoriesAgain: () => void
 }
 
 /**
@@ -55,7 +55,7 @@ type CategoryEntryProps = {
 const CategoryEntry = ({
   salon,
   categories,
-  onParentRefused,
+  readCategoriesAgain,
 }: CategoryEntryProps) => {
   const say = useSay()
   const queryClient = useQueryClient()
@@ -79,9 +79,7 @@ const CategoryEntry = ({
           queryClient.setQueryData(salonKeyOf(salon.id), NOT_FOUND),
         )
         .with({ type: 'invalid' }, (refused) => {
-          if (refusesParent(refused)) {
-            onParentRefused()
-          }
+          readCategoriesAgain()
           setSaid(afterCategoryWrite(refused))
         })
         .with(
@@ -153,7 +151,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
           <CategoryEntry
             salon={salon}
             categories={items}
-            onParentRefused={() => void categories.refetch()}
+            readCategoriesAgain={() => void categories.refetch()}
           />
         ))
         .exhaustive()}

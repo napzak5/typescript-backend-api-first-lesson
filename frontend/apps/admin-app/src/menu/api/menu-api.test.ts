@@ -26,6 +26,7 @@ import {
   readService,
   removeCategory,
   removeService,
+  servicesIn,
 } from './menu-api'
 
 /*
@@ -84,6 +85,16 @@ describe('menuOf', () => {
     ],
   ])('should make no menu while %s', (_, [one, other], menu) => {
     expect(menuOf(one, other)).toEqual(menu)
+  })
+})
+
+describe('servicesIn', () => {
+  it.each<[string, ServicesRead | undefined, readonly unknown[]]>([
+    ['read', { type: 'found', items: [aService()] }, [aService()]],
+    ['not read', { type: 'failed' }, []],
+    ['still read', undefined, []],
+  ])('should give the services of a menu %s', (_, read, services) => {
+    expect(servicesIn(read)).toEqual(services)
   })
 })
 

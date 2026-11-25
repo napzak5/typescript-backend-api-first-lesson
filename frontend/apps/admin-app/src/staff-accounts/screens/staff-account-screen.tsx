@@ -11,7 +11,7 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSession, useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   Button,
@@ -49,7 +49,6 @@ import {
 } from '../../staff/api/staff-api'
 import {
   StaffLedgerForbidden,
-  useSignedInUserId,
   WithStaffMember,
 } from '../../staff/screens/with-staff-member'
 import { useAdministersAccounts } from '../../user-accounts/hooks/administers-accounts'
@@ -418,7 +417,7 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
   const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const own = isOwnAccount(account, useSignedInUserId())
+  const own = isOwnAccount(account, useSignedInUser()?.id)
   const administers = useAdministersAccounts()
   const [unlinking, setUnlinking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */

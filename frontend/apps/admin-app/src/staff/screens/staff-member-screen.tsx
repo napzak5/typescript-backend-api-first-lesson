@@ -4,6 +4,7 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Actions,
   Alert,
@@ -28,7 +29,7 @@ import {
 import { removeStaffMember, STAFF_LISTS, staffKeyOf } from '../api/staff-api'
 import { StaffRecord } from '../components/staff-record/staff-record'
 import { afterStaffRemoval, isOwnStaffRecord } from '../utils/staff-format'
-import { useSignedInUserId, WithStaffMember } from './with-staff-member'
+import { WithStaffMember } from './with-staff-member'
 
 const { member: MEMBER, removal: REMOVAL, titles } = adminStaffMessages
 
@@ -49,7 +50,7 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const say = useSay()
-  const userId = useSignedInUserId()
+  const userId = useSignedInUser()?.id
   const [removing, setRemoving] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
   const [message, setMessage] = useState<LocalizedText>()

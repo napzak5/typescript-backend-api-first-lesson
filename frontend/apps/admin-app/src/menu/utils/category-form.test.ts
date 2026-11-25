@@ -1,3 +1,7 @@
+import type {
+  ModelsServiceCategoryResponse,
+  ModelsServiceCategoryUpdateRequest,
+} from '@beauty-salon-frontend/api-client'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
@@ -8,7 +12,6 @@ import {
   afterCategoryWrite,
   readCategoryChange,
   readCategoryEntry,
-  refusesParent,
 } from './category-form'
 
 /** The form as it opens with a category: a checkbox that is not checked is not handed over */
@@ -240,6 +243,32 @@ describe('readCategoryChange', () => {
     })
   })
 
+  it.each<
+    [
+      string,
+      Record<string, string>,
+      ModelsServiceCategoryResponse,
+      ModelsServiceCategoryUpdateRequest,
+    ]
+  >([
+    ['its kind', { category: 'color' }, aCategory(), { category: 'color' }],
+    [
+      'the colour of a category that had none',
+      {},
+      aCategory({ color: null }),
+      { color: '#C8A2C8' },
+    ],
+  ])(
+    'should send %s alone when it alone was changed',
+    (_, changes, shown, value) => {
+      // Act
+      const read = readCategoryChange(formWith(changes), shown)
+
+      // Assert
+      expect(read).toEqual({ type: 'valid', value })
+    },
+  )
+
   it('should pass on what is wrong with the form', () => {
     expect(
       readCategoryChange(formWith({ name: '' }), aCategory()),
@@ -274,6 +303,37 @@ describe('afterCategoryWrite', () => {
 
     // Assert
     expect(said).toEqual({ message: undefined, errors: { parentId: error } })
+  })
+
+  it('should say at the name, the place in the order and the colour what each takes', () => {
+    // Act
+    const said = afterCategoryWrite({
+      type: 'invalid',
+      values: [
+        { field: 'name', rule: 'too_big' },
+        { field: 'displayOrder', rule: 'too_small' },
+        { field: 'color', rule: 'invalid_format' },
+      ],
+    })
+
+    // Assert
+    expect(said).toEqual({
+      message: undefined,
+      errors: {
+        name: {
+          en: 'Category name: enter 1 to 100 characters.',
+          ja: 'カテゴリーの名前を、100 文字以内で入力してください。',
+        },
+        displayOrder: {
+          en: 'Enter the display order as a whole number of 0 or more.',
+          ja: '表示順は、0 以上の整数で入力してください。',
+        },
+        color: {
+          en: 'Enter the color as a # and 6 hexadecimal digits, such as #C8A2C8.',
+          ja: '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。',
+        },
+      },
+    })
   })
 
   it('should say the values refused at their controls, and say the rest above the form', () => {
@@ -340,24 +400,6 @@ describe('afterCategoryWrite', () => {
     ],
   ])('should say above the form what came of %s', (_, type, message) => {
     expect(afterCategoryWrite({ type })).toEqual({ message, errors: {} })
-  })
-})
-
-describe('refusesParent', () => {
-  it('should tell a refusal of the parent from others', () => {
-    expect([
-      refusesParent({
-        type: 'invalid',
-        values: [
-          { field: 'name', rule: 'too_big' },
-          { field: 'parentId', rule: 'not_found' },
-        ],
-      }),
-      refusesParent({
-        type: 'invalid',
-        values: [{ field: 'name', rule: 'too_big' }],
-      }),
-    ]).toEqual([true, false])
   })
 })
 

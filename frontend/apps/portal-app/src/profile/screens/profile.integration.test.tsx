@@ -9,6 +9,7 @@ import {
   firstSight,
   heading,
   queryClientOfATest,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER, STYLIST, YUKI } from '@beauty-salon-frontend/testing/seed'
@@ -222,9 +223,7 @@ describe('the page and the profile of a customer, against the API', () => {
 
       // Act
       await giveBack('customers')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(await occupation()).toBeVisible()

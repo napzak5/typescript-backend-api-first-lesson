@@ -5,7 +5,7 @@ import {
   takeAway,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { readAgain, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -104,7 +104,7 @@ describe('the alerts of the stock, when something fails or changes meanwhile, ag
 
     // Act
     await giveBack('inventory_alert_acknowledgements')
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await waitFor(() => expect(rowsOf(ALERTS)).toHaveLength(21))

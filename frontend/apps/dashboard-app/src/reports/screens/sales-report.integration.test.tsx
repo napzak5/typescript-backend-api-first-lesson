@@ -16,6 +16,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
@@ -237,7 +238,7 @@ describe('the sales report, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
@@ -602,7 +603,7 @@ describe('the sales report on a page in English, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'Load again' }))
+    await readAgain(user, { name: 'Load again' })
 
     // Assert
     expect(

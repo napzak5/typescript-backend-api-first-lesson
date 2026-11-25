@@ -5,7 +5,11 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  notifications,
+  readAgain,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   OPERATOR,
   OSAKA,
@@ -86,7 +90,7 @@ describe('a sale and its receipt, when they cannot be read or are not for the ac
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theSale()
@@ -144,7 +148,7 @@ describe('a sale and its receipt, when they cannot be read or are not for the ac
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await theSale()
@@ -230,7 +234,7 @@ describe('a sale and its receipt, when they cannot be read or are not for the ac
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       const receipt = await screen.findByRole('article', { name: TOKYO })

@@ -1,4 +1,4 @@
-import { idsOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, idsOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -65,4 +65,14 @@ export const scheduleRowIdsOf = (staffCode: string): Promise<string[]> =>
      where "staffId" = (select id from staff where "staffCode" = $1)
      order by id`,
     [staffCode],
+  )
+
+/** The member of a salon of the seed data registered first, by the name of the salon */
+export const firstMemberOf = (salon: string): Promise<string> =>
+  idOf(
+    `select s.id::text from staff s join salons n on n.id = s."salonId"
+     where n.name = $1 and s."deletedAt" is null
+     order by s."createdAt", s.id
+     limit 1`,
+    [salon],
   )

@@ -12,6 +12,7 @@ import {
   asTheApplicationKeeps,
   heading,
   optionsOf,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
@@ -875,9 +876,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Act
       await giveBack('services')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -903,9 +902,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Act
       await giveBack('staff_schedules')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(await offeredTimes()).toContain('10:00')
@@ -945,9 +942,7 @@ describe('the screens of a booking, against the API', () => {
 
         // Act
         await giveBack(table, column)
-        await userEvent.click(
-          screen.getByRole('button', { name: 'もう一度読み込む' }),
-        )
+        await readAgain(userEvent)
 
         // Assert
         expect(await staffControl()).toBeVisible()
@@ -970,9 +965,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Act
       await giveBack('opening_hours')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -1293,9 +1286,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Act
       await giveBack('booking_services')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(
@@ -1319,9 +1310,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Act
       await giveBack('services')
-      await userEvent.click(
-        screen.getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent)
 
       // Assert
       expect(

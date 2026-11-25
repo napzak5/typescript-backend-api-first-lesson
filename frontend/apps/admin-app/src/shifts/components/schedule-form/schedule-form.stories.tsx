@@ -2,7 +2,13 @@ import { ButtonLink } from '@beauty-salon-frontend/ui'
 import { adminShiftMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { aSchedule, TODAY } from '../examples'
+import {
+  aSchedule,
+  aShortSaturday,
+  aWeek,
+  aYearOfDaysOff,
+  TODAY,
+} from '../examples'
 import { ScheduleForm } from './schedule-form'
 
 const { form } = adminShiftMessages
@@ -36,6 +42,11 @@ export const Whole: Story = {}
 
 /** A member without a schedule: every day without work, and no row of a date */
 export const Empty: Story = { args: { rows: [] } }
+
+/** A schedule that holds as many rows of dates as it may: no row is added, and the form says why */
+export const AtTheMostDates: Story = {
+  args: { rows: [...aWeek(), ...aYearOfDaysOff(), aShortSaturday()] },
+}
 
 /** What the form checked before sending: an end before the start, and the date of a row of a day before today */
 export const WithErrors: Story = {

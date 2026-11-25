@@ -77,6 +77,28 @@ describe('ScheduleForm', () => {
     ).not.toBeChecked()
   })
 
+  it('should add no row to a schedule that holds as many rows of dates as it may, and say why', async () => {
+    // Act
+    await stories.AtTheMostDates.run()
+
+    // Assert
+    expect(screen.getByRole('group', { name: '1 行目' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: '2 行目' })).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: '日付の行を足す' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        '日付ごとの行は、今日より前の行と合わせて 366 行まで入れられます。',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('checkbox', {
+        name: '今日より前の日付の行（365 行）を消す',
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('should ask for the hours of a day once the member works on it', async () => {
     // Arrange
     await stories.Empty.run()

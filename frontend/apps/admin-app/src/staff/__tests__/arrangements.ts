@@ -19,6 +19,20 @@ export const WATANABE = 'STF004'
 export const MORI = 'STF900'
 const SATO = 'STF901'
 
+/**
+ * Links the account of an address of mail to a member, as an administrator
+ * does meanwhile: the API reads the account at every request, and the
+ * member is its own from the next one on.
+ */
+export const linkedMeanwhile = (
+  email: string,
+  staffId: string,
+): Promise<unknown> =>
+  testApi().query('update users set "staffId" = $2 where email = $1', [
+    email,
+    staffId,
+  ])
+
 /** The order `arrangeLedgerOrder` registers the members of the seed data in */
 const LEDGER_ORDER = [MORI, SATO, TANAKA, SUZUKI, WATANABE]
 
@@ -86,6 +100,15 @@ export const removedMeanwhile = (staffId: string): Promise<unknown> =>
     `update staff set "deletedAt" = now(), "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
      where id = $1`,
     [staffId],
+  )
+
+/** Lets every member have been removed from the ledger of the salon in Tokyo. */
+export const everyMemberRemoved = (): Promise<unknown> =>
+  testApi().query(
+    `update staff set "deletedAt" = now() from salons
+      where salons.id = staff."salonId" and salons.name = 'Beauty Studio Tokyo'
+        and staff."deletedAt" is null`,
+    [],
   )
 
 /** Lets a member have stopped working at the salon: they are inactive. */

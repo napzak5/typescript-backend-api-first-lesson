@@ -11,6 +11,7 @@ import {
 import {
   firstSight,
   heading,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -172,7 +173,7 @@ describe('the sales of the staff, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     await screen.findByRole('table', { name: TABLE })
@@ -371,7 +372,7 @@ describe('the sales of the staff on a page in English, against the API', () => {
     await giveBack('sales')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'Load again' }))
+    await readAgain(user, { name: 'Load again' })
 
     // Assert
     expect(

@@ -2397,9 +2397,11 @@ the screens of a service and of a category, `menu-api.ts`,
 - **A tree is named by its path** (`categoryPathOf`, guarded against a
   loop), in the captions of the tables as in the choices of a form, and
   a node is never offered below itself (`parentChoicesOf`).
-- **A refusal that names a choice reads the choices again**: when the API
-  refuses the parent, the error is said at the control and the list it
-  offers is fetched anew, so the next choice is among what there is now.
+- **A refusal of a value reads the choices again**: the form checks
+  every value before it sends one, so the API refuses a value only when
+  what the form offers changed meanwhile. At every 400 the error is said
+  at its control and the lists the form offers are fetched anew, so the
+  next choice is among what there is now.
 - **The dialog of a removal says what becomes of what hung on the
   record** (children to the top, services to none), and the removal drops
   every list the record was in.

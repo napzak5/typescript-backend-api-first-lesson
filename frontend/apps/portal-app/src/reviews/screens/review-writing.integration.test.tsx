@@ -8,6 +8,7 @@ import {
   firstSight,
   heading,
   optionsOf,
+  readAgain,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -171,9 +172,7 @@ describe('the review of a visit, against the API', () => {
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(
-        within(part).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(userEvent, { inside: within(part) })
 
       // Assert
       expect(await within(part).findByText(NOT_WRITTEN)).toBeVisible()
@@ -596,7 +595,7 @@ describe('the review of a visit, against the API', () => {
 
       // Act
       await giveBack('reviews')
-      await userEvent.click(button('もう一度読み込む'))
+      await readAgain(userEvent)
 
       // Assert
       expect(await overall()).toBeVisible()

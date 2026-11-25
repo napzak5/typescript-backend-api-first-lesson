@@ -5,7 +5,7 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, readAgain } from '@beauty-salon-frontend/testing/screens'
 import {
   OPERATOR,
   OWNER,
@@ -81,7 +81,7 @@ describe('recording a payment, when a request fails or something changes meanwhi
     await readable()
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(

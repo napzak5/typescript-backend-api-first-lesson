@@ -16,6 +16,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -576,7 +577,7 @@ describe('a booking of a salon, against the API', () => {
       await giveBack('bookings')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(await shownStatus()).toBe('確定待ち')
@@ -601,7 +602,7 @@ describe('a booking of a salon, against the API', () => {
       await giveBack('services')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(await shownStatus()).toBe('確定待ち')
@@ -739,9 +740,7 @@ describe('a booking of a salon, against the API', () => {
       await giveBack('sales')
 
       // Act
-      await user.click(
-        within(checkout).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(user, { inside: within(checkout) })
 
       // Assert
       expect(
@@ -764,9 +763,7 @@ describe('a booking of a salon, against the API', () => {
       await giveBack('treatment_records')
 
       // Act
-      await user.click(
-        within(record).getByRole('button', { name: 'もう一度読み込む' }),
-      )
+      await readAgain(user, { inside: within(record) })
 
       // Assert
       expect(await within(record).findByRole('link')).toHaveAttribute(

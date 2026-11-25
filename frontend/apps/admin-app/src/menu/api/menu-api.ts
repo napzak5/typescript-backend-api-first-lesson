@@ -182,6 +182,15 @@ export const readService = async (
 }
 
 /**
+ * The services of a read of the menu: none when it was not read, and the
+ * screen then says so in place of the form.
+ */
+export const servicesIn = (
+  read: ServicesRead | undefined,
+): readonly ModelsServiceResponse[] =>
+  read?.type === 'found' ? read.items : []
+
+/**
  * What came of a write of a category. Not found is the salon, for a new
  * category, and the category, for a change.
  */

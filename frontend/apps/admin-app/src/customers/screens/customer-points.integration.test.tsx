@@ -17,6 +17,7 @@ import {
   firstSight,
   heading,
   notifications,
+  readAgain,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -456,7 +457,7 @@ describe('the points of customers, against the API', () => {
       await giveBack('customer_points')
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await screen.findByText('ポイント台帳の開始残高')

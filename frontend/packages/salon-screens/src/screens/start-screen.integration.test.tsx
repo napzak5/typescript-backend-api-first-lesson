@@ -10,6 +10,7 @@ import {
   address,
   goBack,
   heading,
+  readAgain,
   renderApplicationAt,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -146,7 +147,7 @@ describe('the start of an application of a salon, against the API', () => {
     await giveBack('staff', 'bio')
 
     // Act
-    await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+    await readAgain(user)
 
     // Assert
     expect(await heading('予約台帳')).toBeVisible()

@@ -33,6 +33,13 @@ import {
   serviceRemovedMeanwhile,
   storedServicesNamed,
 } from '../__tests__/arrangements'
+import {
+  NOT_KEEPER,
+  NOT_THEIRS,
+  openedServiceForm,
+  serviceField,
+  serviceText,
+} from '../__tests__/screens'
 
 /*
  * The services of the menu, added, changed and removed against the API.
@@ -43,20 +50,6 @@ import {
  * menu of the salon in Tokyo, an administrator that of every salon.
  * Somebody did something meanwhile where a test says so.
  */
-
-/** Waits for a form of a service: its heading comes first, the form once the menu was read. */
-const openedForm = async (title: string): Promise<void> => {
-  await heading(title)
-  await screen.findByRole('group', { name: 'サービス' })
-}
-
-const text = (name: string): HTMLElement =>
-  within(screen.getByRole('group', { name: 'サービス' })).getByRole('textbox', {
-    name,
-  })
-
-const field = (part: string, role: 'textbox' | 'combobox', name: string) =>
-  within(screen.getByRole('group', { name: part })).getByRole(role, { name })
 
 const row = (name: string): HTMLElement => screen.getByRole('group', { name })
 
@@ -78,22 +71,28 @@ describe('the services of the menu, against the API', () => {
     await user.click(
       await screen.findByRole('link', { name: 'サービスを足す' }),
     )
-    await openedForm('サービスを足す')
-    expect(text('表示順')).toHaveValue('11')
+    await openedServiceForm('サービスを足す')
+    expect(serviceText('表示順')).toHaveValue('11')
 
     // Act
-    await user.type(text('名前'), 'Bangs Trim')
+    await user.type(serviceText('名前'), 'Bangs Trim')
     await user.selectOptions(
       within(row('サービス')).getByRole('combobox', { name: 'カテゴリー' }),
       'Hair Cut',
     )
-    await user.type(text('タグ'), '人気、早い')
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '15')
-    await user.type(field('時間と料金', 'textbox', '料金'), '１５００')
-    await user.type(field('時間と料金', 'textbox', '割引後の料金'), '1200')
+    await user.type(serviceText('タグ'), '人気、早い')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '15',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '１５００')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '割引後の料金'),
+      '1200',
+    )
     await user.click(screen.getByRole('checkbox', { name: 'パッチテスト必須' }))
     await user.selectOptions(
-      field('予約', 'combobox', '担当できるスタッフ'),
+      serviceField('予約', 'combobox', '担当できるスタッフ'),
       'スタイリスト以上',
     )
     await user.click(screen.getByRole('button', { name: 'オプションを足す' }))
@@ -151,10 +150,13 @@ describe('the services of the menu, against the API', () => {
     const user = userEvent.setup()
     const tokyo = await salonIdOf(TOKYO)
     await openAs(serviceEntryHrefOf(tokyo), MANAGER)
-    await openedForm('サービスを足す')
-    await user.type(text('名前'), 'Cut & Color')
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '180')
-    await user.type(field('時間と料金', 'textbox', '料金'), '12000')
+    await openedServiceForm('サービスを足す')
+    await user.type(serviceText('名前'), 'Cut & Color')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '180',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '12000')
 
     // Act
     await user.click(screen.getByRole('checkbox', { name: 'パッケージにする' }))
@@ -180,11 +182,17 @@ describe('the services of the menu, against the API', () => {
     const user = userEvent.setup()
     const tokyo = await salonIdOf(TOKYO)
     await openAs(serviceEntryHrefOf(tokyo), MANAGER)
-    await openedForm('サービスを足す')
-    await user.type(text('名前'), 'Quick Blow')
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '20')
-    await user.type(field('時間と料金', 'textbox', '料金'), '2000')
-    await user.type(field('時間と料金', 'textbox', '割引後の料金'), '2500')
+    await openedServiceForm('サービスを足す')
+    await user.type(serviceText('名前'), 'Quick Blow')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '20',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '2000')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '割引後の料金'),
+      '2500',
+    )
     await user.click(screen.getByRole('checkbox', { name: 'パッケージにする' }))
     await user.click(
       screen.getByRole('button', { name: '構成サービス 2 を外す' }),
@@ -195,11 +203,11 @@ describe('the services of the menu, against the API', () => {
 
     // Assert
     expect(
-      field('時間と料金', 'textbox', '割引後の料金'),
+      serviceField('時間と料金', 'textbox', '割引後の料金'),
     ).toHaveAccessibleDescription(
       expect.stringContaining('割引後の料金は、料金以下にしてください。'),
     )
-    expect(field('時間と料金', 'textbox', '割引後の料金')).toHaveFocus()
+    expect(serviceField('時間と料金', 'textbox', '割引後の料金')).toHaveFocus()
     expect(
       screen.getByRole('checkbox', { name: 'パッケージにする' }),
     ).toHaveAccessibleDescription(
@@ -219,12 +227,12 @@ describe('the services of the menu, against the API', () => {
     await user.click(
       await screen.findByRole('link', { name: 'サービスを直す' }),
     )
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
     await serviceDescribedMeanwhile(highlights, 'Written by the manager')
 
     // Act
-    await user.clear(field('時間と料金', 'textbox', '料金'))
-    await user.type(field('時間と料金', 'textbox', '料金'), '13000')
+    await user.clear(serviceField('時間と料金', 'textbox', '料金'))
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '13000')
     await user.click(screen.getByRole('button', { name: '変更を保存する' }))
 
     // Assert
@@ -248,7 +256,7 @@ describe('the services of the menu, against the API', () => {
       serviceChangeHrefOf(tokyo, await serviceIdOf('Ladies Cut')),
       MANAGER,
     )
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Act
     await user.click(
@@ -279,7 +287,7 @@ describe('the services of the menu, against the API', () => {
       serviceChangeHrefOf(osaka, await serviceIdOf('Spa & Cut Package')),
       OPERATOR,
     )
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Act
     await user.click(screen.getByRole('checkbox', { name: 'パッケージにする' }))
@@ -301,7 +309,7 @@ describe('the services of the menu, against the API', () => {
       serviceChangeHrefOf(tokyo, await serviceIdOf('Ladies Cut')),
       MANAGER,
     )
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Act
     await user.click(screen.getByRole('button', { name: '変更を保存する' }))
@@ -322,7 +330,7 @@ describe('the services of the menu, against the API', () => {
       serviceChangeHrefOf(tokyo, await serviceIdOf('Highlights')),
       OWNER,
     )
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Act
     await user.click(screen.getByRole('button', { name: '削除' }))
@@ -370,7 +378,7 @@ describe('the services of the menu, against the API', () => {
         serviceChangeHrefOf(await salonIdOf(salon), await serviceIdOf(name)),
         OPERATOR,
       )
-      await openedForm('サービスを直す')
+      await openedServiceForm('サービスを直す')
 
       // Act
       await user.click(screen.getByRole('button', { name: '削除' }))
@@ -391,14 +399,17 @@ describe('the services of the menu, against the API', () => {
     const user = userEvent.setup()
     const tokyo = await salonIdOf(TOKYO)
     await openAs(serviceEntryHrefOf(tokyo), MANAGER)
-    await openedForm('サービスを足す')
-    await user.type(text('名前'), 'Updo')
+    await openedServiceForm('サービスを足す')
+    await user.type(serviceText('名前'), 'Updo')
     await user.selectOptions(
       within(row('サービス')).getByRole('combobox', { name: 'カテゴリー' }),
       'Styling',
     )
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '60')
-    await user.type(field('時間と料金', 'textbox', '料金'), '6000')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '60',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '6000')
     await removedMeanwhile(await categoryIdOf(TOKYO, 'Styling'))
 
     // Act
@@ -414,7 +425,7 @@ describe('the services of the menu, against the API', () => {
       ),
     )
     await waitFor(() => expect(optionsOf(category)).not.toContain('Styling'))
-    expect(text('名前')).toHaveValue('Updo')
+    expect(serviceText('名前')).toHaveValue('Updo')
     expect(await storedServicesNamed(TOKYO, 'Updo')).toEqual([])
   })
 
@@ -423,10 +434,13 @@ describe('the services of the menu, against the API', () => {
     const user = userEvent.setup()
     const tokyo = await salonIdOf(TOKYO)
     await openAs(serviceEntryHrefOf(tokyo), MANAGER)
-    await openedForm('サービスを足す')
-    await user.type(text('名前'), 'Cut & Perm')
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '150')
-    await user.type(field('時間と料金', 'textbox', '料金'), '14000')
+    await openedServiceForm('サービスを足す')
+    await user.type(serviceText('名前'), 'Cut & Perm')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '150',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '14000')
     await user.click(screen.getByRole('checkbox', { name: 'パッケージにする' }))
     await user.selectOptions(
       within(row('構成サービス 1')).getByRole('combobox', { name: 'サービス' }),
@@ -461,8 +475,8 @@ describe('the services of the menu, against the API', () => {
     const tokyo = await salonIdOf(TOKYO)
     const balayage = await serviceIdOf('Balayage')
     await openAs(serviceChangeHrefOf(tokyo, balayage), MANAGER)
-    await openedForm('サービスを直す')
-    await user.type(text('名前'), ' Plus')
+    await openedServiceForm('サービスを直す')
+    await user.type(serviceText('名前'), ' Plus')
     await serviceRemovedMeanwhile(balayage)
 
     // Act
@@ -496,11 +510,7 @@ describe('the services of the menu, against the API', () => {
     await openAs(serviceEntryHrefOf(tokyo), STYLIST)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(NOT_KEEPER)).toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
@@ -509,18 +519,19 @@ describe('the services of the menu, against the API', () => {
     const user = userEvent.setup()
     const osaka = await salonIdOf(OSAKA)
     await openAs(serviceEntryHrefOf(osaka), MANAGER)
-    await openedForm('サービスを足す')
-    await user.type(text('名前'), 'Nail Care')
-    await user.type(field('時間と料金', 'textbox', '所要時間（分）'), '30')
-    await user.type(field('時間と料金', 'textbox', '料金'), '3000')
+    await openedServiceForm('サービスを足す')
+    await user.type(serviceText('名前'), 'Nail Care')
+    await user.type(
+      serviceField('時間と料金', 'textbox', '所要時間（分）'),
+      '30',
+    )
+    await user.type(serviceField('時間と料金', 'textbox', '料金'), '3000')
 
     // Act
     await user.click(screen.getByRole('button', { name: '足す' }))
 
     // Assert
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(NOT_THEIRS)
     expect(await storedServicesNamed(OSAKA, 'Nail Care')).toEqual([])
   })
 
@@ -533,7 +544,7 @@ describe('the services of the menu, against the API', () => {
     await signInAs(OWNER)
 
     // Act
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
@@ -548,7 +559,7 @@ describe('the services of the menu, against the API', () => {
     await signInAs(OPERATOR)
 
     // Act
-    await openedForm('サービスを直す')
+    await openedServiceForm('サービスを直す')
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
@@ -594,16 +605,16 @@ describe('the services of the menu on a page in English', () => {
       'Hair Cut',
     )
     await user.type(
-      field('Time and price', 'textbox', 'Duration (minutes)'),
+      serviceField('Time and price', 'textbox', 'Duration (minutes)'),
       '15',
     )
-    await user.type(field('Time and price', 'textbox', 'Price'), '1500')
+    await user.type(serviceField('Time and price', 'textbox', 'Price'), '1500')
     await user.type(
-      field('Time and price', 'textbox', 'Discounted price'),
+      serviceField('Time and price', 'textbox', 'Discounted price'),
       '1200',
     )
     await user.selectOptions(
-      field('Booking', 'combobox', 'Staff who can do it'),
+      serviceField('Booking', 'combobox', 'Staff who can do it'),
       'Stylist or above',
     )
     await user.click(screen.getByRole('button', { name: 'Add an option' }))
@@ -652,12 +663,12 @@ describe('the services of the menu on a page in English', () => {
     await openedFormInEnglish('Add a service')
     await user.type(textInEnglish('Name'), 'Quick Blow')
     await user.type(
-      field('Time and price', 'textbox', 'Duration (minutes)'),
+      serviceField('Time and price', 'textbox', 'Duration (minutes)'),
       '2000',
     )
-    await user.type(field('Time and price', 'textbox', 'Price'), '2000')
+    await user.type(serviceField('Time and price', 'textbox', 'Price'), '2000')
     await user.type(
-      field('Time and price', 'textbox', 'Discounted price'),
+      serviceField('Time and price', 'textbox', 'Discounted price'),
       '2500',
     )
     await user.click(
@@ -672,12 +683,12 @@ describe('the services of the menu on a page in English', () => {
 
     // Assert
     expect(
-      field('Time and price', 'textbox', 'Duration (minutes)'),
+      serviceField('Time and price', 'textbox', 'Duration (minutes)'),
     ).toHaveAccessibleDescription(
       'A whole number from 1 to 1,440. Enter the duration as a whole number of minutes from 1 to 1,440.',
     )
     expect(
-      field('Time and price', 'textbox', 'Discounted price'),
+      serviceField('Time and price', 'textbox', 'Discounted price'),
     ).toHaveAccessibleDescription(
       expect.stringContaining('The discounted price can be at most the price.'),
     )
@@ -761,10 +772,10 @@ describe('the services of the menu on a page in English', () => {
     await openedFormInEnglish('Add a service')
     await user.type(textInEnglish('Name'), 'Cut & Perm')
     await user.type(
-      field('Time and price', 'textbox', 'Duration (minutes)'),
+      serviceField('Time and price', 'textbox', 'Duration (minutes)'),
       '150',
     )
-    await user.type(field('Time and price', 'textbox', 'Price'), '14000')
+    await user.type(serviceField('Time and price', 'textbox', 'Price'), '14000')
     await user.click(
       screen.getByRole('checkbox', { name: 'Make it a package' }),
     )

@@ -2,6 +2,7 @@ import type {
   ModelsDayOfWeekType,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
+import { MOST_DATES } from '../utils/schedule-form'
 
 /*
  * Schedules as the API answers them, for the stories: the times with their
@@ -96,6 +97,13 @@ export const aPastDayOff = (): ModelsStaffSchedule => ({
   isAvailable: false,
   notes: null,
 })
+
+/** A day off on every day of the year before today: with one row from today, as many rows of dates as a schedule holds */
+export const aYearOfDaysOff = (): ModelsStaffSchedule[] =>
+  Array.from({ length: MOST_DATES - 1 }, (_, index) => ({
+    ...aPastDayOff(),
+    date: new Date(Date.UTC(2025, 10, 20 + index)).toISOString().slice(0, 10),
+  }))
 
 /** A whole schedule: the week, Sunday off, a day of a week before, and two dates of the week of the stories */
 export const aSchedule = (): ModelsStaffSchedule[] => [

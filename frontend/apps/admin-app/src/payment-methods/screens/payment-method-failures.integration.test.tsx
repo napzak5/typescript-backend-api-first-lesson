@@ -5,7 +5,7 @@ import {
   unreadable,
   whenAskedFor,
 } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, readAgain } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -118,7 +118,7 @@ describe('the payment methods of a salon, when a request fails or something chan
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(
@@ -140,7 +140,7 @@ describe('the payment methods of a salon, when a request fails or something chan
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       expect(
@@ -183,7 +183,7 @@ describe('the payment methods of a salon, when a request fails or something chan
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedForm('支払い方法を足す')
@@ -249,7 +249,7 @@ describe('the payment methods of a salon, when a request fails or something chan
       await readable()
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'もう一度読み込む' }))
+      await readAgain(user)
 
       // Assert
       await openedForm('支払い方法を直す')

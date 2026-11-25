@@ -15,6 +15,7 @@ import {
   attemptStaffEntry,
   readStaffMember,
   readStaffPage,
+  readWholeLedger,
   removeStaffMember,
 } from './staff-api'
 
@@ -145,6 +146,21 @@ describe('attemptStaffEntry', () => {
     },
   )
 
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'email', rule: 'invalid_format' }]))
+
+    // Act
+    const attempt = await attemptStaffEntry(salon.id, request)
+
+    // Assert
+    expect(attempt).toEqual({
+      type: 'invalid',
+      values: [{ field: 'email', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, () => Response]>([
     ['a salon removed meanwhile', () => problem(404)],
     ['a body too large', () => problem(413)],
@@ -203,6 +219,37 @@ describe('attemptStaffChange', () => {
     expect(attempt).toEqual({ type: 'duplicate', field: 'staffCode' })
   })
 
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() => problem(400, [{ field: 'email', rule: 'invalid_format' }]))
+
+    // Act
+    const attempt = await attemptStaffChange(salon.id, member.id, {
+      email: 'misaki',
+    })
+
+    // Assert
+    expect(attempt).toEqual({
+      type: 'invalid',
+      values: [{ field: 'email', rule: 'invalid_format' }],
+    })
+  })
+
+  // The form keeps the member of the account active: the API refuses that only when the member was linked to the account after the form opened
+  it('should say that the member of the account stays active', async () => {
+    // Arrange
+    answering(() => problemWithCode(409, '3003'))
+
+    // Act
+    const attempt = await attemptStaffChange(salon.id, member.id, {
+      isActive: false,
+    })
+
+    // Assert
+    expect(attempt).toEqual({ type: 'ownRecord' })
+  })
+
   it.each<[string, () => Response]>([
     ['a body too large', () => problem(413)],
     ['a body of another type', () => problem(415)],
@@ -230,6 +277,34 @@ describe('attemptStaffChange', () => {
 
     // Assert
     expect(attempt).toEqual({ type })
+  })
+})
+
+describe('readWholeLedger', () => {
+  // The salon was read before, and nothing but the salon and the cursor is sent
+  it.each<[string, () => Response]>([
+    ['400', () => problem(400)],
+    ['404', () => problem(404)],
+  ])('should read nothing after %s', async (_, answer) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const read = await readWholeLedger(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type: 'failed' })
+  })
+
+  it.each(UNREAD)('should read nothing after %s', async (_, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const read = await readWholeLedger(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type })
   })
 })
 

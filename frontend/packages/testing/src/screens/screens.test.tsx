@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useLayoutEffect, useState } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
@@ -15,6 +22,7 @@ import {
   notifications,
   optionsOf,
   queryClientOfATest,
+  readAgain,
   renderApplicationAt,
   rowsOf,
   statusMessages,
@@ -80,6 +88,33 @@ const ReadingARecord = () => {
   })
 
   return <p>{data ?? 'nothing yet'}</p>
+}
+
+/** How often the button that reads again was pressed when it took a press */
+let readsAgain = 0
+
+/** A part that says it could not read, and is busy for a moment before its button takes a press */
+const Unread = ({ name }: { name: string }) => {
+  const [busy, setBusy] = useState(true)
+  useLayoutEffect(() => {
+    const ready = setTimeout(() => setBusy(false), 100)
+
+    return () => clearTimeout(ready)
+  }, [])
+
+  return (
+    <section aria-label='記録'>
+      <button
+        type='button'
+        aria-busy={busy || undefined}
+        onClick={() => {
+          readsAgain += busy ? 0 : 1
+        }}
+      >
+        {name}
+      </button>
+    </section>
+  )
 }
 
 /** Three tables: one with the header of a row first, one with it last, one without rows. */
@@ -161,6 +196,35 @@ describe('the screen tools', () => {
     cleanup()
     tries = 0
     reads = 0
+    readsAgain = 0
+  })
+
+  describe('readAgain', () => {
+    it('should press the button that reads again once it is no longer busy', async () => {
+      // Arrange
+      render(<Unread name='もう一度読み込む' />)
+
+      // Act
+      await readAgain(userEvent)
+
+      // Assert
+      expect(readsAgain).toBe(1)
+    })
+
+    it('should press the button of a part, by the name it has in the language of the page', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      render(<Unread name='Load again' />)
+
+      // Act
+      await readAgain(user, {
+        inside: within(screen.getByRole('region', { name: '記録' })),
+        name: 'Load again',
+      })
+
+      // Assert
+      expect(readsAgain).toBe(1)
+    })
   })
 
   describe('renderApplicationAt', () => {

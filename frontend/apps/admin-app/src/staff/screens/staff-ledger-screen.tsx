@@ -1,4 +1,5 @@
 import {
+  cursorAfter,
   FAILED,
   firstCursor,
   listingOf,
@@ -20,21 +21,13 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { staffEntryHrefOf, staffMemberHrefOf } from '../../navigation'
-import {
-  readStaffPage,
-  STAFF_LISTS,
-  type StaffPageRead,
-} from '../api/staff-api'
+import { readStaffPage, STAFF_LISTS } from '../api/staff-api'
 import { StaffTable } from '../components/staff-table/staff-table'
 import { StaffLedgerForbidden, useKeepsStaffLedger } from './with-staff-member'
 
 const { ledger, loading, names, titles } = adminStaffMessages
 
 type StaffListProps = { salon: ModelsSalonResponse }
-
-/** Where the page after one begins: nowhere after a page that was not read. */
-const cursorAfter = (page: StaffPageRead): string | undefined =>
-  page.type === 'found' ? (page.nextCursor ?? undefined) : undefined
 
 /**
  * The members of the staff ledger of the salon, in the order they were
