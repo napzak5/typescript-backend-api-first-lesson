@@ -190,21 +190,22 @@ export const SalesReportReadMapper = {
         ),
       ),
     ]
-    const ofLabel = (label: string): readonly DayFigures[] =>
-      days.filter(({ saleDate }) => labelOf(unit, saleDate) === label)
-    const sales = labels.map((label) =>
-      sumOf(ofLabel(label).map((day) => day.sales)),
-    )
-    const transactions = labels.map((label) =>
-      sumOf(ofLabel(label).map((day) => day.transactions)),
-    )
+    const parts = labels.map((label) => {
+      const ofLabel = days.filter(
+        ({ saleDate }) => labelOf(unit, saleDate) === label,
+      )
+      return {
+        sales: sumOf(ofLabel.map((day) => day.sales)),
+        transactions: sumOf(ofLabel.map((day) => day.transactions)),
+      }
+    })
 
     return {
       labels,
-      sales,
-      transactions,
-      average: labels.map((_, index) =>
-        averageOf(sales[index] ?? 0, transactions[index] ?? 0),
+      sales: parts.map(({ sales }) => sales),
+      transactions: parts.map(({ transactions }) => transactions),
+      average: parts.map(({ sales, transactions }) =>
+        averageOf(sales, transactions),
       ),
     }
   },

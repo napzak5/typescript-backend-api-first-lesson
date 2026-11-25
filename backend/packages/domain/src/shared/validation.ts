@@ -66,6 +66,9 @@ const toValidationIssues = (
  * An input that breaks a rule is checked once more, with Zod speaking
  * Japanese: the same input against the same schema breaks the same rules
  * in the same order, so the issues of the two checks pair by their place.
+ * A rule that reads what changes between the two (the clock) may decide
+ * otherwise; what the second check does not say again is told in English,
+ * in every language. None of the schemas of the requests has such a rule.
  */
 export const parseWith = <T>(
   schema: z.ZodType<T>,

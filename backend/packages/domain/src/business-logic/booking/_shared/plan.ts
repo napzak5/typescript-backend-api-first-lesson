@@ -143,6 +143,11 @@ export const planBooking = (
     line,
     service: servicesById.get(line.serviceId),
   }))
+  // The rows of the lines whose service is there. A line whose service is
+  // not there is an issue below, and then nothing is written.
+  const services = requested.flatMap(({ line, service }, index) =>
+    service === undefined ? [] : [toServiceRow(line, service, index)],
+  )
   const issues = [
     ...customerIssues,
     ...(staffById.has(request.staffId)
@@ -171,10 +176,6 @@ export const planBooking = (
     return { type: 'invalid', issues }
   }
 
-  // Every service was found, so every line has its row.
-  const services = requested.flatMap(({ line, service }, index) =>
-    service === undefined ? [] : [toServiceRow(line, service, index)],
-  )
   const [first, ...others] = services.map(summedOf)
   if (first === undefined) {
     return {
