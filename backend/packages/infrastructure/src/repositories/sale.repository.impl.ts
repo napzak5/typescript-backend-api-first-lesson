@@ -15,6 +15,8 @@ import {
   type BookingOfSale,
   bookingToHold,
   type CalculationReferences,
+  type DbNewSalesDetail,
+  type DbSalesDetail,
   type DomainError,
   type ISaleRepository,
   type LedgerReach,
@@ -41,7 +43,7 @@ import {
   type SaleWrite,
   SERVICE_ITEM,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import {
   and,
   asc,
@@ -54,23 +56,14 @@ import {
   not,
   sql,
 } from 'drizzle-orm'
-import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
+import { written } from '../database/written'
 import { type HeldSale, heldSaleOf, within } from './_shared/held-sale'
-import { salesWithDetails } from './_shared/sale-details'
-
-/**
- * The statements of a read see the database as it was at one moment: a
- * sale is read with the payments it had when it said what its payment
- * status is, never with one that came in between two statements.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
+import { salesWithDetails, saleWithDetailsOf } from './_shared/sale-details'
 
 /** The IDs among these that are there, without the ones that are null. */
 const named = (ids: readonly (string | null)[]): string[] => [
@@ -305,7 +298,7 @@ const changeReferencesOf = async (
  * Writes a sale that was planned, with its lines. Nothing is written when
  * another sale has the number.
  */
-const written = async (
+const writePlanned = async (
   tx: DatabaseExecutor,
   write: SaleWrite,
 ): Promise<
@@ -418,7 +411,26 @@ const calculationReferencesOf = async (
   }
 }
 
-/** The sale with the ID that the reader reaches, with its lines and payments. */
+/** Puts these lines in the place of every line of the sale, and answers with the lines written. */
+const replacedDetails = async (
+  tx: DatabaseExecutor,
+  saleId: SaleId,
+  details: readonly DbNewSalesDetail[],
+): Promise<DbSalesDetail[]> => {
+  await tx.delete(salesDetails).where(eq(salesDetails.saleId, saleId))
+  return tx
+    .insert(salesDetails)
+    .values(details.map((detail) => ({ ...detail, saleId })))
+    .returning()
+}
+
+/**
+ * The sale with the ID that the reader reaches, with its lines and
+ * payments. The statements of a read see the database as it was at one
+ * moment (`AT_ONE_MOMENT`): a sale is read with the payments it had when
+ * it said what its payment status is, never with one that came in between
+ * two statements.
+ */
 const saleOf = async (
   tx: DatabaseExecutor,
   id: SaleId,
@@ -453,7 +465,7 @@ export class SaleRepository implements ISaleRepository {
             origin,
           )
 
-          return plan.type === 'planned' ? written(tx, plan.write) : plan
+          return plan.type === 'planned' ? writePlanned(tx, plan.write) : plan
         },
         // Each statement sees what was committed before it: a request that
         // waited for the booking sees the sale it waited for. With a
@@ -478,9 +490,9 @@ export class SaleRepository implements ISaleRepository {
     reach: LedgerReach,
     request: RequestedSaleChange,
   ): Promise<Result<SaleUpdate, DomainError>> {
-    return attempt('Failed to update sale', () =>
+    const updated = await attempt('Failed to update sale', () =>
       this.db.transaction(
-        async (tx): Promise<SaleUpdate> => {
+        async (tx): Promise<SaleUpdate | null> => {
           const held = await heldSaleOf(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
@@ -498,32 +510,33 @@ export class SaleRepository implements ISaleRepository {
             return plan
           }
 
-          await tx
+          const [sale] = await tx
             .update(sales)
             .set({ ...plan.change.sale, updatedAt: CLOCK })
             .where(eq(sales.id, id))
-          if (plan.change.details !== null) {
-            await tx.delete(salesDetails).where(eq(salesDetails.saleId, id))
-            await tx.insert(salesDetails).values(
-              plan.change.details.map((detail) => ({
-                ...detail,
-                saleId: id,
-              })),
-            )
+            .returning()
+          if (sale === undefined) {
+            return null
           }
+          const details =
+            plan.change.details === null
+              ? null
+              : await replacedDetails(tx, id, plan.change.details)
+
           // The sale is held: no payment of it comes in between the
           // statements of this read.
-          const sale = await saleOf(tx, id, reach)
-
-          return sale === null
-            ? { type: 'notFound' }
-            : { type: 'updated', sale }
+          return {
+            type: 'updated',
+            sale: await saleWithDetailsOf(tx, sale, details),
+          }
         },
         // Each statement sees what was committed before it: a request that
         // waited for the sale or for the booking sees what it waited for.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(updated, written('Update of sale'))
   }
 
   async voidSale(
@@ -531,9 +544,9 @@ export class SaleRepository implements ISaleRepository {
     reach: LedgerReach,
     request: RequestedSaleVoid,
   ): Promise<Result<SaleVoiding, DomainError>> {
-    return attempt('Failed to void sale', () =>
+    const voided = await attempt('Failed to void sale', () =>
       this.db.transaction(
-        async (tx): Promise<SaleVoiding> => {
+        async (tx): Promise<SaleVoiding | null> => {
           const held = await heldSaleOf(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
@@ -549,7 +562,7 @@ export class SaleRepository implements ISaleRepository {
             return refusal
           }
 
-          await tx
+          const [sale] = await tx
             .update(sales)
             .set({
               isVoid: true,
@@ -558,13 +571,21 @@ export class SaleRepository implements ISaleRepository {
               updatedAt: CLOCK,
             })
             .where(eq(sales.id, id))
-          const sale = await saleOf(tx, id, reach)
+            .returning()
+          if (sale === undefined) {
+            return null
+          }
 
-          return sale === null ? { type: 'notFound' } : { type: 'voided', sale }
+          return {
+            type: 'voided',
+            sale: await saleWithDetailsOf(tx, sale, null),
+          }
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(voided, written('Update of voided sale'))
   }
 
   async list({

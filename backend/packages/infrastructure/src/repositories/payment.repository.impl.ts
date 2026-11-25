@@ -18,11 +18,12 @@ import {
   refusalOfPayment,
   type SaleId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import { and, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { written } from '../database/written'
 import { heldSaleOf, within } from './_shared/held-sale'
 
 /**
@@ -40,6 +41,40 @@ const moneyOfSale = (tx: DatabaseExecutor, saleId: string) =>
     })
     .from(paymentTransactions)
     .where(eq(paymentTransactions.saleId, saleId))
+
+/**
+ * The payment that is refunded and the sale it is of, held `FOR UPDATE` by
+ * one statement until the refund is written. The sale is held as every
+ * writer of a sale and of its payments holds it first, so a refund waits
+ * for the payment, the void or the change of the sale that is under way.
+ * The payment is held with it, and what it says of its money is what the
+ * refund it waited for left. Only a refund holds a payment, and every
+ * refund holds both rows in this statement. A payment stays with its sale,
+ * so the sale is the one the payment names. Null when no payment with the
+ * ID is of a sale within the reach.
+ */
+const heldPaymentOf = async (
+  tx: DatabaseExecutor,
+  id: PaymentId,
+  reach: LedgerReach,
+) => {
+  const [held] = await tx
+    .select({
+      saleId: sales.id,
+      totalAmount: sales.totalAmount,
+      payment: {
+        status: paymentTransactions.status,
+        amount: paymentTransactions.amount,
+        refundAmount: paymentTransactions.refundAmount,
+      },
+    })
+    .from(sales)
+    .innerJoin(paymentTransactions, eq(paymentTransactions.saleId, sales.id))
+    .where(and(eq(paymentTransactions.id, id), within(reach)))
+    .for('update', { of: [sales, paymentTransactions] })
+
+  return held ?? null
+}
 
 export class PaymentRepository implements IPaymentRepository {
   constructor(private readonly db: Database) {}
@@ -133,36 +168,17 @@ export class PaymentRepository implements IPaymentRepository {
     reach: LedgerReach,
     request: RequestedRefund,
   ): Promise<Result<PaymentRefunding, DomainError>> {
-    return attempt('Failed to refund payment', () =>
+    const refunding = await attempt('Failed to refund payment', () =>
       this.db.transaction(
-        async (tx): Promise<PaymentRefunding> => {
-          // A payment stays with its sale, so the sale is learnt without a
-          // lock and held before anything of the payment is decided: the
-          // sale is the first row a refund holds, as it is for a payment
-          // and for a void.
-          const [found] = await tx
-            .select({ saleId: paymentTransactions.saleId })
-            .from(paymentTransactions)
-            .innerJoin(sales, eq(sales.id, paymentTransactions.saleId))
-            .where(and(eq(paymentTransactions.id, id), within(reach)))
-          if (found === undefined) {
-            return { type: 'notFound' }
-          }
-          const held = await heldSaleOf(tx, found.saleId, reach)
+        async (tx): Promise<PaymentRefunding | null> => {
+          const held = await heldPaymentOf(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
           }
-          const payments = await moneyOfSale(tx, found.saleId)
-          const payment = payments.find((one) => one.id === id)
-          if (payment === undefined) {
-            return { type: 'notFound' }
-          }
-          const plan = planRefund(
-            held.sale,
-            payment,
-            payments.filter((one) => one.id !== id),
-            request,
+          const others = (await moneyOfSale(tx, held.saleId)).filter(
+            (one) => one.id !== id,
           )
+          const plan = planRefund(held, held.payment, others, request)
           if (plan.type !== 'planned') {
             return plan
           }
@@ -173,17 +189,21 @@ export class PaymentRepository implements IPaymentRepository {
             .where(eq(paymentTransactions.id, id))
             .returning()
           if (refunded === undefined) {
-            return { type: 'notFound' }
+            return null
           }
           await tx
             .update(sales)
             .set({ paymentStatus: plan.write.paymentStatus, updatedAt: CLOCK })
-            .where(eq(sales.id, found.saleId))
+            .where(eq(sales.id, held.saleId))
 
           return { type: 'refunded', payment: refunded }
         },
+        // Each statement sees what was committed before it: the payments of
+        // the sale are those of the moment the sale was held.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(refunding, written('Update of refunded payment'))
   }
 }

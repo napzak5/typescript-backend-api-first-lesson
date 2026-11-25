@@ -23,7 +23,7 @@ import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database } from '../database/index'
-import { rowWritten } from '../database/written'
+import { rowWritten, written } from '../database/written'
 
 const ofSalon = (salonId: SalonId, id: PaymentMethodId) =>
   and(eq(paymentMethods.id, id), eq(paymentMethods.salonId, salonId))
@@ -121,9 +121,9 @@ export class PaymentMethodRepository implements IPaymentMethodRepository {
     id: PaymentMethodId,
     changes: DbPaymentMethodChanges,
   ): Promise<Result<PaymentMethodUpdate, DomainError>> {
-    return attempt('Failed to update payment method', () =>
+    const updated = await attempt('Failed to update payment method', () =>
       this.db.transaction(
-        async (tx): Promise<PaymentMethodUpdate> => {
+        async (tx): Promise<PaymentMethodUpdate | null> => {
           // Held, the limits are what they are when the change is written:
           // a change of the other limit at the same moment has been written
           // by the time this statement returns the row.
@@ -142,19 +142,21 @@ export class PaymentMethodRepository implements IPaymentMethodRepository {
             return { type: 'limitsOutOfOrder' }
           }
 
-          const [updated] = await tx
+          const [paymentMethod] = await tx
             .update(paymentMethods)
             .set({ ...changes, updatedAt: CLOCK })
             .where(eq(paymentMethods.id, id))
             .returning()
 
-          return updated === undefined
-            ? { type: 'notFound' }
-            : { type: 'updated', paymentMethod: updated }
+          return paymentMethod === undefined
+            ? null
+            : { type: 'updated', paymentMethod }
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(updated, written('Update of payment method'))
   }
 
   async delete(
