@@ -18,7 +18,12 @@ describe('the entry of the server', () => {
     }
   })
 
-  it('should run the server in the process of Node.js: its variables, filled from the environment file, and its exit', async () => {
+  // The entry imports the whole application, which is compiled from source
+  // as it is imported: longer than the 5 seconds of a unit test when the
+  // unit tests of every package run at once, as in CI.
+  it('should run the server in the process of Node.js: its variables, filled from the environment file, and its exit', {
+    timeout: 60_000,
+  }, async () => {
     // Arrange
     vi.stubEnv('PORT', 'not a port')
     vi.stubEnv('MAIL_FROM', undefined)
