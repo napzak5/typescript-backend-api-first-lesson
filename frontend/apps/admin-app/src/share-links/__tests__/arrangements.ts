@@ -55,6 +55,28 @@ export const arrangeShareLink = async ({
     ],
   )
 
+/**
+ * So many links of a file, issued by an account an hour apart, the last of
+ * them an hour ago. Gives the ID of the first issued: the last of the list,
+ * which shows the latest issued first.
+ */
+export const arrangeShareLinks = async (
+  attachmentId: string,
+  issuedBy: string,
+  count: number,
+): Promise<string> => {
+  const first = await arrangeShareLink({
+    attachmentId,
+    issuedBy,
+    hoursAgo: count,
+  })
+  for (const hoursAgo of Array.from({ length: count - 1 }, (_, at) => at + 1)) {
+    await arrangeShareLink({ attachmentId, issuedBy, hoursAgo })
+  }
+
+  return first
+}
+
 const storedSchema = z.array(
   z.object({
     expiresAt: z.number(),

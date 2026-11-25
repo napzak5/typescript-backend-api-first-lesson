@@ -101,27 +101,6 @@ describe('ShareLinkList', () => {
     // Assert
     expect(stories.Unread.args.onRetry).toHaveBeenCalledOnce()
   })
-
-  it.each<[string, keyof typeof stories, RegExp]>([
-    [
-      'a member of the staff who shares no file',
-      'NotTheirsToShare',
-      /オーナー、マネージャー、管理者/,
-    ],
-    [
-      'a file whose upload was not finished',
-      'NotUploaded',
-      /アップロードが済んでいない/,
-    ],
-  ])('should tell %s why there is nothing to issue', async (_, story, said) => {
-    // Act
-    await stories[story].run()
-
-    // Assert
-    expect(within(part()).getByText(said)).toBeVisible()
-    expect(within(part()).queryByRole('link')).toBeNull()
-    expect(within(part()).queryByRole('table')).toBeNull()
-  })
 })
 
 describe('ShareLinkList on a page in English', () => {
@@ -187,19 +166,5 @@ describe('ShareLinkList on a page in English', () => {
     expect(part('Share links')).toHaveTextContent(
       'No share linksWith “Issue a share link”, a link is issued with how long it is valid for, a download limit and a password.',
     )
-  })
-
-  it('should tell in English a member who shares no file who does', async () => {
-    // Arrange
-    languageStore.choose('en')
-
-    // Act
-    await stories.NotTheirsToShare.run()
-
-    // Assert
-    expect(part('Share links')).toHaveTextContent(
-      'Only the owners and managers of the salon and administrators can issue and revoke the share links of files.',
-    )
-    expect(screen.queryByRole('link')).toBeNull()
   })
 })

@@ -20,7 +20,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../../__tests__/screens'
 import {
   arrangeAwaitedFile,
-  arrangeFile,
   fileRemovedMeanwhile,
 } from '../../attachments/__tests__/arrangements'
 import {
@@ -30,10 +29,18 @@ import {
 } from '../../navigation'
 import {
   arrangeShareLink,
+  arrangeShareLinks,
   openedWith,
   revokedMeanwhile,
   storedShareLinksOf,
 } from '../__tests__/arrangements'
+import {
+  CONSENT,
+  consentOfTokyo,
+  linksPart,
+  openFileAs,
+  openFormAs,
+} from '../__tests__/screens'
 
 /*
  * The share links of a file against the API: the links below the file,
@@ -46,40 +53,9 @@ import {
 
 const PORTAL = 'https://portal.salon.example'
 
-const CONSENT = 'カラー同意書_田中様.pdf'
-
 const PASSWORD = 'umi no mieru heya'
 
 const DAY = 24 * 60 * 60 * 1000
-
-/** A form of the salon in Tokyo that the owner uploaded: its ID, and the ID of the salon */
-const consentOfTokyo = async () => {
-  const salonId = await salonIdOf(TOKYO)
-  const attachmentId = await arrangeFile({
-    salonId,
-    filename: CONSENT,
-    uploadedBy: OWNER,
-  })
-
-  return { salonId, attachmentId }
-}
-
-/** The part of the screen of the file that holds its links */
-const linksPart = () => screen.getByRole('region', { name: '共有リンク' })
-
-/** Opens the screen of a file, and waits for its links to be read. */
-const openFileAs = async (
-  file: { salonId: string; attachmentId: string },
-  email: string,
-): Promise<void> => {
-  await openAs(attachmentHrefOf(file.salonId, file.attachmentId), email)
-  await heading(CONSENT)
-  await waitFor(() =>
-    expect(
-      within(linksPart()).queryByText('共有リンクを読み込んでいます'),
-    ).toBeNull(),
-  )
-}
 
 /** Each term of a part of the screen with its description */
 const detailsOf = (region: string): string[][] => {
@@ -92,15 +68,6 @@ const detailsOf = (region: string): string[][] => {
       term.textContent ?? '',
       descriptions[index]?.textContent ?? '',
     ])
-}
-
-/** Opens the form of a link of a file, and waits until the file is read. */
-const openFormAs = async (
-  file: { salonId: string; attachmentId: string },
-  email: string,
-): Promise<void> => {
-  await openAs(shareLinkEntryHrefOf(file.salonId, file.attachmentId), email)
-  await screen.findByRole('combobox', { name: '有効期間' })
 }
 
 const periodControl = () => screen.getByRole('combobox', { name: '有効期間' })
@@ -190,13 +157,7 @@ describe('the share links of a file', () => {
       // Arrange
       const user = userEvent.setup()
       const file = await consentOfTokyo()
-      for (const hoursAgo of Array.from({ length: 21 }, (_, at) => at + 1)) {
-        await arrangeShareLink({
-          attachmentId: file.attachmentId,
-          issuedBy: OWNER,
-          hoursAgo,
-        })
-      }
+      await arrangeShareLinks(file.attachmentId, OWNER, 21)
       await openFileAs(file, OWNER)
       expect(rowsOf('発行した共有リンク')).toHaveLength(20)
 

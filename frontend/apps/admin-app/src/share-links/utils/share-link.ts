@@ -166,9 +166,6 @@ export const afterIssuing = (
         ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors }
     })
-    .with({ type: 'notUploaded' }, () =>
-      aboutTheAttempt(adminShareLinkMessages.notUploaded),
-    )
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORM.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
       aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),

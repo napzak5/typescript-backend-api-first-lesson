@@ -68,17 +68,3 @@ export const Unread: Story = {
     },
   },
 }
-
-/** A member of the staff, who shares no file */
-export const NotTheirsToShare: Story = {
-  args: {
-    listing: { type: 'notShared', note: adminShareLinkMessages.sharers },
-  },
-}
-
-/** A file whose upload was not finished */
-export const NotUploaded: Story = {
-  args: {
-    listing: { type: 'notShared', note: adminShareLinkMessages.notUploaded },
-  },
-}

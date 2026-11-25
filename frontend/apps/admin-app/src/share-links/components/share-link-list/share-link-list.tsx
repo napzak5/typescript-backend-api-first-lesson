@@ -29,8 +29,6 @@ const { list: LIST, loading: LOADING } = adminShareLinkMessages
 
 /** What the part shows of the links of a file */
 export type ShareLinkListing =
-  /** The file is not shared by the account, or not one to share: the note says why */
-  | { type: 'notShared'; note: LocalizedText }
   | { type: 'reading' }
   /** They could not be read: the message says why */
   | { type: 'unread'; message: LocalizedText }
@@ -83,22 +81,11 @@ export const ShareLinkList = ({
   return (
     <Card
       title={say(LIST.title)}
-      actions={
-        listing.type === 'notShared' ? undefined : (
-          <ButtonLink href={entryHref}>{say(LIST.issue)}</ButtonLink>
-        )
-      }
+      actions={<ButtonLink href={entryHref}>{say(LIST.issue)}</ButtonLink>}
     >
       <div className={styles['list']}>
-        <Note>
-          {say(
-            listing.type === 'notShared'
-              ? listing.note
-              : adminShareLinkMessages.about,
-          )}
-        </Note>
+        <Note>{say(adminShareLinkMessages.about)}</Note>
         {match(listing)
-          .with({ type: 'notShared' }, () => null)
           .with({ type: 'reading' }, () => (
             <LoadingIndicator label={say(LOADING.shareLinks)} />
           ))

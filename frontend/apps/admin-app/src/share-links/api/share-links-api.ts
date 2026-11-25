@@ -105,10 +105,11 @@ export type ShareLinkIssue =
   /** The token is in this answer alone */
   | { type: 'issued'; shareLink: ModelsShareLinkResponse; token: string }
   | { type: 'invalid'; values: RefusedValue[] }
-  /** The file was removed meanwhile */
+  /**
+   * The file was removed meanwhile. A file whose upload was not finished
+   * (409) is not found either: the screens know such a file nowhere
+   */
   | NotFound
-  /** The upload of the file was not finished */
-  | { type: 'notUploaded' }
   | Forbidden
   | Unread
 
@@ -133,8 +134,7 @@ export const issueShareLink = async (
       type: 'invalid',
       values: refusedValuesOf(data),
     }))
-    .with({ status: 404 }, () => NOT_FOUND)
-    .with({ status: 409 }, () => ({ type: 'notUploaded' }))
+    .with({ status: P.union(404, 409) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
     .with(P.union(...UNANSWERED_PARTS), unreadOf)

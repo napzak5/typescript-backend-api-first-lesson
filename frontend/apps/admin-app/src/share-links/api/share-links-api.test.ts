@@ -162,7 +162,7 @@ describe('issueShareLink', () => {
 
   it.each<[string, Answer, string]>([
     ['a file removed meanwhile', () => problem(404), 'notFound'],
-    ['a file whose upload was not finished', () => problem(409), 'notUploaded'],
+    ['a file whose upload was not finished', () => problem(409), 'notFound'],
     ['a role that shares no file', () => problem(403), 'forbidden'],
     ['a body too large', () => problem(413), 'failed'],
     ['a body of another kind', () => problem(415), 'failed'],
