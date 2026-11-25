@@ -10,7 +10,6 @@ import {
   type DbPurchaseOrderChanges,
   type DbPurchaseOrderItem,
   type DomainError,
-  DomainErrors,
   type IPurchaseOrderRepository,
   type LedgerReach,
   type OrderStatusRefusal,
@@ -46,14 +45,13 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm'
-import type {
-  PgTransactionConfig,
-  PgUpdateSetSource,
-} from 'drizzle-orm/pg-core'
+import type { PgUpdateSetSource } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
+import { rowWritten, writtenFor } from '../database/written'
 
 /** The orders of the salons the reach covers. */
 const within = (reach: LedgerReach): SQL | undefined =>
@@ -63,11 +61,6 @@ const within = (reach: LedgerReach): SQL | undefined =>
       eq(purchaseOrders.salonId, salonId),
     )
     .exhaustive()
-
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
 
 /**
  * The date of an order as a response shows it, to the millisecond: a
@@ -95,33 +88,28 @@ const PURCHASE: (typeof inventoryTransactions.$inferInsert)['transactionType'] =
 /** What a receipt records of a stock movement that tells where it comes from. */
 const PURCHASE_ORDER_REFERENCE = 'purchase_order'
 
-type Unwritten = { type: 'unwritten'; reason: string }
-
-/** The items of the orders by the order, each in the order of the request. */
-const itemsOf = async (
+/** The items of the orders, by the order and then in the order of the request. */
+const itemsOf = (
   executor: DatabaseExecutor,
   orderIds: string[],
-): Promise<Map<string, DbPurchaseOrderItem[]>> => {
-  const rows =
-    orderIds.length === 0
-      ? []
-      : await executor
-          .select()
-          .from(purchaseOrderItems)
-          .where(inArray(purchaseOrderItems.purchaseOrderId, orderIds))
-          .orderBy(
-            asc(purchaseOrderItems.purchaseOrderId),
-            asc(purchaseOrderItems.sortOrder),
-          )
-  const byOrder = new Map<string, DbPurchaseOrderItem[]>()
-  for (const row of rows) {
-    byOrder.set(row.purchaseOrderId, [
-      ...(byOrder.get(row.purchaseOrderId) ?? []),
-      row,
-    ])
-  }
-  return byOrder
-}
+): Promise<DbPurchaseOrderItem[]> =>
+  executor
+    .select()
+    .from(purchaseOrderItems)
+    .where(inArray(purchaseOrderItems.purchaseOrderId, orderIds))
+    .orderBy(
+      asc(purchaseOrderItems.purchaseOrderId),
+      asc(purchaseOrderItems.sortOrder),
+    )
+
+/** The order, as read or as a write returned it, with its items. */
+const withItems = async (
+  executor: DatabaseExecutor,
+  order: DbPurchaseOrder,
+): Promise<PurchaseOrderWithItems> => ({
+  order,
+  items: await itemsOf(executor, [order.id]),
+})
 
 /** The order with its items, if the reach covers it. */
 const orderOf = async (
@@ -133,12 +121,8 @@ const orderOf = async (
     .select()
     .from(purchaseOrders)
     .where(and(eq(purchaseOrders.id, id), within(reach)))
-  if (order === undefined) {
-    return null
-  }
-  const items = await itemsOf(executor, [order.id])
 
-  return { order, items: items.get(order.id) ?? [] }
+  return order === undefined ? null : withItems(executor, order)
 }
 
 export class PurchaseOrderRepository implements IPurchaseOrderRepository {
@@ -151,9 +135,9 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   }: PurchaseOrderCreateCriteria): Promise<
     Result<PurchaseOrderCreation, DomainError>
   > {
-    return attempt('Failed to create purchase order', () =>
+    const created = await attempt('Failed to create purchase order', () =>
       this.db.transaction(
-        async (tx): Promise<PurchaseOrderCreation> => {
+        async (tx): Promise<Result<PurchaseOrderCreation, DomainError>> => {
           // The stock rows of the salon the items name, with what is copied
           // of their products. The locks are those a removal of a row and a
           // change of a product wait for and are waited for by: a row that
@@ -181,15 +165,18 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             .orderBy(asc(inventory.id))
             .for('key share')
           const byId = new Map(rows.map((row) => [row.id, row]))
-          const ordered = items.map((item) => ({
-            item,
-            row: byId.get(item.inventoryId),
-          }))
-          const indexes = ordered.flatMap(({ row }, index) =>
-            row === undefined ? [index] : [],
-          )
-          if (indexes.length > 0) {
-            return { type: 'rowsNotFound', indexes }
+          // The items with their rows, in the order of the request.
+          const found = items.flatMap((item) => {
+            const row = byId.get(item.inventoryId)
+            return row === undefined ? [] : [{ item, row }]
+          })
+          if (found.length < items.length) {
+            return Result.success({
+              type: 'rowsNotFound',
+              indexes: items.flatMap(({ inventoryId }, index) =>
+                byId.has(inventoryId) ? [] : [index],
+              ),
+            })
           }
 
           const [stored] = await tx
@@ -198,41 +185,40 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             .onConflictDoNothing({ target: purchaseOrders.orderNumber })
             .returning()
           if (stored === undefined) {
-            return { type: 'orderNumberTaken' }
+            return Result.success({ type: 'orderNumberTaken' })
           }
-          const storedItems = await tx
-            .insert(purchaseOrderItems)
-            .values(
-              ordered.flatMap(({ item, row }, sortOrder) =>
-                row === undefined
-                  ? []
-                  : [
-                      {
-                        ...item,
-                        purchaseOrderId: stored.id,
-                        productCode: row.productCode,
-                        productName: row.productName,
-                        unit: row.unit,
-                        sortOrder,
-                      },
-                    ],
-              ),
-            )
-            .returning()
+          const storedItems = writtenFor('Insert of purchase order items')(
+            found,
+            ({ item }) => item.inventoryId,
+            await tx
+              .insert(purchaseOrderItems)
+              .values(
+                found.map(({ item, row }, sortOrder) => ({
+                  ...item,
+                  purchaseOrderId: stored.id,
+                  productCode: row.productCode,
+                  productName: row.productName,
+                  unit: row.unit,
+                  sortOrder,
+                })),
+              )
+              .returning(),
+            ({ inventoryId }) => inventoryId,
+          )
 
-          return {
-            type: 'created',
-            order: {
-              order: stored,
-              items: storedItems.toSorted(
-                (left, right) => left.sortOrder - right.sortOrder,
-              ),
-            },
-          }
+          return Result.map(
+            storedItems,
+            (paired): PurchaseOrderCreation => ({
+              type: 'created',
+              order: { order: stored, items: paired.map(({ row }) => row) },
+            }),
+          )
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(created, (creation) => creation)
   }
 
   async findById(
@@ -278,16 +264,19 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           after === null
             ? []
             : await tx
-                .select({ orderDate: purchaseOrders.orderDate })
+                .select({
+                  orderDate: purchaseOrders.orderDate,
+                  id: purchaseOrders.id,
+                })
                 .from(purchaseOrders)
                 .where(and(eq(purchaseOrders.id, after), within(reach)))
         if (after !== null && cursor === undefined) {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${purchaseOrders.orderDate}, ${purchaseOrders.id}) < (${cursor.orderDate}::timestamptz, ${after}::uuid)`
+            : sql`(${purchaseOrders.orderDate}, ${purchaseOrders.id}) < (${cursor.orderDate}::timestamptz, ${cursor.id}::uuid)`
 
         const found = await tx
           .select()
@@ -297,9 +286,12 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           // One extra order tells whether another page follows.
           .limit(limit + 1)
         const page = found.slice(0, limit)
-        const items = await itemsOf(
-          tx,
-          page.map(({ id }) => id),
+        const items = Map.groupBy(
+          await itemsOf(
+            tx,
+            page.map(({ id }) => id),
+          ),
+          ({ purchaseOrderId }) => purchaseOrderId,
         )
         const counted = await tx
           .select({ total: count() })
@@ -326,6 +318,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   ): Promise<Result<PurchaseOrderChange, DomainError>> {
     return this.change(
       'Failed to update purchase order',
+      'Update of purchase order',
       reach,
       id,
       (status) => refusalOfUpdate(status, changes.status),
@@ -340,6 +333,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   ): Promise<Result<PurchaseOrderChange, DomainError>> {
     return this.change(
       'Failed to approve purchase order',
+      'Update of approved purchase order',
       reach,
       id,
       refusalOfApproval,
@@ -354,6 +348,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   ): Promise<Result<PurchaseOrderChange, DomainError>> {
     return this.change(
       'Failed to cancel purchase order',
+      'Update of cancelled purchase order',
       reach,
       id,
       refusalOfCancellation,
@@ -368,7 +363,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
   ): Promise<Result<PurchaseOrderReceipt, DomainError>> {
     const received = await attempt('Failed to receive purchase order', () =>
       this.db.transaction(
-        async (tx): Promise<PurchaseOrderReceipt | Unwritten> => {
+        async (tx): Promise<Result<PurchaseOrderReceipt, DomainError>> => {
           // Held, the order is received once, and not while it is changed
           // or cancelled; it is decided on as it is once held.
           const [held] = await tx
@@ -377,11 +372,11 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             .where(and(eq(purchaseOrders.id, id), within(reach)))
             .for('update')
           if (held === undefined) {
-            return { type: 'notFound' }
+            return Result.success({ type: 'notFound' })
           }
           const refusal = refusalOfGoodsReceipt(held.status)
           if (refusal !== null) {
-            return refusal
+            return Result.success(refusal)
           }
 
           const ordered = await tx
@@ -394,7 +389,10 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             .where(eq(purchaseOrderItems.purchaseOrderId, id))
           const plan = planGoodsReceipt(ordered, items)
           if (plan.type === 'refused') {
-            return { type: 'itemsRefused', refusals: plan.refusals }
+            return Result.success({
+              type: 'itemsRefused',
+              refusals: plan.refusals,
+            })
           }
           const { movements } = plan
           const ids = movements.map(({ inventoryId }) => inventoryId)
@@ -414,7 +412,6 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           const rows = await tx
             .select({
               id: inventory.id,
-              currentStock: inventory.currentStock,
               overLimit: sql<boolean>`${inventory.currentStock} + ${arriving} > ${MAX_STOCK}`,
             })
             .from(inventory)
@@ -426,107 +423,109 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
             heldById.has(inventoryId) ? [] : [index],
           )
           if (gone.length > 0) {
-            return {
+            return Result.success({
               type: 'itemsRefused',
               refusals: gone.map((index) => ({ type: 'notOrdered', index })),
-            }
+            })
           }
           const over = movements.find(
             ({ inventoryId }) => heldById.get(inventoryId)?.overLimit === true,
           )
           if (over !== undefined) {
-            return { type: 'overLimit', inventoryId: over.inventoryId }
+            return Result.success({
+              type: 'overLimit',
+              inventoryId: over.inventoryId,
+            })
           }
 
           // The moment of the receipt: when its write begins, once the
           // order and every row of it are held. The delivery of the order,
           // the change of each row and each purchase are of it.
-          const [delivered] = await tx
-            .update(purchaseOrders)
-            .set({
-              status: 'delivered',
-              actualDelivery: CHANGED_AT,
-              updatedAt: CHANGED_AT,
-              ...(deliveryNotes === null ? {} : { deliveryNotes }),
-            })
-            .where(eq(purchaseOrders.id, id))
-            .returning({ at: purchaseOrders.updatedAt })
-          if (delivered === undefined) {
-            return {
-              type: 'unwritten',
-              reason: `Purchase order ${id} vanished while it was held`,
-            }
+          const delivered = rowWritten('Update of delivered purchase order')(
+            await tx
+              .update(purchaseOrders)
+              .set({
+                status: 'delivered',
+                actualDelivery: CHANGED_AT,
+                updatedAt: CHANGED_AT,
+                ...(deliveryNotes === null ? {} : { deliveryNotes }),
+              })
+              .where(eq(purchaseOrders.id, id))
+              .returning(),
+          )
+          if (delivered.type === 'error') {
+            return delivered
           }
-          const { at } = delivered
+          const at = delivered.data.updatedAt
 
           // The reserved stock stays, so what is available moves with what
-          // there is.
-          const moved = await tx
-            .update(inventory)
-            .set({
-              currentStock: sql`${inventory.currentStock} + ${arriving}`,
-              availableStock: sql`${inventory.availableStock} + ${arriving}`,
-              updatedAt: at,
-            })
-            .where(inArray(inventory.id, ids))
-            .returning({
-              id: inventory.id,
-              salonId: inventory.salonId,
-              productId: inventory.productId,
-              lotNumber: inventory.lotNumber,
-              expiryDate: inventory.expiryDate,
-              currentStock: inventory.currentStock,
-            })
-          const movedById = new Map(moved.map((row) => [row.id, row]))
-          const purchases: (typeof inventoryTransactions.$inferInsert)[] =
-            movements.flatMap((movement) => {
-              const row = movedById.get(movement.inventoryId)
-              const before = heldById.get(movement.inventoryId)
-              return row === undefined || before === undefined
-                ? []
-                : [
-                    {
-                      ...movement,
-                      transactionType: PURCHASE,
-                      referenceType: PURCHASE_ORDER_REFERENCE,
-                      referenceId: id,
-                      reason: null,
-                      performedBy,
-                      salonId: row.salonId,
-                      productId: row.productId,
-                      lotNumber: row.lotNumber,
-                      expiryDate: row.expiryDate,
-                      balanceBefore: before.currentStock,
-                      balanceAfter: row.currentStock,
-                      createdAt: at,
-                    },
-                  ]
-            })
-          if (purchases.length !== movements.length) {
-            return {
-              type: 'unwritten',
-              reason: `The stock rows of the receipt of purchase order ${id} were not all moved`,
-            }
+          // there is. What a row held before is what it holds now less what
+          // arrived.
+          const moved = writtenFor('Update of received stock rows')(
+            movements,
+            ({ inventoryId }) => inventoryId,
+            await tx
+              .update(inventory)
+              .set({
+                currentStock: sql`${inventory.currentStock} + ${arriving}`,
+                availableStock: sql`${inventory.availableStock} + ${arriving}`,
+                updatedAt: at,
+              })
+              .where(inArray(inventory.id, ids))
+              .returning({
+                id: inventory.id,
+                salonId: inventory.salonId,
+                productId: inventory.productId,
+                lotNumber: inventory.lotNumber,
+                expiryDate: inventory.expiryDate,
+                balanceBefore: sql<string>`(${inventory.currentStock} - ${arriving})::text`,
+                balanceAfter: inventory.currentStock,
+              }),
+            ({ id: inventoryId }) => inventoryId,
+          )
+          if (moved.type === 'error') {
+            return moved
           }
-          await tx.insert(inventoryTransactions).values(purchases)
 
-          const order = await orderOf(tx, id, reach)
-          return order === null
-            ? {
-                type: 'unwritten',
-                reason: `Purchase order ${id} vanished while it was held`,
-              }
-            : { type: 'received', order }
+          const purchases = writtenFor('Insert of purchases')(
+            movements,
+            ({ inventoryId }) => inventoryId,
+            await tx
+              .insert(inventoryTransactions)
+              .values(
+                moved.data.map(({ item: movement, row }) => ({
+                  ...movement,
+                  transactionType: PURCHASE,
+                  referenceType: PURCHASE_ORDER_REFERENCE,
+                  referenceId: id,
+                  reason: null,
+                  performedBy,
+                  salonId: row.salonId,
+                  productId: row.productId,
+                  lotNumber: row.lotNumber,
+                  expiryDate: row.expiryDate,
+                  balanceBefore: row.balanceBefore,
+                  balanceAfter: row.balanceAfter,
+                  createdAt: at,
+                })),
+              )
+              .returning({ inventoryId: inventoryTransactions.inventoryId }),
+            ({ inventoryId }) => inventoryId,
+          )
+          if (purchases.type === 'error') {
+            return purchases
+          }
+
+          return Result.success({
+            type: 'received',
+            order: await withItems(tx, delivered.data),
+          })
         },
         { isolationLevel: 'read committed' },
       ),
     )
 
-    return Result.flatMap(received, (receipt) =>
-      receipt.type === 'unwritten'
-        ? Result.error(DomainErrors.database(receipt.reason, null))
-        : Result.success(receipt),
-    )
+    return Result.flatMap(received, (receipt) => receipt)
   }
 
   async listReorderSuggestions({
@@ -621,7 +620,7 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           after === null
             ? []
             : await tx
-                .select({ productCode: products.productCode })
+                .select({ productCode: products.productCode, id: products.id })
                 .from(products)
                 .where(
                   and(eq(products.id, after), eq(products.salonId, salonId)),
@@ -630,9 +629,9 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${products.productCode}, ${products.id}) > (${cursor.productCode}, ${after}::uuid)`
+            : sql`(${products.productCode}, ${products.id}) > (${cursor.productCode}, ${cursor.id}::uuid)`
 
         const found = await tx
           .select({
@@ -682,39 +681,48 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
    */
   private async change(
     message: string,
+    write: string,
     reach: LedgerReach,
     id: PurchaseOrderId,
     refusalOf: (status: DbPurchaseOrder['status']) => OrderStatusRefusal | null,
     values: PgUpdateSetSource<typeof purchaseOrders>,
   ): Promise<Result<PurchaseOrderChange, DomainError>> {
-    return attempt(message, () =>
+    const changed = await attempt(message, () =>
       this.db.transaction(
-        async (tx): Promise<PurchaseOrderChange> => {
+        async (tx): Promise<Result<PurchaseOrderChange, DomainError>> => {
           const [held] = await tx
             .select({ status: purchaseOrders.status })
             .from(purchaseOrders)
             .where(and(eq(purchaseOrders.id, id), within(reach)))
             .for('update')
           if (held === undefined) {
-            return { type: 'notFound' }
+            return Result.success({ type: 'notFound' })
           }
           const refusal = refusalOf(held.status)
           if (refusal !== null) {
-            return refusal
+            return Result.success(refusal)
           }
 
-          await tx
-            .update(purchaseOrders)
-            .set({ ...values, updatedAt: CHANGED_AT })
-            .where(eq(purchaseOrders.id, id))
-          const order = await orderOf(tx, id, reach)
+          const order = rowWritten(write)(
+            await tx
+              .update(purchaseOrders)
+              .set({ ...values, updatedAt: CHANGED_AT })
+              .where(eq(purchaseOrders.id, id))
+              .returning(),
+          )
+          if (order.type === 'error') {
+            return order
+          }
 
-          return order === null
-            ? { type: 'notFound' }
-            : { type: 'changed', order }
+          return Result.success({
+            type: 'changed',
+            order: await withItems(tx, order.data),
+          })
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(changed, (change) => change)
   }
 }

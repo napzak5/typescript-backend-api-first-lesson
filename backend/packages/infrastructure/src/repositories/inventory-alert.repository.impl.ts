@@ -13,7 +13,6 @@ import {
   type DbProductStockOfAlert,
   type DbStockRowOfAlert,
   type DomainError,
-  DomainErrors,
   decideAcknowledgement,
   type IInventoryAlertRepository,
   type InventoryAlertAcknowledging,
@@ -35,20 +34,24 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm'
-import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
+import { rowWritten } from '../database/written'
 
 const acknowledgements = inventoryAlertAcknowledgements
 
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
+type ProductAcknowledgement = Extract<
+  DbAcknowledgementOfAlert,
+  { type: 'product' }
+>
 
-type Unwritten = { type: 'unwritten'; reason: string }
+type StockRowAcknowledgement = Extract<
+  DbAcknowledgementOfAlert,
+  { type: 'stockRow' }
+>
 
 /** The products an actor reaches. */
 const productsWithin = (reach: LedgerReach): SQL | undefined =>
@@ -186,11 +189,14 @@ const acknowledgementsOf = async (
   }
 
   const latest = await tx
-    .selectDistinctOn([
-      acknowledgements.productId,
-      acknowledgements.inventoryId,
-      acknowledgements.alert,
-    ])
+    .selectDistinctOn(
+      [
+        acknowledgements.productId,
+        acknowledgements.inventoryId,
+        acknowledgements.alert,
+      ],
+      { id: acknowledgements.id, inventoryId: acknowledgements.inventoryId },
+    )
     .from(acknowledgements)
     .where(
       or(
@@ -219,57 +225,25 @@ const acknowledgementsOf = async (
     inventoryId === null ? [] : [id],
   )
 
-  const productSpans = await productStockSince(tx, ofProducts)
-  const rowSpans = await rowStockSince(tx, ofRows)
-  const productSpanOf = new Map(
-    productSpans.map((span) => [span.acknowledgementId, span]),
-  )
-  const rowSpanOf = new Map(
-    rowSpans.map((span) => [span.acknowledgementId, span]),
-  )
-
-  return latest.flatMap((acknowledgement): DbAcknowledgementOfAlert[] => {
-    if (acknowledgement.inventoryId === null) {
-      const span = productSpanOf.get(acknowledgement.id)
-      return span === undefined
-        ? []
-        : [
-            {
-              type: 'product',
-              acknowledgement,
-              lowestStock: span.lowestStock,
-              highestStock: span.highestStock,
-            },
-          ]
-    }
-    const span = rowSpanOf.get(acknowledgement.id)
-    return span === undefined
-      ? []
-      : [
-          {
-            type: 'stockRow',
-            acknowledgement,
-            lowestStock: span.lowestStock,
-          },
-        ]
-  })
+  return [
+    ...(await productStockSince(tx, ofProducts)),
+    ...(await rowStockSince(tx, ofRows)),
+  ]
 }
 
 /**
- * The lowest and the highest stock of the product of each acknowledgement
- * at its salon, from the time of the acknowledgement on: at that time and
- * after each moment at which movements of it were recorded since. The
- * stock after a moment is the stock now less what the movements of the
- * later moments brought, and the stock at the time of the acknowledgement
- * the stock now less what every movement since brought: worked out of
- * the movements, exactly, in `numeric`.
+ * Each acknowledgement, with the lowest and the highest stock of its
+ * product at its salon from the time of the acknowledgement on: at that
+ * time and after each moment at which movements of it were recorded
+ * since. The stock after a moment is the stock now less what the movements
+ * of the later moments brought, and the stock at the time of the
+ * acknowledgement the stock now less what every movement since brought:
+ * worked out of the movements, exactly, in `numeric`.
  */
 const productStockSince = async (
   tx: DatabaseExecutor,
   ids: string[],
-): Promise<
-  { acknowledgementId: string; lowestStock: string; highestStock: string }[]
-> => {
+): Promise<ProductAcknowledgement[]> => {
   if (ids.length === 0) {
     return []
   }
@@ -324,38 +298,63 @@ const productStockSince = async (
     .as('spans')
   const stockNow = sql`(select coalesce(sum(${inventory.currentStock}), 0) from ${inventory} where ${inventory.salonId} = ${acknowledgements.salonId} and ${inventory.productId} = ${acknowledgements.productId})`
 
-  return tx
+  const found = await tx
     .select({
-      acknowledgementId: acknowledgements.id,
+      acknowledgement: acknowledgements,
       lowestStock: sql<string>`(${stockNow} - coalesce(${spans.most}, 0))::text`,
       highestStock: sql<string>`(${stockNow} - coalesce(${spans.least}, 0))::text`,
     })
     .from(acknowledgements)
     .leftJoin(spans, eq(spans.acknowledgementId, acknowledgements.id))
     .where(inArray(acknowledgements.id, ids))
+
+  return found.map(
+    (fact): ProductAcknowledgement => ({ type: 'product', ...fact }),
+  )
 }
 
 /**
- * The lowest stock the row of each acknowledgement was left with by a
- * movement since the acknowledgement; null when none was recorded.
+ * Each acknowledgement, with the lowest stock its row was left with by a
+ * movement since the acknowledgement; null when none was recorded. The
+ * movements are joined: a select of one table writes the columns in the
+ * SQL of its fields without their tables, and a subquery there would
+ * compare the row of each movement with itself.
  */
 const rowStockSince = async (
   tx: DatabaseExecutor,
   ids: string[],
-): Promise<{ acknowledgementId: string; lowestStock: string | null }[]> => {
+): Promise<StockRowAcknowledgement[]> => {
   if (ids.length === 0) {
     return []
   }
-
-  return tx
+  const lowest = tx
     .select({
       acknowledgementId: acknowledgements.id,
-      lowestStock: sql<
-        string | null
-      >`(select min(${inventoryTransactions.balanceAfter})::text from ${inventoryTransactions} where ${inventoryTransactions.inventoryId} = ${acknowledgements.inventoryId} and ${inventoryTransactions.createdAt} > ${acknowledgements.acknowledgedAt})`,
+      stock: sql<string>`min(${inventoryTransactions.balanceAfter})::text`.as(
+        'lowest_stock',
+      ),
     })
     .from(acknowledgements)
+    .innerJoin(
+      inventoryTransactions,
+      and(
+        eq(inventoryTransactions.inventoryId, acknowledgements.inventoryId),
+        gt(inventoryTransactions.createdAt, acknowledgements.acknowledgedAt),
+      ),
+    )
     .where(inArray(acknowledgements.id, ids))
+    .groupBy(acknowledgements.id)
+    .as('lowest')
+
+  const found = await tx
+    .select({ acknowledgement: acknowledgements, lowestStock: lowest.stock })
+    .from(acknowledgements)
+    .leftJoin(lowest, eq(lowest.acknowledgementId, acknowledgements.id))
+    .where(inArray(acknowledgements.id, ids))
+
+  return found.map(
+    (fact): StockRowAcknowledgement => ({ type: 'stockRow', ...fact }),
+  )
 }
 
 /** Everything the alerts of the salon, or of one product or row, come from. */
@@ -467,7 +466,9 @@ export class InventoryAlertRepository implements IInventoryAlertRepository {
       'Failed to acknowledge inventory alert',
       () =>
         this.db.transaction(
-          async (tx): Promise<InventoryAlertAcknowledging | Unwritten> => {
+          async (
+            tx,
+          ): Promise<Result<InventoryAlertAcknowledging, DomainError>> => {
             // Held, the alerts of the product are acknowledged one at a
             // time, and its thresholds do not change until the
             // acknowledgement is written. A row of the product is still
@@ -479,15 +480,15 @@ export class InventoryAlertRepository implements IInventoryAlertRepository {
               .where(and(eq(products.id, productId), productsWithin(reach)))
               .for('no key update', { of: products })
             if (product === undefined) {
-              return { type: 'notFound' }
+              return Result.success({ type: 'notFound' })
             }
             const days = alertDaysOf(now, product.timezone)
             if (days === null) {
-              return {
+              return Result.success({
                 type: 'unknownTimeZone',
                 salonId: product.salonId,
                 timezone: product.timezone,
-              }
+              })
             }
 
             // The rows the alert is decided on, held to share in the order
@@ -512,7 +513,7 @@ export class InventoryAlertRepository implements IInventoryAlertRepository {
               .orderBy(asc(inventory.id))
               .for('share')
             if (inventoryId !== null && held.length === 0) {
-              return { type: 'notFound' }
+              return Result.success({ type: 'notFound' })
             }
 
             const facts = await factsOf(
@@ -527,31 +528,29 @@ export class InventoryAlertRepository implements IInventoryAlertRepository {
             )
             const decision = decideAcknowledgement(facts, days, request)
             if (decision.type !== 'acknowledge') {
-              return decision
+              return Result.success(decision)
             }
 
-            const [written] = await tx
-              .insert(acknowledgements)
-              .values({ ...decision.acknowledgement, acknowledgedAt: CLOCK })
-              .returning()
-            return written === undefined
-              ? {
-                  type: 'unwritten',
-                  reason: `The acknowledgement of inventory alert ${request.alert} of ${inventoryId ?? productId} was not written`,
-                }
-              : {
-                  type: 'acknowledged',
-                  alert: { ...decision.alert, acknowledgement: written },
-                }
+            return Result.map(
+              rowWritten('Insert of inventory alert acknowledgement')(
+                await tx
+                  .insert(acknowledgements)
+                  .values({
+                    ...decision.acknowledgement,
+                    acknowledgedAt: CLOCK,
+                  })
+                  .returning(),
+              ),
+              (acknowledgement): InventoryAlertAcknowledging => ({
+                type: 'acknowledged',
+                alert: { ...decision.alert, acknowledgement },
+              }),
+            )
           },
           { isolationLevel: 'read committed' },
         ),
     )
 
-    return Result.flatMap(acknowledged, (outcome) =>
-      outcome.type === 'unwritten'
-        ? Result.error(DomainErrors.database(outcome.reason, null))
-        : Result.success(outcome),
-    )
+    return Result.flatMap(acknowledged, (outcome) => outcome)
   }
 }
