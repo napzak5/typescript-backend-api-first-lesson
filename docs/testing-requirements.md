@@ -281,9 +281,9 @@ then on a run that covers less fails; until then its coverage is reported,
 and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
 (`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
-the admin application (`frontend/apps/admin-app`), and the `utility`
-and `config` packages and the server (`backend/apps/server`) of the
-backend say so; the other packages of the backend do not yet.
+the admin application (`frontend/apps/admin-app`), and the `utility`,
+`config` and `domain` packages and the server (`backend/apps/server`) of
+the backend say so; the other packages of the backend do not yet.
 
 | Where | How |
 |---|---|

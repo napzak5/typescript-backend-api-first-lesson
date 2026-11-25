@@ -741,6 +741,33 @@ describe('ListLowStockInventoryUseCase', () => {
     expect(missing.inventoryRepository.listLowStock).not.toHaveBeenCalled()
   })
 
+  it('should pass on a query the API could not decode, and look at nothing', async () => {
+    // Arrange
+    const dependencies = inventoryDependencies()
+
+    // Act
+    const result = await lowStock(dependencies, owner, undecodable)
+
+    // Assert
+    expect(result).toEqual(undecodable)
+    expect(untouched(dependencies)).toBe(true)
+  })
+
+  it('should pass on a salon it could not look for, and list nothing', async () => {
+    // Arrange
+    const dependencies = inventoryDependencies(
+      {},
+      { exists: vi.fn(async () => databaseDown) },
+    )
+
+    // Act
+    const result = await lowStock(dependencies)
+
+    // Assert
+    expect(result).toEqual(databaseDown)
+    expect(dependencies.inventoryRepository.listLowStock).not.toHaveBeenCalled()
+  })
+
   it('names the cursor it was given, and the last row as the cursor of the next page when more follow', async () => {
     const dependencies = inventoryDependencies({
       listLowStock: vi.fn(async () =>
@@ -938,6 +965,31 @@ describe('ListExpiringInventoryUseCase', () => {
     expect(messagesOf(refused)).toEqual({
       cursor: 'Must name a stock row of the list',
     })
+  })
+
+  it('should pass on a query the API could not decode, and look at nothing', async () => {
+    // Arrange
+    const dependencies = inventoryDependencies()
+
+    // Act
+    const result = await expiring(dependencies, owner, undecodable)
+
+    // Assert
+    expect(result).toEqual(undecodable)
+    expect(untouched(dependencies)).toBe(true)
+  })
+
+  it('should pass on a list it could not read', async () => {
+    // Arrange
+    const dependencies = inventoryDependencies({
+      listExpiring: vi.fn(async () => databaseDown),
+    })
+
+    // Act
+    const result = await expiring(dependencies)
+
+    // Assert
+    expect(result).toEqual(databaseDown)
   })
 
   it('starts the page after the cursor it was given, and names it and the last row as the cursor of the next page when more follow', async () => {

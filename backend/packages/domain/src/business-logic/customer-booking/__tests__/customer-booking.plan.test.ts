@@ -41,6 +41,7 @@ import {
   candidateTimeOf,
   ONLINE,
   planCustomerBooking,
+  refusalOfSlot,
 } from '../_shared/plan'
 
 const origin = {
@@ -599,6 +600,27 @@ describe('planCustomerBooking', () => {
         planAt('03:00', { customerTimes: [time('03:00', '04:00')] }),
       ).toEqual(notASlot)
     })
+  })
+})
+
+describe('refusalOfSlot', () => {
+  it('should answer a time zone the runtime does not know, in which no slot can be told', () => {
+    // Arrange
+    const asked = { date: DATE, startTime: jst('10:00'), duration: 60 }
+
+    // Act
+    const refusal = refusalOfSlot(asked, NOW, {
+      customer: { isActive: true, customerStatus: 'active' },
+      salon: salonWith({ timezone: 'Mars/Olympus' }),
+      service: cutWith({}),
+      staff: staffOfDay(),
+      calendarDays: [],
+      serviceLineStarts: [],
+      customerTimes: [],
+    })
+
+    // Assert
+    expect(refusal).toEqual({ type: 'timeZoneUnknown' })
   })
 })
 

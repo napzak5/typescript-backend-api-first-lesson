@@ -715,6 +715,35 @@ describe('ExportCustomerDataUseCase', () => {
 
   it.each<[string, Partial<CustomerData>]>([
     ['the customer', { customer: dbCustomer({ gender: 'unknown' }) }],
+    ['the account', { account: dbUser({ createdAt: 'recently' }) }],
+    [
+      'the preferences',
+      {
+        preferences: dbCustomerPreferences({
+          preferredTimeSlots: 'not a list',
+        }),
+      },
+    ],
+    [
+      'the medical chart',
+      { medicalChart: dbMedicalChart({ createdAt: 'recently' }) },
+    ],
+    [
+      'an allergy',
+      { allergies: [dbCustomerAllergy({ createdAt: 'recently' })] },
+    ],
+    [
+      'a booking',
+      { bookings: [bookingWithServices({ startTime: 'recently' })] },
+    ],
+    ['a sale', { sales: [saleWithDetails({ saleTime: 'recently' })] }],
+    ['a review', { reviews: [dbReview({ createdAt: 'recently' })] }],
+    [
+      'a treatment record',
+      {
+        treatmentRecords: [storedTreatmentRecord({ createdAt: 'recently' })],
+      },
+    ],
     [
       'a version',
       {
