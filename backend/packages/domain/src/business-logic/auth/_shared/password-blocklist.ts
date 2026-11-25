@@ -61,15 +61,30 @@ const isRepetition = (characters: string[]): boolean =>
     ),
   )
 
+/**
+ * The code point of a character. A character is never empty, and the
+ * code point of its first place is a number: `codePointAt` says
+ * `undefined` only for a place past the end.
+ */
+const codePointOf = (character: string): number =>
+  Number(character.codePointAt(0))
+
 const follows = (previous: string, next: string, step: 1 | -1): boolean =>
-  (next.codePointAt(0) ?? 0) - (previous.codePointAt(0) ?? 0) === step ||
+  codePointOf(next) - codePointOf(previous) === step ||
   (step === 1 && previous === '9' && next === '0') ||
   (step === -1 && previous === '0' && next === '9')
 
+/** Every character but the first, with the one before it. */
+const withPrevious = (characters: readonly string[]): [string, string][] =>
+  characters.flatMap((character, index) =>
+    characters
+      .slice(index - 1, index)
+      .map((previous): [string, string] => [previous, character]),
+  )
+
 const isRun = (characters: string[], step: 1 | -1): boolean =>
-  characters.every(
-    (character, index) =>
-      index === 0 || follows(characters[index - 1] ?? '', character, step),
+  withPrevious(characters).every(([previous, next]) =>
+    follows(previous, next, step),
   )
 
 /** Neighbours all the way, up or down: "123456789012345", "zyxwvutsrqponml". */
@@ -91,6 +106,9 @@ const isCommonChoice = (password: string): boolean => {
   )
 }
 
+/** From the first @ of an address to its end: what is left is the local part. */
+const FROM_THE_AT = /@.*/su
+
 const isBlocklisted = (password: string, email: string): boolean => {
   const essence = essenceOf(password)
   // A password without a letter or digit has no essence to compare.
@@ -100,7 +118,7 @@ const isBlocklisted = (password: string, email: string): boolean => {
   return (
     password.toLowerCase() === email ||
     isSameChoiceAs(email) ||
-    isSameChoiceAs(email.split('@')[0] ?? '') ||
+    isSameChoiceAs(email.replace(FROM_THE_AT, '')) ||
     isCommonChoice(password)
   )
 }

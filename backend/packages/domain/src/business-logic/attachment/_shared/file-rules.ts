@@ -50,19 +50,15 @@ export const hasExtensionOf = (
 }
 
 /**
- * Whether a character must not be part of a file name: a control character
- * (C0, DEL, C1), or one that separates the parts of a path.
+ * A character that must not be part of a file name: a control character
+ * (C0, DEL and C1, which Unicode calls `Cc`), or one that separates the
+ * parts of a path.
  */
-export const isRefusedInFilename = (character: string): boolean => {
-  const code = character.codePointAt(0) ?? 0
+const REFUSED_IN_FILENAME = /^[\p{Cc}/\\]$/u
 
-  return (
-    code <= 0x1f ||
-    (code >= 0x7f && code <= 0x9f) ||
-    character === '/' ||
-    character === '\\'
-  )
-}
+/** Whether a character must not be part of a file name. */
+export const isRefusedInFilename = (character: string): boolean =>
+  REFUSED_IN_FILENAME.test(character)
 
 /**
  * Where the file of an attachment is stored. The server decides it, and
@@ -101,23 +97,19 @@ export const beginsAs = (
     .with('application/pdf', () => holds(head, PDF, 0))
     .exhaustive()
 
-const isPlain = (character: string): boolean => {
-  const code = character.codePointAt(0) ?? 0
-
-  return (
-    code >= 0x20 &&
-    code <= 0x7e &&
-    character !== '"' &&
-    character !== '\\' &&
-    character !== '%'
-  )
-}
+/**
+ * What the name in ASCII does not hold as it is: a character outside the
+ * printable ASCII, and the quote, the backslash and the percent sign, which
+ * a client would read as more than themselves. One `_` stands for each.
+ */
+const NOT_PLAIN = /[^ -~]|["%\\]/gu
 
 /** What `encodeURIComponent` leaves and RFC 8187 does not allow as it is. */
 const LEFT_UNENCODED = /['()*]/g
 
+/** One of `LEFT_UNENCODED`, which are ASCII: one code unit each. */
 const percentEncoded = (character: string): string =>
-  `%${(character.codePointAt(0) ?? 0).toString(16).toUpperCase()}`
+  `%${character.charCodeAt(0).toString(16).toUpperCase()}`
 
 /**
  * The `Content-Disposition` a download of the file is answered with (RFC
@@ -131,9 +123,7 @@ export const contentDispositionOf = (
   inline: boolean,
 ): string => {
   const kind = inline ? 'inline' : 'attachment'
-  const plain = [...filename]
-    .map((character) => (isPlain(character) ? character : '_'))
-    .join('')
+  const plain = filename.replace(NOT_PLAIN, '_')
   // A lone surrogate cannot be encoded: it is replaced first.
   const encoded = encodeURIComponent(filename.toWellFormed()).replace(
     LEFT_UNENCODED,

@@ -52,6 +52,12 @@ describe('the passwords that are refused as too easy to guess', () => {
     ['digits up, over 9 to 0', '123456789012345'],
     ['digits down, over 0 to 9', '987654321098765'],
     ['letters down', 'zyxwvutsrqponmlk'],
+    // Two code units each: neighbours by their code points.
+    [
+      'letters outside the Basic Multilingual Plane, up',
+      '\u{1d41a}\u{1d41b}\u{1d41c}\u{1d41d}\u{1d41e}\u{1d41f}\u{1d420}\u{1d421}\u{1d422}\u{1d423}\u{1d424}\u{1d425}\u{1d426}\u{1d427}\u{1d428}',
+    ],
+    ['kana up', 'ぁあぃいぅうぇえぉおかがきぎく'],
     // Stretches of the keyboard rows.
     ['the first rows of the keyboard', 'qwertyuiopasdfgh'],
     ['the lower rows of the keyboard', 'asdfghjklzxcvbnm'],
