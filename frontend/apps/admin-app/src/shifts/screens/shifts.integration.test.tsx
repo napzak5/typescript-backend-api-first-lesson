@@ -48,6 +48,7 @@ import {
   scheduleRowIdsOf,
   storedScheduleOf,
 } from '../__tests__/arrangements'
+import { group, openChange, writeTime } from '../__tests__/screens'
 import { mondayOf, weekNameOf } from '../utils/shift-week'
 
 /*
@@ -62,9 +63,6 @@ const weekTableOf = (monday: string, language: Locale = 'ja'): string =>
   language === 'ja'
     ? `${weekNameOf(monday).ja}のシフト`
     : `Shifts for ${weekNameOf(monday).en}`
-
-/** A day of the week, or a row of a date, of the form */
-const group = (name: string): HTMLElement => screen.getByRole('group', { name })
 
 const WEEKDAY = '09:00〜20:00休憩 13:00〜14:00'
 const SATURDAY = '10:00〜18:00休憩 13:00〜14:00'
@@ -115,26 +113,6 @@ const storedDayOff = (date: string, notes: string | null) => ({
   isAvailable: false,
   notes,
 })
-
-/** Writes a time into a control that holds one. */
-const writeTime = async (
-  user: ReturnType<typeof userEvent.setup>,
-  control: HTMLElement,
-  time: string,
-): Promise<void> => {
-  await user.clear(control)
-  await user.type(control, time)
-}
-
-/** Opens the form of the schedule of a member as the manager, and waits for it. */
-const openChange = async (staffCode: string): Promise<string> => {
-  const salonId = await salonIdOf(TOKYO)
-  renderAt(scheduleChangeHrefOf(salonId, await staffIdOf(staffCode)))
-  await signInAs(MANAGER)
-  await screen.findByRole('group', { name: '月曜日' })
-
-  return salonId
-}
 
 describe('the shifts, against the API', () => {
   beforeEach(() => {

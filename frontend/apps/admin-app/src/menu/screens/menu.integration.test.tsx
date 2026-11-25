@@ -34,6 +34,11 @@ import {
   storedCategoriesOf,
   storedServicesOf,
 } from '../__tests__/arrangements'
+import {
+  NOT_KEEPER,
+  NOT_THEIRS,
+  openedCategoryForm,
+} from '../__tests__/screens'
 
 /*
  * The menu of a salon, read and kept against the API: the categories of
@@ -72,12 +77,6 @@ const categoryTable = (): HTMLElement =>
 
 const formHeading = (name: string) =>
   screen.findByRole('heading', { level: 1, name })
-
-/** Waits for a form of a category: its heading comes first, the form once the categories were read. */
-const openedForm = async (title: string): Promise<void> => {
-  await formHeading(title)
-  await screen.findByRole('textbox', { name: /名前/ })
-}
 
 describe('the menu, against the API', () => {
   beforeEach(() => {
@@ -285,7 +284,7 @@ describe('the menu, against the API', () => {
     await user.click(
       await screen.findByRole('link', { name: 'カテゴリーを足す' }),
     )
-    await openedForm('カテゴリーを足す')
+    await openedCategoryForm('カテゴリーを足す')
     expect(screen.getByRole('textbox', { name: /表示順/ })).toHaveValue('9')
     await user.type(screen.getByRole('textbox', { name: /名前/ }), 'Bob Cut')
     await user.selectOptions(
@@ -342,7 +341,7 @@ describe('the menu, against the API', () => {
         await screen.findByRole('table', { name: 'カテゴリー' }),
       ).findByRole('link', { name: 'Hair Color' }),
     )
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
     await describedMeanwhile(color, 'Written by the manager')
 
     // Act
@@ -377,7 +376,7 @@ describe('the menu, against the API', () => {
     await openAs(categoryChangeHrefOf(tokyo, color), OWNER)
 
     // Assert
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
     expect(screen.getByRole('textbox', { name: /名前/ })).toHaveValue(
       'Hair Color',
     )
@@ -396,7 +395,7 @@ describe('the menu, against the API', () => {
       categoryChangeHrefOf(tokyo, await categoryIdOf(TOKYO, 'Perm')),
       MANAGER,
     )
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
 
     // Act
     await user.click(screen.getByRole('button', { name: '変更を保存する' }))
@@ -418,7 +417,7 @@ describe('the menu, against the API', () => {
       categoryChangeHrefOf(tokyo, await categoryIdOf(TOKYO, 'Hair Cut')),
       OWNER,
     )
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
 
     // Act
     await user.click(screen.getByRole('button', { name: '削除' }))
@@ -464,7 +463,7 @@ describe('the menu, against the API', () => {
     const user = userEvent.setup()
     const tokyo = await salonIdOf(TOKYO)
     await openAs(categoryEntryHrefOf(tokyo), MANAGER)
-    await openedForm('カテゴリーを足す')
+    await openedCategoryForm('カテゴリーを足す')
     await user.type(screen.getByRole('textbox', { name: /名前/ }), 'Updo')
     await user.selectOptions(
       screen.getByRole('combobox', { name: /種類/ }),
@@ -502,7 +501,7 @@ describe('the menu, against the API', () => {
     const tokyo = await salonIdOf(TOKYO)
     const perm = await categoryIdOf(TOKYO, 'Perm')
     await openAs(categoryChangeHrefOf(tokyo, perm), OWNER)
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
     await user.selectOptions(
       screen.getByRole('combobox', { name: '親カテゴリー' }),
       'Hair Treatment',
@@ -535,7 +534,7 @@ describe('the menu, against the API', () => {
     const tokyo = await salonIdOf(TOKYO)
     const spa = await categoryIdOf(TOKYO, 'Head Spa')
     await openAs(categoryChangeHrefOf(tokyo, spa), MANAGER)
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
     await user.type(screen.getByRole('textbox', { name: /名前/ }), ' Plus')
     await removedMeanwhile(spa)
 
@@ -561,11 +560,7 @@ describe('the menu, against the API', () => {
     )
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(NOT_KEEPER)).toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
@@ -574,7 +569,7 @@ describe('the menu, against the API', () => {
     const user = userEvent.setup()
     const osaka = await salonIdOf(OSAKA)
     await openAs(categoryEntryHrefOf(osaka), MANAGER)
-    await openedForm('カテゴリーを足す')
+    await openedCategoryForm('カテゴリーを足す')
     await user.type(screen.getByRole('textbox', { name: /名前/ }), 'Nail')
     await user.selectOptions(
       screen.getByRole('combobox', { name: /種類/ }),
@@ -585,9 +580,7 @@ describe('the menu, against the API', () => {
     await user.click(screen.getByRole('button', { name: '足す' }))
 
     // Assert
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent(NOT_THEIRS)
     expect(
       (await storedCategoriesOf(OSAKA)).map(({ name }) => name),
     ).not.toContain('Nail')
@@ -615,7 +608,7 @@ describe('the menu, against the API', () => {
     await signInAs(OWNER)
 
     // Act
-    await openedForm('カテゴリーを直す')
+    await openedCategoryForm('カテゴリーを直す')
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])

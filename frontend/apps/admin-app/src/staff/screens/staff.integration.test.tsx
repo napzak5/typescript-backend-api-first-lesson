@@ -42,6 +42,12 @@ import {
   TANAKA,
   WATANABE,
 } from '../__tests__/arrangements'
+import {
+  fillRequired,
+  LEDGER_NOT_THEIRS,
+  NEW_MEMBER,
+  openedMemberForm,
+} from '../__tests__/screens'
 
 /*
  * The staff ledger of the salon in Tokyo, as its owner keeps it: the five
@@ -52,37 +58,11 @@ import {
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
 
-/** The values a new member is given in the tests that register one */
-const NEW_MEMBER = {
-  lastName: 'Kato',
-  firstName: 'Rina',
-  displayName: 'Rina Kato',
-  email: 'rina.kato@beautysalon.jp',
-  phoneNumber: '090-7777-8888',
-}
-
-/** Fills in what nobody can leave out of a new member. */
-const fillRequired = async (
-  user: ReturnType<typeof userEvent.setup>,
-  values: Partial<typeof NEW_MEMBER> = {},
-): Promise<void> => {
-  const filled = { ...NEW_MEMBER, ...values }
-  await user.type(text('姓'), filled.lastName)
-  await user.type(text('名'), filled.firstName)
-  await user.type(text('表示名'), filled.displayName)
-  await user.type(text('メールアドレス'), filled.email)
-  await user.type(text('電話番号'), filled.phoneNumber)
-  await user.selectOptions(
-    screen.getByRole('combobox', { name: 'レベル' }),
-    'stylist',
-  )
-}
-
 /** Opens the screen that registers a member, as the owner, and waits for the form. */
 const openEntry = async (): Promise<void> => {
   renderAt(staffEntryHrefOf(await salonIdOf(TOKYO)))
   await signInAs(OWNER)
-  await screen.findByRole('group', { name: '名前' })
+  await openedMemberForm()
 }
 
 describe('the staff ledger, against the API', () => {
@@ -424,7 +404,7 @@ describe('the staff ledger, against the API', () => {
     const staffId = await staffIdOf(SUZUKI)
     renderAt(staffChangeHrefOf(salonId, staffId))
     await signInAs(OWNER)
-    await screen.findByRole('group', { name: '名前' })
+    await openedMemberForm()
     await changedMeanwhile(staffId, 'カラーの相談なら何でも。')
     await user.clear(text('役職'))
     await user.type(text('役職'), 'Art Director')
@@ -454,7 +434,7 @@ describe('the staff ledger, against the API', () => {
     const before = await storedMemberOf('stylist2@beautysalon.jp')
     renderAt(staffChangeHrefOf(salonId, staffId))
     await signInAs(OWNER)
-    await screen.findByRole('group', { name: '名前' })
+    await openedMemberForm()
 
     // Act
     await user.click(screen.getByRole('button', { name: '変更を保存する' }))
@@ -494,7 +474,7 @@ describe('the staff ledger, against the API', () => {
     const staffId = await crowdIdOf(1)
     renderAt(staffChangeHrefOf(await salonIdOf(TOKYO), staffId))
     await signInAs(OWNER)
-    await screen.findByRole('group', { name: '名前' })
+    await openedMemberForm()
     await removedMeanwhile(staffId)
     await user.type(text('役職'), 'Assistant')
 
@@ -588,11 +568,7 @@ describe('the staff ledger, against the API', () => {
     await signInAs(MANAGER)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このサロンのスタッフ台帳は、扱えません。スタッフ台帳を扱えるのは、そのサロンのオーナーと、管理者です。',
-      ),
-    ).toBeVisible()
+    expect(await screen.findByText(LEDGER_NOT_THEIRS)).toBeVisible()
     expect(
       within(
         screen.getByRole('navigation', { name: 'メインメニュー' }),
@@ -610,11 +586,7 @@ describe('the staff ledger, against the API', () => {
     await signInAs(THERAPIST)
 
     // Assert
-    expect(
-      await screen.findByText(
-        'このサロンのスタッフ台帳は、扱えません。スタッフ台帳を扱えるのは、そのサロンのオーナーと、管理者です。',
-      ),
-    ).toBeVisible()
+    expect(await screen.findByText(LEDGER_NOT_THEIRS)).toBeVisible()
     expect(screen.queryByRole('region', { name: 'スタッフ' })).toBeNull()
   })
 
@@ -629,7 +601,7 @@ describe('the staff ledger, against the API', () => {
     [
       'the registration of a member',
       async (salonId) => staffEntryHrefOf(salonId),
-      () => screen.findByRole('group', { name: '名前' }),
+      openedMemberForm,
     ],
     [
       'a member',
