@@ -95,7 +95,7 @@ backend or the frontend.
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
 | File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached; what is read of an answer and of a failure that SeaweedFS never gives (the whole file for a range, a failure without a status) | Integration against a SeaweedFS container, with real uploads and downloads; unit for the answers it never gives | `backend/packages/infrastructure/src/storage/__tests__/` |
 | The parts of the database access: the connection and its probe, the clock of the database (`CLOCK`, `CLOCK_ONCE`), the reads of one moment (`AT_ONE_MOMENT`), a count, the one row of an aggregate (`aggregateOf`), a write that returned no row, a pattern of `LIKE`, a failure turned into a `database` error | Unit; integration against PostgreSQL | `backend/packages/infrastructure/src/database/__tests__/` |
-| Repositories: every method and every path of it, against a real PostgreSQL: what is written and read, a list and its next page, every refusal, a write that a trigger skipped, a write that another request overtook, a database that is gone | Integration against PostgreSQL, a database for each test | `backend/packages/infrastructure/src/repositories/__tests__/salon.repository.integration.test.ts`, `service-category.repository.integration.test.ts`, `service.repository.integration.test.ts`, `user.repository.integration.test.ts`, `session.repository.integration.test.ts`, `staff.repository.integration.test.ts`, `staff-profile.repository.integration.test.ts`, `staff-schedule.repository.integration.test.ts`, `staff-account.repository.integration.test.ts`, `staff-invitation.repository.integration.test.ts`, `customer.repository.integration.test.ts`, `customer-merge.repository.integration.test.ts`, `customer-data.repository.integration.test.ts`, `customer-version.repository.integration.test.ts`, `customer-preferences.repository.integration.test.ts`, `customer-deletion-request.repository.integration.test.ts`, `customer-statistics.repository.integration.test.ts`, `booking.repository.integration.test.ts`, `available-slot.repository.integration.test.ts`, `sale.repository.integration.test.ts`, `payment.repository.integration.test.ts`, `payment-method.repository.integration.test.ts`, `point.repository.integration.test.ts`, `sales-report.repository.integration.test.ts`, `review.repository.integration.test.ts`, `review-report.repository.integration.test.ts`, `product.repository.integration.test.ts`, `inventory.repository.integration.test.ts`, `purchase-order.repository.integration.test.ts`, `inventory-alert.repository.integration.test.ts`; what the repositories share, in `backend/packages/infrastructure/src/repositories/_shared/__tests__/` |
+| Repositories: every method and every path of it, against a real PostgreSQL: what is written and read, a list and its next page, every refusal, a write that a trigger skipped, a write that another request overtook, a database that is gone | Integration against PostgreSQL, a database for each test | `backend/packages/infrastructure/src/repositories/__tests__/salon.repository.integration.test.ts`, `service-category.repository.integration.test.ts`, `service.repository.integration.test.ts`, `user.repository.integration.test.ts`, `session.repository.integration.test.ts`, `staff.repository.integration.test.ts`, `staff-profile.repository.integration.test.ts`, `staff-schedule.repository.integration.test.ts`, `staff-account.repository.integration.test.ts`, `staff-invitation.repository.integration.test.ts`, `customer.repository.integration.test.ts`, `customer-merge.repository.integration.test.ts`, `customer-data.repository.integration.test.ts`, `customer-version.repository.integration.test.ts`, `customer-preferences.repository.integration.test.ts`, `customer-deletion-request.repository.integration.test.ts`, `customer-statistics.repository.integration.test.ts`, `booking.repository.integration.test.ts`, `available-slot.repository.integration.test.ts`, `sale.repository.integration.test.ts`, `payment.repository.integration.test.ts`, `payment-method.repository.integration.test.ts`, `point.repository.integration.test.ts`, `sales-report.repository.integration.test.ts`, `review.repository.integration.test.ts`, `review-report.repository.integration.test.ts`, `product.repository.integration.test.ts`, `inventory.repository.integration.test.ts`, `purchase-order.repository.integration.test.ts`, `inventory-alert.repository.integration.test.ts`, `treatment-record.repository.integration.test.ts`, `medical-chart.repository.integration.test.ts`, `customer-allergy.repository.integration.test.ts`, `attachment.repository.integration.test.ts`, `share-link.repository.integration.test.ts`; what the repositories share, in `backend/packages/infrastructure/src/repositories/_shared/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/routes/service-category/_shared/__tests__/`, `backend/packages/api/src/routes/service/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
 | Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts`, `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts`, `backend/packages/api/src/routes/service-category/__tests__/service-category.integration.test.ts` (routes below a salon), `backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` (a bulk operation, a soft delete below a salon) |
 | The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts` |
@@ -107,16 +107,18 @@ backend or the frontend.
 | Configuration: every variable, and every environment file in the repository (the local ones allow the origins of the frontend applications) | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
 | Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
-The repositories of the salons, the service categories, the services, the
-accounts, the sessions, the staff (the ledger, the profiles, the
+Every repository is tested in the `infrastructure` package: those of the
+salons, the service categories, the services, the accounts, the sessions,
+the staff (the ledger, the profiles, the
 schedules, the accounts of the staff members and their invitations), the
 customers (the ledger with its merge and the data of a customer, the
 versions, the preferences, the requests to have the data erased with the
 erasure, and the statistics), the bookings, the available slots, the sales,
 the payments, the payment methods, the points, the sales reports, the
-reviews with their reports, the products, the stock, the purchase orders
-and the acknowledgements of the inventory alerts are tested in the
-`infrastructure` package, in the `__tests__` of the folder of
+reviews with their reports, the products, the stock, the purchase orders,
+the acknowledgements of the inventory alerts, the treatment records with
+their materials and photos, the medical charts, the allergies, the
+attachments and their share links, in the `__tests__` of the folder of
 each, method by method. Each test has a database of its own
 (`useTestDatabase` in `backend/packages/infrastructure/src/__tests__/_shared/database.ts`:
 `useTestDatabases` of `@beauty-salon-backend/testing` with the schema of
@@ -158,9 +160,20 @@ deleted or moved, a product changed and an order cancelled while an order,
 a change or a receipt waits for them, in
 `purchase-order.repository.integration.test.ts`; a stock row moved while an
 acknowledgement waits for it, in
-`inventory-alert.repository.integration.test.ts`).
-The other repository implementations are covered through the endpoint tests,
-against a real database: transactions, the unique violation that becomes
+`inventory-alert.repository.integration.test.ts`; a booking cancelled and a
+salon, a customer, a staff member, a service or a product deleted while a
+treatment record is written, a change and the removal of a record and the
+deletion of a service while a record is changed, and a photo added while an
+addition waits for the record, in
+`treatment-record.repository.integration.test.ts`; a customer deleted while
+their chart or an allergy is written, in
+`medical-chart.repository.integration.test.ts` and
+`customer-allergy.repository.integration.test.ts`; an upload completed while
+its completion or a purge waits for the attachment, in
+`attachment.repository.integration.test.ts`; a download counted while
+another waits for the link, in `share-link.repository.integration.test.ts`).
+The endpoint tests run the repositories too, against a real database:
+transactions, the unique violation that becomes
 `alreadyExists`, soft delete, keyset pagination, a refresh token that only
 one of several parallel requests can use.
 `backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` also calls
@@ -348,8 +361,10 @@ and nothing fails. Every shared package of the frontend
 (`frontend/packages/*`), `shared-i18n`, `shared-config`, the dashboard
 (`frontend/apps/dashboard-app`), the portal (`frontend/apps/portal-app`),
 the admin application (`frontend/apps/admin-app`), and the `utility`,
-`config`, `domain`, `api`, `database` and `testing` packages and the server
-(`backend/apps/server`) of the backend say so; the other packages of the backend do not yet.
+`config`, `domain`, `api`, `database`, `testing` and `infrastructure`
+packages and the server (`backend/apps/server`) of the backend say so:
+every package of the backend that has tests (`generated` holds the
+generated types alone, and has none).
 
 | Where | How |
 |---|---|

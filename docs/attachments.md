@@ -235,6 +235,7 @@
 - どちらも、URL の有効期限を過ぎてから消します。期限の前は、その URL でファイルが置かれるかもしれないためです
 - 1 件ごとに、1 つのトランザクションです。行をロックし（`FOR UPDATE`）、条件をもう一度確かめ、ストレージのファイルを消し、行を消します。ロックを待つあいだに完了したアップロードは、消しません
 - **ファイルを消せなかったら、そこで止めて 500 を返します**。それまでの分は消してあり、止まった行は残っています。もう一度呼ぶと、残りを消します
+- ロックした行の削除が行を返さないのは、書き込みを飛ばすトリガーがあるときだけです。そのときはデータベースのエラー（500）です
 - 何もなければ `purgedCount` は 0 です
 - 行を消すと、その添付ファイルの共有リンクの行も一緒に消えます（外部キーの `ON DELETE CASCADE`）
 - 定期的に呼ぶ仕組み（スケジューラー）は、本番環境の準備の範囲です。呼ぶ間隔は、ストレージに残るファイルを、どれだけの時間まで許すかで決めます。管理者が、admin-app の[運用の画面](./frontend-api-integration.md#運用の画面)から実行します
@@ -603,12 +604,14 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 | `backend/packages/domain/src/mappers/__tests__/attachment.mapper.test.ts` | Write マッパー（保留の行、一覧の条件、ブラウザーで表示するか）と、Read マッパーの添付の答え、一覧のページ、アップロードとダウンロードの URL の答え、掃除の件数 |
 | `backend/packages/domain/src/business-logic/attachment/__tests__/attachment.usecase.test.ts` | 7 つのユースケース（確認の順序、呼び出しの順序、失敗の伝え方） |
 | `backend/packages/api/src/routes/attachment/__tests__/attachment.integration.test.ts` | ルートとデータベース。ストレージは、メモリーの中の代役（`InMemoryFileStorage`）です |
+| `backend/packages/infrastructure/src/repositories/__tests__/attachment.repository.integration.test.ts` | 添付ファイルのリポジトリのメソッドごとに、実際の PostgreSQL で。読む人の範囲、一覧のページ、掃除の条件、待っているあいだに完了したアップロード |
 | `backend/packages/infrastructure/src/storage/__tests__/s3-file-storage.integration.test.ts` | `S3FileStorage` と、本物の S3 互換のストレージ。署名付き URL で実際に送り、取得します |
 | `backend/apps/server/src/__tests__/server.integration.test.ts` | 設定からストレージまでの配線。URL が設定のエンドポイントとバケットを指すこと、ストレージに届かないときの 500 とログ |
 | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` | マイグレーションと制約（`attachments`、`share_links`） |
 | `backend/packages/domain/src/business-logic/share-link/__tests__/share-link.usecase.test.ts` | 共有リンクの 6 つのユースケース（確認の順序、有効期限の境界、パスワードの規則、ロック、署名してから数えること） |
 | `backend/packages/domain/src/mappers/__tests__/share-link.mapper.test.ts` | 共有リンクの Write マッパー（作成の内容、一覧の条件、閲覧者が示すもの）と、Read マッパーの一覧のページ、作成の答え |
 | `backend/packages/domain/src/business-logic/auth/__tests__/password-blocklist.test.ts` | 推測しやすいパスワードの判定 |
+| `backend/packages/infrastructure/src/repositories/__tests__/share-link.repository.integration.test.ts` | 共有リンクのリポジトリのメソッドごとに、実際の PostgreSQL で。管理する人の範囲、一覧のページ、有効期限とダウンロードの上限の境界、違うパスワードの数え方とロック、待っているあいだに数えたダウンロード |
 | `backend/packages/api/src/routes/share-link/__tests__/share-link.integration.test.ts` | 共有リンクのルートとデータベース。同時のダウンロードと違うパスワード、開けないトークンの応答が同じであること、ログにトークンとパスワードが出ないこと、添付ファイルの削除と掃除 |
 
 フロントエンドのテスト（admin-app の `src/attachments/` の画面のテストと、ブラウザーのテスト）は、バックエンドのテストサーバーが testcontainers で起動する SeaweedFS に、ブラウザーと同じ署名付き URL でファイルを送り、取得します（[The Test Server](./api-testing-guide.md#the-test-server)）。
