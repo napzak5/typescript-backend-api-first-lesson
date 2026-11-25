@@ -1,19 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import * as path from 'node:path'
-import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
-import postgres from 'postgres'
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from 'vitest'
+import type postgres from 'postgres'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   applyBaseline,
   dropHistory,
@@ -22,51 +10,21 @@ import {
   readBaseline,
   readMigrationFiles,
 } from '../migrations'
+import { useTestDatabases } from './_shared/test-databases'
 
 const sqlDirectory = path.resolve(import.meta.dirname, '../../../sql')
 
-let container: StartedPostgreSqlContainer | undefined
-/** Connection to the instance, to create and drop the databases of the tests. */
-let admin: postgres.Sql
-let instanceUrl = ''
+const databases = useTestDatabases()
 
 /** The database of the running test: empty when the test starts. */
-let databaseName = ''
 let sql: postgres.Sql
 
-const connect = (): postgres.Sql => {
-  const url = new URL(instanceUrl)
-  url.pathname = `/${databaseName}`
-  return postgres(url.toString(), { max: 2, onnotice: () => undefined })
-}
-
-beforeAll(async () => {
-  const { TEST_DATABASE_URL: externalUrl } = process.env
-
-  if (!externalUrl) {
-    container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withStartupTimeout(120000)
-      .start()
-  }
-
-  instanceUrl = container?.getConnectionUri() ?? externalUrl ?? ''
-  admin = postgres(instanceUrl, { max: 1 })
-})
-
-afterAll(async () => {
-  await admin.end()
-  await container?.stop()
-})
-
-beforeEach(async () => {
-  databaseName = `migrations_test_${randomUUID().replaceAll('-', '')}`
-  await admin.unsafe(`CREATE DATABASE ${databaseName}`)
-  sql = connect()
+beforeEach(() => {
+  sql = databases.connect()
 })
 
 afterEach(async () => {
   await sql.end()
-  await admin.unsafe(`DROP DATABASE ${databaseName} WITH (FORCE)`)
 })
 
 /** A schema small enough to read, shaped like the real one. */
@@ -239,7 +197,7 @@ describe('migrate', () => {
 
   it('should apply a migration once when two processes run at the same time', async () => {
     await createLegacyDatabase()
-    const other = connect()
+    const other = databases.connect()
     const plan = { baseline, migrations: [addPhone, addEmail] }
 
     const outcomes = await Promise.all([
@@ -256,7 +214,7 @@ describe('migrate', () => {
   })
 
   it('should create an empty database once when two processes run at the same time', async () => {
-    const other = connect()
+    const other = databases.connect()
     const plan = { baseline, migrations: [addPhone] }
 
     const outcomes = await Promise.all([
@@ -295,6 +253,18 @@ describe('applyBaseline', () => {
     ).rejects.toThrow('relation "salons" already exists')
 
     expect(await columnsOf('salons')).toEqual(['id', 'name'])
+  })
+  it('should create the schema and record nothing before the first migration is written', async () => {
+    // Arrange
+    const plan = { baseline, migrations: [] }
+
+    // Act
+    const recorded = await applyBaseline(sql, plan)
+
+    // Assert
+    expect(recorded).toEqual([])
+    expect(await recordedMigrations()).toEqual([])
+    expect(await columnsOf('salons')).toEqual(['id', 'name', 'phone'])
   })
 })
 
