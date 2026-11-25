@@ -27,17 +27,9 @@ import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
 import { within as withinSales } from './_shared/held-sale'
 import { transactionsInOrder } from './_shared/point-transactions'
-
-/**
- * A read of the history of a customer in one snapshot: the customer, the
- * cursor, the page and the count of what matches are of one moment.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
 
 /** The condition that keeps a query to the bookings a writer reaches. */
 const withinBookings = (reach: LedgerReach) =>
@@ -170,6 +162,9 @@ export class PointRepository implements IPointRepository {
         : sql`${transactedAt} <= ${endDate}::timestamptz`,
     )
 
+    // A read of the history of a customer in one snapshot (`AT_ONE_MOMENT`):
+    // the customer, the cursor, the page and the count of what matches are
+    // of one moment.
     return attempt('Failed to list point transactions', () =>
       this.db.transaction(async (tx): Promise<PointListing> => {
         const [customer] = await tx
@@ -187,7 +182,10 @@ export class PointRepository implements IPointRepository {
           after === null
             ? []
             : await tx
-                .select({ createdAt: customerPoints.createdAt })
+                .select({
+                  createdAt: customerPoints.createdAt,
+                  id: customerPoints.id,
+                })
                 .from(customerPoints)
                 .where(
                   and(
@@ -199,9 +197,9 @@ export class PointRepository implements IPointRepository {
           return { type: 'cursorNotFound' }
         }
         const afterCursor =
-          after === null || cursor === undefined
+          cursor === undefined
             ? undefined
-            : sql`(${customerPoints.createdAt}, ${customerPoints.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
+            : sql`(${customerPoints.createdAt}, ${customerPoints.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
 
         const found = await tx
           .select()

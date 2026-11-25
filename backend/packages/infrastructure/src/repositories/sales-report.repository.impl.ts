@@ -29,21 +29,9 @@ import {
   type SQLWrapper,
   sql,
 } from 'drizzle-orm'
-import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-
-/**
- * The figures of a report are read in one snapshot, so that the sums of
- * the days, the payments, the categories and the staff members are of the
- * same sales. Nothing is written and nothing is locked: a sale or a
- * payment that is being written is not waited for, and what was committed
- * when the report began is counted.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
+import { AT_ONE_MOMENT } from '../database/snapshot'
 
 /** The statuses of a payment whose amount was received. */
 const RECEIVED: DbPaymentTransaction['status'][] = [
@@ -194,6 +182,11 @@ export class SalesReportRepository implements ISalesReportRepository {
   async findFigures(
     period: SalesPeriod,
   ): Promise<Result<SalesFigures | null, DomainError>> {
+    // The figures of a report are read in one snapshot, so that the sums of
+    // the days, the payments, the categories and the staff members are of
+    // the same sales. Nothing is written and nothing is locked: a sale or a
+    // payment that is being written is not waited for, and what was
+    // committed when the report began is counted.
     return attempt('Failed to read the figures of a sales report', () =>
       this.db.transaction((tx) => figuresOf(tx, period), AT_ONE_MOMENT),
     )
