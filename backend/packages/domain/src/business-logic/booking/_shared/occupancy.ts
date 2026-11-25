@@ -19,6 +19,9 @@ export type ServiceTime = {
   endTime: Date
 }
 
+/** The service lines a staff member is wanted for: at least one. */
+export type ServiceTimes = readonly [ServiceTime, ...ServiceTime[]]
+
 /** The time a service takes that begins at a moment and lasts so many minutes. */
 export const timeOf = (startTime: Date, minutes: number): ServiceTime => ({
   startTime,
@@ -61,16 +64,13 @@ const occupiedBy = (
  * The time outside of which no service line of another booking can stand in
  * the way of the wanted ones: a line that ends at or before `from`, or
  * begins at or after `until`, does not meet any of them, however much time
- * the staff member keeps free. Null when nothing is wanted.
+ * the staff member keeps free.
  */
 export const occupancyWindowOf = (
   staff: StaffCapacity,
-  wanted: readonly ServiceTime[],
-): Occupied | null => {
+  wanted: ServiceTimes,
+): Occupied => {
   const occupied = wanted.map((time) => occupiedBy(staff, time))
-  if (occupied.length === 0) {
-    return null
-  }
 
   // The other line keeps its own time free as well.
   return {

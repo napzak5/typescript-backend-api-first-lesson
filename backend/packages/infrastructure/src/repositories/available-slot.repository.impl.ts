@@ -12,9 +12,9 @@ import {
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, asc, eq, isNull } from 'drizzle-orm'
-import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import type { Database } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
 import {
   calendarDaysOf,
   schedulesOf,
@@ -24,15 +24,11 @@ import {
 import { staffMemberOf } from './_shared/staff-member'
 
 /**
- * The statements of a method see the database as it was at one moment, so
- * the slots are worked out from a day that was really so: a booking that is
- * entered meanwhile is in all of what is read, or in none of it.
+ * What the available slots are worked out from. The statements of a method
+ * see the database as it was at one moment (`AT_ONE_MOMENT`), so the slots
+ * are worked out from a day that was really so: a booking that is entered
+ * meanwhile is in all of what is read, or in none of it.
  */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
-
 export class AvailableSlotRepository implements IAvailableSlotRepository {
   constructor(private readonly db: Database) {}
 

@@ -17,7 +17,7 @@ import type { DbStaff } from '../../../models/staff'
 import { MAX_INTEGER } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
 import { pricedLineOf } from '../../_shared/amounts'
-import type { ServiceTime, StaffCapacity } from './occupancy'
+import type { ServiceTimes, StaffCapacity } from './occupancy'
 import { type SalonOfBooking, type SummedLine, summarize } from './summary'
 
 /**
@@ -58,7 +58,7 @@ export type BookingOrigin = {
 /** The service lines of a booking that one staff member has. */
 export type StaffDemand = {
   staff: StaffOfBooking
-  times: ServiceTime[]
+  times: ServiceTimes
 }
 
 /**
@@ -190,15 +190,17 @@ export const planBooking = (
     }
   }
 
-  const demands = [...staffById.values()].flatMap((staff) => {
-    const times = services
+  const demands = [...staffById.values()].flatMap((staff): StaffDemand[] => {
+    const [firstTime, ...otherTimes] = services
       .filter(({ staffId }) => staffId === staff.id)
       .map(({ startTime, endTime }) => ({
         startTime: parseISO(startTime),
         endTime: parseISO(endTime),
       }))
 
-    return times.length === 0 ? [] : [{ staff, times }]
+    return firstTime === undefined
+      ? []
+      : [{ staff, times: [firstTime, ...otherTimes] }]
   })
 
   return match(summarize([first, ...others], salon))

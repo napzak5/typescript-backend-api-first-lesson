@@ -41,6 +41,7 @@ import {
   type CustomerReach,
   candidateDatesOf,
   candidateTimeOf,
+  type DbBooking,
   type DbBookingNotes,
   type DbBookingService,
   type DomainError,
@@ -67,13 +68,14 @@ import {
   staffOfMoved,
   type UserId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import {
   and,
   asc,
   count,
   eq,
   exists,
+  getTableColumns,
   inArray,
   isNull,
   ne,
@@ -88,6 +90,7 @@ import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { rowWritten, written } from '../database/written'
 import { bookingsWithServices } from './_shared/booking-services'
 import { countBookingsOf } from './_shared/customer-counters'
 import {
@@ -378,7 +381,7 @@ const heldForCustomerOf = async (
  * the first entry of its status history. Nothing is written when another
  * booking has the number.
  */
-const written = async (
+const writePlanned = async (
   tx: DatabaseExecutor,
   write: BookingWrite,
 ): Promise<
@@ -416,30 +419,44 @@ const written = async (
 }
 
 /**
- * A booking held for a move: where it is, with its service lines, and the
- * salon it is of. The booking is held from here on, so of two changes of
- * one booking the second meets what the first made of it. Null when no
- * booking within the reach has the ID.
+ * A booking held for a move: the row, where it is with its service lines,
+ * and the time zone of its salon. The booking is held from here on, so of
+ * two changes of one booking the second meets what the first made of it.
+ * The salon is held shared in the same statement, as for a booking that is
+ * entered: its time zone does not change while the day of the visit is
+ * told by it. Null when no booking within the reach has the ID.
  */
 const heldForMove = async (
   tx: DatabaseExecutor,
   id: BookingId,
   reach: BookingReach,
-): Promise<{ salonId: string; booking: CustomerBookingToMove } | null> => {
-  const [held] = await tx
+): Promise<{
+  salonId: string
+  timezone: string
+  row: DbBooking
+  booking: CustomerBookingToMove
+} | null> => {
+  const holding = tx
     .select({
-      salonId: bookings.salonId,
-      status: bookings.status,
-      staffId: bookings.staffId,
-      startTime: millisecondsOf(bookings.startTime),
-      endTime: millisecondsOf(bookings.endTime),
+      ...getTableColumns(bookings),
+      startMilliseconds: millisecondsOf(bookings.startTime).as(
+        'startMilliseconds',
+      ),
+      endMilliseconds: millisecondsOf(bookings.endTime).as('endMilliseconds'),
     })
     .from(bookings)
     .where(and(eq(bookings.id, id), within(reach)))
     .for('update')
-  if (held === undefined) {
+    .as('holding')
+  const [found] = await tx
+    .select()
+    .from(holding)
+    .innerJoin(salons, eq(salons.id, holding.salonId))
+    .for('share', { of: salons })
+  if (found === undefined) {
     return null
   }
+  const { startMilliseconds, endMilliseconds, ...row } = found.holding
   const lines = await tx
     .select({
       id: bookingServices.id,
@@ -452,12 +469,14 @@ const heldForMove = async (
     .where(eq(bookingServices.bookingId, id))
 
   return {
-    salonId: held.salonId,
+    salonId: row.salonId,
+    timezone: found.salons.timezone,
+    row,
     booking: {
-      status: held.status,
-      staffId: held.staffId,
-      startTime: new Date(held.startTime),
-      endTime: new Date(held.endTime),
+      status: row.status,
+      staffId: row.staffId,
+      startTime: new Date(startMilliseconds),
+      endTime: new Date(endMilliseconds),
       services: lines.map((line) => ({
         id: line.id,
         serviceId: line.serviceId,
@@ -514,9 +533,6 @@ const occupiedAmong = async (
   const occupied: string[] = []
   for (const { staff: member, times } of demands) {
     const window = occupancyWindowOf(member, times)
-    if (window === null) {
-      continue
-    }
     const taken = await tx
       .select({
         bookingId: bookingServices.bookingId,
@@ -567,20 +583,31 @@ const linesOf = (
 /**
  * A booking that is held for a change of its service lines: its status,
  * the lines it has, and what its salon says of the time zone and the tax.
- * The salon is held shared, as for a booking that is entered: neither
- * changes while the booking is summed up by it. Null when no booking
- * within the reach has the ID.
+ * The salon is held shared in the statement that holds the booking, as for
+ * a booking that is entered: neither changes while the booking is summed
+ * up by it. Null when no booking within the reach has the ID.
  */
 const heldForLines = async (
   tx: DatabaseExecutor,
   id: BookingId,
   reach: LedgerReach,
 ) => {
-  const [held] = await tx
+  const holding = tx
     .select({ salonId: bookings.salonId, status: bookings.status })
     .from(bookings)
     .where(and(eq(bookings.id, id), within(reach)))
     .for('update')
+    .as('holding')
+  const [held] = await tx
+    .select({
+      salonId: holding.salonId,
+      status: holding.status,
+      timezone: salons.timezone,
+      taxRate: salons.taxRate,
+    })
+    .from(holding)
+    .innerJoin(salons, eq(salons.id, holding.salonId))
+    .for('share', { of: salons })
   if (held === undefined) {
     return null
   }
@@ -597,14 +624,6 @@ const heldForLines = async (
     })
     .from(bookingServices)
     .where(eq(bookingServices.bookingId, id))
-  const [salon] = await tx
-    .select({ timezone: salons.timezone, taxRate: salons.taxRate })
-    .from(salons)
-    .where(eq(salons.id, held.salonId))
-    .for('share')
-  if (salon === undefined) {
-    return null
-  }
   const booking: BookingOfLines = {
     status: held.status,
     services: lines.map((line) => ({
@@ -614,7 +633,11 @@ const heldForLines = async (
     })),
   }
 
-  return { salonId: held.salonId, salon, booking }
+  return {
+    salonId: held.salonId,
+    salon: { timezone: held.timezone, taxRate: held.taxRate },
+    booking,
+  }
 }
 
 export class BookingRepository implements IBookingRepository {
@@ -640,7 +663,7 @@ export class BookingRepository implements IBookingRepository {
             return { type: 'staffOccupied', staffIds }
           }
 
-          return written(tx, plan.write)
+          return writePlanned(tx, plan.write)
         },
         // Each statement sees what was committed before it: a request that
         // waited for a staff member sees the booking it waited for. With a
@@ -666,7 +689,7 @@ export class BookingRepository implements IBookingRepository {
             origin,
           )
 
-          return plan.type === 'planned' ? written(tx, plan.write) : plan
+          return plan.type === 'planned' ? writePlanned(tx, plan.write) : plan
         },
         // As when the salon enters a booking: a request that waited for
         // the customer, the service or the staff member sees what it
@@ -700,95 +723,101 @@ export class BookingRepository implements IBookingRepository {
     action: BookingAction,
     changedBy: UserId,
   ): Promise<Result<BookingStatusChange, DomainError>> {
-    return attempt('Failed to change the status of booking', () =>
-      this.db.transaction(
-        async (tx): Promise<BookingStatusChange> => {
-          const holding = tx
-            .select({
-              customerId: bookings.customerId,
-              status: bookings.status,
-              startTime: bookings.startTime,
-              actualStartTime: bookings.actualStartTime,
-              actualEndTime: bookings.actualEndTime,
-            })
-            .from(bookings)
-            .where(and(eq(bookings.id, id), within(reach)))
-            .for('update')
-            .as('holding')
-          // The booking is held in a subquery, and the clock is read of the
-          // row it returns: the moment of the change is the one at which it
-          // got hold of the booking, after every change it waited for.
-          const [held] = await tx
-            .select({
-              customerId: holding.customerId,
-              status: holding.status,
-              startTime: millisecondsOf(holding.startTime),
-              actualStartTime: millisecondsOrNullOf(holding.actualStartTime),
-              actualEndTime: millisecondsOrNullOf(holding.actualEndTime),
-              now: sql<number>`(extract(epoch from ${CLOCK}) * 1000)`.mapWith(
-                Number,
-              ),
-            })
-            .from(holding)
-          if (held === undefined) {
-            return { type: 'notFound' }
-          }
-
-          const plan = planStatusChange(
-            {
-              status: held.status,
-              startTime: new Date(held.startTime),
-              actualStartTime: momentOf(held.actualStartTime),
-              actualEndTime: momentOf(held.actualEndTime),
-            },
-            action,
-            { changedBy, at: new Date(held.now) },
-          )
-          if (plan.type !== 'planned') {
-            return plan
-          }
-          const { write } = plan
-
-          const [booking] = await tx
-            .update(bookings)
-            .set({ ...write.booking, updatedAt: CLOCK })
-            .where(eq(bookings.id, id))
-            .returning()
-          if (booking === undefined) {
-            return { type: 'notFound' }
-          }
-          if (write.servicesCompletedAt !== null) {
-            await tx
-              .update(bookingServices)
-              .set({
-                isCompleted: true,
-                completedAt: write.servicesCompletedAt,
-                updatedAt: CLOCK,
+    const changed = await attempt(
+      'Failed to change the status of booking',
+      () =>
+        this.db.transaction(
+          async (tx): Promise<BookingStatusChange | null> => {
+            const holding = tx
+              .select({
+                customerId: bookings.customerId,
+                status: bookings.status,
+                startTime: bookings.startTime,
+                actualStartTime: bookings.actualStartTime,
+                actualEndTime: bookings.actualEndTime,
               })
-              .where(
-                and(
-                  eq(bookingServices.bookingId, id),
-                  eq(bookingServices.isCompleted, false),
+              .from(bookings)
+              .where(and(eq(bookings.id, id), within(reach)))
+              .for('update')
+              .as('holding')
+            // The booking is held in a subquery, and the clock is read of the
+            // row it returns: the moment of the change is the one at which it
+            // got hold of the booking, after every change it waited for.
+            const [held] = await tx
+              .select({
+                customerId: holding.customerId,
+                status: holding.status,
+                startTime: millisecondsOf(holding.startTime),
+                actualStartTime: millisecondsOrNullOf(holding.actualStartTime),
+                actualEndTime: millisecondsOrNullOf(holding.actualEndTime),
+                now: sql<number>`(extract(epoch from ${CLOCK}) * 1000)`.mapWith(
+                  Number,
                 ),
-              )
-          }
-          await tx
-            .insert(bookingStatusHistories)
-            .values({ ...write.statusChange, bookingId: id, createdAt: CLOCK })
-          if (write.countsCustomer) {
-            await countBookingsOf(tx, held.customerId)
-          }
+              })
+              .from(holding)
+            if (held === undefined) {
+              return { type: 'notFound' }
+            }
 
-          return {
-            type: 'changed',
-            booking: { booking, services: await linesOf(tx, id) },
-          }
-        },
-        // A change that waited for another one on the same booking reads
-        // the status the other one committed.
-        { isolationLevel: 'read committed' },
-      ),
+            const plan = planStatusChange(
+              {
+                status: held.status,
+                startTime: new Date(held.startTime),
+                actualStartTime: momentOf(held.actualStartTime),
+                actualEndTime: momentOf(held.actualEndTime),
+              },
+              action,
+              { changedBy, at: new Date(held.now) },
+            )
+            if (plan.type !== 'planned') {
+              return plan
+            }
+            const { write } = plan
+
+            const [booking] = await tx
+              .update(bookings)
+              .set({ ...write.booking, updatedAt: CLOCK })
+              .where(eq(bookings.id, id))
+              .returning()
+            if (booking === undefined) {
+              return null
+            }
+            if (write.servicesCompletedAt !== null) {
+              await tx
+                .update(bookingServices)
+                .set({
+                  isCompleted: true,
+                  completedAt: write.servicesCompletedAt,
+                  updatedAt: CLOCK,
+                })
+                .where(
+                  and(
+                    eq(bookingServices.bookingId, id),
+                    eq(bookingServices.isCompleted, false),
+                  ),
+                )
+            }
+            await tx.insert(bookingStatusHistories).values({
+              ...write.statusChange,
+              bookingId: id,
+              createdAt: CLOCK,
+            })
+            if (write.countsCustomer) {
+              await countBookingsOf(tx, held.customerId)
+            }
+
+            return {
+              type: 'changed',
+              booking: { booking, services: await linesOf(tx, id) },
+            }
+          },
+          // A change that waited for another one on the same booking reads
+          // the status the other one committed.
+          { isolationLevel: 'read committed' },
+        ),
     )
+
+    return Result.flatMap(changed, written('Update of booking status'))
   }
 
   async update(
@@ -796,9 +825,11 @@ export class BookingRepository implements IBookingRepository {
     reach: LedgerReach,
     notes: DbBookingNotes,
   ): Promise<Result<BookingWithServices | null, DomainError>> {
-    return attempt('Failed to update booking', () =>
+    const updated = await attempt('Failed to update booking', () =>
       this.db.transaction(
-        async (tx): Promise<BookingWithServices | null> => {
+        async (
+          tx,
+        ): Promise<Result<BookingWithServices | null, DomainError>> => {
           // The booking is held before it is written, like by every other
           // change of it: the time of the change is then read after
           // whatever it waited for.
@@ -808,22 +839,30 @@ export class BookingRepository implements IBookingRepository {
             .where(and(eq(bookings.id, id), within(reach)))
             .for('update')
           if (held === undefined) {
-            return null
+            return Result.success(null)
           }
 
-          const [booking] = await tx
-            .update(bookings)
-            .set({ ...notes, updatedAt: CLOCK })
-            .where(eq(bookings.id, id))
-            .returning()
+          const booking = rowWritten('Update of booking notes')(
+            await tx
+              .update(bookings)
+              .set({ ...notes, updatedAt: CLOCK })
+              .where(eq(bookings.id, id))
+              .returning(),
+          )
+          if (booking.type === 'error') {
+            return booking
+          }
 
-          return booking === undefined
-            ? null
-            : { booking, services: await linesOf(tx, id) }
+          return Result.success({
+            booking: booking.data,
+            services: await linesOf(tx, id),
+          })
         },
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(updated, (update) => update)
   }
 
   async reschedule(
@@ -831,9 +870,9 @@ export class BookingRepository implements IBookingRepository {
     reach: LedgerReach,
     request: RequestedBookingMove,
   ): Promise<Result<BookingReschedule, DomainError>> {
-    return attempt('Failed to reschedule booking', () =>
+    const rescheduled = await attempt('Failed to reschedule booking', () =>
       this.db.transaction(
-        async (tx): Promise<BookingReschedule> => {
+        async (tx): Promise<BookingReschedule | null> => {
           const held = await heldForMove(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
@@ -843,17 +882,8 @@ export class BookingRepository implements IBookingRepository {
             return move
           }
 
-          // As for a new booking: the time zone of the salon does not
-          // change while the day of the visit is told by it, and the
-          // bookings of a staff member are written one after the other.
-          const [salon] = await tx
-            .select({ timezone: salons.timezone })
-            .from(salons)
-            .where(eq(salons.id, held.salonId))
-            .for('share')
-          if (salon === undefined) {
-            return { type: 'notFound' }
-          }
+          // As for a new booking: the bookings of a staff member are
+          // written one after the other.
           const members = await tx
             .select({
               id: staff.id,
@@ -873,7 +903,7 @@ export class BookingRepository implements IBookingRepository {
             .for('update')
 
           const plan = planReschedule(move.booking, {
-            timezone: salon.timezone,
+            timezone: held.timezone,
             staff: members,
           })
           if (plan.type !== 'planned') {
@@ -886,15 +916,15 @@ export class BookingRepository implements IBookingRepository {
 
           const booking = await writtenWhereMoved(tx, id, plan.write)
 
-          return booking === null
-            ? { type: 'notFound' }
-            : { type: 'rescheduled', booking }
+          return booking === null ? null : { type: 'rescheduled', booking }
         },
         // A move that waited for a staff member sees the booking it
         // waited for, as a new booking does.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(rescheduled, written('Update of moved booking'))
   }
 
   async rebook(
@@ -903,26 +933,19 @@ export class BookingRepository implements IBookingRepository {
     request: RequestedBookingMove,
     mover: CustomerMover,
   ): Promise<Result<CustomerBookingReschedule, DomainError>> {
-    return attempt('Failed to rebook for customer', () =>
+    const rebooked = await attempt('Failed to rebook for customer', () =>
       this.db.transaction(
-        async (tx): Promise<CustomerBookingReschedule> => {
+        async (tx): Promise<CustomerBookingReschedule | null> => {
           const held = await heldForMove(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
           }
           const move = moveCustomerBooking(held.booking, request, mover.now)
           if (move.type === 'unchanged') {
-            const [booking] = await tx
-              .select()
-              .from(bookings)
-              .where(eq(bookings.id, id))
-
-            return booking === undefined
-              ? { type: 'notFound' }
-              : {
-                  type: 'unchanged',
-                  booking: { booking, services: await linesOf(tx, id) },
-                }
+            return {
+              type: 'unchanged',
+              booking: { booking: held.row, services: await linesOf(tx, id) },
+            }
           }
           if (move.type !== 'moved') {
             return move
@@ -951,7 +974,7 @@ export class BookingRepository implements IBookingRepository {
           const { write } = plan
           const booking = await writtenWhereMoved(tx, id, write)
           if (booking === null) {
-            return { type: 'notFound' }
+            return null
           }
           if (write.statusChange !== null) {
             await tx.insert(bookingStatusHistories).values({
@@ -969,6 +992,8 @@ export class BookingRepository implements IBookingRepository {
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(rebooked, written('Update of moved booking'))
   }
 
   async delete(
@@ -1041,9 +1066,9 @@ export class BookingRepository implements IBookingRepository {
     reach: LedgerReach,
     request: RequestedBookingService,
   ): Promise<Result<BookingServiceAddition, DomainError>> {
-    return attempt('Failed to add service to booking', () =>
+    const added = await attempt('Failed to add service to booking', () =>
       this.db.transaction(
-        async (tx): Promise<BookingServiceAddition> => {
+        async (tx): Promise<BookingServiceAddition | null> => {
           const held = await heldForLines(tx, id, reach)
           if (held === null) {
             return { type: 'notFound' }
@@ -1115,20 +1140,23 @@ export class BookingRepository implements IBookingRepository {
               updatedAt: ONE_MOMENT,
             })
             .returning()
+          if (line === undefined) {
+            return null
+          }
           await tx
             .update(bookings)
             .set({ ...plan.booking, updatedAt: CLOCK })
             .where(eq(bookings.id, id))
 
-          return line === undefined
-            ? { type: 'notFound' }
-            : { type: 'added', service: line }
+          return { type: 'added', service: line }
         },
         // A line that waited for a staff member sees the booking it waited
         // for, as a new booking does.
         { isolationLevel: 'read committed' },
       ),
     )
+
+    return Result.flatMap(added, written('Insert of booking service'))
   }
 
   async findService(

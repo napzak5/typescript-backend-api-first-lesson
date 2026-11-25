@@ -7,6 +7,7 @@ import {
   customerPreferences,
   customers,
   medicalCharts,
+  openingHours,
   paymentMethods,
   paymentTransactions,
   products,
@@ -20,6 +21,7 @@ import {
   sessions,
   staff,
   staffInvitations,
+  staffSchedules,
   treatmentMaterials,
   treatmentPhotos,
   treatmentRecords,
@@ -387,6 +389,53 @@ export const newSchedule = (
   notes: null,
   ...overrides,
 })
+
+/** The hours of the salon on a date, from ten to seven on 7 December 2026 unless the test says otherwise. */
+export const insertOpeningHours = async (
+  db: Database,
+  salonId: string,
+  overrides: Partial<typeof openingHours.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(openingHours)
+      .values({ ...newOpeningHours(), salonId, ...overrides })
+      .returning(),
+  )
+
+/** A row of the schedule of the staff member: every Monday from ten to seven unless the test says otherwise. */
+export const insertSchedule = async (
+  db: Database,
+  staffId: string,
+  overrides: Partial<typeof staffSchedules.$inferInsert> = {},
+) =>
+  theRow(
+    await db
+      .insert(staffSchedules)
+      .values({ ...newSchedule(), staffId, ...overrides })
+      .returning(),
+  )
+
+/**
+ * A slot a customer can book by themself: a salon in Tokyo that is open
+ * from ten to seven on Monday 7 December 2026, a service of an hour that
+ * is booked online, a staff member who works then, and a customer.
+ */
+export const insertBookableSlot = async (db: Database) => {
+  const salon = await insertSalon(db)
+  await insertOpeningHours(db, salon.id)
+  const service = await insertService(db, salon.id)
+  const member = await insertStaffMember(db, salon.id)
+  await insertSchedule(db, member.id)
+  const customer = await insertCustomer(db)
+
+  return {
+    salonId: salon.id,
+    serviceId: service.id,
+    staffId: member.id,
+    customerId: customer.id,
+  }
+}
 
 /** Who a booking is of, at which salon, and with whom. */
 export type BookingParties = {

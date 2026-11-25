@@ -159,12 +159,14 @@ export const planReschedule = (
     return { type: 'timeZoneUnknown' }
   }
 
-  const demands = staff.flatMap((member) => {
-    const times = moved.services
+  const demands = staff.flatMap((member): StaffDemand[] => {
+    const [firstTime, ...otherTimes] = moved.services
       .filter(({ staffId }) => staffId === member.id)
       .map(({ startTime, endTime }) => ({ startTime, endTime }))
 
-    return times.length === 0 ? [] : [{ staff: member, times }]
+    return firstTime === undefined
+      ? []
+      : [{ staff: member, times: [firstTime, ...otherTimes] }]
   })
 
   return {
