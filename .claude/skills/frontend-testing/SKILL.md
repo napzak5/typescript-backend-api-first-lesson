@@ -1356,6 +1356,48 @@ and the forms of what is new, `category-failures` and `service-failures`;
   that a 409 of a registration has the screen read is changed when it is
   asked for (`whenAskedFor('GET /salons/<id>/staff', () => madeStaffMeanwhile(OWNER))`).
 
+The files, the charts and the treatment records of a salon
+(`frontend/apps/admin-app/src/attachments/screens/`: `attachments`, and
+beside it `attachment-failures`; `src/charts/screens/`: `charts`,
+`allergies`, and beside them `chart-failures`; `src/treatments/screens/`:
+`treatments`, `photos`, and beside them `treatment-failures`, and
+`photo-failures` for the photos and the statistics) add:
+
+- **The tests of each area open a screen alike**
+  (`attachments/__tests__/screens.ts`: `filesOfTokyo`, `openFilesAs`,
+  `openFileAs`, with `FILES_UNREAD` and `LINKS_UNREAD`;
+  `charts/__tests__/screens.ts`: `openChartOf`, `openAllergyChangeOf`,
+  `chartForm`, `allergiesPart`, `allergiesListed`, `allergyForm`, with
+  `CHARTS_UNREAD` and `ALLERGIES_UNREAD`;
+  `treatments/__tests__/screens.ts`: `openEntryOf`,
+  `openTreatmentChangeOf`, `openPhotosOf`, `treatmentForm`, `photosPart`,
+  `photoRow`, `fillPhoto`, with `RECORDS_UNREAD`). A booking done today
+  is `arrangeVisit()` of `treatments/__tests__/arrangements.ts`.
+- **The column a test makes unreadable keeps the order of the list and
+  breaks no check**: the moment the upload of a file expires
+  (`unreadable('attachments', 'uploadExpiresAt', id)`), as the moment it
+  was made is bound by the check `attachments_upload_expires_after_created`;
+  the moment a chart, an allergy or a record was changed (`updatedAt`).
+  The last row of a list that goes on is the one made first
+  (`firstChartId()`, `firstTreatmentId()`).
+- **A file whose upload is awaited is a row** (`arrangeAwaitedFile` of
+  `attachments/__tests__/arrangements.ts`): the screen of the file and
+  the issue of a share link say that it is not found, as the list does
+  not have it. The files of a list that goes on are rows too
+  (`arrangeFiles`).
+- **A list without what it lists is a statement** (`everyChartRemoved()`,
+  `everyTreatmentRemoved()`).
+- **What a screen reads besides is refused as it is asked for**: the
+  account moves to another salon as the records of the customer of a
+  booking are read
+  (`whenAskedFor('GET /treatments', () => staffMovedMeanwhile('Hiroshi Tanaka', OSAKA))`),
+  and back before it is read again; a file loses its name as the
+  addresses that open it are read
+  (`whenAskedFor('GET /attachments/<id>/download-url', () => takeAway('attachments', 'filename'))`).
+- **A form with more rows than the record has room for is sent again as
+  it is**: after the 409 of photos added meanwhile, the screen says how
+  many it may add, and asks the API nothing.
+
 The ledger of the customers
 (`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)
 adds:
