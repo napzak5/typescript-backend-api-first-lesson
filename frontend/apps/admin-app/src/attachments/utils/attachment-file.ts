@@ -87,7 +87,8 @@ const contentTypeOf = (
 /** Whether a name holds a character the API refuses: a control character, or one that separates the parts of a path. */
 const hasRefusedCharacter = (filename: string): boolean =>
   [...filename].some((character) => {
-    const code = character.codePointAt(0) ?? 0
+    // A character outside the basic plane begins with a surrogate, which is neither
+    const code = character.charCodeAt(0)
 
     return (
       code <= 0x1f ||
@@ -202,7 +203,8 @@ export const afterRemoving = (
  */
 export const uploaderNameOf = (
   uploadedBy: string,
-  accountId: string,
+  /** The account signed in */
+  accountId: string | undefined,
   ledger: readonly { userId: string | null; displayName: string }[],
 ): LocalizedText => {
   if (uploadedBy === accountId) {

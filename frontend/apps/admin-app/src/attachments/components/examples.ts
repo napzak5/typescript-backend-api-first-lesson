@@ -1,5 +1,5 @@
-import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
 import { salon } from '../../bookings/components/examples'
+import type { UploadedAttachment } from '../api/attachments-api'
 
 /*
  * The files of the salon of the examples, as the API answers with them, and
@@ -16,7 +16,7 @@ export const MISAKI_ACCOUNT_ID = '1d5f2b8c-4e6a-4c9b-8f3d-7a2e4b6c8d01'
 export const LEDGER = [{ userId: MISAKI_ACCOUNT_ID, displayName: '佐藤 美咲' }]
 
 /** A photo before a treatment, which the account uploaded */
-export const photo: ModelsAttachmentResponse = {
+export const photo: UploadedAttachment = {
   id: '2b6e3c9d-5f7a-4d0b-9a4e-8b3f5c7d9e12',
   salonId: salon.id,
   filename: '施術前.jpg',
@@ -31,7 +31,7 @@ export const photo: ModelsAttachmentResponse = {
 }
 
 /** A form a customer signed, which a member of the staff uploaded */
-export const consentForm: ModelsAttachmentResponse = {
+export const consentForm: UploadedAttachment = {
   ...photo,
   id: '3c7f4d0e-6a8b-4e1c-8b5f-9c4a6d8e0f23',
   filename: 'カラー同意書_田中様.pdf',
@@ -45,7 +45,7 @@ export const consentForm: ModelsAttachmentResponse = {
 }
 
 /** A small image an administrator uploaded */
-const logo: ModelsAttachmentResponse = {
+const logo: UploadedAttachment = {
   ...photo,
   id: '4d8a5e1f-7b9c-4f2d-9c6a-0d5b7e9f1a34',
   filename: 'logo.png',
@@ -59,7 +59,7 @@ const logo: ModelsAttachmentResponse = {
 }
 
 /** The files of the salon, the latest uploaded first */
-export const FILES_OF_THE_SALON: readonly ModelsAttachmentResponse[] = [
+export const FILES_OF_THE_SALON: readonly UploadedAttachment[] = [
   consentForm,
   photo,
   logo,

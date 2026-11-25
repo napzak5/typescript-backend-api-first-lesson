@@ -19,6 +19,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../../__tests__/screens'
 import {
+  arrangeAwaitedFile,
   arrangeFile,
   fileRemovedMeanwhile,
 } from '../../attachments/__tests__/arrangements'
@@ -29,7 +30,6 @@ import {
 } from '../../navigation'
 import {
   arrangeShareLink,
-  arrangeUnfinishedFile,
   openedWith,
   revokedMeanwhile,
   storedShareLinksOf,
@@ -261,22 +261,6 @@ describe('the share links of a file', () => {
       ).toBeVisible()
       expect(within(linksPart()).queryByRole('link')).toBeNull()
       expect(within(linksPart()).queryByRole('table')).toBeNull()
-    })
-
-    it('should tell that a file whose upload was not finished cannot be shared', async () => {
-      // Arrange
-      const salonId = await salonIdOf(TOKYO)
-      const attachmentId = await arrangeUnfinishedFile(salonId, CONSENT)
-
-      // Act
-      await openAs(attachmentHrefOf(salonId, attachmentId), OWNER)
-      await heading(CONSENT)
-
-      // Assert
-      expect(
-        within(linksPart()).getByText(/アップロードが済んでいないファイル/),
-      ).toBeVisible()
-      expect(within(linksPart()).queryByRole('link')).toBeNull()
     })
   })
 
@@ -583,18 +567,20 @@ describe('the share links of a file', () => {
       },
     )
 
-    it('should tell that a file whose upload was not finished cannot be shared, without the form', async () => {
+    it('should say that a file whose upload was not finished is not found, without the form', async () => {
       // Arrange
       const salonId = await salonIdOf(TOKYO)
-      const attachmentId = await arrangeUnfinishedFile(salonId, CONSENT)
+      const attachmentId = await arrangeAwaitedFile({
+        salonId,
+        filename: CONSENT,
+        uploadedBy: OWNER,
+      })
 
       // Act
       await openAs(shareLinkEntryHrefOf(salonId, attachmentId), OWNER)
 
       // Assert
-      expect(
-        await screen.findByText(/アップロードが済んでいないファイル/),
-      ).toBeVisible()
+      expect(await heading('ファイルが見つかりません')).toBeVisible()
       expect(
         within(screen.getByRole('main')).queryByRole('combobox'),
       ).toBeNull()

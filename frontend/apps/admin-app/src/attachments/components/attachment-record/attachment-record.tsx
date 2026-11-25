@@ -1,4 +1,3 @@
-import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
@@ -15,6 +14,7 @@ import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
+import type { UploadedAttachment } from '../../api/attachments-api'
 import {
   contentTypeNameOf,
   isImage,
@@ -32,7 +32,7 @@ export type FileLinks =
   | { type: 'unread'; message: LocalizedText }
 
 export type AttachmentRecordProps = {
-  attachment: ModelsAttachmentResponse
+  attachment: UploadedAttachment
   /** The time zone of the salon, which the moment of the upload is said in */
   timezone: string
   /** Who uploaded the file */
@@ -139,12 +139,7 @@ export const AttachmentRecord = ({
             { term: say(RECORD.uploader), description: say(uploaderName) },
             {
               term: say(RECORD.uploadedAt),
-              description: say(
-                momentNameAt(
-                  attachment.uploadedAt ?? attachment.createdAt,
-                  timezone,
-                ),
-              ),
+              description: say(momentNameAt(attachment.uploadedAt, timezone)),
             },
           ]}
         />

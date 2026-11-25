@@ -10,6 +10,7 @@ import {
   type RefusedValue,
   refusedValuesOf,
   UNANSWERED_PARTS,
+  UNREAD_TYPES,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -49,8 +50,21 @@ export const attachmentKeyOf = (attachmentId: string): string[] => [
 
 const ATTACHMENT_PAGE = 20
 
+/** A file whose upload was finished: the screens show no other, as the list of the API does not */
+export type UploadedAttachment = ModelsAttachmentResponse & {
+  uploadedAt: string
+}
+
+/** The file, when its upload was finished; none while the upload is awaited */
+const uploadedIn = (
+  attachment: ModelsAttachmentResponse,
+): UploadedAttachment[] =>
+  attachment.uploadedAt === null
+    ? []
+    : [{ ...attachment, uploadedAt: attachment.uploadedAt }]
+
 export type AttachmentPage =
-  | Page<ModelsAttachmentResponse>
+  | Page<UploadedAttachment>
   /** The account is a member of another salon */
   | Forbidden
   | Unread
@@ -70,7 +84,9 @@ export const readAttachmentPage = async (
   // screens send only what the API takes
   return match(answer)
     .returnType<AttachmentPage>()
-    .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
+    .with({ status: 200 }, ({ data }) =>
+      pageOf(data.data.flatMap(uploadedIn), data.meta),
+    )
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
     .with(P.union(...UNANSWERED_PARTS), unreadOf)
@@ -78,12 +94,16 @@ export const readAttachmentPage = async (
 }
 
 export type AttachmentRead =
-  | { type: 'found'; attachment: ModelsAttachmentResponse }
-  /** None has the ID, it was removed, or it is of a salon the account does not reach */
+  | { type: 'found'; attachment: UploadedAttachment }
+  /** None has the ID, it was removed, it is of a salon the account does not reach, or its upload is awaited */
   | NotFound
   | Unread
 
-/** A file: one of another salon, one that was removed, or none, is not found. */
+/**
+ * A file: one of another salon, one that was removed, or none, is not
+ * found, and neither is one whose upload is awaited, which the list does
+ * not have either.
+ */
 export const readAttachment = async (
   attachmentId: string,
 ): Promise<AttachmentRead> => {
@@ -92,27 +112,26 @@ export const readAttachment = async (
   // A 403 is the answer to an account of no salon, which the screens are not for
   return match(answer)
     .returnType<AttachmentRead>()
-    .with({ status: 200 }, ({ data }) => ({
-      type: 'found',
-      attachment: data.data,
-    }))
+    .with({ status: 200 }, ({ data }) =>
+      match(uploadedIn(data.data))
+        .returnType<AttachmentRead>()
+        .with([P.select()], (attachment) => ({ type: 'found', attachment }))
+        .otherwise(() => NOT_FOUND),
+    )
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FAILED)
     .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
-export type DownloadRead =
-  | { type: 'issued'; url: string; expiresAt: string }
+type DownloadRead =
+  | { type: 'issued'; url: string }
   /** The file was removed meanwhile */
   | NotFound
   | Unread
 
-/**
- * A URL of the storage that answers the file for five minutes: shown in the
- * browser (`inline`), or saved under the name it was uploaded with.
- */
-export const readDownloadUrl = async (
+/** A URL of the storage that answers the file for five minutes: shown in the browser (`inline`), or saved under the name it was uploaded with. */
+const readDownloadUrl = async (
   attachmentId: string,
   inline: boolean,
 ): Promise<DownloadRead> => {
@@ -126,12 +145,45 @@ export const readDownloadUrl = async (
     .with({ status: 200 }, ({ data }) => ({
       type: 'issued',
       url: data.data.downloadUrl,
-      expiresAt: data.data.expiresAt,
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: P.union(403, 409) }, () => FAILED)
     .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
+}
+
+export type FileLinksRead =
+  | { type: 'issued'; open: string; save: string }
+  /** The file was removed meanwhile */
+  | NotFound
+  | Unread
+
+/**
+ * The URLs of the storage that open a file in a tab and save it under its
+ * name, asked for together: they last as long, and are read anew together.
+ */
+export const readFileLinks = async (
+  attachmentId: string,
+): Promise<FileLinksRead> => {
+  const read = await Promise.all([
+    readDownloadUrl(attachmentId, true),
+    readDownloadUrl(attachmentId, false),
+  ])
+
+  return match(read)
+    .returnType<FileLinksRead>()
+    .with([{ type: 'issued' }, { type: 'issued' }], ([open, save]) => ({
+      type: 'issued',
+      open: open.url,
+      save: save.url,
+    }))
+    .with(
+      P.union([{ type: 'notFound' }, P._], [P._, { type: 'notFound' }]),
+      () => NOT_FOUND,
+    )
+    .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([unread]) => unread)
+    .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, unread]) => unread)
+    .exhaustive()
 }
 
 /** A file chosen to upload, and its kind by the ending of its name */

@@ -44,7 +44,7 @@ import {
   shareAddressOf,
   sharesFiles,
 } from '../utils/share-link'
-import { SharingForbidden, ToTheFile } from './share-link-notices'
+import { SharingForbidden } from './share-link-notices'
 
 const TITLE = adminShareLinkMessages.titles.entry
 
@@ -177,8 +177,8 @@ type EntryPartProps = { salon: ModelsSalonResponse; attachmentId: string }
 
 /**
  * The file of the address, read whenever the screen opens: a file of
- * another salon is not found at the address of this one, and one whose
- * upload was not finished is shared by nobody.
+ * another salon is not found at the address of this one, nor is one whose
+ * upload was not finished, as on the screen of the file.
  */
 const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
   const read = useQuery({
@@ -219,13 +219,6 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
-        </>
-      ))
-      .with({ type: 'found', attachment: { status: 'pending' } }, () => (
-        <>
-          {header}
-          <p>{say(adminShareLinkMessages.notUploaded)}</p>
-          <ToTheFile salonId={salon.id} attachmentId={attachmentId} />
         </>
       ))
       .with({ type: 'found' }, ({ attachment }) => (

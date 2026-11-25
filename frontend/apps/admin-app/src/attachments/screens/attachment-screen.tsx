@@ -1,10 +1,7 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
-import type {
-  ModelsAttachmentResponse,
-  ModelsSalonResponse,
-} from '@beauty-salon-frontend/api-client'
+import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
   PageHeader,
@@ -23,10 +20,11 @@ import { ShareLinksOfFile } from '../../share-links/screens/share-links-of-file'
 import {
   attachmentKeyOf,
   attachmentsKeyOf,
-  type DownloadRead,
+  type FileLinksRead,
   readAttachment,
-  readDownloadUrl,
+  readFileLinks,
   removeAttachment,
+  type UploadedAttachment,
 } from '../api/attachments-api'
 import {
   AttachmentRecord,
@@ -52,10 +50,10 @@ const useLinks = (
   attachmentId: string,
 ): { links: FileLinks; retry: () => void; retrying: boolean } => {
   const queryClient = useQueryClient()
-  const urlOf = (inline: boolean) => ({
-    queryKey: [...attachmentKeyOf(attachmentId), inline ? 'open' : 'save'],
-    queryFn: async (): Promise<DownloadRead> => {
-      const read = await readDownloadUrl(attachmentId, inline)
+  const query = useQuery({
+    queryKey: [...attachmentKeyOf(attachmentId), 'links'],
+    queryFn: async (): Promise<FileLinksRead> => {
+      const read = await readFileLinks(attachmentId)
       if (read.type === 'notFound') {
         void queryClient.invalidateQueries({
           queryKey: attachmentKeyOf(attachmentId),
@@ -69,28 +67,10 @@ const useLinks = (
     refetchInterval: LINKS_LAST,
     refetchIntervalInBackground: true,
   })
-  const open = useQuery(urlOf(true))
-  const save = useQuery(urlOf(false))
 
-  const links = match(open.data)
+  const links = match(query.data)
     .returnType<FileLinks>()
-    .with({ type: 'issued' }, ({ url: openUrl }) =>
-      match(save.data)
-        .returnType<FileLinks>()
-        .with({ type: 'issued' }, ({ url: saveUrl }) => ({
-          type: 'issued',
-          open: openUrl,
-          save: saveUrl,
-        }))
-        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
-          type: 'unread',
-          message: unreadMessageOf(names.openingAddress, reason),
-        }))
-        .with(P.union(undefined, { type: 'notFound' }), () => ({
-          type: 'reading',
-        }))
-        .exhaustive(),
-    )
+    .with({ type: 'issued' }, (issued) => issued)
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
       message: unreadMessageOf(names.openingAddress, reason),
@@ -100,17 +80,14 @@ const useLinks = (
 
   return {
     links,
-    retry: () => {
-      void open.refetch()
-      void save.refetch()
-    },
-    retrying: open.isFetching || save.isFetching,
+    retry: () => void query.refetch(),
+    retrying: query.isFetching,
   }
 }
 
 type AttachmentDetailsProps = {
   salon: ModelsSalonResponse
-  attachment: ModelsAttachmentResponse
+  attachment: UploadedAttachment
 }
 
 /**
@@ -122,11 +99,7 @@ const AttachmentDetails = ({ salon, attachment }: AttachmentDetailsProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const session = useSession()
-  const account =
-    session.type === 'signedIn'
-      ? { id: session.user.id, role: session.user.role }
-      : { id: '', role: '' }
+  const account = useSignedInUser()
   const uploaderName = useUploaderName(salon.id)
   const { links, retry, retrying } = useLinks(attachment.id)
   const [asking, setAsking] = useState(false)
@@ -166,7 +139,7 @@ const AttachmentDetails = ({ salon, attachment }: AttachmentDetailsProps) => {
       links={links}
       onRetryLinks={retry}
       retryingLinks={retrying}
-      removes={removesAttachment(account, attachment)}
+      removes={account !== undefined && removesAttachment(account, attachment)}
       pending={removal.isPending}
       asking={asking}
       message={message}

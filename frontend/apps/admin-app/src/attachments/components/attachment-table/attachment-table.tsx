@@ -1,4 +1,3 @@
-import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   COUNTED,
@@ -9,13 +8,14 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminAttachmentMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import type { UploadedAttachment } from '../../api/attachments-api'
 import { contentTypeNameOf, sizeNameOf } from '../../utils/attachment-file'
 
 const { table: TABLE } = adminAttachmentMessages
 
 export type AttachmentTableProps = {
   /** The files that were read so far, the latest uploaded first; at least one */
-  attachments: readonly ModelsAttachmentResponse[]
+  attachments: readonly UploadedAttachment[]
   /** The time zone of the salon, which the moments are said in */
   timezone: string
   /** Who uploaded a file, by the ID of the account */
@@ -73,8 +73,7 @@ export const AttachmentTable = ({
         {
           key: 'uploadedAt',
           header: say(TABLE.uploadedAt),
-          cell: ({ uploadedAt, createdAt }) =>
-            say(momentNameAt(uploadedAt ?? createdAt, timezone)),
+          cell: ({ uploadedAt }) => say(momentNameAt(uploadedAt, timezone)),
         },
       ]}
       rows={attachments}
