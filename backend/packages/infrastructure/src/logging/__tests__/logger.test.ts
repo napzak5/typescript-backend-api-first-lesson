@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import fs from 'node:fs'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createLogger, type LoggerSettings } from '../logger'
 
 const settings: LoggerSettings = {
@@ -61,5 +62,53 @@ describe('createLogger', () => {
     expect(lines).toMatchObject([
       { level: 'error', requestId: 'req-1', msg: 'Failed' },
     ])
+  })
+})
+
+describe('createLogger without a destination', () => {
+  /** What is written to standard output, which the test keeps instead. */
+  const writtenToStandardOutput = () => {
+    const written: string[] = []
+    vi.spyOn(fs, 'writeSync').mockImplementation((fd, data) => {
+      if (fd === 1) {
+        written.push(String(data))
+      }
+      return Buffer.byteLength(String(data))
+    })
+    return written
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should write each line of the format json to standard output at once', () => {
+    // Arrange
+    const written = writtenToStandardOutput()
+    const logger = createLogger({ ...settings, format: 'json' })
+
+    // Act
+    logger.info({ salonId: 'salon-1' }, 'Salon created')
+
+    // Assert
+    expect(written.map((line) => JSON.parse(line))).toMatchObject([
+      { level: 'info', salonId: 'salon-1', msg: 'Salon created' },
+    ])
+  })
+
+  it('should write each line of the format pretty to standard output at once, for a terminal', () => {
+    // Arrange
+    const written = writtenToStandardOutput()
+    const logger = createLogger({ ...settings, format: 'pretty' })
+
+    // Act
+    logger.warn({ salonId: 'salon-1' }, 'Salon closed')
+
+    // Assert
+    expect(written).toHaveLength(1)
+    const [line = ''] = written
+    expect(line).toContain('Salon closed')
+    expect(line).toContain('salon-1')
+    expect(() => JSON.parse(line)).toThrow()
   })
 })

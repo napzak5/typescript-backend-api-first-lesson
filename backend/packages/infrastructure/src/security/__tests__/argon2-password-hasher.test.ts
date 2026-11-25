@@ -1,5 +1,5 @@
 import { argon2Sync, randomBytes } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Argon2PasswordHasher } from '../argon2-password-hasher'
 
 const PASSWORD = 'correct horse battery staple'
@@ -221,4 +221,57 @@ describe('Argon2PasswordHasher.verify', () => {
       expect(result).toEqual({ type: 'success', data: { type: 'mismatch' } })
     },
   )
+})
+
+describe('Argon2PasswordHasher and what it derives', () => {
+  it.each([
+    ['more memory than a new hash', 'm=19457,t=2,p=1'],
+    ['more passes than a new hash', 'm=19456,t=3,p=1'],
+    ['more lanes than a new hash', 'm=19456,t=2,p=2'],
+    ['the 4 TiB of memory that end the process', 'm=4294967295,t=1,p=1'],
+  ])(
+    'should match no password against a stored hash with %s, without deriving it',
+    async (_case, parameters) => {
+      // Arrange
+      const derivation = vi.fn(async () => randomBytes(32))
+      const stored = `$argon2id$v=19$${parameters}$${unpadded(randomBytes(16))}$${unpadded(randomBytes(32))}`
+
+      // Act
+      const result = await new Argon2PasswordHasher(derivation).verify(
+        PASSWORD,
+        stored,
+      )
+
+      // Assert
+      expect(result).toEqual({ type: 'success', data: { type: 'mismatch' } })
+      expect(derivation).not.toHaveBeenCalled()
+    },
+  )
+
+  it('should answer a derivation that fails with a database error that names nothing but the failure', async () => {
+    // Arrange
+    const hasher = new Argon2PasswordHasher(async () => {
+      throw new Error('Memory allocation failed')
+    })
+    const stored = await hashOf(PASSWORD)
+
+    // Act
+    const results = [
+      await hasher.hash(PASSWORD),
+      await hasher.verify(PASSWORD, stored),
+    ]
+
+    // Assert
+    for (const result of results) {
+      expect(result).toEqual({
+        type: 'error',
+        error: {
+          type: 'database',
+          message: 'Password hashing failed',
+          cause: 'Memory allocation failed',
+        },
+      })
+      expect(JSON.stringify(result)).not.toContain(PASSWORD)
+    }
+  })
 })

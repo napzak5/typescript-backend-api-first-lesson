@@ -16,6 +16,8 @@ import {
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
+import { describeStorageFailure } from './failure'
+import { storedFileOf } from './stored-file'
 
 export type S3Settings = {
   /** Where the server reaches the storage. */
@@ -58,31 +60,12 @@ const clientOf = (endpoint: string, settings: S3Settings): S3Client =>
     requestHandler: TIMEOUTS,
   })
 
-/**
- * What a failed call leaves for the log: the verdict of the storage, never
- * a URL, which would carry a signature.
- */
-const describeFailure = (error: unknown) => ({
-  name: match(error)
-    .with({ name: P.string }, ({ name }) => name)
-    .otherwise(() => null),
-  message: match(error)
-    .with({ message: P.string }, ({ message }) => message)
-    .otherwise(() => 'The storage failed'),
-  status: match(error)
-    .with(
-      { $metadata: { httpStatusCode: P.number } },
-      ({ $metadata }) => $metadata.httpStatusCode,
-    )
-    .otherwise(() => null),
-})
-
 const attempt = async <T>(
   message: string,
   run: () => Promise<T>,
 ): Promise<Result<T, DomainError>> =>
   Result.mapError(await Result.fromPromise(run()), (cause) =>
-    DomainErrors.storage(message, describeFailure(cause)),
+    DomainErrors.storage(message, describeStorageFailure(cause)),
   )
 
 /**
@@ -97,16 +80,6 @@ const lifetimeUntil = (expiresAt: Date) => {
   const seconds = (expiresAt.getTime() - signingDate.getTime()) / 1000
 
   return { signingDate, expiresIn: Math.max(1, Math.ceil(seconds)) }
-}
-
-/** The size of the whole file, of an answer that holds a part of it. */
-const sizeOf = (
-  contentRange: string | undefined,
-  contentLength: number | undefined,
-): number => {
-  const total = contentRange?.match(/\/(\d+)$/)?.[1]
-
-  return total === undefined ? (contentLength ?? 0) : Number(total)
 }
 
 /**
@@ -182,10 +155,7 @@ export class S3FileStorage implements IFileStorage {
             Range: `bytes=0-${leadingBytes - 1}`,
           }),
         )
-        .then(async ({ Body, ContentRange, ContentLength }) => ({
-          size: sizeOf(ContentRange, ContentLength),
-          head: (await Body?.transformToByteArray()) ?? new Uint8Array(),
-        })),
+        .then(storedFileOf),
     )
 
     return match(read)
@@ -199,7 +169,7 @@ export class S3FileStorage implements IFileStorage {
         Result.error(
           DomainErrors.storage(
             'Failed to read the stored file',
-            describeFailure(error),
+            describeStorageFailure(error),
           ),
         ),
       )

@@ -35,13 +35,15 @@ const BACKUP_CODE_BYTES = 10
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
+/** The pieces of a text that a global pattern matches, in their order; none of an empty text. */
+const piecesOf = (text: string, pattern: RegExp): string[] =>
+  [...text.matchAll(pattern)].map(([piece]) => piece)
+
 /** Base32 of RFC 4648 without padding, which is how authenticator apps take a secret. */
 const toBase32 = (bytes: Buffer): string =>
-  (
-    [...bytes]
-      .map((byte) => byte.toString(2).padStart(8, '0'))
-      .join('')
-      .match(/.{1,5}/g) ?? []
+  piecesOf(
+    [...bytes].map((byte) => byte.toString(2).padStart(8, '0')).join(''),
+    /.{1,5}/g,
   )
     .map((bits) =>
       BASE32_ALPHABET.charAt(Number.parseInt(bits.padEnd(5, '0'), 2)),
@@ -49,8 +51,7 @@ const toBase32 = (bytes: Buffer): string =>
     .join('')
 
 /** `ABCD-EFGH-IJKL-MNOP`: groups that can be read and typed. */
-const inGroups = (code: string): string =>
-  (code.match(/.{1,4}/g) ?? []).join('-')
+const inGroups = (code: string): string => piecesOf(code, /.{1,4}/g).join('-')
 
 /** HOTP of RFC 4226, 5.3, with the time step as its counter. */
 const oneTimePassword = (secret: Buffer, step: number): string => {
