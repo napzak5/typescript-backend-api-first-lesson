@@ -12,20 +12,17 @@ import type {
  */
 export const bookingsWithServices = (
   rows: readonly { booking: DbBooking; service: DbBookingService | null }[],
-): BookingWithServices[] =>
-  [...Map.groupBy(rows, ({ booking }) => booking.id).values()].flatMap(
-    (ofBooking) => {
-      const [first] = ofBooking
+): BookingWithServices[] => {
+  // A map keeps its keys in the order they were first set: each booking is
+  // where its first row is.
+  const byBooking = new Map<string, BookingWithServices>()
+  for (const { booking, service } of rows) {
+    const gathered = byBooking.get(booking.id) ?? { booking, services: [] }
+    if (service !== null) {
+      gathered.services.push(service)
+    }
+    byBooking.set(booking.id, gathered)
+  }
 
-      return first === undefined
-        ? []
-        : [
-            {
-              booking: first.booking,
-              services: ofBooking.flatMap(({ service }) =>
-                service === null ? [] : [service],
-              ),
-            },
-          ]
-    },
-  )
+  return [...byBooking.values()]
+}

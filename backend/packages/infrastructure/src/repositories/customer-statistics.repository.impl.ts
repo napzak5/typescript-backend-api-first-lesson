@@ -29,20 +29,10 @@ import {
   type SQLWrapper,
   sql,
 } from 'drizzle-orm'
-import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { aggregateOf } from '../database/aggregate'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-
-/**
- * The figures of the statistics are read in one snapshot, so that the
- * bookings and the sales are of the same moment. Nothing is written and
- * nothing is locked, as for a sales report.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
+import { AT_ONE_MOMENT } from '../database/snapshot'
 
 const COMPLETED: DbBooking['status'] = 'completed'
 const CANCELLED: DbBooking['status'] = 'cancelled'
@@ -191,6 +181,9 @@ export class CustomerStatisticsRepository
     period: CustomerStatisticsPeriod,
   ): Promise<Result<CustomerStatisticsLookup, DomainError>> {
     return attempt('Failed to read the statistics of a customer', () =>
+      // The figures are read in one snapshot, so that the bookings and the
+      // sales are of the same moment. Nothing is written and nothing is
+      // locked, as for a sales report.
       this.db.transaction(
         (tx) => statisticsOf(tx, customerId, period),
         AT_ONE_MOMENT,
