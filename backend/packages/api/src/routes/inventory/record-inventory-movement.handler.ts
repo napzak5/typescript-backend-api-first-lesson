@@ -30,12 +30,9 @@ export const recordInventoryMovementHandler = (
     match(result)
       .with({ type: 'success' }, ({ data }) => {
         res.json({
-          data,
+          data: data.response,
           meta: responseMeta(req),
-          links:
-            data.inventoryId === null
-              ? null
-              : movementLinks(req.baseUrl, data.inventoryId),
+          links: movementLinks(req.baseUrl, data.inventoryId),
         })
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
