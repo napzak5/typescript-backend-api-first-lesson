@@ -116,14 +116,11 @@ const Shifts = ({ salon }: ShiftsProps) => {
       staleTime: 0,
     })),
   })
+  // What was read is read anew too: the schedules are read whenever they are shown
   const readAgain = (): void => {
-    if (profiles.data?.type !== 'found') {
-      void profiles.refetch()
-    }
+    void profiles.refetch()
     for (const schedule of schedules) {
-      if (schedule.data?.type !== 'found') {
-        void schedule.refetch()
-      }
+      void schedule.refetch()
     }
   }
   const retrying =

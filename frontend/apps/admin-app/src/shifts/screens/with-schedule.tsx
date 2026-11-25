@@ -97,12 +97,12 @@ const useMember = (
         .otherwise((other) => other)
     : match(profile.data)
         .returnType<MemberRead | undefined>()
-        .with({ type: 'found' }, ({ profile: found }) =>
-          // A profile of another salon is no member of this one
-          found.salonId === salonId
-            ? { type: 'found', name: found.displayName, isActive: true }
-            : NOT_FOUND,
-        )
+        // A member of another salon is not looked for here: the API answers their schedule below this salon as not found
+        .with({ type: 'found' }, ({ profile: found }) => ({
+          type: 'found',
+          name: found.displayName,
+          isActive: true,
+        }))
         .otherwise((other) => other)
   const used = keeps ? ledger : profile
 

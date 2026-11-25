@@ -57,10 +57,8 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
       notes: row?.notes ?? null,
     }),
   )
-  const dated = parts.dates.flatMap((row): Dated[] =>
-    row.date === null
-      ? []
-      : [{ date: row.date, shift: shiftOf(row), notes: row.notes }],
+  const dated = parts.dates.map(
+    (row): Dated => ({ date: row.date, shift: shiftOf(row), notes: row.notes }),
   )
   const restIn = (shift: Shift): string => {
     const rest = restOf(shift)

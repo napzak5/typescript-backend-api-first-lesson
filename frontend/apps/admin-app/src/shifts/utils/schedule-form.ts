@@ -65,6 +65,9 @@ export const dateControlOf = (
 /** The control that drops the rows of the days before today */
 export const DROP_PAST = 'dropPast'
 
+/** A row of a date: it has its date. */
+type DatedSchedule = ModelsStaffSchedule & { date: string }
+
 /** The rows the form shows of a schedule, and those it keeps out of sight. */
 export type ScheduleParts = {
   /** The row of every day of the week, from Monday: none for a day without one */
@@ -73,27 +76,33 @@ export type ScheduleParts = {
     row: ModelsStaffSchedule | undefined
   }[]
   /** The rows of today and of the days after it */
-  dates: ModelsStaffSchedule[]
+  dates: DatedSchedule[]
   /** The rows of the days before today */
-  past: ModelsStaffSchedule[]
+  past: DatedSchedule[]
 }
+
+/** The rows of dates of a schedule: those that are not of a day of the week. */
+const datedRowsOf = (rows: readonly ModelsStaffSchedule[]): DatedSchedule[] =>
+  rows.flatMap((row) =>
+    row.isRecurring || row.date === null ? [] : [{ ...row, date: row.date }],
+  )
 
 /** The rows of a schedule as the form shows them, `today` being today at the salon. */
 export const partsOf = (
   rows: readonly ModelsStaffSchedule[],
   today: string,
-): ScheduleParts => ({
-  weekly: WEEKDAYS.map((weekday) => ({
-    weekday,
-    row: rows.find((row) => row.isRecurring && row.dayOfWeek === weekday),
-  })),
-  dates: rows.filter(
-    (row) => !row.isRecurring && row.date !== null && row.date >= today,
-  ),
-  past: rows.filter(
-    (row) => !row.isRecurring && row.date !== null && row.date < today,
-  ),
-})
+): ScheduleParts => {
+  const dated = datedRowsOf(rows)
+
+  return {
+    weekly: WEEKDAYS.map((weekday) => ({
+      weekday,
+      row: rows.find((row) => row.isRecurring && row.dayOfWeek === weekday),
+    })),
+    dates: dated.filter(({ date }) => date >= today),
+    past: dated.filter(({ date }) => date < today),
+  }
+}
 
 /** A time of a row as a control of the form holds it: 「09:00」. */
 export const timeInputOf = (time: string | null): string | undefined =>
@@ -106,16 +115,16 @@ export const timeInputOf = (time: string | null): string | undefined =>
 const TIME = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/
 
 /** A time a control holds, as the API keeps it with its seconds: 「09:00:00」; none for no time. */
-const timeOf = (text: string): string | undefined =>
-  TIME.test(text) ? (text.length === 5 ? `${text}:00` : text) : undefined
+const timeOf = (text: string): string | null =>
+  TIME.test(text) ? (text.length === 5 ? `${text}:00` : text) : null
 
 /** What a part of the form holds: the times as the API keeps them, none for no time. */
 type Filled = {
   works: boolean
-  startTime: string | undefined
-  endTime: string | undefined
-  breakStartTime: string | undefined
-  breakEndTime: string | undefined
+  startTime: string | null
+  endTime: string | null
+  breakStartTime: string | null
+  breakEndTime: string | null
   notes: string | null
 }
 
@@ -136,10 +145,10 @@ const endTimeError = ({
   startTime,
   endTime,
 }: Filled): LocalizedText | undefined => {
-  if (endTime === undefined) {
+  if (endTime === null) {
     return ERRORS.endMissing
   }
-  if (startTime !== undefined && endTime <= startTime) {
+  if (startTime !== null && endTime <= startTime) {
     return ERRORS.endBeforeStart
   }
 
@@ -152,10 +161,10 @@ const breakStartError = ({
   breakStartTime,
   breakEndTime,
 }: Filled): LocalizedText | undefined => {
-  if (breakStartTime === undefined) {
-    return breakEndTime === undefined ? undefined : ERRORS.noBreakStart
+  if (breakStartTime === null) {
+    return breakEndTime === null ? undefined : ERRORS.noBreakStart
   }
-  if (startTime !== undefined && breakStartTime <= startTime) {
+  if (startTime !== null && breakStartTime <= startTime) {
     return ERRORS.breakBeforeStart
   }
 
@@ -168,13 +177,13 @@ const breakEndError = ({
   breakStartTime,
   breakEndTime,
 }: Filled): LocalizedText | undefined => {
-  if (breakEndTime === undefined) {
-    return breakStartTime === undefined ? undefined : ERRORS.noBreakEnd
+  if (breakEndTime === null) {
+    return breakStartTime === null ? undefined : ERRORS.noBreakEnd
   }
-  if (breakStartTime !== undefined && breakEndTime <= breakStartTime) {
+  if (breakStartTime !== null && breakEndTime <= breakStartTime) {
     return ERRORS.breakEndBeforeStart
   }
-  if (endTime !== undefined && breakEndTime >= endTime) {
+  if (endTime !== null && breakEndTime >= endTime) {
     return ERRORS.breakAfterEnd
   }
 
@@ -190,7 +199,7 @@ const timeEntriesOf = (
     ? [
         [
           nameOf('startTime'),
-          filled.startTime === undefined ? ERRORS.startMissing : undefined,
+          filled.startTime === null ? ERRORS.startMissing : undefined,
         ],
         [nameOf('endTime'), endTimeError(filled)],
         [nameOf('breakStartTime'), breakStartError(filled)],
@@ -212,10 +221,10 @@ const hoursOf = (
 > =>
   filled.works
     ? {
-        startTime: filled.startTime ?? null,
-        endTime: filled.endTime ?? null,
-        breakStartTime: filled.breakStartTime ?? null,
-        breakEndTime: filled.breakEndTime ?? null,
+        startTime: filled.startTime,
+        endTime: filled.endTime,
+        breakStartTime: filled.breakStartTime,
+        breakEndTime: filled.breakEndTime,
         isAvailable: true,
         notes: filled.notes,
       }
@@ -230,6 +239,9 @@ const hoursOf = (
 
 /** A row the form sends, with the control it was written at: none for a row of a day before today. */
 type Sent = { row: ModelsStaffSchedule; control: string | undefined }
+
+/** A row of a date the form sends, and its date, which the rows of dates are sent in the order of */
+type Dated = { date: string; sent: Sent }
 
 /** What the form sends: every row of the schedule, and where each was written. */
 export type ScheduleRequest = {
@@ -328,21 +340,29 @@ const readWhole = (
           ],
     ),
     ...[
-      ...kept.map((row): Sent => ({ row, control: undefined })),
-      ...dated.map(
-        ({ index, date, filled }): Sent => ({
-          row: {
-            dayOfWeek: null,
-            date,
-            isRecurring: false,
-            ...hoursOf(filled),
-          },
-          control: `dates.${index}`,
+      ...kept.map(
+        (row): Dated => ({
+          date: row.date,
+          sent: { row, control: undefined },
         }),
       ),
-    ].sort((one, other) =>
-      (one.row.date ?? '').localeCompare(other.row.date ?? ''),
-    ),
+      ...dated.map(
+        ({ index, date, filled }): Dated => ({
+          date,
+          sent: {
+            row: {
+              dayOfWeek: null,
+              date,
+              isRecurring: false,
+              ...hoursOf(filled),
+            },
+            control: `dates.${index}`,
+          },
+        }),
+      ),
+    ]
+      .sort((one, other) => one.date.localeCompare(other.date))
+      .map(({ sent }) => sent),
   ]
 
   return {
