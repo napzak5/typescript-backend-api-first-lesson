@@ -9,23 +9,16 @@ import {
   type ReviewReportListCriteria,
   type UserId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import { totalOf } from '../database/count'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { AT_ONE_MOMENT } from '../database/snapshot'
+import { written } from '../database/written'
 import { countReportsOf } from './_shared/review-report-count'
-
-/**
- * A read of a page of reports in one snapshot: the cursor, the page and
- * the count of what matches are of one moment.
- */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
 
 /**
  * Each statement sees what was committed before it began: a dismissal
@@ -156,8 +149,8 @@ export class ReviewReportRepository implements IReviewReportRepository {
     id: ReviewReportId,
     administrator: UserId,
   ): Promise<Result<ReportDismissal, DomainError>> {
-    return attempt('Failed to dismiss review report', () =>
-      this.db.transaction(async (tx): Promise<ReportDismissal> => {
+    const dismissal = await attempt('Failed to dismiss review report', () =>
+      this.db.transaction(async (tx): Promise<ReportDismissal | null> => {
         const plan = planReportDismissal({
           report: await heldReportOf(tx, id),
         })
@@ -175,15 +168,18 @@ export class ReviewReportRepository implements IReviewReportRepository {
           })
           .where(eq(reviewReports.id, id))
           .returning()
-        // The review of the report is held: the report is there until the
-        // transaction ends.
+        // The review of the report is held, and nothing writes a report
+        // without holding its review: only a trigger that skips the write
+        // leaves it unwritten.
         if (report === undefined) {
-          return { type: 'reportNotFound' }
+          return null
         }
         await countReportsOf(tx, report.reviewId)
 
         return { type: 'dismissed', report }
       }, WRITE),
     )
+
+    return Result.flatMap(dismissal, written('Update of dismissed report'))
   }
 }

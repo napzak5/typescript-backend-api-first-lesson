@@ -24,7 +24,7 @@ import { totalOf } from '../database/count'
 import { describeDatabaseError } from '../database/failure'
 import type { Database } from '../database/index'
 import { containing } from '../database/like'
-import { rowWritten } from '../database/written'
+import { rowWritten, written } from '../database/written'
 import { uniqueViolation } from './_shared/unique-violation'
 
 const codeUniqueViolation = uniqueViolation('products_code_salon_unique')
@@ -186,61 +186,64 @@ export class ProductRepository implements IProductRepository {
     id: ProductId,
     changes: DbProductChanges,
   ): Promise<Result<ProductUpdate, DomainError>> {
-    return attempt('Failed to update product', changes.productCode, () =>
-      this.db.transaction(
-        async (tx): Promise<ProductUpdate> => {
-          // Held, the stock levels are what they are when the change is
-          // written: a change of another level at the same moment has been
-          // written by the time this statement returns the row.
-          const [held] = await tx
-            .select({
-              minimumStock: products.minimumStock,
-              reorderPoint: products.reorderPoint,
-              maximumStock: products.maximumStock,
-            })
-            .from(products)
-            .where(ofSalon(salonId, id))
-            .for('update')
-          if (held === undefined) {
-            return { type: 'notFound' }
-          }
-          const broken = brokenOrders(
-            stockLevelsAfter(
-              {
-                minimumStock: toLevel(held.minimumStock),
-                reorderPoint: toNullableLevel(held.reorderPoint),
-                maximumStock: toNullableLevel(held.maximumStock),
-              },
-              {
-                ...(changes.minimumStock === undefined
-                  ? {}
-                  : { minimumStock: toLevel(changes.minimumStock) }),
-                ...(changes.reorderPoint === undefined
-                  ? {}
-                  : { reorderPoint: toNullableLevel(changes.reorderPoint) }),
-                ...(changes.maximumStock === undefined
-                  ? {}
-                  : { maximumStock: toNullableLevel(changes.maximumStock) }),
-              },
-            ),
-          )
-          if (broken.length > 0) {
-            return { type: 'stockLevelsOutOfOrder', broken }
-          }
+    const updated = await attempt(
+      'Failed to update product',
+      changes.productCode,
+      () =>
+        this.db.transaction(
+          async (tx): Promise<ProductUpdate | null> => {
+            // Held, the stock levels are what they are when the change is
+            // written: a change of another level at the same moment has been
+            // written by the time this statement returns the row.
+            const [held] = await tx
+              .select({
+                minimumStock: products.minimumStock,
+                reorderPoint: products.reorderPoint,
+                maximumStock: products.maximumStock,
+              })
+              .from(products)
+              .where(ofSalon(salonId, id))
+              .for('update')
+            if (held === undefined) {
+              return { type: 'notFound' }
+            }
+            const broken = brokenOrders(
+              stockLevelsAfter(
+                {
+                  minimumStock: toLevel(held.minimumStock),
+                  reorderPoint: toNullableLevel(held.reorderPoint),
+                  maximumStock: toNullableLevel(held.maximumStock),
+                },
+                {
+                  ...(changes.minimumStock === undefined
+                    ? {}
+                    : { minimumStock: toLevel(changes.minimumStock) }),
+                  ...(changes.reorderPoint === undefined
+                    ? {}
+                    : { reorderPoint: toNullableLevel(changes.reorderPoint) }),
+                  ...(changes.maximumStock === undefined
+                    ? {}
+                    : { maximumStock: toNullableLevel(changes.maximumStock) }),
+                },
+              ),
+            )
+            if (broken.length > 0) {
+              return { type: 'stockLevelsOutOfOrder', broken }
+            }
 
-          const [updated] = await tx
-            .update(products)
-            .set({ ...changes, updatedAt: CLOCK })
-            .where(eq(products.id, id))
-            .returning()
+            const [product] = await tx
+              .update(products)
+              .set({ ...changes, updatedAt: CLOCK })
+              .where(eq(products.id, id))
+              .returning()
 
-          return updated === undefined
-            ? { type: 'notFound' }
-            : { type: 'updated', product: updated }
-        },
-        { isolationLevel: 'read committed' },
-      ),
+            return product === undefined ? null : { type: 'updated', product }
+          },
+          { isolationLevel: 'read committed' },
+        ),
     )
+
+    return Result.flatMap(updated, written('Update of product'))
   }
 
   async delete(

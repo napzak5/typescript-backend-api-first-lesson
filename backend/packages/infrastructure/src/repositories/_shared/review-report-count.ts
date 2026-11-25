@@ -1,5 +1,6 @@
 import { reviewReports, reviews } from '@beauty-salon-backend/database'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, count, eq, ne } from 'drizzle-orm'
+import { totalOf } from '../../database/count'
 import type { DatabaseExecutor } from '../../database/index'
 
 /**
@@ -19,27 +20,20 @@ export const countReportsOf = async (
   tx: DatabaseExecutor,
   reviewId: string,
 ): Promise<void> => {
-  const counted = tx
-    .select({
-      reports: sql<number>`count(*)::integer`.as('reports'),
-    })
-    .from(reviewReports)
-    .where(
-      and(
-        eq(reviewReports.reviewId, reviewId),
-        eq(reviewReports.status, 'pending'),
+  const reports = totalOf(
+    await tx
+      .select({ total: count() })
+      .from(reviewReports)
+      .where(
+        and(
+          eq(reviewReports.reviewId, reviewId),
+          eq(reviewReports.status, 'pending'),
+        ),
       ),
-    )
-    .as('counted')
+  )
 
   await tx
     .update(reviews)
-    .set({ reportCount: sql`${counted.reports}` })
-    .from(counted)
-    .where(
-      and(
-        eq(reviews.id, reviewId),
-        sql`${reviews.reportCount} is distinct from ${counted.reports}`,
-      ),
-    )
+    .set({ reportCount: reports })
+    .where(and(eq(reviews.id, reviewId), ne(reviews.reportCount, reports)))
 }

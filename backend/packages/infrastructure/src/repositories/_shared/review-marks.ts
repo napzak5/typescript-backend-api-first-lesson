@@ -1,38 +1,30 @@
 import { reviewHelpfulVotes, reviews } from '@beauty-salon-backend/database'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, count, eq, ne } from 'drizzle-orm'
+import { totalOf } from '../../database/count'
 import type { DatabaseExecutor } from '../../database/index'
 
 /**
  * Counts the helpful count of a review again from its marks, as they are
- * after the mark just written, and returns it. The review is written only
- * when the count changes, and its `updatedAt` stays: what the review says
- * did not change.
+ * after the mark just written or removed, and returns it. The caller holds
+ * the review, so that the count is made by a statement that begins once
+ * the mark written before it is committed. The review is written only when
+ * the count changes, and its `updatedAt` stays: what the review says did
+ * not change.
  */
 export const countMarksOf = async (
   tx: DatabaseExecutor,
   id: string,
 ): Promise<number> => {
-  const counted = tx
-    .select({
-      marks: sql<number>`count(*)::integer`.as('marks'),
-    })
-    .from(reviewHelpfulVotes)
-    .where(eq(reviewHelpfulVotes.reviewId, id))
-    .as('counted')
+  const marks = totalOf(
+    await tx
+      .select({ total: count() })
+      .from(reviewHelpfulVotes)
+      .where(eq(reviewHelpfulVotes.reviewId, id)),
+  )
 
   await tx
     .update(reviews)
-    .set({ helpfulCount: sql`${counted.marks}` })
-    .from(counted)
-    .where(
-      and(
-        eq(reviews.id, id),
-        sql`${reviews.helpfulCount} is distinct from ${counted.marks}`,
-      ),
-    )
-  const [review] = await tx
-    .select({ helpfulCount: reviews.helpfulCount })
-    .from(reviews)
-    .where(eq(reviews.id, id))
-  return review?.helpfulCount ?? 0
+    .set({ helpfulCount: marks })
+    .where(and(eq(reviews.id, id), ne(reviews.helpfulCount, marks)))
+  return marks
 }
