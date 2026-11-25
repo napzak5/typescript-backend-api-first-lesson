@@ -1,25 +1,19 @@
+import { useTestDatabases } from '@beauty-salon-backend/testing'
 import type postgres from 'postgres'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useTestDatabases } from '../../__tests__/_shared/test-databases'
 import { rowCountsOf } from '../../scripts/tables'
 import { getSetupSql } from '../../setup-sql'
 import { seed, seedDatabase } from '../seed'
 
-const databases = useTestDatabases()
-const connections: postgres.Sql[] = []
-
-afterEach(async () => {
-  await Promise.all(connections.splice(0).map((sql) => sql.end()))
-  vi.restoreAllMocks()
+/** Every test starts on a database with the schema and no data. */
+const databases = useTestDatabases({
+  prefix: 'database_test',
+  schema: getSetupSql(),
 })
 
-/** A connection to the database of the test, which has the schema and no data. */
-const emptyDatabase = async (): Promise<postgres.Sql> => {
-  const sql = databases.connect()
-  connections.push(sql)
-  await sql.unsafe(getSetupSql())
-  return sql
-}
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 /** The number of rows of every table that has rows. */
 const rowsOf = async (sql: postgres.Sql): Promise<Record<string, number>> =>
@@ -73,7 +67,7 @@ const countOf = async (
 describe('seed', () => {
   it('should insert the rows of every table it writes to, and say each step before it is taken', async () => {
     // Arrange
-    const sql = await emptyDatabase()
+    const sql = databases.client()
     const said: string[] = []
 
     // Act
@@ -104,7 +98,7 @@ describe('seed', () => {
 
   it('should name, in every row, rows of the salon of the row', async () => {
     // Arrange
-    const sql = await emptyDatabase()
+    const sql = databases.client()
 
     // Act
     await seed(sql, () => {})
@@ -154,7 +148,7 @@ describe('seed', () => {
 
   it('should write the reviews and the treatment records of visits that took place, as the customer and the staff member of the visit', async () => {
     // Arrange
-    const sql = await emptyDatabase()
+    const sql = databases.client()
 
     // Act
     await seed(sql, () => {})
@@ -184,7 +178,7 @@ describe('seed', () => {
 
   it('should give every account of a customer or a staff member the row it is of, and the row the account', async () => {
     // Arrange
-    const sql = await emptyDatabase()
+    const sql = databases.client()
 
     // Act
     await seed(sql, () => {})
@@ -213,7 +207,7 @@ describe('seed', () => {
 describe('seedDatabase', () => {
   it('should insert the same rows as the seed, and say nothing', async () => {
     // Arrange
-    const sql = await emptyDatabase()
+    const sql = databases.client()
     const log = vi.spyOn(console, 'log')
 
     // Act

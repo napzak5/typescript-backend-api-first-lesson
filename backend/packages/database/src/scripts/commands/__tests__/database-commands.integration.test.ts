@@ -1,12 +1,12 @@
 import { join } from 'node:path'
+import { useTestDatabases } from '@beauty-salon-backend/testing'
 import { describe, expect, it } from 'vitest'
-import { useTestDatabases } from '../../../__tests__/_shared/test-databases'
 import { runDatabaseCommand } from '../../__tests__/_shared/commands'
 import { useTemporaryFolders } from '../../__tests__/_shared/folders'
 import { PACKAGE_PATHS } from '../../command'
 import { readMigrationFiles } from '../../migrations'
 
-const databases = useTestDatabases()
+const databases = useTestDatabases({ prefix: 'database_test' })
 const folderOf = useTemporaryFolders()
 
 /** Runs a command on the database of the test, as a test environment does. */
@@ -26,9 +26,7 @@ const runWithSql = (sql: string, ...argv: string[]) =>
 
 /** What the database of the test answers to a query of one value. */
 const answerTo = async (query: string): Promise<unknown> => {
-  const sql = databases.connect()
-  const [row] = await sql.unsafe(query)
-  await sql.end()
+  const [row] = await databases.client().unsafe(query)
   return row?.['value']
 }
 

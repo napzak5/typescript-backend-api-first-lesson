@@ -49,8 +49,8 @@
     "postgres": "^4.1.1"
   },
   "devDependencies": {
+    "@beauty-salon-backend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
-    "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^26.6.6",
     "drizzle-kit": "^0.31.11",
     "ts-pattern": "^5.9.2",
