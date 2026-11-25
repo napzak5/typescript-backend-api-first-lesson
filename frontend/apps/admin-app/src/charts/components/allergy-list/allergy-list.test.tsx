@@ -111,7 +111,9 @@ describe('AllergyList', () => {
     )
 
     // Assert
-    expect(stories.Asking.args.onRemove).toHaveBeenCalledTimes(1)
+    expect(stories.Asking.args.onRemove).toHaveBeenCalledExactlyOnceWith(
+      stories.Asking.args.removing,
+    )
     expect(stories.Asking.args.onClose).not.toHaveBeenCalled()
   })
 

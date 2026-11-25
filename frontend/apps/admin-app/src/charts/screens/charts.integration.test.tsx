@@ -37,6 +37,7 @@ import {
   conditionsWrittenMeanwhile,
   storedChartOf,
 } from '../__tests__/arrangements'
+import { chartForm, openChartOf } from '../__tests__/screens'
 
 /*
  * The charts of the seed data: Tanaka Yuki has one, with allergies
@@ -70,27 +71,6 @@ const customersListed = (name: string): (string | null)[] =>
     .getAllByRole('rowheader')
     .map((header) => header.textContent)
     .toSorted()
-
-/**
- * Opens a screen of the chart of a customer in the salon in Tokyo,
- * signed in: the chart itself, or the screen below it (`/new`, `/edit`).
- */
-const openChartOf = async (
-  email: string,
-  below: '' | '/new' | '/edit' = '',
-  account = OWNER,
-): Promise<{ salonId: string; customerId: string }> => {
-  const customerId = await customerIdOf(email)
-  const salonId = await salonIdOf(TOKYO)
-  renderAt(`${chartHrefOf(salonId, customerId)}${below}`)
-  await signInAs(account)
-
-  return { salonId, customerId }
-}
-
-/** Waits until the form of the chart is shown. */
-const theForm = (): Promise<HTMLElement> =>
-  screen.findByRole('group', { name: '施術の前に確かめること' })
 
 describe('the charts of the customers, against the API', () => {
   beforeEach(() => {
@@ -136,7 +116,7 @@ describe('the charts of the customers, against the API', () => {
     await openChartOf(KENJI.email)
     await user.click(await screen.findByRole('link', { name: 'カルテを作る' }))
     await heading('カルテを作る')
-    await theForm()
+    await chartForm()
 
     // Act
     await user.type(
@@ -220,7 +200,7 @@ describe('the charts of the customers, against the API', () => {
       // Arrange
       const user = userEvent.setup()
       await openChartOf(KENJI.email, '/new')
-      await theForm()
+      await chartForm()
       await fill(user)
 
       // Act
@@ -243,7 +223,7 @@ describe('the charts of the customers, against the API', () => {
     const user = userEvent.setup()
     await openChartOf(YUKI.email, '/edit')
     await heading('カルテを直す')
-    await theForm()
+    await chartForm()
     await conditionsWrittenMeanwhile(YUKI.email, '腰痛があるので、休憩をはさむ')
 
     // Act
@@ -271,7 +251,7 @@ describe('the charts of the customers, against the API', () => {
     // Arrange
     const user = userEvent.setup()
     await openChartOf(YUKI.email, '/edit')
-    await theForm()
+    await chartForm()
     const before = await storedChartOf(YUKI.email)
 
     // Act
@@ -287,7 +267,7 @@ describe('the charts of the customers, against the API', () => {
     // Arrange
     const user = userEvent.setup()
     const { salonId, customerId } = await openChartOf(KENJI.email, '/new')
-    await theForm()
+    await chartForm()
     await user.type(
       screen.getByRole('textbox', { name: '持病や体調' }),
       '花粉症の季節は、目がかゆくなる',
@@ -327,7 +307,7 @@ describe('the charts of the customers, against the API', () => {
       // Arrange
       const user = userEvent.setup()
       const { customerId } = await openChartOf(email, below)
-      await theForm()
+      await chartForm()
       await user.type(screen.getByRole('textbox', { name: '持病や体調' }), '。')
       await removedMeanwhile(customerId, MANAGER)
 

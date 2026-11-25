@@ -10,7 +10,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   moreOf,
@@ -72,7 +72,7 @@ type AllergiesPartProps = {
  * was pressed may be gone.
  */
 const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
-  const session = useSession()
+  const user = useSignedInUser()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const heading = useRef<HTMLHeadingElement>(null)
@@ -163,9 +163,7 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
       }
       entryHref={allergyEntryHrefOf(salon.id, customer.id)}
       changeHrefOf={({ id }) => allergyChangeHrefOf(salon.id, customer.id, id)}
-      removable={
-        session.type === 'signedIn' && mayRemoveAllergies(session.user.role)
-      }
+      removable={user !== undefined && mayRemoveAllergies(user.role)}
       refusal={refusal}
       headingRef={heading}
       removing={removing}
@@ -176,11 +174,7 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
       onClose={() => setRemoving(undefined)}
       message={message}
       pending={removal.isPending}
-      onRemove={() => {
-        if (removing !== undefined) {
-          removal.mutate(removing)
-        }
-      }}
+      onRemove={(allergy) => removal.mutate(allergy)}
     />
   )
 }

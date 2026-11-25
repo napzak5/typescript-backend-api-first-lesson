@@ -141,6 +141,23 @@ describe('findAllergy', () => {
 })
 
 describe('addAllergy', () => {
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [{ field: 'confirmedDate', rule: 'invalid_format' }]),
+    )
+
+    // Act
+    const outcome = await addAllergy(customer.id, recorded)
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'confirmedDate', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, () => Response, string]>([
     ['403', () => problem(403), 'forbidden'],
     ['413', () => problem(413), 'failed'],
@@ -169,6 +186,25 @@ describe('addAllergy', () => {
 })
 
 describe('updateAllergy', () => {
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [{ field: 'confirmedDate', rule: 'invalid_format' }]),
+    )
+
+    // Act
+    const outcome = await updateAllergy(customer.id, allergy.id, {
+      confirmedDate: '2026-11-20',
+    })
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'confirmedDate', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, () => Response, string]>([
     ['403', () => problem(403), 'forbidden'],
     ['413', () => problem(413), 'failed'],

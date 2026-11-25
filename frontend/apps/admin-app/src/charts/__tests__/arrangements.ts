@@ -37,6 +37,26 @@ export const storedChartOf = async (email: string) =>
     ),
   )[0]
 
+/** The ID of the chart of a customer, by their address of mail. */
+export const chartIdOf = (email: string): Promise<string> =>
+  idOf(
+    `select charts.id::text from medical_charts charts
+     join customers on customers.id = charts."customerId"
+     where customers.email = $1`,
+    [email],
+  )
+
+/** The ID of the chart made first: the last of the search, which lists the latest made first. */
+export const firstChartId = (): Promise<string> =>
+  idOf(
+    'select id::text from medical_charts order by "createdAt", id limit 1',
+    [],
+  )
+
+/** Lets no customer have a chart. */
+export const everyChartRemoved = (): Promise<unknown> =>
+  testApi().query('delete from medical_charts')
+
 /** Lets another account have written what to take care of meanwhile. */
 export const conditionsWrittenMeanwhile = (
   email: string,
