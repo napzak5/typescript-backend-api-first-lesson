@@ -16,7 +16,7 @@ import {
   attachmentsKeyOf,
   readAttachment,
   readAttachmentPage,
-  readDownloadUrl,
+  readFileLinks,
   removeAttachment,
   uploadAttachment,
 } from './attachments-api'
@@ -134,6 +134,17 @@ describe('readAttachment', () => {
     expect(asked(fetched)).toEqual([`GET /attachments/${photo.id}`])
   })
 
+  it('should not find a file whose upload is awaited, which the list does not have either', async () => {
+    // Arrange
+    answering(() => record(200, pending))
+
+    // Act
+    const read = await readAttachment(photo.id)
+
+    // Assert
+    expect(read).toEqual({ type: 'notFound' })
+  })
+
   it.each<[string, Answer, string]>([
     [
       'a file that is none, removed or of another salon',
@@ -155,30 +166,44 @@ describe('readAttachment', () => {
   })
 })
 
-describe('readDownloadUrl', () => {
-  it.each<[string, boolean, string]>([
-    ['shows the file in the browser', true, 'true'],
-    ['saves the file under its name', false, 'false'],
-  ])('should ask for the URL that %s', async (_, inline, written) => {
+/** The URL the storage answers a file at, for the request of the API that asked for it */
+const urlOf = (request: Request): string =>
+  `${STORAGE}/file?${new URL(request.url).searchParams.toString()}`
+
+/** Answers the URL that shows the file, and the other way the URL that saves it */
+const answeringLinks = (open: Answer, save: Answer) =>
+  answering((request) =>
+    new URL(request.url).searchParams.get('inline') === 'true'
+      ? open()
+      : save(),
+  )
+
+/** A URL the API issued */
+const issuedUrl: Answer = () =>
+  record(200, { downloadUrl: '', expiresAt: '2026-11-21T03:05:00.000Z' })
+
+describe('readFileLinks', () => {
+  it('should ask for the URL that shows the file in the browser and the one that saves it under its name, together', async () => {
     // Arrange
-    const fetched = answering(() =>
+    const fetched = answering((request) =>
       record(200, {
-        downloadUrl: `${STORAGE}/file`,
+        downloadUrl: urlOf(request),
         expiresAt: '2026-11-21T03:05:00.000Z',
       }),
     )
 
     // Act
-    const read = await readDownloadUrl(photo.id, inline)
+    const read = await readFileLinks(photo.id)
 
     // Assert
     expect(read).toEqual({
       type: 'issued',
-      url: `${STORAGE}/file`,
-      expiresAt: '2026-11-21T03:05:00.000Z',
+      open: `${STORAGE}/file?inline=true`,
+      save: `${STORAGE}/file?inline=false`,
     })
     expect(asked(fetched)).toEqual([
-      `GET /attachments/${photo.id}/download-url?inline=${written}`,
+      `GET /attachments/${photo.id}/download-url?inline=true`,
+      `GET /attachments/${photo.id}/download-url?inline=false`,
     ])
   })
 
@@ -192,7 +217,43 @@ describe('readDownloadUrl', () => {
     answering(given)
 
     // Act
-    const read = await readDownloadUrl(photo.id, true)
+    const read = await readFileLinks(photo.id)
+
+    // Assert
+    expect(read).toEqual({ type })
+  })
+
+  it.each<[string, Answer, Answer, string]>([
+    [
+      'the URL that shows it could not be read',
+      () => problem(500),
+      issuedUrl,
+      'failed',
+    ],
+    [
+      'the URL that saves it could not be read',
+      issuedUrl,
+      () => problem(429),
+      'tooManyRequests',
+    ],
+    [
+      'the file was removed before the URL that saves it was asked for',
+      issuedUrl,
+      () => problem(404),
+      'notFound',
+    ],
+    [
+      'the file was removed, and the other URL could not be read',
+      () => problem(500),
+      () => problem(404),
+      'notFound',
+    ],
+  ])('should give neither URL when %s', async (_, open, save, type) => {
+    // Arrange
+    answeringLinks(open, save)
+
+    // Act
+    const read = await readFileLinks(photo.id)
 
     // Assert
     expect(read).toEqual({ type })

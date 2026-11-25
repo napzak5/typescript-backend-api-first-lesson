@@ -1,4 +1,5 @@
 import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
 
 /*
@@ -40,6 +41,55 @@ export const arrangeFile = async ({
        from users u where u.email = $5
        returning id::text`,
     [salonId, filename, contentType, size, uploadedBy, minutesAgo],
+  )
+
+/**
+ * Puts so many PDF files of the owner into a salon, a minute apart: the
+ * first (「書類1.pdf」) is the latest. Their IDs come in the same order.
+ */
+export const arrangeFiles = async (
+  salonId: string,
+  count: number,
+): Promise<string[]> => {
+  const ids: string[] = []
+  for (let index = 1; index <= count; index += 1) {
+    ids.push(
+      await arrangeFile({
+        salonId,
+        filename: `書類${index}.pdf`,
+        uploadedBy: OWNER,
+        minutesAgo: 10 + index,
+      }),
+    )
+  }
+
+  return ids
+}
+
+/**
+ * Puts a file into the database whose upload an account began and has not
+ * finished: the URL of its upload was issued, and the storage has nothing.
+ */
+export const arrangeAwaitedFile = ({
+  salonId,
+  filename,
+  uploadedBy,
+}: {
+  salonId: string
+  filename: string
+  /** The address of mail of the account that began the upload */
+  uploadedBy: string
+}): Promise<string> =>
+  idOf(
+    `insert into attachments
+         ("salonId", filename, "contentType", size, status, "uploadedBy",
+          "uploadExpiresAt", "createdAt", "updatedAt")
+       select $1, $2, 'application/pdf', 348160, 'pending', u.id,
+         now() + interval '14 minutes', now() - interval '1 minute',
+         now() - interval '1 minute'
+       from users u where u.email = $3
+       returning id::text`,
+    [salonId, filename, uploadedBy],
   )
 
 const storedSchema = z.array(

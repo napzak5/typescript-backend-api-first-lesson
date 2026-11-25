@@ -70,8 +70,8 @@ export type AllergyListProps = {
   message?: LocalizedText | undefined
   /** The removal is on its way */
   pending?: boolean | undefined
-  /** The removal was confirmed */
-  onRemove: () => void
+  /** The removal of the allergy the dialog asks about was confirmed */
+  onRemove: (allergy: ModelsCustomerAllergyResponse) => void
 }
 
 /**
@@ -213,9 +213,15 @@ export const AllergyList = ({
           actions={
             <>
               <Button onClick={onClose}>{say(removal.back)}</Button>
-              <Button variant='danger' pending={pending} onClick={onRemove}>
-                {say(removal.submit)}
-              </Button>
+              {removing !== undefined && (
+                <Button
+                  variant='danger'
+                  pending={pending}
+                  onClick={() => onRemove(removing)}
+                >
+                  {say(removal.submit)}
+                </Button>
+              )}
             </>
           }
         >

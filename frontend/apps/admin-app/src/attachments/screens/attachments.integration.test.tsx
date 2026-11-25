@@ -23,16 +23,13 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../../__tests__/screens'
-import {
-  attachmentHrefOf,
-  attachmentsHrefOf,
-  reviewsHrefOf,
-} from '../../navigation'
+import { attachmentHrefOf, reviewsHrefOf } from '../../navigation'
 import {
   arrangeFile,
   fileRemovedMeanwhile,
   storedFilesOf,
 } from '../__tests__/arrangements'
+import { filesOfTokyo, openFileAs, openFilesAs } from '../__tests__/screens'
 
 /*
  * The files of a salon against the API and the object storage of the test
@@ -40,25 +37,6 @@ import {
  * that open and save it, and its removal. The seed data has no file; the
  * files a test needs are in `__tests__/arrangements.ts`.
  */
-
-/** The files of the salon in Tokyo */
-const filesOfTokyo = async (): Promise<string> =>
-  attachmentsHrefOf(await salonIdOf(TOKYO))
-
-/** Opens the files of the salon in Tokyo, and waits until they are read. */
-const openFilesAs = async (email: string): Promise<void> => {
-  await openAs(await filesOfTokyo(), email)
-  await heading('ファイル')
-  await waitFor(() =>
-    expect(screen.queryByText('ファイルを読み込んでいます')).toBeNull(),
-  )
-}
-
-/** Opens a file of the salon in Tokyo, and waits for the links that open it. */
-const openFileAs = async (id: string, email: string): Promise<void> => {
-  await openAs(attachmentHrefOf(await salonIdOf(TOKYO), id), email)
-  await screen.findByRole('link', { name: '保存する' })
-}
 
 const fileControl = (): HTMLElement =>
   screen.getByLabelText('ファイル', { selector: 'input' })

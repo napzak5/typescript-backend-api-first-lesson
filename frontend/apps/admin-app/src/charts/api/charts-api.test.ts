@@ -197,6 +197,25 @@ describe('createChart', () => {
     expect(outcome).toEqual({ type: 'notFound' })
   })
 
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused of the chart', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [
+        { field: 'previousTreatments.0.date', rule: 'invalid_format' },
+      ]),
+    )
+
+    // Act
+    const outcome = await createChart({ customerId: customer.id, ...written })
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'previousTreatments.0.date', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, () => Response, string]>([
     ['403', () => problem(403), 'forbidden'],
     ['413', () => problem(413), 'failed'],
@@ -236,6 +255,25 @@ describe('updateChart', () => {
     expect(outcome).toEqual({ type: 'written', chart })
     expect(asked(fetched)).toEqual([`PATCH /medical-charts/${chart.id}`])
     expect(await sent(fetched)).toEqual([{ notes: null }])
+  })
+
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [{ field: 'preferredProducts.0', rule: 'too_big' }]),
+    )
+
+    // Act
+    const outcome = await updateChart(chart.id, {
+      preferredProducts: ['オイル'],
+    })
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'preferredProducts.0', rule: 'too_big' }],
+    })
   })
 
   it.each<[string, () => Response, string]>([

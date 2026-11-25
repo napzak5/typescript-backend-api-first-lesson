@@ -179,6 +179,39 @@ const photoErrorsOf = (
   ]
 }
 
+type PhotoRead =
+  | { type: 'valid'; photo: ModelsTreatmentPhotoCreateRequest }
+  | { type: 'invalid'; errors: [string, LocalizedText][] }
+
+/** The row of the number `index`: the photo at the place `sortOrder` of the record, or what is wrong with it. */
+const readPhoto = (
+  index: number,
+  filled: FilledPhoto,
+  earlier: readonly FilledPhoto[],
+  held: readonly ModelsTreatmentPhotoResponse[],
+  sortOrder: number,
+): PhotoRead => {
+  const photoType = photoTypeOf(filled.photoType)
+  const errors = photoErrorsOf(index, filled, earlier, held)
+  if (photoType === undefined || errors.length > 0) {
+    return { type: 'invalid', errors }
+  }
+
+  return {
+    type: 'valid',
+    photo: {
+      photoType,
+      photoUrl: filled.photoUrl,
+      thumbnailUrl: textOrNull(filled.thumbnailUrl),
+      angle: textOrNull(filled.angle),
+      description: textOrNull(filled.description),
+      isPublic: filled.isPublic,
+      customerConsent: filled.customerConsent,
+      sortOrder,
+    },
+  }
+}
+
 /** The photos that were filled in, or what is wrong with them; and none, when the record has no room for them. */
 export type PhotosRead =
   | FormRead<ModelsTreatmentPhotoBulkCreateRequest, Errors>
@@ -194,41 +227,33 @@ export const readPhotos = (
   record: Pick<ModelsTreatmentRecordResponse, 'photos'>,
 ): PhotosRead => {
   const filled = photosIn(values, 0)
-  const errors = filled.flatMap((photo, index) =>
-    photoErrorsOf(index, photo, filled.slice(0, index), record.photos),
+  const next = Math.max(-1, ...record.photos.map(({ sortOrder }) => sortOrder))
+  const rows = filled.map((photo, index) =>
+    readPhoto(
+      index,
+      photo,
+      filled.slice(0, index),
+      record.photos,
+      next + 1 + index,
+    ),
+  )
+  // The rows are parted before the check: those that are valid are sent when no row is wrong
+  const photos = rows.flatMap((row) =>
+    row.type === 'valid' ? [row.photo] : [],
+  )
+  const errors = rows.flatMap((row) =>
+    row.type === 'invalid' ? row.errors : [],
   )
   if (errors.length > 0) {
     return { type: 'invalid', errors: Object.fromEntries(errors) }
   }
+  // A record that came to hold more photos meanwhile has less room than the form has rows
   const room = roomOf(record)
   if (filled.length > room) {
     return { type: 'noRoom', message: noRoomOf(room) }
   }
-  const next = Math.max(-1, ...record.photos.map(({ sortOrder }) => sortOrder))
 
-  return {
-    type: 'valid',
-    value: {
-      photos: filled.flatMap((photo, index) => {
-        const photoType = photoTypeOf(photo.photoType)
-
-        return photoType === undefined
-          ? []
-          : [
-              {
-                photoType,
-                photoUrl: photo.photoUrl,
-                thumbnailUrl: textOrNull(photo.thumbnailUrl),
-                angle: textOrNull(photo.angle),
-                description: textOrNull(photo.description),
-                isPublic: photo.isPublic,
-                customerConsent: photo.customerConsent,
-                sortOrder: next + 1 + index,
-              },
-            ]
-      }),
-    },
-  }
+  return { type: 'valid', value: { photos } }
 }
 
 const PHOTO_FIELD =

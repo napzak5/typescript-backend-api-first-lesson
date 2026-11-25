@@ -38,6 +38,12 @@ import {
   treatmentIdOf,
   treatmentRemovedMeanwhile,
 } from '../__tests__/arrangements'
+import {
+  fillPhoto,
+  openPhotosOf,
+  photoRow,
+  photosPart,
+} from '../__tests__/screens'
 
 /*
  * The photos of the treatment records of the seed data: Tanaka Yuki's has
@@ -52,89 +58,11 @@ import {
 const seedPhotoOf = (treatmentId: string, file: string): string =>
   `https://images.example.com/treatments/${treatmentId}/${file}`
 
-const photosPart = (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: '施術写真' })
-
 /** What the record shows of each photo: its caption */
 const captions = async (): Promise<string[]> =>
   within(await photosPart())
     .queryAllByRole('figure')
     .map((figure) => figure.textContent ?? '')
-
-const photoRow = (number: number): HTMLElement =>
-  screen.getByRole('group', { name: `${number} 枚目の写真` })
-
-type Filled = {
-  photoType: string
-  photoUrl: string
-  angle?: string
-  description?: string
-  thumbnailUrl?: string
-  consent?: boolean
-  outside?: boolean
-}
-
-/** Fills in the row of the photo of a number, counted from 1. */
-const fillPhoto = async (
-  user: ReturnType<typeof userEvent.setup>,
-  number: number,
-  filled: Filled,
-): Promise<void> => {
-  const row = photoRow(number)
-  await user.selectOptions(
-    within(row).getByRole('combobox', { name: '区分' }),
-    filled.photoType,
-  )
-  await user.type(
-    within(row).getByRole('textbox', { name: '写真の URL' }),
-    filled.photoUrl,
-  )
-  if (filled.thumbnailUrl !== undefined) {
-    await user.type(
-      within(row).getByRole('textbox', { name: '縮小した写真の URL' }),
-      filled.thumbnailUrl,
-    )
-  }
-  if (filled.angle !== undefined) {
-    await user.type(
-      within(row).getByRole('textbox', { name: '撮った向き' }),
-      filled.angle,
-    )
-  }
-  if (filled.description !== undefined) {
-    await user.type(
-      within(row).getByRole('textbox', { name: '写真の説明' }),
-      filled.description,
-    )
-  }
-  if (filled.consent === true) {
-    await user.click(
-      within(row).getByRole('checkbox', {
-        name: 'お客様が、写真の撮影と利用に同意している',
-      }),
-    )
-  }
-  if (filled.outside === true) {
-    await user.click(
-      within(row).getByRole('checkbox', {
-        name: 'サロンの外（サロンのページなど）に見せてよい',
-      }),
-    )
-  }
-}
-
-/** Opens the screen that adds photos to the record of a customer of the seed data, and waits for the form. */
-const openPhotosOf = async (
-  email: string,
-  account = OWNER,
-): Promise<string> => {
-  const treatmentId = await treatmentIdOf(email)
-  renderAt(treatmentPhotosHrefOf(await salonIdOf(TOKYO), treatmentId))
-  await signInAs(account)
-  await screen.findByRole('group', { name: '1 枚目の写真' })
-
-  return treatmentId
-}
 
 describe('the photos and the statistics of the treatment records, against the API', () => {
   beforeEach(() => {
@@ -324,6 +252,15 @@ describe('the photos and the statistics of the treatment records, against the AP
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'この施術記録には、あと 1 枚まで足せます。写真の欄を減らしてください。',
     )
+
+    // Act: sent again with as many rows, the record has no room for them
+    await user.click(screen.getByRole('button', { name: '写真を足す' }))
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'この施術記録には、あと 1 枚まで足せます。写真の欄を減らしてください。',
+    )
+    expect(await storedPhotosOf(treatmentId)).toHaveLength(19)
 
     // Act
     await user.click(

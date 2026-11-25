@@ -5,7 +5,7 @@ import type {
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
 import { dayNameOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { useSession } from '@beauty-salon-frontend/session'
+import { useSignedInUser } from '@beauty-salon-frontend/session'
 import {
   Alert,
   Button,
@@ -126,11 +126,7 @@ const PhotosPart = ({ salon, record }: PhotosPartProps) => {
       onClose={() => setRemoving(undefined)}
       message={message}
       pending={removal.isPending}
-      onRemove={() => {
-        if (removing !== undefined) {
-          removal.mutate(removing)
-        }
-      }}
+      onRemove={(photo) => removal.mutate(photo)}
     />
   )
 }
@@ -150,7 +146,7 @@ const RecordPart = ({
   products,
 }: RecordPartProps) => {
   const say = useSay()
-  const session = useSession()
+  const user = useSignedInUser()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
@@ -160,8 +156,7 @@ const RecordPart = ({
   /** What the API refused: said above the record */
   const [refusal, setRefusal] = useState<LocalizedText>()
   const name = customerInASentence(customer)
-  const removable =
-    session.type === 'signedIn' && mayRemoveTreatments(session.user.role)
+  const removable = user !== undefined && mayRemoveTreatments(user.role)
 
   const removal = useMutation({
     mutationFn: () => removeTreatment(record.id),

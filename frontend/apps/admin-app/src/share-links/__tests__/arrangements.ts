@@ -55,22 +55,6 @@ export const arrangeShareLink = async ({
     ],
   )
 
-/** Puts a file whose upload was not finished into the database, as the owner of a salon began it. */
-export const arrangeUnfinishedFile = async (
-  salonId: string,
-  filename: string,
-): Promise<string> =>
-  idOf(
-    `insert into attachments
-         ("salonId", filename, "contentType", size, status, "uploadedBy",
-          "uploadExpiresAt")
-       select $1, $2, 'application/pdf', 512, 'pending', u.id,
-         now() + interval '15 minutes'
-       from users u where u.email = 'owner@beautysalon.jp'
-       returning id::text`,
-    [salonId, filename],
-  )
-
 const storedSchema = z.array(
   z.object({
     expiresAt: z.number(),

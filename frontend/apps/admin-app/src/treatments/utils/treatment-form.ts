@@ -280,6 +280,10 @@ const readWhole = (
   const materials = filled.map((material, index) =>
     readMaterial(index, material, products),
   )
+  // The rows are parted before the check: those that are valid are sent when no row is wrong
+  const validMaterials = materials.flatMap((material) =>
+    material.type === 'valid' ? [material.material] : [],
+  )
   const errors: Record<string, LocalizedText> = Object.fromEntries([
     ...errorAt(
       'services',
@@ -340,9 +344,7 @@ const readWhole = (
       homeCareSuggestions: textOrNull(textOf(values, 'homeCareSuggestions')),
       customerSatisfaction,
       staffEvaluation: textOrNull(textOf(values, 'staffEvaluation')),
-      materials: materials.flatMap((material) =>
-        material.type === 'valid' ? [material.material] : [],
-      ),
+      materials: validMaterials,
     },
   }
 }

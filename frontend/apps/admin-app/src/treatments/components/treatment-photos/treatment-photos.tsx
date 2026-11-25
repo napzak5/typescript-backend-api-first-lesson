@@ -45,8 +45,8 @@ export type TreatmentPhotosProps = {
   message?: LocalizedText | undefined
   /** The removal is on its way */
   pending: boolean
-  /** The removal was confirmed */
-  onRemove: () => void
+  /** The removal of the photo the dialog asks about was confirmed */
+  onRemove: (photo: ModelsTreatmentPhotoResponse) => void
 }
 
 /** A photo, as the list names it: 「2 枚目：施術後の写真（側面）」. */
@@ -153,9 +153,15 @@ export const TreatmentPhotos = ({
         actions={
           <>
             <Button onClick={onClose}>{say(REMOVAL.back)}</Button>
-            <Button variant='danger' pending={pending} onClick={onRemove}>
-              {say(REMOVAL.submit)}
-            </Button>
+            {removing !== undefined && (
+              <Button
+                variant='danger'
+                pending={pending}
+                onClick={() => onRemove(removing)}
+              >
+                {say(REMOVAL.submit)}
+              </Button>
+            )}
           </>
         }
       >

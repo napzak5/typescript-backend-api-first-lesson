@@ -246,6 +246,23 @@ describe('createTreatment', () => {
 })
 
 describe('updateTreatment', () => {
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [{ field: 'processingTime', rule: 'too_big' }]),
+    )
+
+    // Act
+    const outcome = await updateTreatment(treatment.id, { processingTime: 60 })
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'processingTime', rule: 'too_big' }],
+    })
+  })
+
   it.each<[string, () => Response, string]>([
     ['403', () => problem(403), 'forbidden'],
     ['413', () => problem(413), 'failed'],
@@ -312,6 +329,23 @@ const photo: ModelsTreatmentPhotoCreateRequest = {
 }
 
 describe('addTreatmentPhotos', () => {
+  // The form checks every value first: the API refuses one only when the form and the contract disagree
+  it('should give the values the API refused', async () => {
+    // Arrange
+    answering(() =>
+      problem(400, [{ field: 'photos.0.photoUrl', rule: 'invalid_format' }]),
+    )
+
+    // Act
+    const outcome = await addTreatmentPhotos(treatment.id, { photos: [photo] })
+
+    // Assert
+    expect(outcome).toEqual({
+      type: 'invalid',
+      values: [{ field: 'photos.0.photoUrl', rule: 'invalid_format' }],
+    })
+  })
+
   it.each<[string, () => Response, string]>([
     ['403', () => problem(403), 'forbidden'],
     ['413', () => problem(413), 'failed'],

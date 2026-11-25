@@ -178,6 +178,10 @@ const readWhole = (
   const rows = rowsIn(values, 0).map((filled, index) =>
     readRow(index, filled, today),
   )
+  // The rows are parted before the check: those that are valid are sent when no row is wrong
+  const previousTreatments = rows.flatMap((row) =>
+    row.type === 'valid' ? [row.row] : [],
+  )
   const preferredProducts = tagsIn(textOf(values, 'preferredProducts'))
   const avoidProducts = tagsIn(textOf(values, 'avoidProducts'))
   const preferredError = productsErrorOf(preferredProducts)
@@ -198,9 +202,7 @@ const readWhole = (
   return {
     type: 'valid',
     value: {
-      previousTreatments: rows.flatMap((row) =>
-        row.type === 'valid' ? [row.row] : [],
-      ),
+      previousTreatments,
       medicalConditions: textOrNull(textOf(values, 'medicalConditions')),
       preferredProducts,
       avoidProducts,

@@ -13,6 +13,7 @@ const meta: Meta<typeof TreatmentFilter> = {
   args: {
     conditions: {},
     staff,
+    withoutCustomerHref: TREATMENTS,
     onSubmit: fn(),
   },
 }
@@ -41,7 +42,14 @@ export const OfCustomer: Story = {
   args: {
     conditions: { customer: aCustomer().id },
     customerName: adminCustomerMessages.naming.honored('山田 花子'),
-    withoutCustomerHref: TREATMENTS,
+    clearHref: TREATMENTS,
+  },
+}
+
+/** The records of a customer whose name is not known yet: it is being read, or could not be */
+export const OfCustomerUnnamed: Story = {
+  args: {
+    conditions: { customer: aCustomer().id },
     clearHref: TREATMENTS,
   },
 }

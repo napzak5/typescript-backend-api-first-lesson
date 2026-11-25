@@ -285,6 +285,20 @@ describe('readChartChange', () => {
     })
   })
 
+  it('should send the products preferred alone, when only they were changed', () => {
+    // Arrange
+    const values = shownValues({ preferredProducts: '無香料のオイル' })
+
+    // Act
+    const change = readChartChange(values, aChart(), TODAY)
+
+    // Assert
+    expect(change).toEqual({
+      type: 'valid',
+      value: { preferredProducts: ['無香料のオイル'] },
+    })
+  })
+
   it('should send the treatments in their new order', () => {
     // Arrange
     const values = shownValues({

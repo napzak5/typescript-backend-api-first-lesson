@@ -105,6 +105,17 @@ describe('TreatmentFilter', () => {
     ])
   })
 
+  it('should name the customer of the list in a word while their name is not known', async () => {
+    // Act
+    await stories.OfCustomerUnnamed.run()
+
+    // Assert
+    expect(screen.getByText('お客様：このお客様')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'すべてのお客様にする' }),
+    ).toHaveAttribute('href', `/salons/${salon.id}/treatments`)
+  })
+
   it('should say what is wrong at the control, and take the focus there', async () => {
     // Act
     await stories.WithErrors.run()

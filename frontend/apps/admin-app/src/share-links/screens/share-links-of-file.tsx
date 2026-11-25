@@ -5,16 +5,13 @@ import {
   listingOf,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
-import type {
-  ModelsAttachmentResponse,
-  ModelsSalonResponse,
-} from '@beauty-salon-frontend/api-client'
+import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
 import { moreOf } from '@beauty-salon-frontend/ui'
-import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { adminShareLinkMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
+import type { UploadedAttachment } from '../../attachments/api/attachments-api'
 import { shareLinkEntryHrefOf, shareLinkHrefOf } from '../../navigation'
 import { readShareLinkPage, shareLinksKeyOf } from '../api/share-links-api'
 import {
@@ -25,7 +22,7 @@ import { sharesFiles } from '../utils/share-link'
 
 type ShareLinksOfFileProps = {
   salon: ModelsSalonResponse
-  attachment: ModelsAttachmentResponse
+  attachment: UploadedAttachment
 }
 
 /**
@@ -90,8 +87,9 @@ const ListedShareLinks = ({ salon, attachment }: ShareLinksOfFileProps) => {
 
 /**
  * The share links of a file, below it on its screen, for the owner, a
- * manager and an administrator. Everybody else is told who shares a file;
- * a file whose upload was not finished is shared by nobody.
+ * manager and an administrator. Everybody else is told who shares a file.
+ * The file is one whose upload was finished: the screen of a file whose
+ * upload is awaited says that it is not found.
  */
 export const ShareLinksOfFile = ({
   salon,
@@ -99,17 +97,12 @@ export const ShareLinksOfFile = ({
 }: ShareLinksOfFileProps) => {
   const session = useSession()
   const role = session.type === 'signedIn' ? session.user.role : ''
-  const note = match({ status: attachment.status, shares: sharesFiles(role) })
-    .returnType<LocalizedText | undefined>()
-    .with({ status: 'pending' }, () => adminShareLinkMessages.notUploaded)
-    .with({ shares: false }, () => adminShareLinkMessages.sharers)
-    .otherwise(() => undefined)
 
-  return note === undefined ? (
+  return sharesFiles(role) ? (
     <ListedShareLinks salon={salon} attachment={attachment} />
   ) : (
     <ShareLinkList
-      listing={{ type: 'notShared', note }}
+      listing={{ type: 'notShared', note: adminShareLinkMessages.sharers }}
       timezone={salon.timezone}
       now={new Date()}
       entryHref={shareLinkEntryHrefOf(salon.id, attachment.id)}
