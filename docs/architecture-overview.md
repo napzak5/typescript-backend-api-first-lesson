@@ -2117,15 +2117,16 @@ repository looks the sale up within the reach. What differs:
   and `planRefund` decide from the same rows what is refused (409 for the
   sale or the payment, 400 for the request) and what is written.
 - **The sale is held first.** `record` and `refund` of the repository hold
-  the row of the sale `FOR UPDATE` (`heldSaleOf` in
-  `repositories/_shared/held-sale.ts`, which the update and the void of a sale use
-  too) and read its payments in the statement after it, so the payments of
-  one sale are written one after the other and never receive more than the
-  sale charges. A payment then reads its payment method `FOR SHARE`:
+  the row of the sale `FOR UPDATE` and read its payments in the statement
+  after it, so the payments of one sale are written one after the other and
+  never receive more than the sale charges. A payment holds the sale with
+  `heldSaleOf` (`repositories/_shared/held-sale.ts`, which the update and
+  the void of a sale use too), then reads its payment method `FOR SHARE`:
   payments by one payment method do not wait for one another, and a change
   or the removal of the payment method and a payment wait for each other.
-  A refund reads the sale of the payment without a lock, holds the sale and
-  reads the payment again.
+  A refund holds the payment and its sale in one statement
+  (`FOR UPDATE OF sales, payment_transactions`): a payment stays with its
+  sale, and only a refund holds a payment.
 - **A number issued by the system.** The payment number (`PT-XXXX-XXXX`) is
   issued like a sale number and tried again when it is taken.
 

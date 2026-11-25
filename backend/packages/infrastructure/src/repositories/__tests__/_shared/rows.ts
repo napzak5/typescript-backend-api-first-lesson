@@ -553,12 +553,16 @@ export const insertSaleLine = async (
       .returning(),
   )
 
-/** A way of paying of the salon in the table: cash. */
-export const insertPaymentMethod = async (db: Database, salonId: string) =>
+/** A way of paying of the salon in the table: cash, unless the test says otherwise. */
+export const insertPaymentMethod = async (
+  db: Database,
+  salonId: string,
+  overrides: Partial<typeof paymentMethods.$inferInsert> = {},
+) =>
   theRow(
     await db
       .insert(paymentMethods)
-      .values({ salonId, method: 'cash', displayName: '現金' })
+      .values({ salonId, method: 'cash', displayName: '現金', ...overrides })
       .returning(),
   )
 
