@@ -38,9 +38,9 @@ export class BatchGetCustomersUseCase {
       return found
     }
     const foundIds = found.data.map(({ id }) => id)
-    const missing = ids.filter((id) => !foundIds.includes(id))
-    if (missing.length > 0) {
-      return Result.error(customerNotFound(ids, missing))
+    const [missing] = ids.filter((id) => !foundIds.includes(id))
+    if (missing !== undefined) {
+      return Result.error(customerNotFound(missing))
     }
 
     return CustomerReadMapper.toApiCustomers(inOrderOf(ids, found.data))

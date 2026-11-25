@@ -72,6 +72,17 @@ describe('SalonWriteMapper.fromUpdateRequest', () => {
     })
   })
 
+  it('should write a latitude the request gives as numeric, and clear a longitude it gives as null', () => {
+    // Act
+    const mapped = SalonWriteMapper.fromUpdateRequest({
+      latitude: 35.6654,
+      longitude: null,
+    })
+
+    // Assert
+    expect(mapped.changes).toEqual({ latitude: '35.6654', longitude: null })
+  })
+
   it('replaces the calendar when openingHours is present, even if empty', () => {
     const [firstDay] = salonCreateRequest().openingHours
 

@@ -105,29 +105,34 @@ export type CustomerUpdate =
 export type CustomerChange = { id: CustomerId; changes: DbCustomerChanges }
 
 /**
- * Customers named that are not there, or are deleted: the customers to
- * change or delete (`customersNotFound`), or the referrers of those to
- * create or change (`referrersNotFound`).
+ * The first of the customers to change or delete, in the order given, that
+ * is not there or is deleted.
  */
-type Missing<T extends 'customersNotFound' | 'referrersNotFound'> = {
-  type: T
-  missing: string[]
-}
+type CustomerMissing = { type: 'customerNotFound'; id: string }
+
+/**
+ * The referrers named by the customers to create or change that are not
+ * there, or are deleted.
+ */
+type ReferrersMissing = { type: 'referrersNotFound'; missing: string[] }
 
 export type CustomerBulkCreation =
   | { type: 'created'; customers: DbCustomer[] }
-  | Missing<'referrersNotFound'>
+  | ReferrersMissing
 
 export type CustomerBulkUpdate =
   | { type: 'updated'; customers: DbCustomer[] }
-  | Missing<'customersNotFound'>
-  | Missing<'referrersNotFound'>
+  | CustomerMissing
+  | ReferrersMissing
 
 export type CustomerBulkDeletion =
   | { type: 'deleted' }
-  | Missing<'customersNotFound'>
-  /** The customers that a booking that is not finished refers to. */
-  | { type: 'bookingsUnfinished'; customers: string[] }
+  | CustomerMissing
+  /**
+   * The first of the customers, in the order given, that a booking that
+   * is not finished refers to.
+   */
+  | { type: 'bookingsUnfinished'; customer: string }
 
 /** What became of a deleted customer who was to be restored. */
 export type CustomerRestoration =

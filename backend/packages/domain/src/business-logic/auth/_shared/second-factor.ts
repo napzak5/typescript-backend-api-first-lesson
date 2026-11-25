@@ -138,7 +138,8 @@ const checkCode = async (
  * whether two-factor authentication is enabled or still being set up. A
  * code is accepted once. The check is under the same limit on guesses as
  * the password: a wrong code counts, and nothing is accepted while the
- * account is locked.
+ * account is locked. `code` is of the six digits of an app's code: the
+ * schema of the request has the same rule as `APP_CODE`.
  */
 export const checkAppCode = (
   dependencies: SecondFactorDependencies,
@@ -147,9 +148,7 @@ export const checkAppCode = (
   now: Date,
 ): Promise<Result<SecondFactorCheck, DomainError>> =>
   checkCode(dependencies, user, now, (sealedSecret) =>
-    APP_CODE.test(code)
-      ? acceptAppCode(dependencies, user, sealedSecret, code, now)
-      : Promise.resolve(Result.success({ type: 'refused' })),
+    acceptAppCode(dependencies, user, sealedSecret, code, now),
   )
 
 /**

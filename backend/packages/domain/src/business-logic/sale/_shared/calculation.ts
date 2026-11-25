@@ -141,6 +141,11 @@ export const planCalculation = (
   const added = request.services.map(
     (id) => references.services.find((service) => service.id === id) ?? null,
   )
+  // The lines of the services that are there. A service that is not there
+  // is an issue below, and then nothing is calculated.
+  const addedLines = added.flatMap((service) =>
+    service === null ? [] : [pricedLineOf(service)],
+  )
   const issues = [
     ...(request.bookingId === null || booking !== null
       ? []
@@ -155,12 +160,7 @@ export const planCalculation = (
     return { type: 'invalid', issues }
   }
 
-  const lines = [
-    ...(booking?.lines ?? []),
-    ...added.flatMap((service) =>
-      service === null ? [] : [pricedLineOf(service)],
-    ),
-  ]
+  const lines = [...(booking?.lines ?? []), ...addedLines]
   if (lines.length === 0) {
     return { type: 'invalid', issues: [NOTHING_TO_CALCULATE] }
   }

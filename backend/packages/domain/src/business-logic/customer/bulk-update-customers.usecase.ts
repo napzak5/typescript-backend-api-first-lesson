@@ -59,13 +59,8 @@ export class BulkUpdateCustomersUseCase {
       .with({ type: 'updated' }, ({ customers }) =>
         Result.success(CustomerReadMapper.toApiBulkUpdate(customers)),
       )
-      .with({ type: 'customersNotFound' }, ({ missing }) =>
-        Result.error(
-          customerNotFound(
-            items.map(({ id }) => id),
-            missing,
-          ),
-        ),
+      .with({ type: 'customerNotFound' }, ({ id }) =>
+        Result.error(customerNotFound(id)),
       )
       .with({ type: 'referrersNotFound' }, ({ missing }) =>
         Result.error(

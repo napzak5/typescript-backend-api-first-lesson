@@ -182,6 +182,29 @@ describe('parseWith', () => {
     ])
   })
 
+  it('should tell what Zod says in English, in every language, of an issue that the check in Japanese does not find again', () => {
+    // Arrange: a rule that reads what changes, as the clock does, and is
+    // kept the second time
+    let checks = 0
+    const schema = z.string().refine(() => {
+      checks += 1
+      return checks > 1
+    })
+
+    // Act
+    const issues = issuesOf(schema, 'nine')
+
+    // Assert
+    expect(issues).toEqual([
+      {
+        field: '',
+        rule: 'custom',
+        message: { en: 'Invalid input', ja: 'Invalid input' },
+      },
+    ])
+    expect(checks).toBe(2)
+  })
+
   it('should report a property that is not known once for each, under its own name', () => {
     // Act
     const issues = issuesOf(z.object({ visit: visitSchema }), {

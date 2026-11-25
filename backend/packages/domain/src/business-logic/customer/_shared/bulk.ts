@@ -13,32 +13,19 @@ import { referrerMissing } from './rules'
  * request where it is.
  */
 
-/** The issues of one part of a request, at its place (`path`) in the request. */
+/**
+ * The issues of one part of a request, at its place (`path`) in the
+ * request. Each of them is of a property of the part.
+ */
 export const atPlace = (
   path: string,
   issues: readonly ValidationIssue[],
 ): ValidationIssue[] =>
-  issues.map((issue) => ({
-    ...issue,
-    field: issue.field === '' ? path : `${path}.${issue.field}`,
-  }))
+  issues.map((issue) => ({ ...issue, field: `${path}.${issue.field}` }))
 
-/**
- * The customer that the request names first among some customers. The
- * repository reports only customers the request names; the list of them
- * stands in, should it ever report another.
- */
-export const firstAmong = (
-  ids: readonly string[],
-  among: readonly string[],
-): string => ids.find((id) => among.includes(id)) ?? among.join(', ')
-
-/** The customer the request names first among the missing is not found. */
-export const customerNotFound = (
-  ids: readonly string[],
-  missing: readonly string[],
-): DomainError =>
-  DomainErrors.notFound(entityMessages.customer, firstAmong(ids, missing))
+/** The customer of the ID is not found. */
+export const customerNotFound = (id: string): DomainError =>
+  DomainErrors.notFound(entityMessages.customer, id)
 
 /**
  * Every part of a request whose referrer is missing, each at its place
@@ -59,14 +46,8 @@ export const referrersNotFound = (
     ),
   )
 
-/** The rows in the order of the IDs; an ID without a row is left out. */
+/** The rows of the IDs, in the order of the IDs. */
 export const inOrderOf = <T extends { id: string }>(
   ids: readonly string[],
   rows: readonly T[],
-): T[] => {
-  const byId = new Map(rows.map((row) => [row.id, row]))
-  return ids.flatMap((id) => {
-    const row = byId.get(id)
-    return row === undefined ? [] : [row]
-  })
-}
+): T[] => rows.toSorted((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))

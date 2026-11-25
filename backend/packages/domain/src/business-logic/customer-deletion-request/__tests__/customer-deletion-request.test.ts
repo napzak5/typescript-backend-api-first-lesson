@@ -623,6 +623,32 @@ describe('ExecuteCustomerDeletionRequestsUseCase', () => {
     expect(eraseOf(dependencies)).toHaveBeenCalledTimes(2)
   })
 
+  it('should stop as the database at a request it carried out whose stored row does not match the API model, and carry out none after it', async () => {
+    // Arrange
+    const dependencies = customerDeletionRequestDependencies({
+      dueRequests: due(),
+      erase: erasing().mockResolvedValueOnce(
+        Result.success({
+          type: 'erased',
+          request: dbCustomerDeletionRequest({ completedAt: 'today' }),
+        }),
+      ),
+    })
+
+    // Act
+    const result = await run(dependencies)
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Stored customer deletion request ${CUSTOMER_DELETION_REQUEST_ID} does not match the API model`,
+      },
+    })
+    expect(eraseOf(dependencies)).toHaveBeenCalledTimes(1)
+  })
+
   it('passes on a failure to find the requests due', async () => {
     const dependencies = customerDeletionRequestDependencies({
       dueRequests: vi.fn(async () => databaseDown),

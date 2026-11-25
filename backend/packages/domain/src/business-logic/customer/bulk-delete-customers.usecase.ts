@@ -8,7 +8,7 @@ import type { ApiCustomerBulkDeleteResponse } from '../../models/customer'
 import { customerBulkDeleteRequestSchema } from '../../schemas/customer-bulk.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from './_shared/authorization'
-import { customerNotFound, firstAmong } from './_shared/bulk'
+import { customerNotFound } from './_shared/bulk'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = customerMessages.invalidCustomerDeletion
@@ -48,15 +48,13 @@ export class BulkDeleteCustomersUseCase {
       .with({ type: 'deleted' }, () =>
         Result.success(CustomerReadMapper.toApiBulkDelete(ids)),
       )
-      .with({ type: 'customersNotFound' }, ({ missing }) =>
-        Result.error(customerNotFound(ids, missing)),
+      .with({ type: 'customerNotFound' }, ({ id }) =>
+        Result.error(customerNotFound(id)),
       )
-      .with({ type: 'bookingsUnfinished' }, ({ customers }) =>
+      .with({ type: 'bookingsUnfinished' }, ({ customer }) =>
         Result.error(
           DomainErrors.conflict(
-            customerMessages.unfinishedBookingsReferTo(
-              firstAmong(ids, customers),
-            ),
+            customerMessages.unfinishedBookingsReferTo(customer),
           ),
         ),
       )

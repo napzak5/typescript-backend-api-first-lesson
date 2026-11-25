@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
+import { OTHER_STAFF_MEMBER_ID } from '../../../__tests__/fixtures/staff-fixtures'
 import {
   dayOffEntry,
   dbStaffSchedule,
   singleDayEntry,
   weeklyEntry,
 } from '../../../__tests__/fixtures/staff-schedule-fixtures'
+import type { Actor } from '../../../models/auth'
+import { staffIdSchema } from '../../../models/staff'
 import type { DbStaffSchedule } from '../../../models/staff-schedule'
 import { scheduleOn } from '../_shared/applicable-schedule'
+import { mayReadScheduleOf } from '../_shared/authorization'
 
 const monday = dbStaffSchedule({ id: 'monday', ...weeklyEntry() })
 const wednesdayOff = dbStaffSchedule({
@@ -111,5 +116,43 @@ describe('scheduleOn', () => {
     ['an empty text', ''],
   ])('returns null for %s, which names no day', (_case, text) => {
     expect(scheduleOn(schedules, text)).toBeNull()
+  })
+})
+
+describe('mayReadScheduleOf', () => {
+  const own = staffIdSchema.parse(STAFF_ID)
+  const another = staffIdSchema.parse(OTHER_STAFF_MEMBER_ID)
+
+  it.each<[string, Actor]>([
+    ['an administrator', actors.admin],
+    ['an owner', actors.ofSalon('owner')],
+    ['a manager', actors.ofSalon('manager')],
+  ])('should let %s read the schedule of every staff member', (_who, actor) => {
+    // Act
+    const mayRead = [own, another].map((id) => mayReadScheduleOf(actor, id))
+
+    // Assert
+    expect(mayRead).toEqual([true, true])
+  })
+
+  it('should let a staff member read their own schedule alone', () => {
+    // Act
+    const mayRead = [own, another].map((id) =>
+      mayReadScheduleOf(actors.ofSalon('staff'), id),
+    )
+
+    // Assert
+    expect(mayRead).toEqual([true, false])
+  })
+
+  it.each<[string, Actor]>([
+    ['a customer', actors.customer],
+    ['an account of no scope', actors.withoutScope],
+  ])('should let %s read no schedule', (_who, actor) => {
+    // Act
+    const mayRead = [own, another].map((id) => mayReadScheduleOf(actor, id))
+
+    // Assert
+    expect(mayRead).toEqual([false, false])
   })
 })
