@@ -1,10 +1,13 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
-import type { CompletedBooking } from './bookings'
+import type { SeededVisits, VisitKey } from './bookings'
+import type { SeededStockRows, StockedCode } from './products'
 
 /** What a seeded record says of a treatment, beside its booking. */
 type SeededTreatment = {
+  /** The visit the record is of. */
+  visit: VisitKey
   techniques: string[]
   consultationNotes: string | null
   scalpCondition: string | null
@@ -16,7 +19,11 @@ type SeededTreatment = {
   customerSatisfaction: number | null
   staffEvaluation: string | null
   /** The products used, by code, and how much of each. */
-  materials: { productCode: string; quantity: string; notes: string | null }[]
+  materials: {
+    productCode: StockedCode
+    quantity: string
+    notes: string | null
+  }[]
   /** The photos taken, by the name of their file, in their order. */
   photos: {
     photoType: (typeof schema.treatmentPhotoType.enumValues)[number]
@@ -29,13 +36,13 @@ type SeededTreatment = {
 }
 
 /**
- * What the visits of the first salon that took place came to, in the order
- * of the visits: a cut with a treatment, a men's cut without materials, and
- * a colour with a cut. The salon keeps products of its own, which the other
+ * What the visits of the first salon that took place came to: a cut with a
+ * treatment, a men's cut without materials, and a colour with a cut. The salon keeps products of its own, which the other
  * salon does not.
  */
-const TREATMENTS: SeededTreatment[] = [
+const TREATMENTS: readonly SeededTreatment[] = [
   {
+    visit: 'firstCutAndTreatment',
     techniques: ['レイヤーカット', 'ディープコンディショニング'],
     consultationNotes: '毛先のパサつきが気になる。長さは肩につく程度を希望',
     scalpCondition: '健康',
@@ -59,6 +66,7 @@ const TREATMENTS: SeededTreatment[] = [
     ],
   },
   {
+    visit: 'thirdMensCut',
     techniques: [],
     consultationNotes: null,
     scalpCondition: null,
@@ -73,6 +81,7 @@ const TREATMENTS: SeededTreatment[] = [
     photos: [],
   },
   {
+    visit: 'vipColorAndCut',
     techniques: ['ワンメイクカラー', 'レイヤーカット'],
     consultationNotes: '前回より明るめのブラウンを希望。頭皮のしみる感じはなし',
     scalpCondition: 'やや乾燥',
@@ -118,96 +127,37 @@ const TREATMENTS: SeededTreatment[] = [
  */
 export async function seedTreatmentRecords(
   db: PostgresJsDatabase<typeof schema>,
-  completedBookings: CompletedBooking[],
-  salonId: string,
-): Promise<string[]> {
-  const visits = completedBookings.filter(
-    (booking) => booking.salonId === salonId,
-  )
-  const lines = await db
-    .select({
-      bookingId: schema.bookingServices.bookingId,
-      serviceId: schema.bookingServices.serviceId,
-      bookingDate: schema.bookings.bookingDate,
-    })
-    .from(schema.bookingServices)
-    .innerJoin(
-      schema.bookings,
-      eq(schema.bookings.id, schema.bookingServices.bookingId),
-    )
-    .where(
-      inArray(
-        schema.bookingServices.bookingId,
-        visits.map(({ id }) => id),
-      ),
-    )
-    .orderBy(
-      asc(schema.bookingServices.startTime),
-      asc(schema.bookingServices.id),
-    )
-  const stock = await db
-    .select({
-      productId: schema.products.id,
-      productCode: schema.products.productCode,
-      unit: schema.products.unit,
-      lotNumber: schema.inventory.lotNumber,
-    })
-    .from(schema.products)
-    .innerJoin(
-      schema.inventory,
-      eq(schema.inventory.productId, schema.products.id),
-    )
-    .where(
-      and(
-        eq(schema.products.salonId, salonId),
-        eq(schema.inventory.salonId, salonId),
-      ),
-    )
-
-  const written: string[] = []
-  for (const [index, treatment] of TREATMENTS.entries()) {
-    const visit = visits[index]
-    if (visit === undefined) {
-      break
-    }
-    const services = lines.filter(({ bookingId }) => bookingId === visit.id)
-    const [first] = services
-    if (first === undefined) {
-      throw new Error(`The seeded booking ${visit.id} has no service lines`)
-    }
-    const nextVisit = new Date(`${first.bookingDate}T00:00:00Z`)
+  visits: SeededVisits,
+  stock: SeededStockRows,
+): Promise<void> {
+  for (const { visit: visitKey, materials, photos, ...stated } of TREATMENTS) {
+    const visit = visits[visitKey]
+    const [firstService] = visit.services
+    const nextVisit = new Date(`${visit.bookingDate}T00:00:00Z`)
     nextVisit.setUTCDate(nextVisit.getUTCDate() + 28)
-    const { materials, photos, ...stated } = treatment
+    const recordId = randomUUID()
 
-    const [record] = await db
-      .insert(schema.treatmentRecords)
-      .values({
-        ...stated,
-        bookingId: visit.id,
-        customerId: visit.customerId,
-        staffId: visit.staffId,
-        services: services.map(({ serviceId }) => serviceId),
-        nextRecommendedDate: nextVisit.toISOString().slice(0, 10),
-        nextRecommendedServices: [first.serviceId],
-      })
-      .returning({ id: schema.treatmentRecords.id })
-    if (record === undefined) {
-      throw new Error('The treatment record was not written')
-    }
+    await db.insert(schema.treatmentRecords).values({
+      ...stated,
+      id: recordId,
+      bookingId: visit.id,
+      customerId: visit.customerId,
+      staffId: visit.staffId,
+      services: [...visit.services],
+      nextRecommendedDate: nextVisit.toISOString().slice(0, 10),
+      nextRecommendedServices: [firstService],
+    })
 
     if (materials.length > 0) {
       await db.insert(schema.treatmentMaterials).values(
         materials.map(({ productCode, quantity, notes }, sortOrder) => {
-          const row = stock.find((kept) => kept.productCode === productCode)
-          if (row === undefined) {
-            throw new Error(`The salon keeps no stock of ${productCode}`)
-          }
+          const { productId, unit, lotNumber } = stock[productCode]
           return {
-            treatmentRecordId: record.id,
-            productId: row.productId,
+            treatmentRecordId: recordId,
+            productId,
             quantity,
-            unit: row.unit,
-            lotNumber: row.lotNumber,
+            unit,
+            lotNumber,
             notes,
             sortOrder,
           }
@@ -218,15 +168,12 @@ export async function seedTreatmentRecords(
       await db.insert(schema.treatmentPhotos).values(
         photos.map(({ file, ...photo }, sortOrder) => ({
           ...photo,
-          treatmentRecordId: record.id,
-          photoUrl: `https://images.example.com/treatments/${record.id}/${file}`,
+          treatmentRecordId: recordId,
+          photoUrl: `https://images.example.com/treatments/${recordId}/${file}`,
           thumbnailUrl: null,
           sortOrder,
         })),
       )
     }
-    written.push(record.id)
   }
-
-  return written
 }

@@ -66,7 +66,7 @@ Examples:
         onlyIfEmpty: context.args.includes('--if-empty'),
       })
       const insert = async (): Promise<number> => {
-        await seed(db)
+        await seed(sql, context.say)
         context.say('📊 Collecting seeding statistics...')
         tellCounts(context, await rowCountsOf(sql))
         context.say('✅ Database population completed successfully!')

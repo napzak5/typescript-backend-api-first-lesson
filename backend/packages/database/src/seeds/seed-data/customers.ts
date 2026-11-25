@@ -1,24 +1,30 @@
+import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
+import type { SeededUsers } from './users'
 
-export interface CustomerSeedResult {
-  customerIds: string[]
-  vipCustomerId: string
-  regularCustomerIds: string[]
-}
+/** The four customers: three regulars and a VIP, each with an account. */
+export type CustomerKey = 'first' | 'second' | 'third' | 'vip'
+
+export type SeededCustomers = Readonly<Record<CustomerKey, string>>
 
 export async function seedCustomers(
   db: PostgresJsDatabase<typeof schema>,
-  userIds?: {
-    customerUserIds: string[]
-  },
-): Promise<CustomerSeedResult> {
+  users: SeededUsers,
+): Promise<SeededCustomers> {
+  const ids: SeededCustomers = {
+    first: randomUUID(),
+    second: randomUUID(),
+    third: randomUUID(),
+    vip: randomUUID(),
+  }
   const customers = await db
     .insert(schema.customers)
     .values([
       {
-        userId: userIds?.customerUserIds[0],
+        id: ids.first,
+        userId: users.customer1,
         firstName: 'Yuki',
         lastName: 'Tanaka',
         firstNameKana: 'ユキ',
@@ -46,7 +52,8 @@ export async function seedCustomers(
         isActive: true,
       },
       {
-        userId: userIds?.customerUserIds[1],
+        id: ids.second,
+        userId: users.customer2,
         firstName: 'Kenji',
         lastName: 'Yamamoto',
         firstNameKana: 'ケンジ',
@@ -73,7 +80,8 @@ export async function seedCustomers(
         isActive: true,
       },
       {
-        userId: userIds?.customerUserIds[2],
+        id: ids.third,
+        userId: users.customer3,
         firstName: 'Sakura',
         lastName: 'Sato',
         firstNameKana: 'サクラ',
@@ -101,7 +109,8 @@ export async function seedCustomers(
         isActive: true,
       },
       {
-        userId: userIds?.customerUserIds[3],
+        id: ids.vip,
+        userId: users.vipCustomer,
         firstName: 'Hiroshi',
         lastName: 'Nakamura',
         firstNameKana: 'ヒロシ',
@@ -177,30 +186,19 @@ export async function seedCustomers(
     ),
   )
 
-  const vipCustomerId = customers[3]?.id ?? ''
-  const regularCustomerIds = customers.slice(0, 3).map((c) => c.id)
-
-  // Link users to customers
-  if (userIds?.customerUserIds && customers.length > 0) {
-    for (
-      let i = 0;
-      i < Math.min(userIds.customerUserIds.length, customers.length);
-      i++
-    ) {
-      const userId = userIds.customerUserIds[i]
-      const customerId = customers[i]?.id
-      if (userId && customerId) {
-        await db
-          .update(schema.users)
-          .set({ customerId })
-          .where(eq(schema.users.id, userId))
-      }
-    }
+  // Each account is that of its customer
+  const accounts: [userId: string, customerId: string][] = [
+    [users.customer1, ids.first],
+    [users.customer2, ids.second],
+    [users.customer3, ids.third],
+    [users.vipCustomer, ids.vip],
+  ]
+  for (const [userId, customerId] of accounts) {
+    await db
+      .update(schema.users)
+      .set({ customerId })
+      .where(eq(schema.users.id, userId))
   }
 
-  return {
-    customerIds: customers.map((c) => c.id),
-    vipCustomerId,
-    regularCustomerIds,
-  }
+  return ids
 }

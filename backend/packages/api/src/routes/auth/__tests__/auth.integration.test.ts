@@ -1,14 +1,13 @@
 import {
   SEED_PASSWORD,
   salons,
-  seed,
+  seedDatabase,
   sessions,
   staff,
   users,
 } from '@beauty-salon-backend/database'
 import { Argon2PasswordHasher } from '@beauty-salon-backend/infrastructure'
 import { eq, inArray, sql } from 'drizzle-orm'
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Express } from 'express'
 import type { Response } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -86,18 +85,6 @@ const pictographs = (length: number): string =>
   Array.from({ length }, (_, index) =>
     String.fromCodePoint(0x1f300 + 3 * index),
   ).join('')
-
-/**
- * The schema `seed` is declared with: the tables of the database package
- * without their relations. The application's `Database` is typed with the
- * relations too, so it is not accepted by `seed`; the seed gets a Drizzle
- * instance of its own on the test's connection. It makes no relational
- * queries, so it needs no schema at run time.
- */
-type SeedSchema =
-  Parameters<typeof seed>[0] extends PostgresJsDatabase<infer Schema>
-    ? Schema
-    : never
 
 /** The properties of a user in a response, and nothing else. */
 const USER_PROPERTIES = [
@@ -1324,7 +1311,7 @@ describe('Authentication API', () => {
     }
 
     it('sign in with SEED_PASSWORD, and the owner and the manager are scoped to the first seeded salon', async () => {
-      await seed(drizzle<SeedSchema>(getTestDbClient()))
+      await seedDatabase(getTestDbClient())
       const firstSalon = await salonNamed('Beauty Studio Tokyo')
       const secondSalon = await salonNamed('Hair & Spa Osaka')
       const emails = [

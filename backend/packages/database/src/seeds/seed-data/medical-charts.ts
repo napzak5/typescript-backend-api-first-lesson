@@ -1,5 +1,6 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
+import type { SeededCustomers } from './customers'
 
 /**
  * The medical charts of the first and the third customer, as the staff
@@ -9,13 +10,8 @@ import * as schema from '../../schema'
  */
 export async function seedMedicalCharts(
   db: PostgresJsDatabase<typeof schema>,
-  customerIds: string[],
+  { first, third }: SeededCustomers,
 ): Promise<void> {
-  const [first, , third] = customerIds
-  if (first === undefined || third === undefined) {
-    return
-  }
-
   await db.insert(schema.medicalCharts).values([
     {
       customerId: first,
