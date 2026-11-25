@@ -22,12 +22,20 @@ import {
   signIn,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   createTestApp,
   databaseMoment,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
+  invalidToken,
+  notAllowed,
+  notFound,
   request,
+  routeNotFound,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -36,19 +44,6 @@ const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 const INVALID_PHOTOS = 'Invalid treatment photos'
 const INVALID_RECORD_ID = 'Invalid treatment record ID'

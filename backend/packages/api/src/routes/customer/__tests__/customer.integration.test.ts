@@ -27,13 +27,22 @@ import {
   signInAsAdmin,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  alreadyExists,
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
+  databaseProblem,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidToken,
+  malformedBody,
+  notFound,
   request,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -49,20 +58,6 @@ const JSON_UTF8 = 'application/json; charset=utf-8'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const malformedBody = { status: 400, code: '2002', type: 'malformed-body' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const conflict = { status: 409, code: '3002', type: 'already-exists' }
-const databaseProblem = { status: 500, code: '4003', type: 'database' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 /** A customer as the API returns it. */
 type Customer = {
@@ -773,7 +768,7 @@ describe('Customer API', () => {
       )
 
       for (const response of [same, otherCase]) {
-        expectProblem(response, conflict)
+        expectProblem(response, alreadyExists)
         expect(response.body.detail).toBe(
           'Customer with email hanako@example.com already exists',
         )
@@ -804,11 +799,11 @@ describe('Customer API', () => {
       const ofLive = await post(customerRequest({ referralCode: 'LIVE' }))
       const ofDeleted = await post(customerRequest({ referralCode: 'GONE' }))
 
-      expectProblem(ofLive, conflict)
+      expectProblem(ofLive, alreadyExists)
       expect(ofLive.body.detail).toBe(
         'Customer with referralCode LIVE already exists',
       )
-      expectProblem(ofDeleted, conflict)
+      expectProblem(ofDeleted, alreadyExists)
       expect(ofDeleted.body.detail).toBe(
         'Customer with referralCode GONE already exists',
       )
@@ -1638,7 +1633,7 @@ describe('Customer API', () => {
         lastName: 'Sato',
       })
 
-      expectProblem(response, conflict)
+      expectProblem(response, alreadyExists)
       expect(response.body.detail).toBe(
         'Customer with email taken@example.com already exists',
       )
@@ -1663,11 +1658,11 @@ describe('Customer API', () => {
       const unchanged = await storedCustomers()
       const own = await patch(created.id, { referralCode: 'OWN' })
 
-      expectProblem(ofLive, conflict)
+      expectProblem(ofLive, alreadyExists)
       expect(ofLive.body.detail).toBe(
         'Customer with referralCode LIVE already exists',
       )
-      expectProblem(ofDeleted, conflict)
+      expectProblem(ofDeleted, alreadyExists)
       expect(unchanged).toEqual(before)
       expect(own.status).toBe(200)
       expect(own.body.data.referralCode).toBe('OWN')
@@ -1949,8 +1944,8 @@ describe('Customer API', () => {
       expect(created.status).toBe(201)
       expect(changed.status).toBe(200)
       expect(changed.body.data.email).toBe('second@example.com')
-      expectProblem(codeOnCreate, conflict)
-      expectProblem(codeOnUpdate, conflict)
+      expectProblem(codeOnCreate, alreadyExists)
+      expectProblem(codeOnUpdate, alreadyExists)
     })
 
     it.each(malformedIds)(

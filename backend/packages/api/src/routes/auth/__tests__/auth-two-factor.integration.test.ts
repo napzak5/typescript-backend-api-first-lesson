@@ -33,6 +33,8 @@ import {
   updateUser,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
   type ExpectedProblem,
@@ -40,7 +42,12 @@ import {
   getTestDb,
   getTestDbClient,
   ISO_TIMESTAMP,
+  invalidCredentials,
+  invalidToken,
+  notAllowed,
   request,
+  tokenExpired,
+  twoFactorRequired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 import {
@@ -90,26 +97,6 @@ const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
 
 const FIFTEEN_MINUTES_MS = 15 * 60_000
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const invalidCredentials = {
-  status: 401,
-  code: '1002',
-  type: 'invalid-credentials',
-}
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const twoFactorRequired = {
-  status: 401,
-  code: '1007',
-  type: 'two-factor-required',
-}
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
 
 const ENABLED_SUBJECT = 'Two-factor authentication was turned on'
 const DISABLED_SUBJECT = 'Two-factor authentication was turned off'

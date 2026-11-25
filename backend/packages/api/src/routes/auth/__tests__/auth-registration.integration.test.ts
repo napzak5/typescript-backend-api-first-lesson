@@ -21,14 +21,20 @@ import {
   updateUser,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
   getTestDbClient,
+  invalidCredentials,
+  invalidToken,
   PUBLIC_APP_URL,
   request,
+  tokenExpired,
+  twoFactorRequired,
 } from '../../../__tests__/_shared/test-helpers'
 import {
   SECRET,
@@ -61,25 +67,6 @@ const ARGON2ID =
 
 const MINUTE_MS = 60_000
 const DAY_MS = 24 * 60 * MINUTE_MS
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const invalidCredentials = {
-  status: 401,
-  code: '1002',
-  type: 'invalid-credentials',
-}
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const twoFactorRequired = {
-  status: 401,
-  code: '1007',
-  type: 'two-factor-required',
-}
 
 const VERIFICATION_SUBJECT = 'Confirm your email address'
 const RESET_SUBJECT = 'Reset your password'

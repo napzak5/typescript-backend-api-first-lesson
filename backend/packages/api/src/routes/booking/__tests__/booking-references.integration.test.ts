@@ -24,16 +24,15 @@ import {
 import {
   createTestApp,
   expectProblem,
+  forbidden,
   getTestDb,
   getTestDbClient,
+  notAllowed,
+  notFound,
   request,
 } from '../../../__tests__/_shared/test-helpers'
 
 const BOOKINGS = '/api/v1/bookings'
-
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 type Status = (typeof bookings.status.enumValues)[number]
 

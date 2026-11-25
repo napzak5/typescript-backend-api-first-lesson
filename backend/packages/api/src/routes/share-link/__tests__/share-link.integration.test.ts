@@ -23,15 +23,28 @@ import {
   STORAGE_URL,
 } from '../../../__tests__/_shared/in-memory-file-storage'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseProblem,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidToken,
+  malformedBody,
+  notAllowed,
+  notFound,
+  passwordRequired,
   request,
+  routeNotFound,
+  storageProblem,
+  tokenExpired,
   UUID,
+  unsupportedMediaType,
 } from '../../../__tests__/_shared/test-helpers'
 
 /** A UUID that nothing has. */
@@ -40,32 +53,6 @@ const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const malformedBody = { status: 400, code: '2002', type: 'malformed-body' }
-const unsupportedMediaType = {
-  status: 415,
-  code: '2002',
-  type: 'unsupported-media-type',
-}
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
-const passwordRequired = {
-  status: 403,
-  code: '1002',
-  type: 'password-required',
-}
-const databaseFailed = { status: 500, code: '4003', type: 'database' }
-const storageFailed = { status: 500, code: '4004', type: 'storage' }
 
 const INVALID_LINK = 'Invalid share link'
 const INVALID_LINK_ID = 'Invalid share link ID'
@@ -1935,7 +1922,7 @@ describe('Share links API', () => {
       storage.failing.clear()
       const next = await download(downloading(token))
 
-      expectProblem(failed, storageFailed)
+      expectProblem(failed, storageProblem)
       expect(failed.body).toMatchObject({ detail: null, errors: null })
       expect(next.status).toBe(200)
       expect(await stored(id)).toMatchObject({ downloadCount: 1 })
@@ -2065,12 +2052,12 @@ describe('Share links API', () => {
       await connection.close()
 
       for (const response of [opened, downloaded]) {
-        expectProblem(response, databaseFailed)
+        expectProblem(response, databaseProblem)
         expect(response.body).toMatchObject({ detail: null, errors: null })
         expect(response.headers['cache-control']).toBe('no-store')
       }
       // Who asks cannot be told without the database either.
-      expectProblem(readByManager, databaseFailed)
+      expectProblem(readByManager, databaseProblem)
       expect(await everything()).toEqual(before)
       expect(storage.calls).toEqual([])
     })

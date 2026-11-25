@@ -19,6 +19,7 @@ import {
 } from './_shared/auth-helpers'
 import {
   ALLOWED_ORIGIN,
+  connectSilentDatabase,
   connectUnreachableDatabase,
   createTestApp,
   getTestDb,
@@ -1186,6 +1187,32 @@ describe('GET /api/system/ready', () => {
           type: 'database',
           message: 'Database is unreachable',
           cause: { code: 'ECONNREFUSED' },
+        },
+      },
+    ])
+  })
+
+  it('should answer 503 naming the database when it does not answer in time', async () => {
+    // Arrange
+    const connection = await connectSilentDatabase()
+    const logs: unknown[] = []
+    const app = createTestApp({ database: connection.database, logs })
+
+    // Act
+    const response = await request(app).get('/api/system/ready')
+    await connection.close()
+
+    // Assert
+    expect(response.status).toBe(503)
+    expect(response.body).toEqual({ ready: false, reason: 'database' })
+    expect(logs).toMatchObject([
+      {
+        level: 'error',
+        msg: 'Database probe failed',
+        error: {
+          type: 'database',
+          message: 'Database did not answer in time',
+          cause: { timeoutMs: 3000 },
         },
       },
     ])

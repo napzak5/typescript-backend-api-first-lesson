@@ -24,13 +24,18 @@ import {
   signInAsAdmin,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  notFound,
   request,
+  routeNotFound,
 } from '../../../__tests__/_shared/test-helpers'
 
 const SALONS = '/api/v1/salons'
@@ -43,12 +48,6 @@ const staffOf = (salonId: string): string => `${SALONS}/${salonId}/staff`
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 
 const JSON_UTF8 = 'application/json; charset=utf-8'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const databaseProblem = { status: 500, code: '4003', type: 'database' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 /** A staff profile as the API returns it. */
 type StaffProfile = {

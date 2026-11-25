@@ -31,13 +31,21 @@ import {
   signInAsAdmin,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
+  databaseProblem,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidToken,
+  notAllowed,
+  notFound,
   request,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -63,18 +71,6 @@ const JSON_UTF8 = 'application/json; charset=utf-8'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const conflict = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 /** An option of a service as the API returns it and takes it. */
 type ServiceOption = {
@@ -1664,7 +1660,7 @@ describe('Service API', () => {
 
       const response = await get(created.id)
 
-      expectProblem(response, { status: 500, code: '4003', type: 'database' })
+      expectProblem(response, databaseProblem)
       expect(response.body.detail).toBeNull()
       expect(JSON.stringify(response.body)).not.toContain('infinity')
     })
@@ -2158,7 +2154,7 @@ describe('Service API', () => {
 
       const response = await list()
 
-      expectProblem(response, { status: 500, code: '4003', type: 'database' })
+      expectProblem(response, databaseProblem)
       expect(response.body.detail).toBeNull()
       expect(JSON.stringify(response.body)).not.toContain('infinity')
     })
@@ -3597,7 +3593,7 @@ describe('Service API', () => {
 
       const response = await remove(asAdmin, member?.id ?? '')
 
-      expectProblem(response, conflict)
+      expectProblem(response, notAllowed)
       expect(await storedRows()).toEqual(before)
       expect((await get(member?.id ?? '')).status).toBe(200)
     })
@@ -3638,7 +3634,7 @@ describe('Service API', () => {
 
       expect(replaced.status).toBe(200)
       expect(response.status).toBe(204)
-      expectProblem(await remove(asAdmin, other?.id ?? ''), conflict)
+      expectProblem(await remove(asAdmin, other?.id ?? ''), notAllowed)
     })
 
     it.each(malformedIds)(

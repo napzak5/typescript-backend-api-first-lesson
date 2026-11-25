@@ -31,13 +31,21 @@ import {
   updateUser,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidCredentials,
+  invalidToken,
+  notAllowed,
+  notFound,
   request,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 import {
@@ -62,23 +70,6 @@ const RESET_SUBJECT =
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const invalidCredentials = {
-  status: 401,
-  code: '1002',
-  type: 'invalid-credentials',
-}
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
 
 /** The properties of a user in a response, and nothing else. */
 const USER_PROPERTIES = [
