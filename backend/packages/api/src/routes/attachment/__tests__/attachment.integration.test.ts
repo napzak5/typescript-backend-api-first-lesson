@@ -18,15 +18,25 @@ import {
   STORAGE_URL,
 } from '../../../__tests__/_shared/in-memory-file-storage'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseProblem,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   getTestDbClient,
   ISO_TIMESTAMP,
+  invalidToken,
+  notAllowed,
+  notFound,
   request,
+  routeNotFound,
+  storageProblem,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -36,21 +46,6 @@ const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
-const databaseFailed = { status: 500, code: '4003', type: 'database' }
-const storageFailed = { status: 500, code: '4004', type: 'storage' }
 
 const INVALID_ATTACHMENT = 'Invalid attachment'
 const INVALID_ID = 'Invalid attachment ID'
@@ -742,7 +737,7 @@ describe('Attachments API', () => {
 
       const response = await announce(announcement())
 
-      expectProblem(response, storageFailed)
+      expectProblem(response, storageProblem)
       expect(response.body.detail).toBeNull()
       const [left] = await everything()
       expect(left).toMatchObject({ status: 'pending', deletedAt: null })
@@ -977,7 +972,7 @@ describe('Attachments API', () => {
 
       const response = await complete(id)
 
-      expectProblem(response, storageFailed)
+      expectProblem(response, storageProblem)
       expect(await stored(id)).toMatchObject({
         status: 'pending',
         deletedAt: null,
@@ -994,7 +989,7 @@ describe('Attachments API', () => {
 
       const response = await complete(id)
 
-      expectProblem(response, storageFailed)
+      expectProblem(response, storageProblem)
       expect(storage.files.has(keyOf(id))).toBe(true)
       expect(await stored(id)).toMatchObject({ deletedAt: expect.any(String) })
       expectProblem(await complete(id), notFound)
@@ -1585,7 +1580,7 @@ describe('Attachments API', () => {
 
       const response = await download(id)
 
-      expectProblem(response, storageFailed)
+      expectProblem(response, storageProblem)
       expect(response.body).not.toHaveProperty('data')
     })
   })
@@ -1674,7 +1669,7 @@ describe('Attachments API', () => {
 
       const failed = await remove(id)
 
-      expectProblem(failed, storageFailed)
+      expectProblem(failed, storageProblem)
       expect(await everything()).toEqual(before)
       expect(storage.files.has(keyOf(id))).toBe(true)
       expect((await read(id)).status).toBe(200)
@@ -1971,7 +1966,7 @@ describe('Attachments API', () => {
 
       const failed = await purge()
 
-      expectProblem(failed, storageFailed)
+      expectProblem(failed, storageProblem)
       expect(await storedIds()).toEqual(ids.slice(1))
       expect([...storage.files.keys()].sort()).toEqual(ids.slice(1).map(keyOf))
 
@@ -2025,7 +2020,7 @@ describe('Attachments API', () => {
         .get(`${PATH}/${id}/download-url`)
         .set('Authorization', asAdmin)
 
-      expectProblem(response, storageFailed)
+      expectProblem(response, storageProblem)
       expect(response.body).toMatchObject({
         title: 'Internal server error',
         detail: null,
@@ -2059,7 +2054,7 @@ describe('Attachments API', () => {
         .set('Authorization', session.authorization)
       await connection.close()
 
-      expectProblem(response, databaseFailed)
+      expectProblem(response, databaseProblem)
       expect(await everything()).toEqual(before)
       expect(storage.calls).toEqual([])
     })

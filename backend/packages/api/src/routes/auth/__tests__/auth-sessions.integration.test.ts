@@ -26,13 +26,18 @@ import {
   type TestUser,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidToken,
+  notFound,
   request,
+  tokenExpired,
 } from '../../../__tests__/_shared/test-helpers'
 
 const SESSIONS = `${AUTH}/sessions`
@@ -47,16 +52,6 @@ const LOOPBACK = /^(::ffff:)?127\.0\.0\.1$|^::1$/
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
 
 /** The properties of a session in a response, and nothing else. */
 const SESSION_PROPERTIES = [

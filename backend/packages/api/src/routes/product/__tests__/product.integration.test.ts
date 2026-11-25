@@ -23,15 +23,25 @@ import {
   signIn,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  alreadyExists,
+  authenticationRequired,
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   getTestDbClient,
   ISO_TIMESTAMP,
+  invalidToken,
+  malformedBody,
+  notAllowed,
+  notFound,
   request,
+  routeNotFound,
+  tokenExpired,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -46,21 +56,6 @@ const MAX_LEVEL = 99_999_999.99
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const unreadable = { status: 400, code: '2002', type: 'malformed-body' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const alreadyExists = { status: 409, code: '3002', type: 'already-exists' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 const INVALID = 'Invalid product'
 const INVALID_UPDATE = 'Invalid product update'
@@ -897,7 +892,7 @@ describe('Products API', () => {
           .set('Content-Type', 'application/json')
           .send(body)
 
-        expectProblem(response, unreadable)
+        expectProblem(response, malformedBody)
         expect(await everything()).toEqual([])
       })
 
@@ -1980,7 +1975,7 @@ describe('Products API', () => {
           .set('Content-Type', 'application/json')
           .send(body)
 
-        expectProblem(response, unreadable)
+        expectProblem(response, malformedBody)
       })
     })
 

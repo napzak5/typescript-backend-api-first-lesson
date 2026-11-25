@@ -1,9 +1,10 @@
 import { createServer } from 'node:http'
 import { SEED_PASSWORD, seedDatabase } from '@beauty-salon-backend/database'
 import { PostgreSqlContainer } from '@testcontainers/postgresql'
+import { LOOPBACK, listen } from '../_shared/listening'
 import { openTestDatabases } from '../_shared/test-databases'
 import { createControl } from './control'
-import { LOOPBACK, listen, openTestApis, stop } from './test-apis'
+import { openTestApis, stop } from './test-apis'
 import { startTestStorage } from './test-storage'
 
 /**

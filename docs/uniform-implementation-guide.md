@@ -547,8 +547,9 @@ Logging is structured, with pino. Application code never writes to `console`.
   is passed to `createApp`, not imported as a global.
 - `requestLogging` in `backend/packages/api/src/middleware/request-logging.ts`
   gives every request `req.id` and `req.log`, a logger whose lines carry that
-  ID, and writes one line per completed request (`error` for 5xx, `warn` for
-  4xx, otherwise `info`).
+  ID, and writes one line per completed request (`error` for 5xx and for a
+  response that fails as it is sent, such as one a route writes to after
+  its end; `warn` for 4xx; otherwise `info`).
 - The line of a request that was authenticated carries the ID of the
   signed-in user as `userId`. `authenticated` notes it for the request
   (`noteSignedInUser` in `backend/packages/api/src/shared/signed-in-user.ts`)

@@ -12,11 +12,18 @@ import {
   signInAsAdmin,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  alreadyExists,
+  authenticationRequired,
+  badRequest,
   brokenRules,
   createTestApp,
+  databaseProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  invalidToken,
+  notFound,
   request,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
@@ -88,17 +95,6 @@ const storedCalendar = [
   { ...workingMonday, openTime: '10:00:00', closeTime: '19:00:00' },
   holidayMonday,
 ]
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const conflict = { status: 409, code: '3002', type: 'already-exists' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 describe('Salon API', () => {
   let app: Express
@@ -251,7 +247,7 @@ describe('Salon API', () => {
         .set('Authorization', asAdmin)
         .send(salonRequest({ name: 'Second salon' }))
 
-      expectProblem(response, conflict)
+      expectProblem(response, alreadyExists)
       expect(response.body.detail).toBe(
         'Salon with email aoyama@example.com already exists',
       )
@@ -343,7 +339,7 @@ describe('Salon API', () => {
 
       const response = await request(app).get(`${SALONS}/${created.id}`)
 
-      expectProblem(response, { status: 500, code: '4003', type: 'database' })
+      expectProblem(response, databaseProblem)
       expect(response.body.detail).toBeNull()
       expect(JSON.stringify(response.body)).not.toContain('ten to seven')
     })
@@ -735,7 +731,7 @@ describe('Salon API', () => {
         .set('Authorization', asAdmin)
         .send({ name: 'Renamed', email: 'taken@example.com', openingHours: [] })
 
-      expectProblem(response, conflict)
+      expectProblem(response, alreadyExists)
       expect(response.body.detail).toBe(
         'Salon with email taken@example.com already exists',
       )

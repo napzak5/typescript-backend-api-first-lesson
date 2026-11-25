@@ -29,7 +29,8 @@ backend/packages/api/
         ├── _shared/
         │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
         │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
-        │   ├── test-helpers.ts          # createTestApp, getTestDb, request
+        │   ├── test-helpers.ts          # createTestApp, getTestDb, request, the problems the tests expect
+        │   ├── listening.ts             # a server of a test on a port of this machine
         │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
         │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
         ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)
@@ -323,6 +324,8 @@ export function createTestApp({
 | `getTestDb()` | The Drizzle database of the test's own database, to arrange or inspect rows |
 | `getTestDbClient()` | The postgres.js client under `getTestDb()`, for code that builds a Drizzle instance of its own (the authentication tests run the seed with it) |
 | `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
+| `connectSilentDatabase()` | A connection that a server takes and never answers: a query waits until the connection is closed |
+| `badRequest`, `forbidden`, `notFound`, `databaseProblem`, … | The problems the tests expect, below |
 | `PUBLIC_APP_URL` | The origin of the web application in the test settings: the links in the mails start with it |
 | `TWO_FACTOR_ENCRYPTION_KEY` | The key under which the application under test encrypts the secrets of authenticator apps |
 | `request` | supertest |
@@ -468,7 +471,8 @@ two lines read the salon back: what was returned is what was stored.
 
 Every error response is RFC 9457 problem details, sent as
 `application/problem+json`. Two helpers in `_shared/test-helpers.ts` keep the
-assertions short, and each test file names the problems it expects:
+assertions short, and the problems the tests expect are written there once,
+under one name each, as the contract has them:
 
 ```typescript
 // _shared/test-helpers.ts
@@ -496,18 +500,48 @@ export const brokenRules = (response: Response): string[] =>
     ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
   )
 
-// salon.integration.test.ts
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const conflict = { status: 409, code: '3002', type: 'already-exists' }
-const authenticationRequired = {
+// Among them (the others: malformedBody, invalidCredentials, tokenExpired,
+// twoFactorRequired, passwordRequired, routeNotFound, notAllowed,
+// unsupportedMediaType, storageProblem)
+export const badRequest: ExpectedProblem = {
+  status: 400,
+  code: '2001',
+  type: 'validation',
+}
+export const authenticationRequired: ExpectedProblem = {
   status: 401,
   code: '1001',
   type: 'authentication-required',
 }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
+export const invalidToken: ExpectedProblem = {
+  status: 401,
+  code: '1004',
+  type: 'invalid-token',
+}
+export const forbidden: ExpectedProblem = {
+  status: 403,
+  code: '1005',
+  type: 'forbidden',
+}
+export const notFound: ExpectedProblem = {
+  status: 404,
+  code: '3001',
+  type: 'not-found',
+}
+export const alreadyExists: ExpectedProblem = {
+  status: 409,
+  code: '3002',
+  type: 'already-exists',
+}
+export const databaseProblem: ExpectedProblem = {
+  status: 500,
+  code: '4003',
+  type: 'database',
+}
 ```
+
+A test file imports the ones it expects. A problem is not written out in a
+test file, so that a change of the contract is made in one place.
 
 The kinds of error an endpoint test meets:
 
@@ -571,7 +605,7 @@ it('rejects an email that another salon uses', async () => {
     .set('Authorization', asAdmin)
     .send(salonRequest({ name: 'Second salon' }))
 
-  expectProblem(response, conflict)
+  expectProblem(response, alreadyExists)
   expect(response.body.detail).toBe(
     'Salon with email aoyama@example.com already exists',
   )
@@ -655,7 +689,7 @@ it('answers 500 without details when the stored salon is corrupt', async () => {
 
   const response = await request(app).get(`${SALONS}/${created.id}`)
 
-  expectProblem(response, { status: 500, code: '4003', type: 'database' })
+  expectProblem(response, databaseProblem)
   expect(response.body.detail).toBeNull()
   expect(JSON.stringify(response.body)).not.toContain('ten to seven')
 })
@@ -688,6 +722,16 @@ it('should answer 500 without the cause and log the cause under the request ID',
   )
 })
 ```
+
+Two other failures are arranged as they happen:
+
+- A database that takes the connection and never answers is
+  `connectSilentDatabase()`: the probes give it up after 3 seconds.
+- A database that fails one statement, while the others go on, is arranged
+  in the test's own database, which the test drops afterwards. A trigger that
+  raises refuses a write (`auth.integration.test.ts` refuses to delete a
+  session); a value the model refuses (`infinity` in a timestamp, a `jsonb`
+  value of another shape) fails the read of its row, as the salon above.
 
 ## Tests for a New Domain
 

@@ -5,6 +5,7 @@ import {
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
 import type { Authenticated } from '../../shared/authentication'
+import { clientOf } from '../../shared/client'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import { bookingLinks, type CreateBookingResponse } from './_shared'
@@ -24,10 +25,7 @@ export const createBookingHandler = (
   const useCase = new CreateBookingUseCase(dependencies)
 
   return authenticated(async (actor, req, res) => {
-    const result = await useCase.execute(actor, req.body, {
-      ipAddress: req.ip ?? null,
-      userAgent: req.get('user-agent') ?? null,
-    })
+    const result = await useCase.execute(actor, req.body, clientOf(req))
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {

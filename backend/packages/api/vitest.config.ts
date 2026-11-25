@@ -1,6 +1,7 @@
 import { backendTests } from '@beauty-salon-shared/config/vitest'
 
 export default backendTests({
+  full: true,
   unit: { isolate: false },
   integration: {
     setupFiles: ['./src/__tests__/_shared/setup.ts'],

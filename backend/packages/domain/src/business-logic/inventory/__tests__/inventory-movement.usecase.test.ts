@@ -83,7 +83,10 @@ describe('RecordInventoryMovementUseCase', () => {
 
     const result = await record(dependencies)
 
-    expect(result).toEqual({ type: 'success', data: apiMovement })
+    expect(result).toEqual({
+      type: 'success',
+      data: { inventoryId: INVENTORY_ID, response: apiMovement },
+    })
     expect(
       dependencies.inventoryRepository.recordMovement,
     ).toHaveBeenCalledWith({ type: 'everySalon' }, INVENTORY_ID, {
@@ -139,7 +142,10 @@ describe('RecordInventoryMovementUseCase', () => {
 
       const result = await record(dependencies, actor, ofKind[kind])
 
-      expect(result).toEqual({ type: 'success', data: apiMovement })
+      expect(result).toEqual({
+        type: 'success',
+        data: { inventoryId: INVENTORY_ID, response: apiMovement },
+      })
       expect(
         dependencies.inventoryRepository.recordMovement,
       ).toHaveBeenCalledWith(

@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
-import type { AddressInfo } from 'node:net'
 import {
   type IFileStorage,
   type Mail,
@@ -13,13 +12,11 @@ import {
 } from '@beauty-salon-backend/infrastructure'
 import type { Express } from 'express'
 import { createApp } from '../../index'
+import { LOOPBACK, listen } from '../_shared/listening'
 import type { TestDatabase, TestDatabases } from '../_shared/test-databases'
 
 /** What the applications encrypt the secrets of authenticator apps under. */
 const TWO_FACTOR_ENCRYPTION_KEY = 'key-of-the-test-server-only'
-
-/** The APIs listen on this machine only. */
-export const LOOPBACK = '127.0.0.1'
 
 /** What a test asks for when it starts an API. */
 type TestApiOptions = {
@@ -116,23 +113,6 @@ const applicationOn = (
       format: 'json',
       environment: 'test',
     }),
-  })
-
-/**
- * Listens on a port of this machine, a free one unless one is named; the
- * port it listens on. Rejects when the port is taken.
- */
-export const listen = (server: Server, port = 0): Promise<number> =>
-  new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(port, LOOPBACK, () => {
-      const address: AddressInfo | string | null = server.address()
-      if (address === null || typeof address === 'string') {
-        reject(new Error('The server listens on no port'))
-        return
-      }
-      resolve(address.port)
-    })
   })
 
 export const stop = (server: Server): Promise<void> =>

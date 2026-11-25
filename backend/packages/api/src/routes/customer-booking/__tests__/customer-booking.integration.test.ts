@@ -49,13 +49,20 @@ import {
   weeklyHours,
 } from '../../../__tests__/_shared/slot-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   ISO_TIMESTAMP,
+  notAllowed,
+  notFound,
   request,
+  routeNotFound,
   UUID,
 } from '../../../__tests__/_shared/test-helpers'
 
@@ -67,18 +74,6 @@ const SALONS = '/api/v1/salons'
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 
 const BOOKING_NUMBER = /^BK-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const databaseProblem = { status: 500, code: '4003', type: 'database' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 const INVALID_BOOKING = 'Invalid booking'
 const INVALID_SEARCH = 'Invalid booking search'

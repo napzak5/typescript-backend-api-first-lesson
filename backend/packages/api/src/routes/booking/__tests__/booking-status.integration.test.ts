@@ -30,15 +30,22 @@ import {
   signIn,
 } from '../../../__tests__/_shared/auth-helpers'
 import {
+  authenticationRequired,
+  badRequest,
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
   type ExpectedProblem,
   expectProblem,
+  forbidden,
   getTestDb,
   getTestDbClient,
   ISO_TIMESTAMP,
+  invalidToken,
+  notAllowed,
+  notFound,
   request,
+  tokenExpired,
 } from '../../../__tests__/_shared/test-helpers'
 
 const BOOKINGS = '/api/v1/bookings'
@@ -50,18 +57,6 @@ const JSON_UTF8 = 'application/json; charset=utf-8'
 const CHALLENGE = 'Bearer realm="beauty-salon-api"'
 const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
-
-const badRequest = { status: 400, code: '2001', type: 'validation' }
-const notFound = { status: 404, code: '3001', type: 'not-found' }
-const notAllowed = { status: 409, code: '3003', type: 'operation-not-allowed' }
-const authenticationRequired = {
-  status: 401,
-  code: '1001',
-  type: 'authentication-required',
-}
-const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
-const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
-const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 type Status = (typeof bookings.status.enumValues)[number]
 type Action = 'confirm' | 'cancel' | 'start' | 'complete' | 'no-show'

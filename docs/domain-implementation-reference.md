@@ -840,7 +840,7 @@ Integration tests run the production `createApp` (through `createTestApp` in `ba
         .set('Authorization', asAdmin)
         .send(salonRequest({ name: 'Second salon' }))
 
-      expectProblem(response, conflict)
+      expectProblem(response, alreadyExists)
       expect(response.body.detail).toBe(
         'Salon with email aoyama@example.com already exists',
       )

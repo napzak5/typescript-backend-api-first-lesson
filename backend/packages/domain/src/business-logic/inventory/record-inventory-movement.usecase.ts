@@ -4,7 +4,10 @@ import { match } from 'ts-pattern'
 import { InventoryTransactionReadMapper } from '../../mappers/read/inventory-transaction.mapper'
 import { InventoryTransactionWriteMapper } from '../../mappers/write/inventory-transaction.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiInventoryTransactionResponse } from '../../models/inventory'
+import type {
+  ApiInventoryTransactionResponse,
+  InventoryId,
+} from '../../models/inventory'
 import { inventoryMovementRequestSchema } from '../../schemas/inventory.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { notFound } from '../booking/_shared/plan'
@@ -16,6 +19,15 @@ import {
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = inventoryMessages.invalidStockMovement
+
+/**
+ * The movement a recording wrote, and the stock row it moved, which the
+ * links of the answer name.
+ */
+type RecordedMovement = {
+  inventoryId: InventoryId
+  response: ApiInventoryTransactionResponse
+}
 
 export class RecordInventoryMovementUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}
@@ -35,7 +47,7 @@ export class RecordInventoryMovementUseCase {
   async execute(
     actor: Actor,
     input: unknown,
-  ): Promise<Result<ApiInventoryTransactionResponse, DomainError>> {
+  ): Promise<Result<RecordedMovement, DomainError>> {
     if (inventoryReachOf(actor) === null) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -63,9 +75,12 @@ export class RecordInventoryMovementUseCase {
     }
 
     return match(recorded.data)
-      .returnType<Result<ApiInventoryTransactionResponse, DomainError>>()
+      .returnType<Result<RecordedMovement, DomainError>>()
       .with({ type: 'recorded' }, ({ transaction }) =>
-        InventoryTransactionReadMapper.toApiInventoryTransaction(transaction),
+        Result.map(
+          InventoryTransactionReadMapper.toApiInventoryTransaction(transaction),
+          (response) => ({ inventoryId, response }),
+        ),
       )
       .with({ type: 'notFound' }, () =>
         Result.error(
