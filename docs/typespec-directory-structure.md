@@ -111,10 +111,10 @@ import "./operations/salon-operations.tsp";
 // ...
 
 @service(#{ title: "Beauty Salon API" })
+@info(#{ version: "1.0" })
 @server("https://api.beauty-salon.com", "Production API Server")
-@server("https://staging-api.beauty-salon.com", "Staging API Server")
+@server("https://api-staging.beauty-salon.com", "Staging API Server")
 @server("http://localhost:3000", "Local Development Server")
-@versioned(VersionType)
 @useAuth(BearerAuth)
 namespace BeautySalon {
 ```

@@ -1,7 +1,7 @@
 import "@typespec/http";
 import "@typespec/rest";
+import "@typespec/openapi";
 import "@typespec/openapi3";
-import "@typespec/versioning";
 
 // Import all models
 // common.tsp is imported by each model file, so we don't need to import it here
@@ -35,24 +35,12 @@ import "./operations/inventory-operations.tsp";
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.OpenAPI;
-using TypeSpec.Versioning;
-
-@doc("""
-  APIバージョン区分 - ビューティーサロンサービスのAPIバージョン管理
-  
-  v1: バージョン1.0.0 - 初回リリース、基本機能を提供
-  v2: バージョン2.0.0 - 拡張機能を追加、パフォーマンス最適化
-  """)
-enum VersionType {
-  v1: "1.0",
-  v2: "2.0",
-}
 
 @service(#{ title: "Beauty Salon API" })
+@info(#{ version: "1.0" })
 @server("https://api.beauty-salon.com", "Production API Server")
-@server("https://staging-api.beauty-salon.com", "Staging API Server")
+@server("https://api-staging.beauty-salon.com", "Staging API Server")
 @server("http://localhost:3000", "Local Development Server")
-@versioned(VersionType)
 @useAuth(BearerAuth)
 @doc("Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.")
 namespace BeautySalon {

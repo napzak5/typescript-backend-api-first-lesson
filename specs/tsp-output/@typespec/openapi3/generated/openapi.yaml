@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
   title: Beauty Salon API
+  version: '1.0'
   description: Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
-  version: '2.0'
 tags:
   - name: System
   - name: Authentication
@@ -38905,7 +38905,7 @@ servers:
   - url: http://localhost:3000
     description: Local Development Server
     variables: {}
-  - url: https://staging-api.beauty-salon.com
+  - url: https://api-staging.beauty-salon.com
     description: Staging API Server
     variables: {}
   - url: https://api.beauty-salon.com
