@@ -21,7 +21,7 @@ copy is the one that goes out of date.
 | What happened: a migration, a former contract, a decision of the past | The history of Git |
 
 - A rule that a decorator can state is a decorator, not a sentence.
-- A reason stands beside its rule, in the same place.
+- A reason stands beside its rule: that of a rule of one property or one operation in its `@doc`, that of a principle of the domain (who handles it, what belongs to what) in the document.
 - What several operations share is written on the first, and the others name it (`実行できるのは、カルテの一覧と同じ利用者です`).
 - The `@doc` of an operation, of a property and of a model reaches `openapi.yaml`, the API client and the backend types. The `@doc` of a namespace does not, nor that of a model that is spread into the parameters of an operation (a search request): what a reader of the API needs is written on the operation.
 
