@@ -9,8 +9,8 @@ import type { ModelsProductId } from './modelsProductId';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 在庫アラートの確認レスポンス - inventory_alert_acknowledgements テーブルの全カラムを返す。1行はアラートを1回確認した記録で、作成後は変更されない。
- * プロパティ名と null 許可は DB カラムと一致させている。商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
+ * 在庫アラートの確認レスポンス - アラートを1回確認した記録1件を表す。作成後は変更されず、同じアラートを確認し直すと新しい記録ができる。
+ * 商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
  */
 export interface ModelsInventoryAlertAcknowledgementResponse {
   /** 確認の記録 ID */
@@ -44,7 +44,7 @@ export interface ModelsInventoryAlertAcknowledgementResponse {
      */
   notes: string | null;
   /**
-     * 確認したスタッフ ID。管理者が確認した場合は null
+     * 確認したスタッフ ID。管理者はサロンのスタッフではないので、管理者が確認した場合は null
      * @nullable
      */
   acknowledgedBy: string | null;

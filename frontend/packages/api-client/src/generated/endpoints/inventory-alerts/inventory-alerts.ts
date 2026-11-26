@@ -126,7 +126,7 @@ export const getInventoryAlertCrudListUrl = (params: InventoryAlertCrudListParam
 }
 
 /**
- * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export const inventoryAlertCrudList = async (params: InventoryAlertCrudListParams, options?: RequestInit): Promise<inventoryAlertCrudListResponse> => {
@@ -174,7 +174,7 @@ export type InventoryAlertCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -188,7 +188,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -202,7 +202,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -210,7 +210,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -298,7 +298,7 @@ export const getInventoryAlertCrudAcknowledgeUrl = () => {
 }
 
 /**
- * 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
+ * 今出ている在庫アラートを、操作者が確認したことを記録します。確認するアラートは、本文の alert、productId、inventoryId で指定します。確認の記録には、そのときのアラートの重要度、閾値、使用期限を残します。確認は、在庫や閾値、使用期限が変わってアラートの状態が変わると、有効でなくなります。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。200で確認したアラートを返し、その acknowledgement が、作成した確認の記録です。アラートには1件ごとのURLがないため、links は self を持たず、links.list がそのサロンのアラートの一覧を、links.summary が件数を指します。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合、在庫の行がproductIdの商品のものでない場合、そのアラートが今出ていない場合(同じ商品や在庫の行に別の種別のアラートが出ている場合を含みます)は404を、アラートが確認済み(有効な確認がある)の場合は409を返します。
  * @summary Acknowledge an inventory alert
  */
 export const inventoryAlertCrudAcknowledge = async (modelsInventoryAlertAcknowledgeRequest: ModelsInventoryAlertAcknowledgeRequest, options?: RequestInit): Promise<inventoryAlertCrudAcknowledgeResponse> => {
@@ -351,7 +351,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryAlertCrudAcknowledgeMutationVariables = {data: ModelsInventoryAlertAcknowledgeRequest}
 
     /**
- * 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
+ * 今出ている在庫アラートを、操作者が確認したことを記録します。確認するアラートは、本文の alert、productId、inventoryId で指定します。確認の記録には、そのときのアラートの重要度、閾値、使用期限を残します。確認は、在庫や閾値、使用期限が変わってアラートの状態が変わると、有効でなくなります。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。200で確認したアラートを返し、その acknowledgement が、作成した確認の記録です。アラートには1件ごとのURLがないため、links は self を持たず、links.list がそのサロンのアラートの一覧を、links.summary が件数を指します。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合、在庫の行がproductIdの商品のものでない場合、そのアラートが今出ていない場合(同じ商品や在庫の行に別の種別のアラートが出ている場合を含みます)は404を、アラートが確認済み(有効な確認がある)の場合は409を返します。
  * @summary Acknowledge an inventory alert
  */
 export const useInventoryAlertCrudAcknowledge = <TError = ModelsProblemDetails,
@@ -419,7 +419,7 @@ export const getInventoryAlertCrudGetSummaryUrl = (params: InventoryAlertCrudGet
 }
 
 /**
- * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory alert summary
  */
 export const inventoryAlertCrudGetSummary = async (params: InventoryAlertCrudGetSummaryParams, options?: RequestInit): Promise<inventoryAlertCrudGetSummaryResponse> => {
@@ -467,7 +467,7 @@ export type InventoryAlertCrudGetSummaryQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory alert summary
  */
 export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
@@ -481,7 +481,7 @@ export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory alert summary
  */
 export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
@@ -495,7 +495,7 @@ export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory alert summary
  */
 export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
@@ -503,7 +503,7 @@ export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory alert summary
  */
 export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(

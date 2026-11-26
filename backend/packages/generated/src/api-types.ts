@@ -1417,7 +1417,7 @@ export interface paths {
         };
         /**
          * List active inventory alerts
-         * @description サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
+         * @description サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。商品の一覧と同じく商品コード(productCode)の昇順、同じ商品コードなら商品IDの昇順に並べ、同じ商品のアラートは、商品のアラートを先に、在庫の行のアラートを使用期限の早い順、同じ日なら在庫IDの昇順に返します。ページと件数は、同じ時点の値です。meta.nextCursor は、ページの最後のアラートの在庫ID(商品のアラートでは商品ID)です。cursor の商品や在庫の行にアラートが今出ていなくても、その位置の続きを返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
          */
         get: operations["InventoryAlertCrud_list"];
         put?: never;
@@ -1439,7 +1439,7 @@ export interface paths {
         put?: never;
         /**
          * Acknowledge an inventory alert
-         * @description 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
+         * @description 今出ている在庫アラートを、操作者が確認したことを記録します。確認するアラートは、本文の alert、productId、inventoryId で指定します。確認の記録には、そのときのアラートの重要度、閾値、使用期限を残します。確認は、在庫や閾値、使用期限が変わってアラートの状態が変わると、有効でなくなります。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。200で確認したアラートを返し、その acknowledgement が、作成した確認の記録です。アラートには1件ごとのURLがないため、links は self を持たず、links.list がそのサロンのアラートの一覧を、links.summary が件数を指します。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合、在庫の行がproductIdの商品のものでない場合、そのアラートが今出ていない場合(同じ商品や在庫の行に別の種別のアラートが出ている場合を含みます)は404を、アラートが確認済み(有効な確認がある)の場合は409を返します。
          */
         post: operations["InventoryAlertCrud_acknowledge"];
         delete?: never;
@@ -1457,7 +1457,7 @@ export interface paths {
         };
         /**
          * Get the inventory alert summary
-         * @description サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。数えるのは、絞り込み条件のない一覧と同じアラートで、どの件数も同じ時点のものです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["InventoryAlertCrud_getSummary"];
         put?: never;
@@ -5408,11 +5408,11 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** @description 在庫アラート確認リクエスト - 全項目のキーが必須。確認したのは操作者として記録する */
+        /** @description 在庫アラート確認リクエスト - 確認したのは操作者として記録する */
         "Models.InventoryAlertAcknowledgeRequest": {
             /** @description 確認するアラートの種別 */
             alert: components["schemas"]["Models.InventoryAlertType"];
-            /** @description アラートの商品 ID */
+            /** @description アラートの商品 ID。在庫の行のアラートでは、その行の商品 */
             productId: components["schemas"]["Models.ProductId"];
             /** @description 在庫の行のアラート(expiring・expired)では、productId の商品の在庫 ID。商品のアラート(low_stock・overstock)では null */
             inventoryId: (string & components["schemas"]["Models.InventoryId"]) | null;
@@ -5425,8 +5425,8 @@ export interface components {
          */
         "Models.InventoryAlertAcknowledgementId": string;
         /**
-         * @description 在庫アラートの確認レスポンス - inventory_alert_acknowledgements テーブルの全カラムを返す。1行はアラートを1回確認した記録で、作成後は変更されない。
-         *     プロパティ名と null 許可は DB カラムと一致させている。商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
+         * @description 在庫アラートの確認レスポンス - アラートを1回確認した記録1件を表す。作成後は変更されず、同じアラートを確認し直すと新しい記録ができる。
+         *     商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
          */
         "Models.InventoryAlertAcknowledgementResponse": {
             /** @description 確認の記録 ID */
@@ -5453,7 +5453,7 @@ export interface components {
             expiryDate: string | null;
             /** @description 確認時のメモ。メモがない場合はnull */
             notes: string | null;
-            /** @description 確認したスタッフ ID。管理者が確認した場合は null */
+            /** @description 確認したスタッフ ID。管理者はサロンのスタッフではないので、管理者が確認した場合は null */
             acknowledgedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
@@ -5462,9 +5462,8 @@ export interface components {
             acknowledgedAt: string;
         };
         /**
-         * @description 在庫アラート - 商品、在庫の行、在庫の移動から、読むたびに求める。保存するのは確認の記録(inventory_alert_acknowledgements テーブル)だけ。
-         *     商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、在庫の行のアラート(expiring・expired)は、取り扱いをやめた商品の行も含めて在庫の行ごとに、1件ずつ出る。
-         *     確認は、確認したときの状態が続くあいだだけ有効で、次の場合は未確認に戻る。商品のアラートでは、確認したとき以後に在庫の和が条件を外れたか、重要度が確認したときより重くなったか、閾値が確認したときと違う場合。在庫の行のアラートでは、確認のあとに行の在庫が0になったか、使用期限が確認したときと違うか、重要度が確認したときより重い場合
+         * @description 在庫アラート - 今出ているアラート1件を表す。読むたびに、商品、在庫の行、在庫の移動から求める。ID はなく、アラート種別と、何についてか(商品のアラートでは商品、在庫の行のアラートでは在庫の行)で決まる。
+         *     商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、どちらか1件まで出る(最低在庫数は最大在庫数以下なので、両方は出ない)。在庫の行のアラート(expiring・expired)は、在庫の行ごとに、どちらか1件まで出る。在庫があれば使うか捨てるので、取り扱いをやめた商品の行にも出る
          */
         "Models.InventoryAlertResponse": {
             /** @description アラート種別 */
@@ -5473,7 +5472,7 @@ export interface components {
             severity: components["schemas"]["Models.InventoryAlertSeverityType"];
             /** @description サロン ID */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description 商品 ID */
+            /** @description 商品 ID。在庫の行のアラートでは、その行の商品 */
             productId: components["schemas"]["Models.ProductId"];
             /** @description 商品コード */
             productCode: string;
@@ -5500,7 +5499,7 @@ export interface components {
              * @description 判定に使った閾値。low_stock では minimumStock、overstock では maximumStock。在庫の行のアラートでは null
              */
             threshold: number | null;
-            /** @description 今も有効な確認の記録。未確認の場合は null */
+            /** @description 今も有効な確認の記録。有効かどうかは、そのアラートの最新の確認で決まる。未確認の場合は null */
             acknowledgement: components["schemas"]["Models.InventoryAlertAcknowledgementResponse"] | null;
         };
         /**
@@ -5554,7 +5553,7 @@ export interface components {
             infoAlerts: number;
             /**
              * Format: int32
-             * @description 未確認のアラート数
+             * @description 未確認(有効な確認がない)のアラート数
              */
             unacknowledged: number;
         };
@@ -5580,7 +5579,7 @@ export interface components {
 
          *
 
-         * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
+         * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態。最大在庫数のない商品には発生しない
 
          * @enum {string}
 
@@ -10098,7 +10097,7 @@ export interface components {
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
         "Models.DailySalesGetRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 確認済みかどうかによる絞り込み */
+        /** @description 確認済みかどうかによる絞り込み。trueの場合は有効な確認があるアラートに、falseの場合は有効な確認がないアラートに一致する */
         "Models.InventoryAlertSearchRequest.acknowledged": boolean;
         /** @description アラート種別による絞り込み(完全一致) */
         "Models.InventoryAlertSearchRequest.alert": components["schemas"]["Models.InventoryAlertType"];
@@ -19831,7 +19830,7 @@ export interface operations {
                 alert?: components["parameters"]["Models.InventoryAlertSearchRequest.alert"];
                 /** @description 重要度による絞り込み(完全一致) */
                 severity?: components["parameters"]["Models.InventoryAlertSearchRequest.severity"];
-                /** @description 確認済みかどうかによる絞り込み */
+                /** @description 確認済みかどうかによる絞り込み。trueの場合は有効な確認があるアラートに、falseの場合は有効な確認がないアラートに一致する */
                 acknowledged?: components["parameters"]["Models.InventoryAlertSearchRequest.acknowledged"];
             };
             header?: never;

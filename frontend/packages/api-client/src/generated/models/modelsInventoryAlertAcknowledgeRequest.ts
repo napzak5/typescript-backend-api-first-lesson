@@ -6,12 +6,12 @@ import type { ModelsInventoryAlertType } from './modelsInventoryAlertType';
 import type { ModelsProductId } from './modelsProductId';
 
 /**
- * 在庫アラート確認リクエスト - 全項目のキーが必須。確認したのは操作者として記録する
+ * 在庫アラート確認リクエスト - 確認したのは操作者として記録する
  */
 export interface ModelsInventoryAlertAcknowledgeRequest {
   /** 確認するアラートの種別 */
   alert: ModelsInventoryAlertType;
-  /** アラートの商品 ID */
+  /** アラートの商品 ID。在庫の行のアラートでは、その行の商品 */
   productId: ModelsProductId;
   /**
      * 在庫の行のアラート(expiring・expired)では、productId の商品の在庫 ID。商品のアラート(low_stock・overstock)では null
