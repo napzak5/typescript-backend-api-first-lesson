@@ -5,7 +5,7 @@
 import type { ModelsServiceCategoryType } from './modelsServiceCategoryType';
 
 /**
- * サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスのカテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない
+ * サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスがいま属するカテゴリーの区分(category)ごとに合わせる。明細は売ったときのカテゴリーを持たないので、サービスを別のカテゴリーに移すと、過去の売上も移した先で数える。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない
  */
 export interface ModelsSalesByCategoryResponse {
   /** サービスカテゴリ区分 */
@@ -14,6 +14,6 @@ export interface ModelsSalesByCategoryResponse {
   amount: number;
   /** 明細の数量(quantity)の合計 */
   count: number;
-  /** 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0 */
+  /** 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0 */
   percentage: number;
 }

@@ -860,7 +860,7 @@ namespace BeautySalon.Models {
   // ---------------------------------------------------------------------------
 
   @doc("""
-    売上レポートの集計条件 - サロンと、売上日(saleDate)の期間を指定する。期間は両端を含み、366日まで
+    売上レポートの集計条件 - サロンと、売上日(saleDate)の期間を指定する。数える売上は get に書く
     """)
   model SalesReportGetRequest {
     @query
@@ -868,11 +868,11 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで")
+    @doc("期間の最初の売上日(saleDate)")
     startDate: plainDate;
 
     @query
-    @doc("期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで")
+    @doc("期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで")
     endDate: plainDate;
   }
 
@@ -883,7 +883,7 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで")
+    @doc("集計対象の売上日(saleDate)")
     date: plainDate;
   }
 
@@ -943,7 +943,7 @@ namespace BeautySalon.Models {
     @doc("totalSales を transactionCount で割った額(1円未満を切り捨て)。売上がなければ0")
     averageTransactionValue: int64;
 
-    @doc("支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順")
+    @doc("支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順。まだ受け取っていない額(支払いが済んでいない売上と、一部だけを受け取った売上の残り)は入らず、返金は amount から引くので、amount の合計は totalSales と一致しないことがある")
     salesByMethod: SalesByMethodResponse[];
 
     @doc("サービスのカテゴリーの区分ごとの売上。amount の多い順、同じなら区分の名前の順")
@@ -963,15 +963,15 @@ namespace BeautySalon.Models {
     @doc("決済取引の金額(amount)から返金額(refundAmount)を引いた額の合計")
     amount: int64;
 
-    @doc("決済取引の件数")
+    @doc("決済取引の件数。全額を返金した決済取引も数える")
     count: int32;
 
-    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0")
+    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0")
     percentage: float32;
   }
 
   @doc("""
-    サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスのカテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない
+    サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスがいま属するカテゴリーの区分(category)ごとに合わせる。明細は売ったときのカテゴリーを持たないので、サービスを別のカテゴリーに移すと、過去の売上も移した先で数える。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない
     """)
   model SalesByCategoryResponse {
     @doc("サービスカテゴリ区分")
@@ -983,21 +983,21 @@ namespace BeautySalon.Models {
     @doc("明細の数量(quantity)の合計")
     count: int32;
 
-    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0")
+    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0")
     percentage: float32;
   }
 
   @doc("""
-    スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。削除したスタッフも載る
+    スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。売上はそのスタッフが売った記録なので、削除したスタッフも、無効にしたスタッフも載る
     """)
   model SalesByStaffResponse {
     @doc("スタッフ ID")
     staffId: StaffId;
 
-    @doc("スタッフの表示名(staff.displayName のいまの値)")
+    @doc("スタッフの表示名(displayName)。売ったときの値ではなく、いまの値")
     displayName: string;
 
-    @doc("担当した明細の合計金額(totalAmount)の合計")
+    @doc("担当した明細の合計金額(totalAmount)の合計。サービスの明細も、商品などサービスでない明細も数える。getByStaff のすべての行の合計は、同じ期間のレポートの totalSales から、どちらの担当スタッフもない明細の合計金額を引いた額に等しい")
     totalSales: int64;
 
     @doc("担当した、itemType が service の明細の数量(quantity)の合計")
@@ -1029,7 +1029,7 @@ namespace BeautySalon.Models {
     売上推移 - 期間を区切った単位ごとの、取り消していない売上の時系列。各配列の同じ位置が同じ区切りを表す。最初と最後の区切りは期間の中の売上だけを数え、売上のない区切りも0で載せる
     """)
   model SalesTrendsResponse {
-    @doc("各区切りのラベル(SalesTrendPeriodType の説明を参照)")
+    @doc("各区切りのラベル(SalesTrendPeriodType の説明を参照)。古い順。weekly の最初のラベルは、startDate より前の日付になることがある")
     labels: string[];
 
     @doc("各区切りの売上の合計金額(totalAmount)の合計")

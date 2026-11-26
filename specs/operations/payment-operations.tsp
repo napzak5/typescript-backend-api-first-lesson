@@ -225,12 +225,11 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("売上を集計したレポートを取得・出力するAPI操作群です。6つの操作はすべて実装済みで、定義と実装は一致しています。どの操作も、管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。salonId に自分のサロン以外を指定した場合は403を、salonId のサロンが存在しない場合は400を返します。集計は、リクエストのたびに、取り消していない売上とその決済取引から行い、記録しません。日付は売上日(saleDate。会計日時のサロンのタイムゾーンでの日付)です。")
   @route("/api/v1/sales-reports")
   @tag("Sales Reports")
   namespace SalesReportOperations {
     interface SalesReportCrud {
-      @doc("サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @doc("サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。売上のない期間は、すべての値が0で、内訳の配列が空のレポートを返します。管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get a sales report")
       @get
       get(...SalesReportGetRequest):
@@ -241,7 +240,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("サロンの、売上日が date の、取り消していない売上を集計します。")
+      @doc("サロンの、売上日が date の、取り消していない売上を集計します。startDate と endDate がどちらも date の期間のレポート(get)と同じ売上を数えます。売上のない日は、すべての値が0です。実行できるのは、期間のレポート(get)と同じ利用者です。")
       @summary("Get daily sales")
       @route("/daily")
       @get
@@ -253,7 +252,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @doc("期間内の売上の明細を、担当スタッフ別に集計します。数える売上は、期間のレポート(get)と同じです。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを、ページには分けずにすべて返します。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales by staff")
       @route("/by-staff")
       @get
@@ -265,7 +264,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @doc("期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。数える売上は、期間のレポート(get)と同じで、同じ期間のレポートの salesByCategory と同じ値を返します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales by service category")
       @route("/by-category")
       @get
@@ -277,7 +276,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @doc("期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。数える売上は、期間のレポート(get)と同じです。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales trends")
       @route("/trends")
       @get
@@ -289,7 +288,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @doc("期間の売上を、1日を1行にした CSV ファイルとして返します。会計ソフトや表計算ソフトに取り込むためのファイルです。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は、getDaily の値に、その日の売上の消費税額(tax)と値引額(discounts)の合計を加えたものです)。合計の行はありません(表計算ソフトで合計すると二重になり、取り込むときに日付でない行が混じるためです)。文字コードは UTF-8(BOM なし)、改行は CRLF で(RFC 4180。最後の行も CRLF で終わります)、1行目は列名です。列名は英語で、値は日付と整数だけなので、引用符で囲む値はなく、ファイルは ASCII の文字だけです(Shift_JIS で開く表計算ソフトでも文字化けしません)。ファイルは保存せず、応答の本文として返します(本文がファイルそのもので、data・meta・links の包みはありません)。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Export a sales report as CSV")
       @route("/export")
       @get

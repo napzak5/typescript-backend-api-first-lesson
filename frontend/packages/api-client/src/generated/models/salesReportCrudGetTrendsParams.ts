@@ -10,9 +10,9 @@ import type { ModelsSalesTrendsGetRequestPeriodParameter } from './modelsSalesTr
 export type SalesReportCrudGetTrendsParams = {
   /** サロン (店舗) の ID。 */
   salonId: ModelsSalesReportGetRequestSalonIdParameter;
-  /** 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+  /** 期間の最初の売上日(saleDate) */
   startDate: ModelsSalesReportGetRequestStartDateParameter;
-  /** 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+  /** 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
   endDate: ModelsSalesReportGetRequestEndDateParameter;
   /**
    * 売上推移区切り区分 - 売上推移の期間を区切る単位

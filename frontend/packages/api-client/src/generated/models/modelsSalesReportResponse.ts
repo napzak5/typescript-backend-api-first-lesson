@@ -31,7 +31,7 @@ export interface ModelsSalesReportResponse {
   transactionCount: number;
   /** totalSales を transactionCount で割った額(1円未満を切り捨て)。売上がなければ0 */
   averageTransactionValue: number;
-  /** 支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順 */
+  /** 支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順。まだ受け取っていない額(支払いが済んでいない売上と、一部だけを受け取った売上の残り)は入らず、返金は amount から引くので、amount の合計は totalSales と一致しないことがある */
   salesByMethod: ModelsSalesByMethodResponse[];
   /** サービスのカテゴリーの区分ごとの売上。amount の多い順、同じなら区分の名前の順 */
   salesByCategory: ModelsSalesByCategoryResponse[];
