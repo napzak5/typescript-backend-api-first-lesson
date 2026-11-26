@@ -298,7 +298,6 @@ export * from './modelsDailySalesGetRequestSalonIdParameter';
 export * from './modelsDailySalesResponse';
 export * from './modelsDateRange';
 export * from './modelsDayOfWeekType';
-export * from './modelsDecimal';
 export * from './modelsErrorCodeType';
 export * from './modelsHairThicknessType';
 export * from './modelsHairType';

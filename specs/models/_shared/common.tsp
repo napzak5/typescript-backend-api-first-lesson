@@ -116,9 +116,6 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar PointTransactionId extends string;
 
-  @doc("税率や金額計算で用いる汎用小数型。")
-  scalar decimal extends float64;
-
   @doc("""
     曜日区分 - 営業日やスケジュール管理で使用される曜日の定義
     

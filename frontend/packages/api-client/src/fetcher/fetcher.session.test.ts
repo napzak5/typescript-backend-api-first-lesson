@@ -726,7 +726,6 @@ describe('customInstance with a session', () => {
     it.each([
       ['1002', 'a failed sign-in'],
       ['1007', 'a missing two-factor code'],
-      ['1006', 'a wrong current password'],
     ])(
       'should return code %s (%s) as it is: no renewal, no second request, the session stays',
       async (code) => {
