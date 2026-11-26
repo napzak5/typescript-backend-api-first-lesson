@@ -5,7 +5,7 @@
 
 export type PointCrudGetExpiringParams = {
   /**
-   * 集計する期間の日数 (1〜365)
+   * 集計する期間の日数
    * @minimum 1
    * @maximum 365
    */

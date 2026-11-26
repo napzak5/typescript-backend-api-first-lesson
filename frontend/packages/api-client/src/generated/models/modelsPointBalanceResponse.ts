@@ -5,8 +5,7 @@
 import type { ModelsCustomerId } from './modelsCustomerId';
 
 /**
- * ポイント残高レスポンス - 顧客の残高(customers.loyaltyPoints)を返す。
- * 残高は最新のポイント取引(customer_points)の balance と等しく、ポイント取引のない顧客の残高は 0
+ * ポイント残高レスポンス - 顧客の現在のポイント残高を返す
  */
 export interface ModelsPointBalanceResponse {
   /** 対象顧客の ID */

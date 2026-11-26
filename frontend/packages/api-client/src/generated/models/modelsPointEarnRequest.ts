@@ -6,14 +6,13 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPointMovementReferenceType } from './modelsPointMovementReferenceType';
 
 /**
- * ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
- * DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+ * ポイント付与リクエスト - 種別 earned のポイント取引を登録する。残高はシステムが計算する
  */
 export interface ModelsPointEarnRequest {
   /** ポイントを付与する顧客の ID */
   customerId: ModelsCustomerId;
   /**
-     * 付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない
+     * 付与するポイント数。付与の後の残高が 2,147,483,647 を超える場合は409
      * @minimum 1
      */
   points: number;
@@ -25,12 +24,12 @@ export interface ModelsPointEarnRequest {
   /** 付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
   referenceType: ModelsPointMovementReferenceType | null;
   /**
-     * 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
+     * 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに付与した記録を指定した場合は409。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;
   /**
-     * 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで
+     * 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。日付はタイムゾーンを持たないため、どのタイムゾーンの今日も指定できるように、昨日(UTC)から受け付ける。有効期限を設けない場合はnull
      * @nullable
      */
   expiryDate: string | null;

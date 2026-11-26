@@ -49,13 +49,13 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+    ポイント取引種別区分 - 顧客ポイントの増減の種類
     
     earned: 獲得 - 来店や購入などでポイントを付与した取引
     used: 利用 - 支払いなどでポイントを使用した取引
     expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
     adjusted: 調整 - スタッフが手動でポイントを増減した取引
-    transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
+    transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは、サブの残高を増やした取引(付与、正の調整、移行)のうち、使われずに残っているものごとの正の取引
     """)
   enum PointTransactionType {
     earned,
@@ -66,7 +66,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+    ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類
     
     sale: 売上 - referenceId は売上の ID
     booking: 予約 - referenceId は予約の ID
@@ -678,10 +678,7 @@ namespace BeautySalon.Models {
   // ポイント (customer_points)
   // ---------------------------------------------------------------------------
 
-  @doc("""
-    ポイント取引レスポンス - customer_points テーブルの1行。顧客ポイントの1回の増減と、その後の残高を表す。
-    プロパティ名と null 許可は DB カラムと一致させている
-    """)
+  @doc("ポイント取引レスポンス - 顧客ポイントの1回の増減と、その後の残高を表す")
   model PointTransactionResponse {
     @doc("ポイント取引 ID")
     id: PointTransactionId;
@@ -715,9 +712,7 @@ namespace BeautySalon.Models {
     createdAt: utcDateTime;
   }
 
-  @doc("""
-    ポイント取引の一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
-    """)
+  @doc("ポイント取引の一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。並びと日時の比べ方は listTransactions に書く")
   model PointTransactionSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限")
@@ -726,7 +721,7 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない")
+    @doc("取得開始位置を示すカーソル")
     cursor?: PointTransactionId;
 
     @query
@@ -738,10 +733,7 @@ namespace BeautySalon.Models {
     endDate?: utcDateTime;
   }
 
-  @doc("""
-    ポイント残高レスポンス - 顧客の残高(customers.loyaltyPoints)を返す。
-    残高は最新のポイント取引(customer_points)の balance と等しく、ポイント取引のない顧客の残高は 0
-    """)
+  @doc("ポイント残高レスポンス - 顧客の現在のポイント残高を返す")
   model PointBalanceResponse {
     @doc("対象顧客の ID")
     customerId: CustomerId;
@@ -750,15 +742,12 @@ namespace BeautySalon.Models {
     balance: int32;
   }
 
-  @doc("""
-    ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
-    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-    """)
+  @doc("ポイント付与リクエスト - 種別 earned のポイント取引を登録する。残高はシステムが計算する")
   model PointEarnRequest {
     @doc("ポイントを付与する顧客の ID")
     customerId: CustomerId;
 
-    @doc("付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない")
+    @doc("付与するポイント数。付与の後の残高が 2,147,483,647 を超える場合は409")
     @minValue(1)
     points: int32;
 
@@ -768,23 +757,20 @@ namespace BeautySalon.Models {
     @doc("付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
     referenceType: PointMovementReferenceType | null;
 
-    @doc("付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull")
+    @doc("付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに付与した記録を指定した場合は409。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
 
-    @doc("付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで")
+    @doc("付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。日付はタイムゾーンを持たないため、どのタイムゾーンの今日も指定できるように、昨日(UTC)から受け付ける。有効期限を設けない場合はnull")
     expiryDate: plainDate | null;
   }
 
-  @doc("""
-    ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
-    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-    """)
+  @doc("ポイント利用リクエスト - 種別 used のポイント取引を登録する。残高はシステムが計算する")
   model PointUseRequest {
     @doc("ポイントを利用する顧客の ID")
     customerId: CustomerId;
 
-    @doc("利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する")
+    @doc("利用するポイント数。残高を超える場合は409。ポイント取引には負の値で記録する")
     @minValue(1)
     points: int32;
 
@@ -794,20 +780,17 @@ namespace BeautySalon.Models {
     @doc("利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
     referenceType: PointMovementReferenceType | null;
 
-    @doc("利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull")
+    @doc("利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに利用した記録を指定した場合は409。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
   }
 
-  @doc("""
-    ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
-    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-    """)
+  @doc("ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。残高はシステムが計算する")
   model PointAdjustRequest {
     @doc("ポイントを調整する顧客の ID")
     customerId: CustomerId;
 
-    @doc("調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない")
+    @doc("調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる場合と、2,147,483,647 を超える場合は409")
     points: int32;
 
     @doc("調整の理由。空白だけの文字列は指定できない。未設定の場合はnull")
@@ -816,7 +799,7 @@ namespace BeautySalon.Models {
     @doc("調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
     referenceType: PointMovementReferenceType | null;
 
-    @doc("調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull")
+    @doc("調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も、すでに付与・利用・調整した記録も指定できる。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
   }
@@ -836,12 +819,12 @@ namespace BeautySalon.Models {
     transactions: PointTransactionResponse[];
   }
 
-  @doc("ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須")
+  @doc("ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する")
   model PointExpireRequest {
     @doc("対象顧客の ID。削除されていないすべての顧客を処理する場合はnull")
     customerId: CustomerId | null;
 
-    @doc("有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない。1900-01-01 から 2999-12-31 まで")
+    @doc("有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない")
     processBefore: plainDate | null;
   }
 
