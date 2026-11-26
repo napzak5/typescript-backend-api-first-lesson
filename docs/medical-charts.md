@@ -2,14 +2,6 @@
 
 カルテは、施術の前にスタッフが確かめる、顧客の情報です。ほかのサロンで受けた施術、注意が必要な持病や体調、好みの商材と避ける商材、メモを持ちます。顧客のアレルギーは、カルテとは別の記録で、カルテがなくても書けます。
 
-この文書には、オペレーションをまたぐ規則と、その理由を書きます。1 つのプロパティや 1 つのオペレーションの規則は、コントラクトに書いてあり、ここには書きません。コントラクトの文は、生成された `openapi.yaml` と、API クライアントの型のコメントにも出ます。
-
-| 知りたいこと | 書いてある場所 |
-|---|---|
-| プロパティの意味と、値の規則 | `specs/models/treatment.tsp` の、カルテと顧客アレルギーのモデル |
-| 誰が実行できるか、どの場合にどのステータスを返すか、一覧の並び | `specs/operations/treatment-operations.tsp` の `MedicalChartCrud` |
-| どの API にも共通の作り（リクエストの検査、ID、ページ、エラーの形） | [Uniform Implementation Guide](./uniform-implementation-guide.md) |
-
 ## 何をどこに持つか
 
 ```mermaid
@@ -91,3 +83,8 @@ flowchart TD
 - **カルテを削除するオペレーション。** 顧客を削除すると、カルテも見えなくなります
 - **書き換えの履歴。** 残るのは、最後に書いた時刻（`updatedAt`）だけです。顧客台帳の変更履歴（[変更履歴と版](./customers.md#変更履歴と版)）は、顧客の行の版で、カルテを含みません
 - **アレルギーを 1 件だけ読むオペレーション。** アレルギーは、一覧で読みます
+
+## 関連
+
+- プロパティの意味と値の規則、オペレーションごとの権限と応答: コントラクト（`specs/models/treatment.tsp`、`specs/operations/treatment-operations.tsp` の `MedicalChartCrud`）
+- どの API にも共通の規則: [Uniform Implementation Guide](./uniform-implementation-guide.md)

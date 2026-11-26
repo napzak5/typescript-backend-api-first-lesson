@@ -8,18 +8,15 @@ document is wrong: fix it in the same change.
 
 What is implemented is stated once, in the table
 [Implementation Status](../README.md#implementation-status) of the README; the
-document of a domain says, under 実装範囲, which operations it has and what it
-deliberately does not do. The other documents refer to these two places
-instead of listing it again.
+document of a domain says, under 実装範囲 or 持たないもの, what it deliberately
+does not do. The other documents refer to these two places instead of
+listing it again.
 
 A fact is written once. Where, and the form of the document of a domain, is
 the skill [requirements-docs](../.claude/skills/requirements-docs/SKILL.md):
 the rule of one property or one operation is in the contract (TypeSpec), and
 the document of the domain holds the rules across operations and their
-reasons. [Medical Charts](./medical-charts.md) is in that form: it has no
-実装範囲, its operations are in the contract, and what it deliberately does not
-have is under 持たないもの. The other domain documents are moved to it one by
-one.
+reasons.
 
 ## 📚 Architecture & Design
 - [**Architecture Overview**](./architecture-overview.md) - The system as a whole: layers, packages, request flow

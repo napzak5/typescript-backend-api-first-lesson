@@ -33,7 +33,7 @@ say one thing each, and it has only the sections it has something to say in:
 
 | Section | What it says |
 |---------|--------------|
-| The opening | What the thing is, in a few sentences, and where the contract of it is |
+| The opening | What the thing is, in a few sentences |
 | 何をどこに持つか | What belongs to what, as an `erDiagram`, and what is kept elsewhere |
 | 誰が扱えるか | The principle and its reason. The roles of each operation are in the contract |
 | 確認の順序 | One `flowchart` for the domain: what is checked first, and the status of each check |
@@ -41,9 +41,11 @@ say one thing each, and it has only the sections it has something to say in:
 | 規則に合わない値の答え | The `field` and the `rule` of the refusals that are not about the form of a value |
 | 削除された…、同時に届いたリクエスト | What a client observes, not how it is done |
 | 持たないもの | What is deliberately not there, and what stands in for it |
+| 関連 | Where the contract of the domain is, and the documents it relies on, as a list |
 
 It leaves out:
 
+- sentences about the document itself: what it holds, what was moved where, how it came to be
 - where the code is, and the layers of the implementation
 - migrations, the names of constraints and indexes, locks and isolation levels
 - the seed data, and which operations are implemented
