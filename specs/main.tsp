@@ -219,7 +219,7 @@ const REQUIREMENTS = "https://github.com/napzak5/typescript-backend-api-first-le
 @doc("""
   美容サロンの店舗、スタッフ、メニュー、顧客、予約、会計、在庫、施術の記録を扱う API です。
   
-  オペレーションの説明が、次の規則と違うことを言うときは、オペレーションの説明に従います。
+  オペレーションやプロパティの説明が、次の規則と違うことを言うときは、その説明に従います。
   
   # 認証
   
@@ -252,6 +252,8 @@ const REQUIREMENTS = "https://github.com/napzak5/typescript-backend-api-first-le
   - ID は UUID です。英字は大文字でも小文字でも同じ ID で、レスポンスでは小文字です。UUID でない ID は 400 です（`invalid_format`）。
   - 日時は UTC の ISO 8601 です。リクエストは `Z` で終わる形で書き、レスポンスはミリ秒まで書きます（`2026-11-20T03:40:00.000Z`）。
   - 日付は `YYYY-MM-DD` です。リクエストでは 1900-01-01 から 2999-12-31 までです。
+  - 文字列は、書いたとおりに保存します。前後の空白も除きません。文字数は、Unicode のコードポイントで数えます。
+  - クエリの真偽値は、`true` か `false` です。
   
   # 一覧
   
@@ -283,7 +285,7 @@ const REQUIREMENTS = "https://github.com/napzak5/typescript-backend-api-first-le
   
   - `invalid_type`: 型が違う。必須のキーがない。null にできない値が null。整数でない
   - `invalid_format`: UUID、日付、日時、時刻、メールアドレス、URL、決まった書式の文字列の形でない。空白だけの文字列。数値でないクエリの値
-  - `invalid_value`: 列挙にない値
+  - `invalid_value`: 列挙にない値。`true` でも `false` でもない、クエリの真偽値
   - `too_small`、`too_big`: 数、長さ、件数、日付が範囲の外
   - `not_multiple_of`: 金額の小数が 2 桁を超える
   - `unrecognized_keys`: 定義にないキー
