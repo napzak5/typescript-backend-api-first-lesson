@@ -139,7 +139,7 @@ export const getMedicalChartCrudListUrl = (params?: MedicalChartCrudListParams,)
 }
 
 /**
- * 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+ * 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
  * @summary List medical charts
  */
 export const medicalChartCrudList = async (params?: MedicalChartCrudListParams, options?: RequestInit): Promise<medicalChartCrudListResponse> => {
@@ -187,7 +187,7 @@ export type MedicalChartCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+ * 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
  * @summary List medical charts
  */
 export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medicalChartCrudList>>, TError = ModelsProblemDetails>(
@@ -201,7 +201,7 @@ export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medica
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+ * 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
  * @summary List medical charts
  */
 export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medicalChartCrudList>>, TError = ModelsProblemDetails>(
@@ -215,7 +215,7 @@ export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medica
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+ * 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
  * @summary List medical charts
  */
 export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medicalChartCrudList>>, TError = ModelsProblemDetails>(
@@ -223,7 +223,7 @@ export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medica
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+ * 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
  * @summary List medical charts
  */
 export function useMedicalChartCrudList<TData = Awaited<ReturnType<typeof medicalChartCrudList>>, TError = ModelsProblemDetails>(
@@ -306,7 +306,7 @@ export const getMedicalChartCrudCreateUrl = () => {
 }
 
 /**
- * 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+ * 顧客のカルテを新規作成します。実行できるのは、カルテの一覧と同じ利用者です。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーとlinks.selfは、顧客IDによるカルテ取得のURLを指します。
  * @summary Create a medical chart
  */
 export const medicalChartCrudCreate = async (modelsMedicalChartCreateRequest: ModelsMedicalChartCreateRequest, options?: RequestInit): Promise<medicalChartCrudCreateResponse> => {
@@ -359,7 +359,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudCreateMutationVariables = {data: ModelsMedicalChartCreateRequest}
 
     /**
- * 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+ * 顧客のカルテを新規作成します。実行できるのは、カルテの一覧と同じ利用者です。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーとlinks.selfは、顧客IDによるカルテ取得のURLを指します。
  * @summary Create a medical chart
  */
 export const useMedicalChartCrudCreate = <TError = ModelsProblemDetails,
@@ -425,7 +425,7 @@ export const getMedicalChartCrudGetByCustomerUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export const medicalChartCrudGetByCustomer = async (customerId: ModelsCustomerId, options?: RequestInit): Promise<medicalChartCrudGetByCustomerResponse> => {
@@ -473,7 +473,7 @@ export type MedicalChartCrudGetByCustomerQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -487,7 +487,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -501,7 +501,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -509,7 +509,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -590,7 +590,7 @@ export const getMedicalChartCrudListAllergiesUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
  * @summary List the allergies of a customer
  */
 export const medicalChartCrudListAllergies = async (customerId: ModelsCustomerId,
@@ -641,7 +641,7 @@ export type MedicalChartCrudListAllergiesQueryError = ModelsProblemDetails
 
 
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -656,7 +656,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -671,7 +671,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -680,7 +680,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -769,7 +769,7 @@ export const getMedicalChartCrudAddAllergyUrl = (customerId: ModelsCustomerId,) 
 }
 
 /**
- * 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+ * 顧客のアレルギーを1件追加します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返さず、links.listがその顧客のアレルギーの一覧を指します。
  * @summary Add an allergy of a customer
  */
 export const medicalChartCrudAddAllergy = async (customerId: ModelsCustomerId,
@@ -823,7 +823,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudAddAllergyMutationVariables = {customerId: ModelsCustomerId;data: ModelsCustomerAllergyCreateRequest}
 
     /**
- * 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+ * 顧客のアレルギーを1件追加します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返さず、links.listがその顧客のアレルギーの一覧を指します。
  * @summary Add an allergy of a customer
  */
 export const useMedicalChartCrudAddAllergy = <TError = ModelsProblemDetails,
@@ -905,7 +905,7 @@ export const getMedicalChartCrudUpdateAllergyUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+ * 顧客のアレルギーの指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。
  * @summary Update an allergy of a customer
  */
 export const medicalChartCrudUpdateAllergy = async (customerId: ModelsCustomerId,
@@ -960,7 +960,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudUpdateAllergyMutationVariables = {customerId: ModelsCustomerId;allergyId: ModelsCustomerAllergyId;data: ModelsCustomerAllergyUpdateRequest}
 
     /**
- * 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+ * 顧客のアレルギーの指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。
  * @summary Update an allergy of a customer
  */
 export const useMedicalChartCrudUpdateAllergy = <TError = ModelsProblemDetails,
@@ -1027,7 +1027,7 @@ export const getMedicalChartCrudRemoveAllergyUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+ * 誤って記録した顧客のアレルギーを削除します。施術の安全のための記録なので、削除できるのは管理者と、サロンのオーナー・マネージャーだけです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
  * @summary Remove an allergy of a customer
  */
 export const medicalChartCrudRemoveAllergy = async (customerId: ModelsCustomerId,
@@ -1081,7 +1081,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudRemoveAllergyMutationVariables = {customerId: ModelsCustomerId;allergyId: ModelsCustomerAllergyId}
 
     /**
- * 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+ * 誤って記録した顧客のアレルギーを削除します。施術の安全のための記録なので、削除できるのは管理者と、サロンのオーナー・マネージャーだけです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
  * @summary Remove an allergy of a customer
  */
 export const useMedicalChartCrudRemoveAllergy = <TError = ModelsProblemDetails,
@@ -1157,7 +1157,7 @@ export const getMedicalChartCrudUpdateUrl = (id: ModelsMedicalChartId,) => {
 }
 
 /**
- * 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
+ * 指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
  * @summary Update a medical chart
  */
 export const medicalChartCrudUpdate = async (id: ModelsMedicalChartId,
@@ -1211,7 +1211,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudUpdateMutationVariables = {id: ModelsMedicalChartId;data: ModelsMedicalChartUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
+ * 指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
  * @summary Update a medical chart
  */
 export const useMedicalChartCrudUpdate = <TError = ModelsProblemDetails,

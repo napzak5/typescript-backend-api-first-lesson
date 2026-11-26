@@ -9,7 +9,8 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する
+ * カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
+ * 好みの一覧と避ける一覧に、同じ名前があってもよい
  */
 export interface ModelsMedicalChartCreateRequest {
   /** 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
@@ -20,22 +21,22 @@ export interface ModelsMedicalChartCreateRequest {
      */
   previousTreatments: ModelsPreviousTreatment[];
   /**
-     * 施術の前に注意が必要な持病・体調。特にない場合はnull
+     * 施術の前に注意が必要な持病・体調（空白だけは指定できない）。特にない場合はnull
      * @nullable
      */
   medicalConditions: string | null;
   /**
-     * 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列
+     * 好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列
      * @maxItems 50
      */
   preferredProducts: string[];
   /**
-     * 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列
+     * 避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列
      * @maxItems 50
      */
   avoidProducts: string[];
   /**
-     * 自由記述のメモ。特記事項がない場合はnull
+     * 自由記述のメモ（空白だけは指定できない）。特記事項がない場合はnull
      * @nullable
      */
   notes: string | null;
