@@ -20,6 +20,7 @@
     "build:prod": "pnpm -r run build:prod",
     "build:backend": "pnpm --filter './shared-i18n' --filter './backend/**' run build:prod",
     "build:frontend": "pnpm --filter './frontend/**' run build:prod",
+    "build:api-reference": "pnpm --filter '@beauty-salon/specs' run build:api-reference",
     "prepare:frontend": "pnpm --filter './shared-i18n' --filter './frontend/packages/**' run build:prod",
     "start:backend": "pnpm --filter '@beauty-salon-backend/server' run start",
     "preview:frontend": "pnpm --parallel --filter './frontend/apps/**' run preview",

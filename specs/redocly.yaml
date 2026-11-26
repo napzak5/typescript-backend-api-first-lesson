@@ -1,0 +1,3 @@
+# Redocly CLI builds the page of the API reference (`pnpm build:api-reference`).
+# It sends no usage data
+telemetry: 'off'
