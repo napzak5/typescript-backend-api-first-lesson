@@ -4,6 +4,6 @@
  */
 
 /**
- * アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する
+ * アレルギーの有無による絞り込み。trueの場合はアレルギーの記録がある顧客の、falseの場合は記録がない顧客のカルテに一致する
  */
 export type ModelsMedicalChartSearchRequestHasAllergiesParameter = boolean;

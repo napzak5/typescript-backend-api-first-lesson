@@ -24,27 +24,18 @@ erDiagram
 
 ## 確認の順序
 
-どのオペレーションも、次の順に確かめ、合わなかったところのステータスを返します。そのオペレーションにない確認は、飛ばします。
+どの API にも共通の確認（認証、権限、ID と値の形）のあと、次の順に確かめ、合わなかったところのステータスを返します。そのオペレーションにない確認は、飛ばします。
 
 ```mermaid
 flowchart TD
-    start(["リクエスト"]) --> token{"アクセストークンが有効か"}
-    token -- いいえ --> s401["401"]
-    token -- はい --> may{"操作者が実行できるか"}
-    may -- いいえ --> s403["403"]
-    may -- はい --> shape{"パスの ID、クエリ、本文が<br/>規則に合うか"}
-    shape -- いいえ --> s400["400"]
-    shape -- はい --> dates{"施術日と確認日が<br/>今日までか"}
-    dates -- いいえ --> s400
+    start(["共通の確認を通ったリクエスト"]) --> dates{"施術日と確認日が<br/>今日までか"}
+    dates -- いいえ --> s400["400"]
     dates -- はい --> exists{"顧客がいて、カルテや<br/>アレルギーがあるか"}
-    exists -- いいえ --> s404["404<br/>本文の customerId と<br/>クエリの cursor は 400"]
+    exists -- いいえ --> s404["404<br/>本文の customerId は 400"]
     exists -- はい --> twice{"顧客のカルテや、同じアレルゲンが<br/>すでにあるか"}
     twice -- はい --> s409["409"]
     twice -- いいえ --> done(["200、201、204"])
 ```
-
-- 権限のないユーザーには、ID や本文が不正でも、顧客がいなくても 403 です
-- パスの ID は、クエリや本文より先に確かめます
 
 ## 日付は今日まで
 
@@ -52,16 +43,12 @@ flowchart TD
 
 ## 規則に合わない値の答え
 
-値の形（型、文字数、件数、形式、定義にないプロパティ）の誤りは、どの API も同じコードで答えます（[Request validation](./uniform-implementation-guide.md#request-validation)）。そのほかの規則は、400 の `errors` に、次の `field` と `rule` で答えます。
+カルテとアレルギーの規則に合わない値は、400 の `errors` に、次の `field` と `rule` で入ります。
 
 | 誤り | `field` | `rule` |
 |---|---|---|
 | 施術日や確認日が、今日より後 | `previousTreatments.<n>.date`、`confirmedDate` | `too_big` |
-| 施術日や確認日が、1900-01-01 より前 | 同上 | `too_small` |
 | 商材の名前の 2 度目 | 2 度目の位置（`preferredProducts.<n>`、`avoidProducts.<n>`） | `custom` |
-| 更新する項目が 1 つもない | 空文字 | `custom` |
-| カルテの作成で、顧客がいない | `customerId` | `not_found` |
-| `cursor` が、一覧に載るものを指さない | `cursor` | `not_found` |
 
 ## 削除された顧客
 
@@ -75,8 +62,6 @@ flowchart TD
 - **カルテの作成とアレルギーの追加は、顧客の更新や削除が終わるのを待ちます。** 待った顧客が削除されていれば、顧客がいないときと同じ答えです
 - **同じ顧客のカルテの作成が同時に 2 件届くと、1 件が 201 で、もう 1 件は 409 です。** 同じアレルゲンの追加と、同じアレルゲンへの書き換えも同じで、先に確定した書き込みが通り、あとの書き込みは 409 です
 - **同じカルテ、同じアレルギーの更新は、1 件ずつ行います。** 違う項目の更新が同時に 2 件届くと、どちらの項目も残ります。同じ項目なら、あとの更新が残ります
-- **取得と一覧は、書き込みを待ちません。** 一覧のページと件数は、1 つの時点のものです。一覧の途中に書かれたものは、ページにも件数にも入りません
-- **`createdAt` と `updatedAt` は、書いた時刻です。** 待った書き込みは、待ったあとの時刻になります。作成したときの 2 つは、同じ時刻です
 
 ## 持たないもの
 
@@ -87,4 +72,4 @@ flowchart TD
 ## 関連
 
 - プロパティの意味と値の規則、オペレーションごとの権限と応答: コントラクト（`specs/models/treatment.tsp`、`specs/operations/treatment-operations.tsp` の `MedicalChartCrud`）
-- どの API にも共通の規則: [Uniform Implementation Guide](./uniform-implementation-guide.md)
+- どの API にも共通の規則: [API リファレンス](https://napzak5.github.io/typescript-backend-api-first-lesson/)

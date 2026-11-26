@@ -6,8 +6,7 @@ import type { ModelsAllergySeverityType } from './modelsAllergySeverityType';
 import type { ModelsAllergyType } from './modelsAllergyType';
 
 /**
- * 顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
- * DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
+ * 顧客アレルギー部分更新リクエスト - 対象の顧客は変更できない
  */
 export interface ModelsCustomerAllergyUpdateRequest {
   /** アレルギーの種類 */
@@ -30,7 +29,7 @@ export interface ModelsCustomerAllergyUpdateRequest {
      */
   notes?: string | null;
   /**
-     * アレルギーを確認した日。1900-01-01 から今日まで。nullでクリア
+     * アレルギーを確認した日。今日まで。nullでクリア
      * @nullable
      */
   confirmedDate?: string | null;

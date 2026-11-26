@@ -6,7 +6,7 @@ import type { ModelsAllergySeverityType } from './modelsAllergySeverityType';
 import type { ModelsAllergyType } from './modelsAllergyType';
 
 /**
- * 顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す
+ * 顧客アレルギー追加リクエスト - 対象の顧客はパスの customerId で示す
  */
 export interface ModelsCustomerAllergyCreateRequest {
   /** アレルギーの種類 */
@@ -29,7 +29,7 @@ export interface ModelsCustomerAllergyCreateRequest {
      */
   notes: string | null;
   /**
-     * アレルギーを確認した日。1900-01-01 から今日まで。確認日が不明な場合はnull
+     * アレルギーを確認した日。今日まで。確認日が不明な場合はnull
      * @nullable
      */
   confirmedDate: string | null;

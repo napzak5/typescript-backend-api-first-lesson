@@ -1625,7 +1625,7 @@ export interface paths {
         };
         /**
          * List medical charts
-         * @description 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
+         * @description 絞り込み条件とページネーションを指定してカルテを一覧取得します。作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。ページと件数は、同じ時点の値です。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。
          */
         get: operations["MedicalChartCrud_list"];
         put?: never;
@@ -1669,7 +1669,7 @@ export interface paths {
         };
         /**
          * List the allergies of a customer
-         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
+         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。ページと件数は、同じ時点の値です。顧客が存在しないか削除されている場合は404を返します。
          */
         get: operations["MedicalChartCrud_listAllergies"];
         put?: never;
@@ -1703,7 +1703,7 @@ export interface paths {
         head?: never;
         /**
          * Update an allergy of a customer
-         * @description 顧客のアレルギーの指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。
+         * @description 顧客のアレルギーを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。
          */
         patch: operations["MedicalChartCrud_updateAllergy"];
         trace?: never;
@@ -1723,7 +1723,7 @@ export interface paths {
         head?: never;
         /**
          * Update a medical chart
-         * @description 指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
+         * @description カルテを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
          */
         patch: operations["MedicalChartCrud_update"];
         trace?: never;
@@ -3902,7 +3902,7 @@ export interface components {
          * @description サービスカテゴリーの ID。
          */
         "Models.CategoryId": string;
-        /** @description 顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す */
+        /** @description 顧客アレルギー追加リクエスト - 対象の顧客はパスの customerId で示す */
         "Models.CustomerAllergyCreateRequest": {
             /** @description アレルギーの種類 */
             allergyType: components["schemas"]["Models.AllergyType"];
@@ -3916,7 +3916,7 @@ export interface components {
             notes: string | null;
             /**
              * Format: date
-             * @description アレルギーを確認した日。1900-01-01 から今日まで。確認日が不明な場合はnull
+             * @description アレルギーを確認した日。今日まで。確認日が不明な場合はnull
              */
             confirmedDate: string | null;
         };
@@ -3925,10 +3925,7 @@ export interface components {
          * @description 顧客のアレルギーの ID。
          */
         "Models.CustomerAllergyId": string;
-        /**
-         * @description 顧客アレルギーレスポンス - customer_allergies テーブルの1行。顧客ごとのアレルギー情報を返す。
-         *     プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
-         */
+        /** @description 顧客アレルギーレスポンス - 顧客のアレルギー1件を返す。対象の顧客はパスの customerId で示す */
         "Models.CustomerAllergyResponse": {
             /** @description アレルギー ID */
             id: components["schemas"]["Models.CustomerAllergyId"];
@@ -3958,10 +3955,7 @@ export interface components {
              */
             updatedAt: string;
         };
-        /**
-         * @description 顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-         *     DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
-         */
+        /** @description 顧客アレルギー部分更新リクエスト - 対象の顧客は変更できない */
         "Models.CustomerAllergyUpdateRequest": {
             /** @description アレルギーの種類 */
             allergyType?: components["schemas"]["Models.AllergyType"];
@@ -3975,7 +3969,7 @@ export interface components {
             notes?: string | null;
             /**
              * Format: date
-             * @description アレルギーを確認した日。1900-01-01 から今日まで。nullでクリア
+             * @description アレルギーを確認した日。今日まで。nullでクリア
              */
             confirmedDate?: string | null;
         };
@@ -5944,10 +5938,7 @@ export interface components {
          */
 
         "Models.LanguageType": "en" | "ja";
-        /**
-         * @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
-         *     好みの一覧と避ける一覧に、同じ名前があってもよい
-         */
+        /** @description カルテ新規作成リクエスト - 好みの一覧と避ける一覧に、同じ名前があってもよい */
         "Models.MedicalChartCreateRequest": {
             /** @description 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
             customerId: components["schemas"]["Models.CustomerId"];
@@ -5968,9 +5959,8 @@ export interface components {
          */
         "Models.MedicalChartId": string;
         /**
-         * @description カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
-         *     プロパティ名と null 許可は DB カラムと一致させている。
-         *     顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+         * @description カルテレスポンス - 顧客1人に1件で、施術の前に確認する情報を返す。
+         *     顧客のアレルギーはカルテとは別の記録で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
          *     medicalConditions はスタッフ向けの情報で、顧客には返さない
          */
         "Models.MedicalChartResponse": {
@@ -5999,10 +5989,7 @@ export interface components {
              */
             updatedAt: string;
         };
-        /**
-         * @description カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-         *     DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
-         */
+        /** @description カルテ部分更新リクエスト - 一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない */
         "Models.MedicalChartUpdateRequest": {
             /** @description 過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア */
             previousTreatments?: components["schemas"]["Models.PreviousTreatment"][];
@@ -6695,7 +6682,7 @@ export interface components {
             referenceId: string | null;
         };
         /**
-         * @description 過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する。
+         * @description 過去の施術 1 件。カルテの previousTreatments の要素。
          *     1 件ごとの ID は持たないので、更新は一覧全体を置き換える
          */
         "Models.PreviousTreatment": {
@@ -6703,7 +6690,7 @@ export interface components {
             treatment: components["schemas"]["Models.TreatmentType"];
             /**
              * Format: date
-             * @description 施術日。1900-01-01 から今日まで
+             * @description 施術日。今日まで
              */
             date: string;
             /** @description 施術を受けたサロンの名前（255文字まで。空白だけは指定できない）。自店での施術や、サロンが分からない場合はnull */
@@ -10166,7 +10153,7 @@ export interface components {
         "Models.InventoryValueReportRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル */
         "Models.MedicalChartSearchRequest.cursor": string;
-        /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
+        /** @description アレルギーの有無による絞り込み。trueの場合はアレルギーの記録がある顧客の、falseの場合は記録がない顧客のカルテに一致する */
         "Models.MedicalChartSearchRequest.hasAllergies": boolean;
         /** @description 1ページあたりの取得件数上限 */
         "Models.MedicalChartSearchRequest.limit": number;
@@ -21233,7 +21220,7 @@ export interface operations {
                 cursor?: components["parameters"]["Models.MedicalChartSearchRequest.cursor"];
                 /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない */
                 search?: components["parameters"]["Models.MedicalChartSearchRequest.search"];
-                /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
+                /** @description アレルギーの有無による絞り込み。trueの場合はアレルギーの記録がある顧客の、falseの場合は記録がない顧客のカルテに一致する */
                 hasAllergies?: components["parameters"]["Models.MedicalChartSearchRequest.hasAllergies"];
             };
             header?: never;

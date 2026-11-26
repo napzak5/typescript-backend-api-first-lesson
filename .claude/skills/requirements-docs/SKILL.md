@@ -12,18 +12,33 @@ copy is the one that goes out of date.
 
 | Fact | Place |
 |------|-------|
-| A length, a count, a range, the values of an enum, a status code | A decorator or a type of TypeSpec |
+| A length, a count, a range, a default, the values of an enum, a status code | A decorator or a type of TypeSpec |
 | What a property means, what `null` means | The `@doc` of the property |
 | Who may call an operation, when it answers which status, the order and the filters of a list | The `@doc` of the operation |
-| A rule across operations, and its reason | `docs/<domain>.md` |
+| What a group of operations is | The description of its tag (`@tagMetadata` in `specs/main.tsp`), which names the document of the domain |
+| A rule every operation shares | The description of the service (the `@doc` of the namespace `BeautySalon` in `specs/main.tsp`), and the `@doc`s of the shared models (`specs/models/_shared/`) |
+| A rule across the operations of a domain, and its reason | `docs/<domain>.md` |
 | How something is built | A skill |
 | Why a piece of code is as it is | A comment at that code |
 | What happened: a migration, a former contract, a decision of the past | The history of Git |
 
-- A rule that a decorator can state is a decorator, not a sentence.
+- A rule that a decorator can state is a decorator, not a sentence, and no sentence says it again.
 - A reason stands beside its rule: that of a rule of one property or one operation in its `@doc`, that of a principle of the domain (who handles it, what belongs to what) in the document.
 - What several operations share is written on the first, and the others name it (`実行できるのは、カルテの一覧と同じ利用者です`).
-- The `@doc` of an operation, of a property and of a model reaches `openapi.yaml`, the API client and the backend types. The `@doc` of a namespace does not, nor that of a model that is spread into the parameters of an operation (a search request): what a reader of the API needs is written on the operation.
+- What every operation shares is said by the description of the service alone. Neither a `@doc` nor a document repeats it; an operation says where it differs.
+
+## The texts of the contract
+
+A `@doc` says what a client of the API observes, in Japanese. It reaches
+`openapi.yaml`, the API reference (`pnpm build:api-reference`), the API
+client and the backend types.
+
+- It names no table, column, constraint, transaction or lock, and says nothing about what is implemented or what was changed.
+- A namespace and an interface of operations carry no `@doc`: it reaches no generated file. What the group is belongs to its tag; who may call and what is answered, to each operation.
+- The `@doc` of a model that is spread into the parameters of an operation (a search request) reaches no generated file either: it only names the operation that says the order of the list.
+- A tag is declared in `specs/main.tsp`, in the place the API reference lists it at, with one sentence and the link to the document of its domain.
+- The description of the service is Markdown: its headings are the entries of the menu of the API reference. A diagram is not drawn there; it is in a document.
+- After a change of texts alone, the generated files differ in descriptions and comments only.
 
 ## The document of a domain
 
@@ -36,9 +51,9 @@ say one thing each, and it has only the sections it has something to say in:
 | The opening | What the thing is, in a few sentences |
 | 何をどこに持つか | What belongs to what, as an `erDiagram`, and what is kept elsewhere |
 | 誰が扱えるか | The principle and its reason. The roles of each operation are in the contract |
-| 確認の順序 | One `flowchart` for the domain: what is checked first, and the status of each check |
+| 確認の順序 | One `flowchart` for the domain: what is checked after the checks every operation shares, in which order, and the status of each check. Where the domain departs from the shared order, it says so |
 | A rule of its own (日付は今日まで) | A rule that several properties or operations share |
-| 規則に合わない値の答え | The `field` and the `rule` of the refusals that are not about the form of a value |
+| 規則に合わない値の答え | The `field` and the `rule` of the refusals of the domain's own rules. The refusals every operation shares are not listed |
 | 削除された…、同時に届いたリクエスト | What a client observes, not how it is done |
 | 持たないもの | What is deliberately not there, and what stands in for it |
 | 関連 | Where the contract of the domain is, and the documents it relies on, as a list |
@@ -51,7 +66,7 @@ It leaves out:
 - the seed data, and which operations are implemented
 - what the contract was before
 - the texts of error messages (they are messages of `shared-i18n`)
-- what every API does alike (it is written once, in a shared document)
+- what every operation does alike (the description of the service says it)
 
 ## Diagrams
 
@@ -62,10 +77,11 @@ diagram and look at it before it is committed.
 ## Moving a document to this form
 
 1. Take each statement of the document in turn:
-   - the contract says it: delete it from the document
+   - the contract says it, in a decorator, a `@doc` or the description of the service: delete it from the document
    - it is a rule of one property or one operation that the contract lacks: add it to the `@doc`, then `pnpm generate`
    - it is a rule across operations: keep it, with its reason
    - it is none of these: delete it. If it is a reason for code, make sure a comment at that code says it
 2. Check a statement you keep against the tests, not against the old text.
-3. Keep the headings that other documents link to, and update the entry in `docs/README.md`.
-4. Run `pnpm generate` and `pnpm format:check`.
+3. Clean the `@doc`s of the domain by "The texts of the contract", and move what the `@doc` of its namespace says before removing it.
+4. Keep the headings that other documents link to, and update the entry in `docs/README.md`.
+5. Run `pnpm generate` and `pnpm format:check`, and read the texts in the API reference (`pnpm build:api-reference`).

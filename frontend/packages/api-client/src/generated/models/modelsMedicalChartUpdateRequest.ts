@@ -5,8 +5,7 @@
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
- * DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
+ * カルテ部分更新リクエスト - 一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
  */
 export interface ModelsMedicalChartUpdateRequest {
   /**

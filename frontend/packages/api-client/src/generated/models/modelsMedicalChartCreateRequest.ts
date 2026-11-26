@@ -6,8 +6,7 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
- * 好みの一覧と避ける一覧に、同じ名前があってもよい
+ * カルテ新規作成リクエスト - 好みの一覧と避ける一覧に、同じ名前があってもよい
  */
 export interface ModelsMedicalChartCreateRequest {
   /** 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */

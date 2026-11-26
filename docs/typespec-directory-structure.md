@@ -116,10 +116,23 @@ import "./operations/salon-operations.tsp";
 @server("https://api-staging.beauty-salon.com", "Staging API Server")
 @server("http://localhost:3000", "Local Development Server")
 @useAuth(BearerAuth)
+@tagMetadata(#[
+  #{
+    name: "System",
+    description: "稼働の監視に使うオペレーションです。…",
+  },
+  // ...
+])
+@doc("""
+  美容サロンの店舗、スタッフ、メニュー、顧客、予約、会計、在庫、施術の記録を扱う API です。
+  ...
+  """)
 namespace BeautySalon {
 ```
 
-`models/_shared/common.tsp` は各モデルファイルが import するので、`main.tsp` には書かれていない。
+- `@tagMetadata` には、すべてのタグを、API リファレンスに並べる順に書く。タグごとに、何のオペレーションかの 1 文と、領域の要件の文書へのリンク（`externalDocs`）を付ける
+- `@doc` はサービスの説明（OpenAPI の `info.description`）で、どのオペレーションにも共通の規則を書く。API リファレンスの最初のページになる
+- `models/_shared/common.tsp` は各モデルファイルが import するので、`main.tsp` には書かれていない
 
 ### `models/_shared/`
 

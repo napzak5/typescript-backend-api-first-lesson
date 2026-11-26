@@ -7,9 +7,8 @@ import type { ModelsMedicalChartId } from './modelsMedicalChartId';
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
- * プロパティ名と null 許可は DB カラムと一致させている。
- * 顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+ * カルテレスポンス - 顧客1人に1件で、施術の前に確認する情報を返す。
+ * 顧客のアレルギーはカルテとは別の記録で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
  * medicalConditions はスタッフ向けの情報で、顧客には返さない
  */
 export interface ModelsMedicalChartResponse {

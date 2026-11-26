@@ -7,8 +7,7 @@ import type { ModelsAllergyType } from './modelsAllergyType';
 import type { ModelsCustomerAllergyId } from './modelsCustomerAllergyId';
 
 /**
- * 顧客アレルギーレスポンス - customer_allergies テーブルの1行。顧客ごとのアレルギー情報を返す。
- * プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
+ * 顧客アレルギーレスポンス - 顧客のアレルギー1件を返す。対象の顧客はパスの customerId で示す
  */
 export interface ModelsCustomerAllergyResponse {
   /** アレルギー ID */
