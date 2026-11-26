@@ -57,8 +57,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
-    プロパティ名と null 許可は DB カラムと一致させている。
+    商品レスポンス - サロンが店頭で売る、または施術で使う商品1件を表す。
     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
     """)
   model ProductResponse {
@@ -148,12 +147,12 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-    商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+    商品新規登録リクエスト - 商品を持つサロンはパスの salonId で指定する。
+    文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
     """)
   model ProductCreateRequest {
-    @doc("商品コード。サロンの削除されていない商品の間で一意")
+    @doc("商品コード。サロンの削除されていない商品の間で一意(取り扱いをやめた商品のコードも重複になる)。大文字と小文字は区別する")
     @minLength(1)
     @maxLength(100)
     productCode: string;
@@ -218,7 +217,7 @@ namespace BeautySalon.Models {
     @minValue(0)
     leadTimeDays: int32 | null;
 
-    @doc("商品画像の URL(http または https)。未設定の場合はnull")
+    @doc("商品画像の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull")
     @maxLength(500)
     imageUrl: string | null;
 
@@ -242,7 +241,7 @@ namespace BeautySalon.Models {
     @doc("保管条件。未設定の場合はnull")
     storageConditions: string | null;
 
-    @doc("安全データシート(SDS)の URL(http または https)。未設定の場合はnull")
+    @doc("安全データシート(SDS)の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull")
     @maxLength(500)
     safetyDataSheet: string | null;
 
@@ -251,12 +250,12 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-    DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+    商品部分更新リクエスト - 商品を持つサロンは変更できない。
+    文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
     在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
     """)
   model ProductUpdateRequest {
-    @doc("商品コード。サロンの削除されていない商品の間で一意")
+    @doc("商品コード。サロンの削除されていない、ほかの商品と重複できない(比べ方は登録と同じ)。その商品がいま持つコードは指定できる")
     @minLength(1)
     @maxLength(100)
     productCode?: string;
@@ -321,7 +320,7 @@ namespace BeautySalon.Models {
     @minValue(0)
     leadTimeDays?: int32 | null;
 
-    @doc("商品画像の URL(http または https)。nullでクリア")
+    @doc("商品画像の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア")
     @maxLength(500)
     imageUrl?: string | null;
 
@@ -335,7 +334,7 @@ namespace BeautySalon.Models {
     @doc("施術で使う商品か")
     isForTreatment?: boolean;
 
-    @doc("在庫をロット番号で分けて管理するか")
+    @doc("在庫をロット番号で分けて管理するか。在庫のある商品でも変更でき、すでにある在庫のロット番号は変わらない")
     requiresLotTracking?: boolean;
 
     @doc("使用期限までの月数の目安。nullでクリア")
@@ -345,7 +344,7 @@ namespace BeautySalon.Models {
     @doc("保管条件。nullでクリア")
     storageConditions?: string | null;
 
-    @doc("安全データシート(SDS)の URL(http または https)。nullでクリア")
+    @doc("安全データシート(SDS)の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア")
     @maxLength(500)
     safetyDataSheet?: string | null;
 
@@ -353,9 +352,7 @@ namespace BeautySalon.Models {
     isActive?: boolean;
   }
 
-  @doc("""
-    商品一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
-    """)
+  @doc("商品一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。並びは list に書く")
   model ProductSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限")
@@ -368,19 +365,19 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
-    @doc("商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)")
+    @doc("商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない。% と _ は、ただの文字として扱う。空白だけは指定できない)")
     @minLength(1)
     @maxLength(100)
     keyword?: string;
 
     @query
-    @doc("商品カテゴリによる絞り込み(完全一致)")
+    @doc("商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない)")
     @minLength(1)
     @maxLength(100)
     category?: string;
 
     @query
-    @doc("バーコードによる絞り込み(完全一致)")
+    @doc("バーコードによる絞り込み(完全一致。空白だけは指定できない)")
     @minLength(1)
     @maxLength(100)
     barcode?: string;

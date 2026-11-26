@@ -4,6 +4,6 @@
  */
 
 /**
- * 商品カテゴリによる絞り込み(完全一致)
+ * 商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない)
  */
 export type ModelsProductSearchRequestCategoryParameter = string;

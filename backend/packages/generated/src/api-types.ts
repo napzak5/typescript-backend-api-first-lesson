@@ -2569,13 +2569,13 @@ export interface paths {
         };
         /**
          * List products
-         * @description サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+         * @description サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
          */
         get: operations["ProductCrud_list"];
         put?: never;
         /**
          * Create product
-         * @description サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+         * @description サロンに商品を登録します。実行できるのは admin と、パスのサロンの owner / manager です(staff には403を返します)。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は、商品とは別に登録します。
          */
         post: operations["ProductCrud_create"];
         delete?: never;
@@ -2593,21 +2593,21 @@ export interface paths {
         };
         /**
          * Get product
-         * @description サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+         * @description サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
          */
         get: operations["ProductCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete product
-         * @description 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+         * @description 商品を削除します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も削除できます。在庫のある商品は削除できず、409を返します。数量が0の在庫も、ロットや保管場所の記録なので、在庫に数えます。先に在庫を削除するか、削除せずに isActive を false にして取り扱いをやめます。削除した商品の商品コードは、ほかの商品に使えます。
          */
         delete: operations["ProductCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update product
-         * @description 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+         * @description 商品を更新します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も、在庫のある商品も更新できます。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode が、サロンの削除されていないほかの商品と重複する場合は409を返します。値が変わらない更新でも、updatedAt は更新した時刻になります。
          */
         patch: operations["ProductCrud_update"];
         trace?: never;
@@ -6759,12 +6759,12 @@ export interface components {
             timestamp: string;
         };
         /**
-         * @description 商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-         *     商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+         * @description 商品新規登録リクエスト - 商品を持つサロンはパスの salonId で指定する。
+         *     文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
          *     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
          */
         "Models.ProductCreateRequest": {
-            /** @description 商品コード。サロンの削除されていない商品の間で一意 */
+            /** @description 商品コード。サロンの削除されていない商品の間で一意(取り扱いをやめた商品のコードも重複になる)。大文字と小文字は区別する */
             productCode: string;
             /** @description 商品名 */
             name: string;
@@ -6815,7 +6815,7 @@ export interface components {
              * @description 発注から納品までの日数。未設定の場合はnull
              */
             leadTimeDays: number | null;
-            /** @description 商品画像の URL(http または https)。未設定の場合はnull */
+            /** @description 商品画像の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull */
             imageUrl: string | null;
             /** @description バーコード。未設定の場合はnull */
             barcode: string | null;
@@ -6832,7 +6832,7 @@ export interface components {
             expiryMonths: number | null;
             /** @description 保管条件。未設定の場合はnull */
             storageConditions: string | null;
-            /** @description 安全データシート(SDS)の URL(http または https)。未設定の場合はnull */
+            /** @description 安全データシート(SDS)の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull */
             safetyDataSheet: string | null;
             /** @description 取り扱い中か */
             isActive: boolean;
@@ -6843,8 +6843,7 @@ export interface components {
          */
         "Models.ProductId": string;
         /**
-         * @description 商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
-         *     プロパティ名と null 許可は DB カラムと一致させている。
+         * @description 商品レスポンス - サロンが店頭で売る、または施術で使う商品1件を表す。
          *     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
          */
         "Models.ProductResponse": {
@@ -6936,12 +6935,12 @@ export interface components {
             updatedAt: string;
         };
         /**
-         * @description 商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-         *     DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+         * @description 商品部分更新リクエスト - 商品を持つサロンは変更できない。
+         *     文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
          *     在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
          */
         "Models.ProductUpdateRequest": {
-            /** @description 商品コード。サロンの削除されていない商品の間で一意 */
+            /** @description 商品コード。サロンの削除されていない、ほかの商品と重複できない(比べ方は登録と同じ)。その商品がいま持つコードは指定できる */
             productCode?: string;
             /** @description 商品名 */
             name?: string;
@@ -6992,7 +6991,7 @@ export interface components {
              * @description 発注から納品までの日数。nullでクリア
              */
             leadTimeDays?: number | null;
-            /** @description 商品画像の URL(http または https)。nullでクリア */
+            /** @description 商品画像の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア */
             imageUrl?: string | null;
             /** @description バーコード。nullでクリア */
             barcode?: string | null;
@@ -7000,7 +6999,7 @@ export interface components {
             isForSale?: boolean;
             /** @description 施術で使う商品か */
             isForTreatment?: boolean;
-            /** @description 在庫をロット番号で分けて管理するか */
+            /** @description 在庫をロット番号で分けて管理するか。在庫のある商品でも変更でき、すでにある在庫のロット番号は変わらない */
             requiresLotTracking?: boolean;
             /**
              * Format: int32
@@ -7009,7 +7008,7 @@ export interface components {
             expiryMonths?: number | null;
             /** @description 保管条件。nullでクリア */
             storageConditions?: string | null;
-            /** @description 安全データシート(SDS)の URL(http または https)。nullでクリア */
+            /** @description 安全データシート(SDS)の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア */
             safetyDataSheet?: string | null;
             /** @description 取り扱い中か */
             isActive?: boolean;
@@ -10175,9 +10174,9 @@ export interface components {
         "Models.PointTransactionSearchRequest.limit": number;
         /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.startDate": string;
-        /** @description バーコードによる絞り込み(完全一致) */
+        /** @description バーコードによる絞り込み(完全一致。空白だけは指定できない) */
         "Models.ProductSearchRequest.barcode": string;
-        /** @description 商品カテゴリによる絞り込み(完全一致) */
+        /** @description 商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない) */
         "Models.ProductSearchRequest.category": string;
         /** @description 取得開始位置を示すカーソル */
         "Models.ProductSearchRequest.cursor": string;
@@ -10187,7 +10186,7 @@ export interface components {
         "Models.ProductSearchRequest.isForSale": boolean;
         /** @description 施術で使う商品かどうかによる絞り込み */
         "Models.ProductSearchRequest.isForTreatment": boolean;
-        /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
+        /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない。% と _ は、ただの文字として扱う。空白だけは指定できない) */
         "Models.ProductSearchRequest.keyword": string;
         /** @description 1ページあたりの取得件数上限 */
         "Models.ProductSearchRequest.limit": number;
@@ -28369,11 +28368,11 @@ export interface operations {
                 limit?: components["parameters"]["Models.ProductSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.ProductSearchRequest.cursor"];
-                /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
+                /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない。% と _ は、ただの文字として扱う。空白だけは指定できない) */
                 keyword?: components["parameters"]["Models.ProductSearchRequest.keyword"];
-                /** @description 商品カテゴリによる絞り込み(完全一致) */
+                /** @description 商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない) */
                 category?: components["parameters"]["Models.ProductSearchRequest.category"];
-                /** @description バーコードによる絞り込み(完全一致) */
+                /** @description バーコードによる絞り込み(完全一致。空白だけは指定できない) */
                 barcode?: components["parameters"]["Models.ProductSearchRequest.barcode"];
                 /** @description 取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す */
                 isActive?: components["parameters"]["Models.ProductSearchRequest.isActive"];

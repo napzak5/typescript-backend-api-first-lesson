@@ -21,19 +21,19 @@ export type ProductCrudListParams = {
   /** 取得開始位置を示すカーソル */
   cursor?: ModelsProductSearchRequestCursorParameter;
   /**
-   * 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)
+   * 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない。% と _ は、ただの文字として扱う。空白だけは指定できない)
    * @minLength 1
    * @maxLength 100
    */
   keyword?: ModelsProductSearchRequestKeywordParameter;
   /**
-   * 商品カテゴリによる絞り込み(完全一致)
+   * 商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない)
    * @minLength 1
    * @maxLength 100
    */
   category?: ModelsProductSearchRequestCategoryParameter;
   /**
-   * バーコードによる絞り込み(完全一致)
+   * バーコードによる絞り込み(完全一致。空白だけは指定できない)
    * @minLength 1
    * @maxLength 100
    */

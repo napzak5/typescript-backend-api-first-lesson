@@ -11,12 +11,11 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("サロンが店頭で売る、または施術で使う商品の台帳(products)を登録・取得・更新・削除するAPI操作群です。ここに定義した操作はすべて実装済みで、定義と実装は一致しています。一覧と1件の取得は admin と、そのサロンの owner / manager / staff が実行できます。登録・更新・削除は admin と、そのサロンの owner / manager が実行できます。それ以外のアカウント(ほかのサロンのメンバー、顧客)には、パスの salonId だけで判断して403を返します。商品は仕入価格と仕入先を持つので、顧客には公開しません。サロンが存在しない場合は404を返します。ほかのサロンの商品と削除済みの商品は、存在しない商品と同じく404を返します。")
   @route("/api/v1/salons/{salonId}/products")
   @tag("Products")
   namespace ProductOperations {
     interface ProductCrud {
-      @doc("サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。")
+      @doc("サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。")
       @summary("List products")
       @get
       list(@path salonId: SalonId, ...ProductSearchRequest):
@@ -28,7 +27,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。")
+      @doc("サロンに商品を登録します。実行できるのは admin と、パスのサロンの owner / manager です(staff には403を返します)。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は、商品とは別に登録します。")
       @summary("Create product")
       @post
       create(@path salonId: SalonId, @body request: ProductCreateRequest):
@@ -43,7 +42,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。")
+      @doc("サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。")
       @summary("Get product")
       @get
       get(@path salonId: SalonId, @path id: ProductId):
@@ -55,7 +54,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。")
+      @doc("商品を更新します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も、在庫のある商品も更新できます。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode が、サロンの削除されていないほかの商品と重複する場合は409を返します。値が変わらない更新でも、updatedAt は更新した時刻になります。")
       @summary("Update product")
       @patch
       update(
@@ -73,7 +72,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。")
+      @doc("商品を削除します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も削除できます。在庫のある商品は削除できず、409を返します。数量が0の在庫も、ロットや保管場所の記録なので、在庫に数えます。先に在庫を削除するか、削除せずに isActive を false にして取り扱いをやめます。削除した商品の商品コードは、ほかの商品に使えます。")
       @summary("Delete product")
       @delete
       delete(@path salonId: SalonId, @path id: ProductId):
