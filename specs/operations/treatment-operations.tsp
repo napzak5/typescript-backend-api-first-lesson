@@ -127,7 +127,6 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("顧客ごとのカルテと、施術時に確認するアレルギー情報を扱うAPI操作群です。")
   @route("/api/v1/medical-charts")
   @tag("Medical Charts")
   namespace MedicalChartOperations {

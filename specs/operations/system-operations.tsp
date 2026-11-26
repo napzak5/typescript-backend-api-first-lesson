@@ -10,7 +10,6 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("システム全体の状態監視やデプロイ確認に利用する運用系API操作群です。監視ツールやオーケストレーターが呼び出すため、認証は不要です。")
   @route("/api/system")
   @tag("System")
   @useAuth(NoAuth)
