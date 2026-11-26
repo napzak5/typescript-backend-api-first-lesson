@@ -58,6 +58,7 @@ reasons.
 - [Cleanup Policy](./cleanup-policy.md) - YAGNI in practice and the tools that enforce it
 
 ## 🏗️ Type Generation & API
+- [API Reference](https://napzak5.github.io/typescript-backend-api-first-lesson/) - Every operation and model of the contract, as a page built from the OpenAPI document
 - [Type Generation System](./type-generation-system.md) - TypeSpec → OpenAPI → TypeScript pipeline
 - [**TypeSpec API Type Rules**](./typespec-api-type-rules.md) - Model naming, required / optional / nullable rules
 - [TypeSpec Directory Structure](./typespec-directory-structure.md) - How `specs/` is organized

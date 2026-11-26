@@ -24,6 +24,7 @@
 | lint・型チェック・テストなどの品質チェック | されている | `.github/workflows/ci.yml` |
 | プルリクエストでのイメージのビルドと起動確認 | されている | `.github/workflows/docker-validation.yml` |
 | イメージのビルドとレジストリへの push | されている | `.github/workflows/publish-images.yml`（`ci.yml` から呼び出すか、手動で実行する） |
+| API リファレンスのページの公開 | されている | `.github/workflows/api-reference.yml` |
 | デプロイ先の環境変数の設定 | されていない | 運用者 |
 | データベースのマイグレーション | されていない | 運用者が `pnpm db:migrate` を実行する |
 | イメージのデプロイ先への展開 | されていない | 運用者 |
@@ -163,6 +164,19 @@ staging 向け（`BUILD_SCRIPT=build:stg`）は admin で確認します。イ�
 
 以前のワークフローが push していた `main`、`main-<短縮 SHA>`、`latest` のタグは、更新されなくなりました。
 レジストリに残っているこれらのタグは、古いコミットのイメージです。
+
+### API Reference（`.github/workflows/api-reference.yml`）
+
+コミット済みの OpenAPI ドキュメントを 1 つのページにビルドし、GitHub Pages に公開します
+（[API リファレンス](https://napzak5.github.io/typescript-backend-api-first-lesson/)）。
+
+- **きっかけ**: `main` への push のうち、`specs/`、ロックファイル、このワークフローのどれかを変えるもの。
+  または手動実行
+- **実行環境**: 公開のジョブは、GitHub Environment の `github-pages` で動く
+- **同時実行**: 公開は、同時に 1 つだけ実行する。待っている実行は、あとから来た実行に置き換えられる
+
+CI のチェックは待ちません。OpenAPI ドキュメントがコントラクトと合っていることは、プルリクエストの
+`pnpm check:generated` が確かめています。
 
 ## リリースの流れ
 

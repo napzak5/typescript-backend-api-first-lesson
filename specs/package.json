@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "compile": "tsp compile .",
+    "build:api-reference": "redocly build-docs tsp-output/@typespec/openapi3/generated/openapi.yaml --output dist/api-reference/index.html --inlineBundle",
     "format": "tsp format \"**/*.tsp\"",
-    "format:check": "tsp format --check \"**/*.tsp\""
+    "format:check": "tsp format --check \"**/*.tsp\"",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@redocly/cli": "2.83.0",
     "@typespec/compiler": "1.18.0",
     "@typespec/http": "1.18.0",
     "@typespec/openapi": "1.18.0",

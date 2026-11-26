@@ -32,6 +32,7 @@ specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
 | `pnpm generate:backend` | The `generate` script of `@beauty-salon-backend/generated` | `backend/packages/generated/src/` |
 | `pnpm generate:watch` | `scripts/generate-watch.ts` | Runs `pnpm generate` once, then again after every change to a `.tsp` file under `specs/` |
 | `pnpm check:generated` | `pnpm generate`, then `scripts/check-clean.ts` | Fails when the generated files differ from what is committed |
+| `pnpm build:api-reference` | The `build:api-reference` script of `@beauty-salon/specs` (Redocly CLI) | `specs/dist/api-reference/index.html`: the OpenAPI document as one page. It is not committed |
 
 `make generate` runs `pnpm generate`.
 

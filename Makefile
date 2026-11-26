@@ -112,6 +112,7 @@ ci-check: ## Run the checks of the CI workflow (all but db-check, which recreate
 	pnpm build:prod
 	pnpm typecheck
 	pnpm knip
+	pnpm build:api-reference
 	pnpm test:coverage
 	pnpm test:e2e
 	pnpm audit --audit-level=high
