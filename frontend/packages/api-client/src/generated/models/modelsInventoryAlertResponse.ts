@@ -9,9 +9,8 @@ import type { ModelsProductId } from './modelsProductId';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 在庫アラート - 商品、在庫の行、在庫の移動から、読むたびに求める。保存するのは確認の記録(inventory_alert_acknowledgements テーブル)だけ。
- * 商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、在庫の行のアラート(expiring・expired)は、取り扱いをやめた商品の行も含めて在庫の行ごとに、1件ずつ出る。
- * 確認は、確認したときの状態が続くあいだだけ有効で、次の場合は未確認に戻る。商品のアラートでは、確認したとき以後に在庫の和が条件を外れたか、重要度が確認したときより重くなったか、閾値が確認したときと違う場合。在庫の行のアラートでは、確認のあとに行の在庫が0になったか、使用期限が確認したときと違うか、重要度が確認したときより重い場合
+ * 在庫アラート - 今出ているアラート1件を表す。読むたびに、商品、在庫の行、在庫の移動から求める。ID はなく、アラート種別と、何についてか(商品のアラートでは商品、在庫の行のアラートでは在庫の行)で決まる。
+ * 商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、どちらか1件まで出る(最低在庫数は最大在庫数以下なので、両方は出ない)。在庫の行のアラート(expiring・expired)は、在庫の行ごとに、どちらか1件まで出る。在庫があれば使うか捨てるので、取り扱いをやめた商品の行にも出る
  */
 export interface ModelsInventoryAlertResponse {
   /** アラート種別 */
@@ -20,7 +19,7 @@ export interface ModelsInventoryAlertResponse {
   severity: ModelsInventoryAlertSeverityType;
   /** サロン ID */
   salonId: ModelsSalonId;
-  /** 商品 ID */
+  /** 商品 ID。在庫の行のアラートでは、その行の商品 */
   productId: ModelsProductId;
   /** 商品コード */
   productCode: string;
@@ -51,7 +50,7 @@ export interface ModelsInventoryAlertResponse {
      */
   threshold: number | null;
   /**
-     * 今も有効な確認の記録。未確認の場合は null
+     * 今も有効な確認の記録。有効かどうかは、そのアラートの最新の確認で決まる。未確認の場合は null
      * @nullable
      */
   acknowledgement: ModelsInventoryAlertAcknowledgementResponse | null;

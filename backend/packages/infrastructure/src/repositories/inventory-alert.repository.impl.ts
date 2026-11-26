@@ -238,7 +238,12 @@ const acknowledgementsOf = async (
  * since. The stock after a moment is the stock now less what the movements
  * of the later moments brought, and the stock at the time of the
  * acknowledgement the stock now less what every movement since brought:
- * worked out of the movements, exactly, in `numeric`.
+ * worked out of the movements, exactly, in `numeric`. The movements of one
+ * moment are one change: a stock count writes several rows at one time,
+ * and what it moves between them does not change the stock of the
+ * product. The movements tell every change: nothing else changes the
+ * stock, and a row is created without stock and deleted only without
+ * stock.
  */
 const productStockSince = async (
   tx: DatabaseExecutor,

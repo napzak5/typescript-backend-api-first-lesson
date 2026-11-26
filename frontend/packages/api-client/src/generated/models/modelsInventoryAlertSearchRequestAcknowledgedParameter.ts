@@ -4,6 +4,6 @@
  */
 
 /**
- * 確認済みかどうかによる絞り込み
+ * 確認済みかどうかによる絞り込み。trueの場合は有効な確認があるアラートに、falseの場合は有効な確認がないアラートに一致する
  */
 export type ModelsInventoryAlertSearchRequestAcknowledgedParameter = boolean;

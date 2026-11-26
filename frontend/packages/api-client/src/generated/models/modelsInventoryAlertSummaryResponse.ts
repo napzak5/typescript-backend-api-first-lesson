@@ -15,6 +15,6 @@ export interface ModelsInventoryAlertSummaryResponse {
   warningAlerts: number;
   /** 重要度 info のアラート数 */
   infoAlerts: number;
-  /** 未確認のアラート数 */
+  /** 未確認(有効な確認がない)のアラート数 */
   unacknowledged: number;
 }

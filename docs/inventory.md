@@ -420,7 +420,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 違反する在庫の移動があると、マイグレーションは失敗し、何も変えません。どのカラムが誤りかは決められないので、記録を直してから、やり直します。マイグレーションは、何度適用しても同じ結果です（開始の在庫移動は、在庫数が違う行にだけ記録します）。以前のバージョンは、在庫の移動を書かず、在庫数も変えないので、マイグレーションを適用したあとも動きます。
 
-マイグレーション `202611171700_inventory_alert_acknowledgements.sql` は、在庫の移動の商品だけのインデックス `idx_inventory_transactions_product_id` を、`idx_inventory_transactions_product_time`（`productId`、`createdAt`）に置き換えました。在庫のアラートが、確認してからの商品の在庫の移動を読むためのものです（[在庫のアラート](./inventory-alerts.md#db-の制約)）。
+マイグレーション `202611171700_inventory_alert_acknowledgements.sql` は、在庫の移動の商品だけのインデックス `idx_inventory_transactions_product_id` を、`idx_inventory_transactions_product_time`（`productId`、`createdAt`）に置き換えました。在庫のアラートが、確認してからの商品の在庫の移動を読むためのものです（[在庫のアラート](./inventory-alerts.md)）。
 
 在庫の行は、外部キーで、サロン（`inventory_salon_id_fk`）と商品（`inventory_product_id_fk`）を指します。どちらも `ON DELETE CASCADE` です。API のサロンと商品の削除は、行を残す論理削除です。在庫の移動の記録は、外部キー（`inventory_transactions_inventory_id_fk`。`ON DELETE SET NULL`）で在庫の行を指します。`lastCountedBy` は、外部キーのない UUID です。
 

@@ -32,7 +32,7 @@ namespace BeautySalon.Models {
     low_stock: 在庫僅少 - 取り扱い中の商品の、サロンにある在庫の和が最低在庫数(minimumStock)以下の状態
     expiring: 期限間近 - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日から30日後まで(両端を含む)の状態
     expired: 期限切れ - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日より前の状態
-    overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
+    overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態。最大在庫数のない商品には発生しない
     """)
   enum InventoryAlertType {
     low_stock,
@@ -1104,8 +1104,8 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    在庫アラートの確認レスポンス - inventory_alert_acknowledgements テーブルの全カラムを返す。1行はアラートを1回確認した記録で、作成後は変更されない。
-    プロパティ名と null 許可は DB カラムと一致させている。商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
+    在庫アラートの確認レスポンス - アラートを1回確認した記録1件を表す。作成後は変更されず、同じアラートを確認し直すと新しい記録ができる。
+    商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
     """)
   model InventoryAlertAcknowledgementResponse {
     @doc("確認の記録 ID")
@@ -1135,7 +1135,7 @@ namespace BeautySalon.Models {
     @doc("確認時のメモ。メモがない場合はnull")
     notes: string | null;
 
-    @doc("確認したスタッフ ID。管理者が確認した場合は null")
+    @doc("確認したスタッフ ID。管理者はサロンのスタッフではないので、管理者が確認した場合は null")
     acknowledgedBy: StaffId | null;
 
     @doc("確認日時")
@@ -1143,9 +1143,8 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    在庫アラート - 商品、在庫の行、在庫の移動から、読むたびに求める。保存するのは確認の記録(inventory_alert_acknowledgements テーブル)だけ。
-    商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、在庫の行のアラート(expiring・expired)は、取り扱いをやめた商品の行も含めて在庫の行ごとに、1件ずつ出る。
-    確認は、確認したときの状態が続くあいだだけ有効で、次の場合は未確認に戻る。商品のアラートでは、確認したとき以後に在庫の和が条件を外れたか、重要度が確認したときより重くなったか、閾値が確認したときと違う場合。在庫の行のアラートでは、確認のあとに行の在庫が0になったか、使用期限が確認したときと違うか、重要度が確認したときより重い場合
+    在庫アラート - 今出ているアラート1件を表す。読むたびに、商品、在庫の行、在庫の移動から求める。ID はなく、アラート種別と、何についてか(商品のアラートでは商品、在庫の行のアラートでは在庫の行)で決まる。
+    商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、どちらか1件まで出る(最低在庫数は最大在庫数以下なので、両方は出ない)。在庫の行のアラート(expiring・expired)は、在庫の行ごとに、どちらか1件まで出る。在庫があれば使うか捨てるので、取り扱いをやめた商品の行にも出る
     """)
   model InventoryAlertResponse {
     @doc("アラート種別")
@@ -1157,7 +1156,7 @@ namespace BeautySalon.Models {
     @doc("サロン ID")
     salonId: SalonId;
 
-    @doc("商品 ID")
+    @doc("商品 ID。在庫の行のアラートでは、その行の商品")
     productId: ProductId;
 
     @doc("商品コード")
@@ -1184,14 +1183,11 @@ namespace BeautySalon.Models {
     @doc("判定に使った閾値。low_stock では minimumStock、overstock では maximumStock。在庫の行のアラートでは null")
     threshold: float64 | null;
 
-    @doc("今も有効な確認の記録。未確認の場合は null")
+    @doc("今も有効な確認の記録。有効かどうかは、そのアラートの最新の確認で決まる。未確認の場合は null")
     acknowledgement: InventoryAlertAcknowledgementResponse | null;
   }
 
-  @doc("""
-    在庫アラート一覧リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。
-    アラートは商品コード、商品 ID の順で、ひとつの商品では商品のアラートが先、在庫の行のアラートが使用期限、在庫 ID の順で後
-    """)
+  @doc("在庫アラート一覧リクエスト - 絞り込み条件とページネーションを指定する。並びは list に書く")
   model InventoryAlertSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限")
@@ -1216,16 +1212,16 @@ namespace BeautySalon.Models {
     severity?: InventoryAlertSeverityType;
 
     @query
-    @doc("確認済みかどうかによる絞り込み")
+    @doc("確認済みかどうかによる絞り込み。trueの場合は有効な確認があるアラートに、falseの場合は有効な確認がないアラートに一致する")
     acknowledged?: boolean;
   }
 
-  @doc("在庫アラート確認リクエスト - 全項目のキーが必須。確認したのは操作者として記録する")
+  @doc("在庫アラート確認リクエスト - 確認したのは操作者として記録する")
   model InventoryAlertAcknowledgeRequest {
     @doc("確認するアラートの種別")
     alert: InventoryAlertType;
 
-    @doc("アラートの商品 ID")
+    @doc("アラートの商品 ID。在庫の行のアラートでは、その行の商品")
     productId: ProductId;
 
     @doc("在庫の行のアラート(expiring・expired)では、productId の商品の在庫 ID。商品のアラート(low_stock・overstock)では null")
@@ -1249,7 +1245,7 @@ namespace BeautySalon.Models {
     @doc("重要度 info のアラート数")
     infoAlerts: int32;
 
-    @doc("未確認のアラート数")
+    @doc("未確認(有効な確認がない)のアラート数")
     unacknowledged: int32;
   }
 }
