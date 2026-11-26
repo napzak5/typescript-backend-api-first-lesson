@@ -103,6 +103,8 @@ pnpm db:seed --if-empty
 3. マイグレーション・`schema.ts`・`relations.ts`・`sql/setup.sql` を一緒にコミットする
 4. API のモデルを合わせる(`pnpm check:api-db` が API と DB の食い違いを検出します)
 
+`text[]` の列には、既定値を付けません。`pnpm db:introspect`(drizzle-kit)が、既定値 `'{}'::text[]` を `['']`(空文字 1 つの配列)と読み戻すからです。一覧の列は NOT NULL で既定値なしにし、行を書くときに、すべての列の値を書きます(`customers.tags`、`medical_charts` の一覧の列)。
+
 ### CI での確認
 
 ```bash

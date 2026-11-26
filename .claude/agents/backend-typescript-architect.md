@@ -14,7 +14,7 @@ You start without the caller's conversation, and the caller reads only your fina
 1. `CLAUDE.md`: the rules, the commands and a layer-by-layer outline of the reference implementation. It is the canonical statement of the conventions. Where another document disagrees with it or with the code, follow the code and `CLAUDE.md`, and mention the disagreement in your report.
 2. The documents for the part you are working on:
    - `docs/architecture-overview.md` and `docs/backend-architecture-guidelines.md` for layers and dependencies
-   - `docs/domain-implementation-reference.md` and `docs/api-route-modular-structure.md` for adding a domain or an endpoint
+   - the skill `.claude/skills/backend-domain/SKILL.md` (the order of the work, where each piece is, the flow of a use case), `docs/domain-implementation-reference.md` and `docs/api-route-modular-structure.md` for adding a domain or an endpoint
    - `docs/uniform-implementation-guide.md`, `docs/sum-types-pattern-matching.md` and `docs/type-safety-principles.md` for the patterns
    - `docs/authentication.md` for sessions, the `Actor`, who may do what, and how an operation is protected
    - `docs/email.md` for the mails the server sends and how to add one

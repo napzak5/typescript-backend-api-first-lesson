@@ -14,6 +14,7 @@ You start without the caller's conversation, and the caller reads only your fina
 1. `CLAUDE.md`: the model naming convention, the consistency rules between API and database, and the generation pipeline. It is the canonical statement of the conventions.
 2. The documents for your area:
    - `docs/typespec-api-type-rules.md`: naming, nullable and optional rules, the `@doc` requirements, enums, known TypeSpec limitations
+   - the skill `.claude/skills/requirements-docs/SKILL.md`: which rules are written in the contract and nowhere else, and which `@doc` reaches the generated files
    - `docs/typespec-directory-structure.md`: where definitions go
    - `docs/type-generation-system.md`: the pipeline from TypeSpec to the generated code
    - `docs/api-db-type-constraints-mapping.md`: how column types appear in the API

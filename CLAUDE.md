@@ -190,6 +190,15 @@ is deliberately not there) and its section of
 [docs/domain-implementation-reference.md](docs/domain-implementation-reference.md)
 (what its layers do differently from the reference, and why).
 
+How a domain is built is the skill
+[backend-domain](.claude/skills/backend-domain/SKILL.md), and where a fact is
+written, once, is the skill
+[requirements-docs](.claude/skills/requirements-docs/SKILL.md): the rule of
+one property or one operation is in the contract, a rule across operations
+in the document of the domain, and why code is as it is in a comment at that
+code. The medical charts are documented in this form and have no section in
+the reference; the other domains are moved to it one by one.
+
 ### Frontend Packages
 ```
 frontend/
@@ -421,6 +430,8 @@ The full index is [docs/README.md](docs/README.md).
 - [i18n](docs/i18n.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
+- [Backend Domain](.claude/skills/backend-domain/SKILL.md) (skill)
+- [Requirement Documents](.claude/skills/requirements-docs/SKILL.md) (skill)
 
 ### Frontend
 - [Frontend UI](.claude/skills/frontend-ui/SKILL.md) (skill)
