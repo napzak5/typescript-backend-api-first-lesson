@@ -384,6 +384,8 @@ pnpm build:dev        # Development build
 pnpm build:test       # Test build
 pnpm build:stg        # Staging build
 pnpm build:prod       # Production build
+pnpm build:api-reference  # The page of the API reference, from the checked-in OpenAPI document
+                          # (specs/dist/api-reference/index.html)
 
 # CI/CD Local Testing
 make ci-check             # Run the CI checks locally (all but the schema check)
@@ -394,6 +396,10 @@ make ci-check-dockerfile  # Test all Docker builds locally before pushing
 # Push to main     → After the CI checks pass, builds the staging images and pushes them to GitHub Container Registry
 # Manual trigger   → The same for the chosen environment (staging or production), without the checks
 # Rolling an image out, and running pnpm db:migrate first, is not automated
+
+# API reference (GitHub Actions, .github/workflows/api-reference.yml)
+# Push to main that changes specs/ → Builds the page and publishes it to GitHub Pages:
+#   https://napzak5.github.io/typescript-backend-api-first-lesson/
 ```
 
 ## 📚 Documentation References

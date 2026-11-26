@@ -234,6 +234,9 @@ pnpm check:api-db
 コミット済みの内容と比較し、差分があれば失敗します（CI でも実行されます）。未コミットの生成物が
 あると失敗するので、コミットしてから実行します。
 
+OpenAPI ドキュメントは、[API リファレンス](https://napzak5.github.io/typescript-backend-api-first-lesson/)のページとして公開しています。
+手元では、`pnpm build:api-reference` が `specs/dist/api-reference/index.html` にビルドします（コミットしません）。
+
 ## データベースを変更する
 
 データベースが Drizzle スキーマの正です。`schema.ts` を手で編集するのではなく、SQL マイグレーションを
@@ -453,7 +456,7 @@ Docker イメージのビルドも行います。イメージは、手元では 
 
 | ジョブ | 内容 |
 |--------|------|
-| `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
+| `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`、`build:api-reference`。OpenAPI ドキュメントをアーティファクトとして保存する |
 | `scope` | 単体テストと統合テストを走らせるパッケージを決める。フロントエンド（`frontend/`）、ドキュメント（`docs/`、`.md`）、スキル（`.claude/`）だけを変えるプルリクエストでは、変えたパッケージとそれに依存するパッケージ（pnpm の `--filter "...[<ベース>]"`。ベースは、マージのコミットの 1 つ目の親）。ワークスペースのルートは、最後の `--filter "!{.}"` で除く（ドキュメントの変更でルートが選ばれ、ルートのスクリプトはすべてのパッケージを走らせるため）。ほかのファイルを 1 つでも変えるプルリクエストと、push では、すべてのパッケージ。画面のテストはバックエンドのテスト用サーバーを別のプロセスとして起動し、`package.json` の依存にないので、バックエンドの変更ではすべてを走らせる。ルートのファイルは、どのパッケージにも数えられない |
 | `unit` | `build:prod` のあと、`scope` のパッケージの単体テスト |
 | `test` | `build:prod` のあと、`scope` のパッケージの統合テストを実行する。PostgreSQL は、サービスコンテナのものを `TEST_DATABASE_URL` で使う（`e2e` と同じ。手元では、`TEST_DATABASE_URL` を付けなければ、テスト自身が PostgreSQL のコンテナを起動する）。すべてのパッケージのテストのファイルを 4 つに分け（Vitest の `--shard`）、1 つずつを別のジョブで並べて実行する（4 つのジョブ）。ファイルが 4 つより少ないパッケージには、ファイルのない部分ができる（`--passWithNoTests`）。`check:db-schema` は、1 つ目の部分で実行する。メール送信の統合テストは Mailpit のコンテナを、添付ファイルの保存先の統合テストは SeaweedFS のコンテナを、自分で起動する |
@@ -475,6 +478,12 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、`shared-i1
 イメージをビルドして GitHub Container Registry に push します。`ci.yml` から呼び出されるほか、
 手動でも実行できます。内容と、自動化されていない作業は
 [リリースワークフローガイド](./release-workflow.md) を参照してください。
+
+### `.github/workflows/api-reference.yml`
+
+`main` への push のうち、`specs/`、ロックファイル、このワークフローのどれかを変えるものと、手動で実行されます。
+コミット済みの OpenAPI ドキュメントから API リファレンスのページをビルドし（`pnpm build:api-reference`）、
+GitHub Pages に公開します。
 
 ## トラブルシューティング
 

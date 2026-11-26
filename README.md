@@ -166,6 +166,13 @@ accounts and their roles are listed in
 3. Commit the generated files together with the TypeSpec change;
    `pnpm check:generated` fails in CI when they drift
 
+The OpenAPI document is published as a page, the
+[API reference](https://napzak5.github.io/typescript-backend-api-first-lesson/):
+every operation and model of the contract, with what the contract says about
+them. A push to `main` that changes `specs/` publishes it to GitHub Pages, and
+`pnpm build:api-reference` builds it locally
+(`specs/dist/api-reference/index.html`).
+
 ### Database Workflow
 
 The database is the source of truth for the Drizzle schema:
@@ -214,6 +221,7 @@ pnpm build                   # Production build of every package
 pnpm build:dev               # Also build:test, build:stg, build:prod
 pnpm build:backend           # Backend only
 pnpm build:frontend          # Frontend packages and apps
+pnpm build:api-reference     # The page of the API reference (specs/dist/api-reference/index.html)
 pnpm start:backend           # Run the built backend
 pnpm preview:frontend        # Serve the built frontend apps
 
@@ -407,6 +415,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Development Guidelines](CLAUDE.md) - The conventions every change follows
 - [Architecture Overview](docs/architecture-overview.md) - System design and architecture
 - [Development Workflow](docs/development-workflow.md) - Set-up, the daily loop, checks
+- [API Reference](https://napzak5.github.io/typescript-backend-api-first-lesson/) - Every operation and model of the contract, as a page
 - [AI Agent Guidelines](AGENTS.md) - Instructions and roles for AI coding agents
 
 ### Development Guides

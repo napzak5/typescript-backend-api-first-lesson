@@ -2434,7 +2434,8 @@ The workflows in `.github/workflows`:
 
 - `ci.yml` runs on every pull request and on pushes to `main` and `develop`:
   the toolchain-version, generated-file, API–database and schema-file checks,
-  lint, format check, build, type check, knip, the unit tests, the integration
+  lint, format check, build, type check, knip, the build of the page of the
+  API reference, the unit tests, the integration
   tests (against a PostgreSQL service, cut into four parts that run in jobs
   side by side),
   the browser tests, a build for each environment, and a
@@ -2452,6 +2453,9 @@ The workflows in `.github/workflows`:
   Registry, tagged for one environment: for staging when `ci.yml` calls it, or
   for the environment chosen in a manual run. The frontend images are built
   with the `VITE_*` values of that environment.
+- `api-reference.yml` runs on a push to `main` that changes the contract. It
+  renders the checked-in OpenAPI document as one page and publishes it to
+  GitHub Pages: the [API reference](https://napzak5.github.io/typescript-backend-api-first-lesson/).
 
 Nothing in the repository rolls an image out to a host or runs
 `pnpm db:migrate` during a deployment. `Dockerfile.backend` builds the API
