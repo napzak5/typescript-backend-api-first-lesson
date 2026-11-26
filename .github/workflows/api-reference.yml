@@ -1,0 +1,67 @@
+name: API Reference
+
+# The page of the API reference: the OpenAPI document that is generated from
+# the contract, rendered as one HTML file and published to GitHub Pages. The
+# document is checked in and CI fails when it is not that of the contract, so
+# the page is built from it as it is
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "specs/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/api-reference.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publication at a time. A run that waits is replaced by a newer one, and
+# the one that publishes is not interrupted
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the Page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the API reference
+        run: pnpm build:api-reference
+
+      - name: Upload the page
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: specs/dist/api-reference
+
+  publish:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the page
+        id: deployment
+        uses: actions/deploy-pages@v5
