@@ -4,6 +4,6 @@
  */
 
 /**
- * 施術スタッフや従業員を識別するためのブランド付きUUID。
+ * スタッフの ID。
  */
 export type ModelsStaffId = string;

@@ -4,6 +4,6 @@
  */
 
 /**
- * 予約に含まれる施術明細（booking_services の1行）を識別するブランド付きUUID。
+ * 予約の施術明細の ID。
  */
 export type ModelsBookingServiceId = string;

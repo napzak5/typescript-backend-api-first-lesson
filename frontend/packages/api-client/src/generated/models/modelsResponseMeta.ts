@@ -4,15 +4,14 @@
  */
 
 /**
- * レスポンス共通メタデータモデル。
- * 問い合わせ対応やロギングで必要となる識別情報を保持する。
+ * 成功レスポンスが、どのリクエストにいつ答えたものかを表すモデル。
  */
 export interface ModelsResponseMeta {
-  /** リクエストを一意に紐づける相関 ID。ログ横断調査に使用する。 */
+  /** リクエストの ID。レスポンスの X-Request-Id ヘッダーと同じ値で、サーバーのログと照合できる。 */
   correlationId: string;
-  /** レスポンス生成日時 (UTC)。障害時のタイムライン整理に利用。 */
+  /** 答えた日時 (UTC)。 */
   timestamp: string;
-  /** レスポンスを返却した API バージョン。 */
+  /** API の版 (`v1`)。 */
   version: string;
   [key: string]: unknown;
 }

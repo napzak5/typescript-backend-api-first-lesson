@@ -370,13 +370,13 @@ namespace BeautySalon.Models {
     """)
   model TreatmentRecordSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
 
     @query
@@ -546,13 +546,13 @@ namespace BeautySalon.Models {
   @doc("顧客アレルギー一覧リクエスト - ページネーションを指定する。並びは listAllergies に書く")
   model CustomerAllergySearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
   }
 
@@ -668,13 +668,13 @@ namespace BeautySalon.Models {
   @doc("カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件の結合と並びは list に書く")
   model MedicalChartSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
 
     @query

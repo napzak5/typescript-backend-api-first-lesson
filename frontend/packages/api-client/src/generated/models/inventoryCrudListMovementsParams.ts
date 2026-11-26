@@ -10,12 +10,12 @@ import type { ModelsInventoryTransactionSearchRequestTransactionTypeParameter } 
 
 export type InventoryCrudListMovementsParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsInventoryTransactionSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsInventoryTransactionSearchRequestCursorParameter;
   /**
    * 在庫移動種別区分 - 在庫数を増減させた操作の種類を表す区分

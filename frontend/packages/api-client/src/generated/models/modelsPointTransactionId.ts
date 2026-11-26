@@ -4,6 +4,6 @@
  */
 
 /**
- * 顧客ポイントの加算・減算履歴を識別するブランド付きUUID。
+ * ポイントの増減の記録の ID。
  */
 export type ModelsPointTransactionId = string;

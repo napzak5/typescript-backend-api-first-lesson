@@ -4,6 +4,6 @@
  */
 
 /**
- * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+ * 取得開始位置を示すカーソル
  */
 export type ModelsPurchaseOrderSearchRequestCursorParameter = string;

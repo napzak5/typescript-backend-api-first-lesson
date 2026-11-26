@@ -7,19 +7,18 @@ import type { ModelsStaffSchedule } from './modelsStaffSchedule';
 import type { StaffSchedulesList200Links } from './staffSchedulesList200Links';
 
 /**
- * API 成功レスポンスの共通ラッパーモデル。
- * サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+ * 成功レスポンスの本文を表すモデル。
  */
 export type StaffSchedulesList200 = {
-  /** レスポンスの主体となるビジネスデータ。 */
+  /** オペレーションの結果。 */
   data: ModelsStaffSchedule[];
   /**
-     * リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+     * リクエストの ID と、答えた日時。
      * @nullable
      */
   meta: ModelsResponseMeta | null;
   /**
-     * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+     * 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull
      * @nullable
      */
   links: StaffSchedulesList200Links;

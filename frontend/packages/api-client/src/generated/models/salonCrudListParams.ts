@@ -13,12 +13,12 @@ import type { ModelsSalonSearchRequestPrefectureParameter } from './modelsSalonS
 
 export type SalonCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsSalonSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsSalonSearchRequestCursorParameter;
   /**
    * 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない)

@@ -7,11 +7,11 @@ import type { ModelsStaffSearchRequestLimitParameter } from './modelsStaffSearch
 
 export type StaffCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsStaffSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsStaffSearchRequestCursorParameter;
 };

@@ -8,13 +8,13 @@ import type { ModelsReorderSuggestionSearchRequestSalonIdParameter } from './mod
 
 export type PurchaseOrderCrudListReorderSuggestionsParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsReorderSuggestionSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsReorderSuggestionSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsReorderSuggestionSearchRequestSalonIdParameter;
 };

@@ -7,14 +7,13 @@ import type { ModelsPaginationLinks } from './modelsPaginationLinks';
 import type { ModelsPaginationMeta } from './modelsPaginationMeta';
 
 /**
- * カーソル方式のページネーションレスポンスモデル。
- * `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
+ * 一覧の 1 ページを表すレスポンスモデル。
  */
 export type InventoryCrudListLowStock200 = {
-  /** 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+  /** このページの項目。 */
   data: ModelsInventoryResponse[];
-  /** ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+  /** ページの位置と件数。 */
   meta: ModelsPaginationMeta;
-  /** 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+  /** このページと、前後のページの URL。 */
   links: ModelsPaginationLinks;
 };

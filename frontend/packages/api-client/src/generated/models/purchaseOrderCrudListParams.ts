@@ -12,14 +12,14 @@ import type { ModelsPurchaseOrderSearchRequestSupplierParameter } from './models
 
 export type PurchaseOrderCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsPurchaseOrderSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsPurchaseOrderSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsPurchaseOrderSearchRequestSalonIdParameter;
   /**
    * 発注ステータス区分 - 商品発注の進行状態を表す区分

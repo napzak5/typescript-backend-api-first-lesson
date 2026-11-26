@@ -10,16 +10,16 @@ import type { ModelsInventorySearchRequestSalonIdParameter } from './modelsInven
 
 export type InventoryCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsInventorySearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsInventorySearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsInventorySearchRequestSalonIdParameter;
-  /** サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。 */
+  /** 商品 (店販品と、施術で使う商材) の ID。 */
   productId?: ModelsInventorySearchRequestProductIdParameter;
   /**
    * ロット番号による絞り込み(完全一致)

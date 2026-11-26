@@ -4,6 +4,6 @@
  */
 
 /**
- * サロンが受け付ける支払い方法の設定を識別するブランド付きUUID。
+ * サロンの支払い方法の ID。
  */
 export type ModelsPaymentMethodId = string;

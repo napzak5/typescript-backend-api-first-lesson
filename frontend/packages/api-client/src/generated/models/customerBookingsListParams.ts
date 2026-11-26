@@ -10,12 +10,12 @@ import type { ModelsCustomerBookingSearchRequestStatusParameter } from './models
 
 export type CustomerBookingsListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsCustomerBookingSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsCustomerBookingSearchRequestCursorParameter;
   /**
    * 予約ステータス区分 - 予約の詳細な進行状態を表す区分

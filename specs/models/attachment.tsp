@@ -77,7 +77,7 @@ namespace BeautySalon.Models {
     """)
   model AttachmentSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
@@ -219,7 +219,7 @@ namespace BeautySalon.Models {
     """)
   model ShareLinkSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;

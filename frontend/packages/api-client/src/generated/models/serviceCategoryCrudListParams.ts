@@ -8,12 +8,12 @@ import type { ModelsServiceCategorySearchRequestLimitParameter } from './modelsS
 
 export type ServiceCategoryCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsServiceCategorySearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsServiceCategorySearchRequestCursorParameter;
   /** 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
   isActive?: ModelsServiceCategorySearchRequestIsActiveParameter;

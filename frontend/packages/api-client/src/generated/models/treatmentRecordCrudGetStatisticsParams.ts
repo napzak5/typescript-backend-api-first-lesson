@@ -7,7 +7,7 @@ import type { ModelsTreatmentStatisticsGetRequestSalonIdParameter } from './mode
 import type { ModelsTreatmentStatisticsGetRequestStartDateParameter } from './modelsTreatmentStatisticsGetRequestStartDateParameter';
 
 export type TreatmentRecordCrudGetStatisticsParams = {
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsTreatmentStatisticsGetRequestSalonIdParameter;
   /** レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし */
   startDate?: ModelsTreatmentStatisticsGetRequestStartDateParameter;

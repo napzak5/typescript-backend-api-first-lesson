@@ -64,7 +64,7 @@ export const getSystemOperationsAliveUrl = () => {
 }
 
 /**
- * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+ * プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
  * @summary Check API liveness
  */
 export const systemOperationsAlive = async ( options?: RequestInit): Promise<systemOperationsAliveResponse> => {
@@ -112,7 +112,7 @@ export type SystemOperationsAliveQueryError = unknown
 
 
 /**
- * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+ * プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
@@ -126,7 +126,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+ * プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
@@ -140,7 +140,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+ * プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
@@ -148,7 +148,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+ * プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
@@ -196,7 +196,7 @@ export const getSystemOperationsHealthUrl = () => {
 }
 
 /**
- * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+ * 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
  * @summary Check API health
  */
 export const systemOperationsHealth = async ( options?: RequestInit): Promise<systemOperationsHealthResponse> => {
@@ -244,7 +244,7 @@ export type SystemOperationsHealthQueryError = ModelsHealthStatus
 
 
 /**
- * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+ * 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
@@ -258,7 +258,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+ * 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
@@ -272,7 +272,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+ * 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
@@ -280,7 +280,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+ * 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
@@ -328,7 +328,7 @@ export const getSystemOperationsReadyUrl = () => {
 }
 
 /**
- * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+ * リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
  * @summary Check API readiness
  */
 export const systemOperationsReady = async ( options?: RequestInit): Promise<systemOperationsReadyResponse> => {
@@ -376,7 +376,7 @@ export type SystemOperationsReadyQueryError = ModelsSystemReadyResponse
 
 
 /**
- * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+ * リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
@@ -390,7 +390,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+ * リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
@@ -404,7 +404,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+ * リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
@@ -412,7 +412,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+ * リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(

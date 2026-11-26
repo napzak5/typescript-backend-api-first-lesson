@@ -4,6 +4,6 @@
  */
 
 /**
- * カルテ（メディカルチャート）を識別するブランド付きUUID。
+ * カルテの ID。
  */
 export type ModelsMedicalChartId = string;

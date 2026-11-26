@@ -4,6 +4,6 @@
  */
 
 /**
- * 提供メニュー・施術サービスを識別するためのブランド付きUUID。
+ * サービス (メニュー) の ID。
  */
 export type ModelsServiceId = string;

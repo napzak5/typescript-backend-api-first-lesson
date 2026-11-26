@@ -10,14 +10,14 @@ import type { ModelsStaffProfileSearchRequestSpecialtyParameter } from './models
 
 export type StaffProfileListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsStaffProfileSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsStaffProfileSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsStaffProfileSearchRequestSalonIdParameter;
   /**
    * 得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する

@@ -4,6 +4,6 @@
  */
 
 /**
- * ログインセッションを追跡するためのブランド付きUUID。
+ * ログインセッションの ID。
  */
 export type ModelsSessionId = string;

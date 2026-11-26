@@ -4,6 +4,6 @@
  */
 
 /**
- * 顧客のデータの削除の依頼（customer_deletion_requests の行）を識別するブランド付きUUID。
+ * 顧客のデータの削除の依頼の ID。
  */
 export type ModelsCustomerDeletionRequestId = string;

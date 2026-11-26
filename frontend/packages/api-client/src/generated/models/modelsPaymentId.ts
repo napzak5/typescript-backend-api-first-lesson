@@ -4,6 +4,6 @@
  */
 
 /**
- * 決済取引（売上に対する1回の支払い）を識別するブランド付きUUID。
+ * 決済取引 (売上に対する 1 回の支払い) の ID。
  */
 export type ModelsPaymentId = string;

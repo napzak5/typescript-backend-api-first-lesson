@@ -4,6 +4,6 @@
  */
 
 /**
- * 施術記録やカウンセリングメモを識別するブランド付きUUID。
+ * 施術記録の ID。
  */
 export type ModelsTreatmentRecordId = string;

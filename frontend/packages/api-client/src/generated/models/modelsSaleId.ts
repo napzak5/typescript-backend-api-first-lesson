@@ -4,6 +4,6 @@
  */
 
 /**
- * 売上（1回の来店の会計）を識別するブランド付きUUID。
+ * 売上 (1 回の来店の会計) の ID。
  */
 export type ModelsSaleId = string;

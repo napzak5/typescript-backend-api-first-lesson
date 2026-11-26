@@ -4,6 +4,6 @@
  */
 
 /**
- * 在庫の入出庫(在庫移動)の記録を識別するブランド付きUUID。
+ * 在庫の移動の記録の ID。
  */
 export type ModelsInventoryTransactionId = string;

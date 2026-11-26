@@ -4,6 +4,6 @@
  */
 
 /**
- * サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。
+ * 商品 (店販品と、施術で使う商材) の ID。
  */
 export type ModelsProductId = string;

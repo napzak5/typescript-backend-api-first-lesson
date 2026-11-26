@@ -4,6 +4,6 @@
  */
 
 /**
- * 添付ファイル・画像データを識別するブランド付きUUID。
+ * 添付ファイルの ID。
  */
 export type ModelsAttachmentId = string;

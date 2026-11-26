@@ -11,14 +11,14 @@ import type { ModelsInventoryAlertSearchRequestSeverityParameter } from './model
 
 export type InventoryAlertCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsInventoryAlertSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsInventoryAlertSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsInventoryAlertSearchRequestSalonIdParameter;
   /**
    * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類

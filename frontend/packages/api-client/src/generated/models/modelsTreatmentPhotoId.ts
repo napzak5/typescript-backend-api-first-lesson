@@ -4,6 +4,6 @@
  */
 
 /**
- * 施術記録の写真を識別するブランド付きUUID。
+ * 施術記録の写真の ID。
  */
 export type ModelsTreatmentPhotoId = string;

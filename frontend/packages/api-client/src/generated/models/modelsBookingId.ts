@@ -4,6 +4,6 @@
  */
 
 /**
- * 予約（bookings の1行）を識別するブランド付きUUID。
+ * 予約の ID。
  */
 export type ModelsBookingId = string;

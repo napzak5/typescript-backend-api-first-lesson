@@ -4,6 +4,6 @@
  */
 
 /**
- * 顧客のアレルギー（customer_allergies の行）を識別するブランド付きUUID。
+ * 顧客のアレルギーの ID。
  */
 export type ModelsCustomerAllergyId = string;

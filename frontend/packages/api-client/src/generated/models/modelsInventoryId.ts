@@ -4,6 +4,6 @@
  */
 
 /**
- * 在庫アイテムや消耗品を識別するブランド付きUUID。
+ * 在庫 (サロンの、商品 1 つの 1 ロットの在庫) の ID。
  */
 export type ModelsInventoryId = string;

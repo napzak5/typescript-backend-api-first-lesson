@@ -7,7 +7,7 @@ import type { ModelsCustomerVersionSearchRequestLimitParameter } from './modelsC
 
 export type CustomerCrudGetHistoryParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */

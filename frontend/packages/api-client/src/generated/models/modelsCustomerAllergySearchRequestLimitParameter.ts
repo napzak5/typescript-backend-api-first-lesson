@@ -4,6 +4,6 @@
  */
 
 /**
- * 1ページあたりの取得件数上限 (1〜100)
+ * 1ページあたりの取得件数上限
  */
 export type ModelsCustomerAllergySearchRequestLimitParameter = number;

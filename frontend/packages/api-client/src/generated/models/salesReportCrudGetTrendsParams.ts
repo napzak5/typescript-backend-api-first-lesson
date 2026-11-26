@@ -8,7 +8,7 @@ import type { ModelsSalesReportGetRequestStartDateParameter } from './modelsSale
 import type { ModelsSalesTrendsGetRequestPeriodParameter } from './modelsSalesTrendsGetRequestPeriodParameter';
 
 export type SalesReportCrudGetTrendsParams = {
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsSalesReportGetRequestSalonIdParameter;
   /** 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
   startDate: ModelsSalesReportGetRequestStartDateParameter;

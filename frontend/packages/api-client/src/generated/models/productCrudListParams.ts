@@ -13,12 +13,12 @@ import type { ModelsProductSearchRequestLimitParameter } from './modelsProductSe
 
 export type ProductCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsProductSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsProductSearchRequestCursorParameter;
   /**
    * 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)

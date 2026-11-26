@@ -7,7 +7,7 @@ import type { ModelsShareLinkSearchRequestLimitParameter } from './modelsShareLi
 
 export type ShareLinkCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */

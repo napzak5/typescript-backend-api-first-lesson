@@ -7,7 +7,7 @@ import type { ModelsCustomerStatisticsGetRequestSalonIdParameter } from './model
 import type { ModelsCustomerStatisticsGetRequestStartDateParameter } from './modelsCustomerStatisticsGetRequestStartDateParameter';
 
 export type CustomerCrudGetStatisticsParams = {
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsCustomerStatisticsGetRequestSalonIdParameter;
   /** 期間の最初の日。1900-01-01 から 2999-12-31 まで */
   startDate: ModelsCustomerStatisticsGetRequestStartDateParameter;

@@ -13,18 +13,18 @@ import type { ModelsSaleSearchRequestStartDateParameter } from './modelsSaleSear
 
 export type SaleCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsSaleSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsSaleSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsSaleSearchRequestSalonIdParameter;
-  /** 顧客（来店者）を識別するためのブランド付きUUID。 */
+  /** 顧客の ID。 */
   customerId?: ModelsSaleSearchRequestCustomerIdParameter;
-  /** 予約（bookings の1行）を識別するブランド付きUUID。 */
+  /** 予約の ID。 */
   bookingId?: ModelsSaleSearchRequestBookingIdParameter;
   /**
    * 支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分

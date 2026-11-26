@@ -4,7 +4,7 @@
  */
 
 /**
- * システム全体の稼働状態。`healthy` は正常、`degraded` は性能低下、`unhealthy` は停止を表す。
+ * 全体の状態。`healthy` は、どの依存先も応答した。`unhealthy` は、応答しない依存先がある。
  */
 export type ModelsHealthStatusStatus = typeof ModelsHealthStatusStatus[keyof typeof ModelsHealthStatusStatus];
 

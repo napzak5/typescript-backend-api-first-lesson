@@ -9,14 +9,14 @@ import type { ModelsServiceSearchRequestLimitParameter } from './modelsServiceSe
 
 export type ServiceCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsServiceSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsServiceSearchRequestCursorParameter;
-  /** サービスカテゴリやメニュー分類を識別するブランド付きUUID。 */
+  /** サービスカテゴリーの ID。 */
   categoryId?: ModelsServiceSearchRequestCategoryIdParameter;
   /** 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す */
   isActive?: ModelsServiceSearchRequestIsActiveParameter;

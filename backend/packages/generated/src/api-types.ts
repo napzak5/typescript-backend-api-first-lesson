@@ -17,7 +17,7 @@ export interface paths {
         };
         /**
          * Check API liveness
-         * @description プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
+         * @description プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。
          */
         get: operations["SystemOperations_alive"];
         put?: never;
@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * Check API health
-         * @description APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
+         * @description 依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。
          */
         get: operations["SystemOperations_health"];
         put?: never;
@@ -57,7 +57,7 @@ export interface paths {
         };
         /**
          * Check API readiness
-         * @description Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
+         * @description リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。
          */
         get: operations["SystemOperations_ready"];
         put?: never;
@@ -3225,7 +3225,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 添付ファイル・画像データを識別するブランド付きUUID。
+         * @description 添付ファイルの ID。
          */
         "Models.AttachmentId": string;
         /** @description 完了しなかったアップロードと、削除した添付ファイルの掃除の結果 */
@@ -3570,7 +3570,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 予約（bookings の1行）を識別するブランド付きUUID。
+         * @description 予約の ID。
          */
         "Models.BookingId": string;
         /**
@@ -3762,7 +3762,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 予約に含まれる施術明細（booking_services の1行）を識別するブランド付きUUID。
+         * @description 予約の施術明細の ID。
          */
         "Models.BookingServiceId": string;
         /**
@@ -3899,7 +3899,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description サービスカテゴリやメニュー分類を識別するブランド付きUUID。
+         * @description サービスカテゴリーの ID。
          */
         "Models.CategoryId": string;
         /** @description 顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す */
@@ -3922,7 +3922,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 顧客のアレルギー（customer_allergies の行）を識別するブランド付きUUID。
+         * @description 顧客のアレルギーの ID。
          */
         "Models.CustomerAllergyId": string;
         /**
@@ -4318,7 +4318,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 顧客のデータの削除の依頼（customer_deletion_requests の行）を識別するブランド付きUUID。
+         * @description 顧客のデータの削除の依頼の ID。
          */
         "Models.CustomerDeletionRequestId": string;
         /** @description 顧客のデータの削除の依頼 - customer_deletion_requests の行。受け付けた時刻の14日後に、消去を実行できるようになる */
@@ -4458,7 +4458,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 顧客（来店者）を識別するためのブランド付きUUID。
+         * @description 顧客の ID。
          */
         "Models.CustomerId": string;
         /**
@@ -5020,7 +5020,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 顧客の版（customer_versions の行）を識別するブランド付きUUID。
+         * @description 顧客の版の ID。
          */
         "Models.CustomerVersionId": string;
         /**
@@ -5372,50 +5372,44 @@ export interface components {
          */
 
         "Models.HairType": "straight" | "wavy" | "curly" | "coily";
-        /**
-         * @description 個別サービスのヘルスチェック結果モデル。
-         *     外部サービス連携や内部マイクロサービスごとの状態を把握する。
-         */
+        /** @description 依存先 1 つの確認の結果を表すモデル。 */
         "Models.HealthCheck": {
-            /** @description 対象サービス名またはコンポーネント識別子。 */
+            /** @description 依存先の名前 (`database`)。 */
             name: string;
             /**
-             * @description 対象サービスの稼働状態。`up` は正常、`down` は停止、`degraded` は部分的な性能低下を示す。
+             * @description 依存先の状態。`up` は応答した、`down` は応答しなかった。
              * @enum {string}
              */
             status: "up" | "down" | "degraded";
             /**
              * Format: int32
-             * @description ヘルスチェックに要した時間 (ミリ秒)。応答遅延の指標。測定不可の場合はnull
+             * @description 応答を待った時間 (ミリ秒)。
              */
             responseTime: number | null;
-            /** @description 停止時のエラーメッセージや原因メモ。正常時はnull */
+            /** @description 応答しなかったことの説明。応答した場合はnull */
             error: string | null;
-            /** @description 監視対象固有の追加詳細。再試行回数や依存サービス名などを含める。追加情報がない場合はnull */
+            /** @description 常にnull */
             details: {
                 [key: string]: unknown;
             } | null;
         };
-        /**
-         * @description API ヘルスチェック結果モデル。
-         *     監視基盤や運用ダッシュボードにシステム状態を提供し、早期異常検知を実現する。
-         */
+        /** @description 稼働の状態と、依存先ごとの確認の結果を表すモデル。 */
         "Models.HealthStatus": {
             /**
-             * @description システム全体の稼働状態。`healthy` は正常、`degraded` は性能低下、`unhealthy` は停止を表す。
+             * @description 全体の状態。`healthy` は、どの依存先も応答した。`unhealthy` は、応答しない依存先がある。
              * @enum {string}
              */
             status: "healthy" | "degraded" | "unhealthy";
-            /** @description 稼働中の API バージョン。運用チームのバージョン管理に利用。 */
+            /** @description API の版 (`v1`)。 */
             version: string;
             /**
              * Format: date-time
-             * @description 判定実行時点のサーバー時刻 (UTC)。
+             * @description 確認した日時 (UTC)。
              */
             timestamp: string;
-            /** @description 各内部サービスや依存コンポーネントのヘルスチェック結果一覧。 */
+            /** @description 依存先ごとの確認の結果。 */
             checks: components["schemas"]["Models.HealthCheck"][];
-            /** @description 監視環境固有の追加メタ情報。必要に応じてキーを拡張する。追加情報がない場合はnull */
+            /** @description 常にnull */
             metadata: {
                 [key: string]: unknown;
             } | null;
@@ -5433,7 +5427,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 在庫アラートを確認した記録を識別するブランド付きUUID。
+         * @description 在庫アラートを確認した記録の ID。
          */
         "Models.InventoryAlertAcknowledgementId": string;
         /**
@@ -5624,7 +5618,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 在庫アイテムや消耗品を識別するブランド付きUUID。
+         * @description 在庫 (サロンの、商品 1 つの 1 ロットの在庫) の ID。
          */
         "Models.InventoryId": string;
         /**
@@ -5769,7 +5763,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 在庫の入出庫(在庫移動)の記録を識別するブランド付きUUID。
+         * @description 在庫の移動の記録の ID。
          */
         "Models.InventoryTransactionId": string;
         /**
@@ -5970,7 +5964,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description カルテ（メディカルチャート）を識別するブランド付きUUID。
+         * @description カルテの ID。
          */
         "Models.MedicalChartId": string;
         /**
@@ -6076,7 +6070,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description サプライヤー発注・仕入れオーダーを識別するブランド付きUUID。
+         * @description 発注の ID。
          */
         "Models.OrderId": string;
         /**
@@ -6120,49 +6114,43 @@ export interface components {
          */
 
         "Models.OrderStatusType": "draft" | "pending" | "approved" | "ordered" | "shipped" | "delivered" | "cancelled";
-        /**
-         * @description ページ遷移に利用するリンク情報モデル。
-         *     API クライアントや外部連携がRESTフローで次・前のリソースを辿る際に利用する。
-         */
+        /** @description 一覧のページの URL を表すモデル。URL は、パスとクエリ。 */
         "Models.PaginationLinks": {
-            /** @description 現在ページを指すリンク。 */
+            /** @description このページの URL。 */
             self: string;
-            /** @description 最初のページへのリンク。総件数が確定しない場合はnull */
+            /** @description 最初のページの URL。 */
             first: string | null;
-            /** @description 最後のページへのリンク。カーソル算出ができない場合はnull */
+            /** @description 常にnull。一覧は先へだけ進む。 */
             last: string | null;
-            /** @description 次ページへのリンク。最終ページの場合はnull */
+            /** @description 次のページの URL。最後のページの場合はnull */
             next: string | null;
-            /** @description 前ページへのリンク。初回ページまたは戻り操作が不要な場合はnull */
+            /** @description 常にnull。一覧は先へだけ進む。 */
             prev: string | null;
         };
-        /**
-         * @description ページネーションに関する統計情報モデル。
-         *     総件数やカーソル位置を保持し、フロントエンドの続き取得や無限スクロールの制御に利用する。
-         */
+        /** @description 一覧のページの位置と件数を表すモデル。 */
         "Models.PaginationMeta": {
             /**
              * Format: int32
-             * @description 取得対象全体の総件数。件数計測ができない場合はnull
+             * @description 条件に合う項目の、全体の件数。
              */
             total: number | null;
             /**
              * Format: int32
-             * @description 1ページあたりの取得件数。クエリパラメータ `limit` と一致する。
+             * @description 1 ページの件数の上限。リクエストの `limit` の値で、指定がなければ 20。
              */
             limit: number;
-            /** @description 次ページが存在するかを示すフラグ。無限スクロールの継続判定に使用。 */
+            /** @description 次のページがあればtrue。 */
             hasMore: boolean;
-            /** @description 現在ページのカーソル値。次リクエストで `cursor` に指定することで同位置から再開できる。初回ページの場合はnull */
+            /** @description このページを読んだリクエストの `cursor` の値。最初のページの場合はnull */
             cursor: string | null;
-            /** @description 次ページを取得するためのカーソル値。最終ページの場合はnull */
+            /** @description 次のページを読むリクエストの `cursor` に書く値。最後のページの場合はnull */
             nextCursor: string | null;
-            /** @description 前ページへ戻るためのカーソル値。初回ページまたは戻り操作が不要な場合はnull */
+            /** @description 常にnull。一覧は先へだけ進む。 */
             prevCursor: string | null;
         };
         /**
          * Format: uuid
-         * @description 決済取引（売上に対する1回の支払い）を識別するブランド付きUUID。
+         * @description 決済取引 (売上に対する 1 回の支払い) の ID。
          */
         "Models.PaymentId": string;
         /**
@@ -6207,7 +6195,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description サロンが受け付ける支払い方法の設定を識別するブランド付きUUID。
+         * @description サロンの支払い方法の ID。
          */
         "Models.PaymentMethodId": string;
         /**
@@ -6607,7 +6595,7 @@ export interface components {
         "Models.PointReferenceType": "sale" | "booking" | "customer";
         /**
          * Format: uuid
-         * @description 顧客ポイントの加算・減算履歴を識別するブランド付きUUID。
+         * @description ポイントの増減の記録の ID。
          */
         "Models.PointTransactionId": string;
         /**
@@ -6756,33 +6744,30 @@ export interface components {
          */
 
         "Models.PricingStrategyType": "fixed" | "variable" | "tiered" | "dynamic" | "consultation_based";
-        /**
-         * @description RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
-         *     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
-         */
+        /** @description エラーの本文。RFC 9457 (Problem Details for HTTP APIs) の形で、どのエラーもこのモデルで返す。 */
         "Models.ProblemDetails": {
-            /** @description エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。 */
+            /** @description エラーの種類を表す URN (`urn:beauty-salon:problem:not-found` など)。 */
             type: string;
-            /** @description ユーザーに短く要点を伝えるエラー概要メッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
+            /** @description エラーの種類を短く言う文。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
             title: string;
             /**
              * Format: int32
-             * @description レスポンスに付与される HTTP ステータスコード。
+             * @description レスポンスの HTTP ステータスコード。
              */
             status: number;
-            /** @description 今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。言語は、レスポンスの Content-Language ヘッダーのとおり。詳細が不要な場合はnull */
+            /** @description 今回のエラーを説明する文。言語は、レスポンスの Content-Language ヘッダーのとおり。サーバー内部のエラー (500) など、説明を付けないエラーではnull */
             detail: string | null;
-            /** @description この事象を一意に識別するための URI。監査ログやダッシュボードと連携する。URIが不要な場合はnull */
+            /** @description リクエストの URL (パスとクエリ)。 */
             instance: string | null;
-            /** @description システム全体で共有する機械判読可能なエラーコード。画面表示や分岐処理に使用する。 */
+            /** @description エラーの種類を表すコード。画面は、この値で分岐する。 */
             code: components["schemas"]["Models.ErrorCodeType"];
-            /** @description フィールド単位の検証エラーなど、追加のエラー詳細情報一覧。検証エラーがない場合はnull */
+            /** @description 規則に合わなかった値の一覧。検証エラー (code が 2001) でない場合はnull */
             errors: components["schemas"]["Models.ValidationError"][] | null;
-            /** @description 障害調査や問い合わせで利用する相関 ID。リクエスト単位で一意。相関IDが不要な場合はnull */
+            /** @description リクエストの ID。レスポンスの X-Request-Id ヘッダーと同じ値で、サーバーのログと照合できる。 */
             correlationId: string | null;
             /**
              * Format: date-time
-             * @description エラー発生日時 (UTC)。サーバーログの検索キーとして使用する。
+             * @description エラーを返した日時 (UTC)。
              */
             timestamp: string;
         };
@@ -6867,7 +6852,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。
+         * @description 商品 (店販品と、施術で使う商材) の ID。
          */
         "Models.ProductId": string;
         /**
@@ -7294,19 +7279,16 @@ export interface components {
              */
             lastOrderDate: string | null;
         };
-        /**
-         * @description レスポンス共通メタデータモデル。
-         *     問い合わせ対応やロギングで必要となる識別情報を保持する。
-         */
+        /** @description 成功レスポンスが、どのリクエストにいつ答えたものかを表すモデル。 */
         "Models.ResponseMeta": {
-            /** @description リクエストを一意に紐づける相関 ID。ログ横断調査に使用する。 */
+            /** @description リクエストの ID。レスポンスの X-Request-Id ヘッダーと同じ値で、サーバーのログと照合できる。 */
             correlationId: string;
             /**
              * Format: date-time
-             * @description レスポンス生成日時 (UTC)。障害時のタイムライン整理に利用。
+             * @description 答えた日時 (UTC)。
              */
             timestamp: string;
-            /** @description レスポンスを返却した API バージョン。 */
+            /** @description API の版 (`v1`)。 */
             version: string;
         } & {
             [key: string]: unknown;
@@ -7372,12 +7354,12 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 顧客レビューや口コミを識別するブランド付きUUID。
+         * @description レビューの ID。
          */
         "Models.ReviewId": string;
         /**
          * Format: uuid
-         * @description レビューの通報（review_reports の1行）を識別するブランド付きUUID。
+         * @description レビューの通報の ID。
          */
         "Models.ReviewReportId": string;
         /**
@@ -7727,7 +7709,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 売上（1回の来店の会計）を識別するブランド付きUUID。
+         * @description 売上 (1 回の来店の会計) の ID。
          */
         "Models.SaleId": string;
         /**
@@ -8159,7 +8141,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description サロン店舗・拠点を識別するためのブランド付きUUID。
+         * @description サロン (店舗) の ID。
          */
         "Models.SalonId": string;
         /**
@@ -8625,7 +8607,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 提供メニュー・施術サービスを識別するためのブランド付きUUID。
+         * @description サービス (メニュー) の ID。
          */
         "Models.ServiceId": string;
         /**
@@ -8874,7 +8856,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description ログインセッションを追跡するためのブランド付きUUID。
+         * @description ログインセッションの ID。
          */
         "Models.SessionId": string;
         /**
@@ -9146,7 +9128,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 施術スタッフや従業員を識別するためのブランド付きUUID。
+         * @description スタッフの ID。
          */
         "Models.StaffId": string;
         /**
@@ -9159,7 +9141,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description スタッフへの招待(staff_invitations の1行)を識別するブランド付きUUID。
+         * @description スタッフへの招待の ID。
          */
         "Models.StaffInvitationId": string;
         /**
@@ -9493,14 +9475,11 @@ export interface components {
             /** @description 参考画像のURL(http または https、500文字まで)の一覧。ない場合は空配列。同じURLの繰り返しは指定できない */
             inspirationImages: string[];
         };
-        /**
-         * @description 準備完了チェックの結果モデル。
-         *     オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
-         */
+        /** @description リクエストを処理できる状態かどうかを表すモデル。 */
         "Models.SystemReadyResponse": {
             /** @description リクエストを処理できる状態であればtrue。 */
             ready: boolean;
-            /** @description 準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull */
+            /** @description 応答しない依存先の名前 (`database`)。リクエストを処理できる場合はnull */
             reason: string | null;
         };
         /** @description 営業時間や休憩時間を表現する単一の時間帯スロット。 */
@@ -9571,7 +9550,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 施術記録の写真を識別するブランド付きUUID。
+         * @description 施術記録の写真の ID。
          */
         "Models.TreatmentPhotoId": string;
         /**
@@ -9681,7 +9660,7 @@ export interface components {
         };
         /**
          * Format: uuid
-         * @description 施術記録やカウンセリングメモを識別するブランド付きUUID。
+         * @description 施術記録の ID。
          */
         "Models.TreatmentRecordId": string;
         /**
@@ -9945,7 +9924,7 @@ export interface components {
         "Models.UserAccountStatusType": "active" | "unverified" | "inactive" | "locked" | "suspended" | "deleted";
         /**
          * Format: uuid
-         * @description システム利用者（顧客・スタッフ・管理者）を一意に識別するブランド付きUUID。
+         * @description 利用者 (顧客、スタッフ、管理者) のアカウントの ID。
          */
         "Models.UserId": string;
         /**
@@ -10037,20 +10016,17 @@ export interface components {
          */
 
         "Models.UserRoleType": "customer" | "staff" | "manager" | "admin" | "owner";
-        /**
-         * @description 入力検証での失敗内容を表すモデル。
-         *     画面入力フォームやAPI連携時のフィールド単位のエラー詳細を格納し、顧客やスタッフへのフィードバックに利用する。
-         */
+        /** @description 規則に合わなかった値 1 件を表すモデル。 */
         "Models.ValidationError": {
-            /** @description 検証に失敗したフィールドパス。ネストしたキーをドット記法で表現する。 */
+            /** @description 値の場所。本文のプロパティは、キーと配列の番号をドットでつないだパス (`details.0.quantity`)。クエリとパスのパラメーターは、その名前。リクエスト全体についての違反では空文字。 */
             field: string;
-            /** @description 違反した検証ルール名またはコード。 */
+            /** @description 合わなかった規則の名前 (`too_big`、`not_found` など)。画面は、field とこの値で分岐する。 */
             rule: string;
-            /** @description ユーザーに提示する具体的なエラーメッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
+            /** @description 違反を説明する文。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
             message: string;
-            /** @description 検証対象となった実際の値。セキュリティ観点で出力が許容される場合のみ利用する。出力不可の場合はnull */
+            /** @description 常にnull */
             value: unknown;
-            /** @description 期待される値や制約条件。入力補助やUI表示のガイダンスに使用する。制約が明示不要な場合はnull */
+            /** @description 常にnull */
             constraint: unknown;
         };
     };
@@ -10060,7 +10036,7 @@ export interface components {
         "Models.AttachmentDownloadUrlRequest": boolean;
         /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー */
         "Models.AttachmentSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.AttachmentSearchRequest.limit": number;
         /** @description ファイルが属するサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
         "Models.AttachmentSearchRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10070,7 +10046,7 @@ export interface components {
         "Models.AvailableSlotSearchRequest.date": string;
         /** @description 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う */
         "Models.AvailableSlotSearchRequest.duration": number;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.AvailableSlotSearchRequest.limit": number;
         /** @description 予約したい施術メニューのID。パスのサロンのサービスを指定する */
         "Models.AvailableSlotSearchRequest.serviceId": components["schemas"]["Models.ServiceId"];
@@ -10080,11 +10056,11 @@ export interface components {
         "Models.BookingSearchRequest.bookingDateFrom": string;
         /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.BookingSearchRequest.bookingDateTo": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.BookingSearchRequest.cursor": string;
         /** @description 顧客のIDによる絞り込み(完全一致) */
         "Models.BookingSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.BookingSearchRequest.limit": number;
         /** @description サロンのIDによる絞り込み(完全一致) */
         "Models.BookingSearchRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10092,25 +10068,25 @@ export interface components {
         "Models.BookingSearchRequest.staffId": components["schemas"]["Models.StaffId"];
         /** @description ステータスによる絞り込み(完全一致) */
         "Models.BookingSearchRequest.status": components["schemas"]["Models.BookingStatusType"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.CustomerAllergySearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.CustomerAllergySearchRequest.limit": number;
         /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerBookingSearchRequest.bookingDateFrom": string;
         /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerBookingSearchRequest.bookingDateTo": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.CustomerBookingSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.CustomerBookingSearchRequest.limit": number;
         /** @description ステータスによる絞り込み(完全一致) */
         "Models.CustomerBookingSearchRequest.status": components["schemas"]["Models.BookingStatusType"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.CustomerSearchRequest.cursor": string;
         /** @description 顧客ステータスによる絞り込み(完全一致) */
         "Models.CustomerSearchRequest.customerStatus": components["schemas"]["Models.CustomerStatusType"];
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.CustomerSearchRequest.limit": number;
         /** @description 会員ランクによる絞り込み(完全一致) */
         "Models.CustomerSearchRequest.membershipTier": components["schemas"]["Models.MembershipTierType"];
@@ -10130,7 +10106,7 @@ export interface components {
         "Models.CustomerStatisticsGetRequest.startDate": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する */
         "Models.CustomerVersionSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.CustomerVersionSearchRequest.limit": number;
         /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
         "Models.DailySalesGetRequest.date": string;
@@ -10140,33 +10116,33 @@ export interface components {
         "Models.InventoryAlertSearchRequest.acknowledged": boolean;
         /** @description アラート種別による絞り込み(完全一致) */
         "Models.InventoryAlertSearchRequest.alert": components["schemas"]["Models.InventoryAlertType"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.InventoryAlertSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.InventoryAlertSearchRequest.limit": number;
         /** @description 対象のサロン ID */
         "Models.InventoryAlertSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 重要度による絞り込み(完全一致) */
         "Models.InventoryAlertSearchRequest.severity": components["schemas"]["Models.InventoryAlertSeverityType"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.InventoryExpiringSearchRequest.cursor": string;
         /** @description サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む */
         "Models.InventoryExpiringSearchRequest.days": number;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.InventoryExpiringSearchRequest.limit": number;
         /** @description 対象のサロン ID */
         "Models.InventoryExpiringSearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.InventoryLowStockSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.InventoryLowStockSearchRequest.limit": number;
         /** @description 対象のサロン ID */
         "Models.InventoryLowStockSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 在庫僅少とみなす在庫数の閾値。商品ごとに、サロンにあるその商品の在庫の currentStock の合計がこの値以下なら、その商品の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う */
         "Models.InventoryLowStockSearchRequest.threshold": number;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.InventorySearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.InventorySearchRequest.limit": number;
         /** @description ロット番号による絞り込み(完全一致) */
         "Models.InventorySearchRequest.lotNumber": string;
@@ -10174,11 +10150,11 @@ export interface components {
         "Models.InventorySearchRequest.productId": components["schemas"]["Models.ProductId"];
         /** @description 在庫を管理するサロンの ID による絞り込み(完全一致)。省略すると、サロンのユーザーには所属サロンの在庫、管理者にはすべてのサロンの在庫を返す */
         "Models.InventorySearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.InventoryTransactionSearchRequest.cursor": string;
         /** @description 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.InventoryTransactionSearchRequest.endDate": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.InventoryTransactionSearchRequest.limit": number;
         /** @description 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.InventoryTransactionSearchRequest.startDate": string;
@@ -10188,19 +10164,19 @@ export interface components {
         "Models.InventoryValueReportRequest.category": string;
         /** @description 対象のサロン ID */
         "Models.InventoryValueReportRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.MedicalChartSearchRequest.cursor": string;
         /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
         "Models.MedicalChartSearchRequest.hasAllergies": boolean;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.MedicalChartSearchRequest.limit": number;
         /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない */
         "Models.MedicalChartSearchRequest.search": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.PaymentMethodSearchRequest.cursor": string;
         /** @description 有効フラグによる絞り込み。指定しない場合は無効な支払い方法も返す */
         "Models.PaymentMethodSearchRequest.isActive": boolean;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.PaymentMethodSearchRequest.limit": number;
         /** @description 支払い方法区分による絞り込み(完全一致) */
         "Models.PaymentMethodSearchRequest.method": components["schemas"]["Models.PaymentMethodType"];
@@ -10208,7 +10184,7 @@ export interface components {
         "Models.PointTransactionSearchRequest.cursor": components["schemas"]["Models.PointTransactionId"];
         /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.endDate": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.PointTransactionSearchRequest.limit": number;
         /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.startDate": string;
@@ -10216,7 +10192,7 @@ export interface components {
         "Models.ProductSearchRequest.barcode": string;
         /** @description 商品カテゴリによる絞り込み(完全一致) */
         "Models.ProductSearchRequest.category": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.ProductSearchRequest.cursor": string;
         /** @description 取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す */
         "Models.ProductSearchRequest.isActive": boolean;
@@ -10226,13 +10202,13 @@ export interface components {
         "Models.ProductSearchRequest.isForTreatment": boolean;
         /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
         "Models.ProductSearchRequest.keyword": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ProductSearchRequest.limit": number;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.PurchaseOrderSearchRequest.cursor": string;
         /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する */
         "Models.PurchaseOrderSearchRequest.endDate": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.PurchaseOrderSearchRequest.limit": number;
         /** @description 発注を行うサロンの ID による絞り込み(完全一致) */
         "Models.PurchaseOrderSearchRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10242,15 +10218,15 @@ export interface components {
         "Models.PurchaseOrderSearchRequest.status": components["schemas"]["Models.OrderStatusType"];
         /** @description 仕入先名による絞り込み(完全一致) */
         "Models.PurchaseOrderSearchRequest.supplier": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.ReorderSuggestionSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ReorderSuggestionSearchRequest.limit": number;
         /** @description 対象のサロン ID */
         "Models.ReorderSuggestionSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る通報のIDでない場合は検証エラー */
         "Models.ReviewReportSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ReviewReportSearchRequest.limit": number;
         /** @description 通報されたレビューのIDによる絞り込み(完全一致) */
         "Models.ReviewReportSearchRequest.reviewId": components["schemas"]["Models.ReviewId"];
@@ -10266,7 +10242,7 @@ export interface components {
         "Models.ReviewSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
         /** @description 実来店確認済みかどうかによる絞り込み */
         "Models.ReviewSearchRequest.isVerified": boolean;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ReviewSearchRequest.limit": number;
         /** @description 全体満足度評価(overallRating)の上限による絞り込み。指定値以下のレビューに一致する */
         "Models.ReviewSearchRequest.maxRating": number;
@@ -10280,13 +10256,13 @@ export interface components {
         "Models.ReviewSearchRequest.staffId": components["schemas"]["Models.StaffId"];
         /** @description 予約 ID による絞り込み(完全一致) */
         "Models.SaleSearchRequest.bookingId": components["schemas"]["Models.BookingId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.SaleSearchRequest.cursor": string;
         /** @description 顧客 ID による絞り込み(完全一致) */
         "Models.SaleSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
         /** @description 売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.SaleSearchRequest.endDate": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.SaleSearchRequest.limit": number;
         /** @description 支払い状態による絞り込み(完全一致) */
         "Models.SaleSearchRequest.paymentStatus": components["schemas"]["Models.PaymentStatusType"];
@@ -10304,7 +10280,7 @@ export interface components {
         "Models.SalesTrendsGetRequest.period": components["schemas"]["Models.SalesTrendPeriodType"];
         /** @description 市区町村名による絞り込み(完全一致) */
         "Models.SalonSearchRequest.city": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.SalonSearchRequest.cursor": string;
         /** @description 特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する */
         "Models.SalonSearchRequest.features": string[];
@@ -10312,39 +10288,39 @@ export interface components {
         "Models.SalonSearchRequest.isActive": boolean;
         /** @description 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない) */
         "Models.SalonSearchRequest.keyword": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.SalonSearchRequest.limit": number;
         /** @description 最低評価値による絞り込み。評価のないサロンは除外される */
         "Models.SalonSearchRequest.minRating": number;
         /** @description 都道府県名による絞り込み(完全一致) */
         "Models.SalonSearchRequest.prefecture": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.ServiceCategorySearchRequest.cursor": string;
         /** @description 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
         "Models.ServiceCategorySearchRequest.isActive": boolean;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ServiceCategorySearchRequest.limit": number;
         /** @description サービスカテゴリの ID による絞り込み(完全一致) */
         "Models.ServiceSearchRequest.categoryId": components["schemas"]["Models.CategoryId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.ServiceSearchRequest.cursor": string;
         /** @description 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す */
         "Models.ServiceSearchRequest.isActive": boolean;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ServiceSearchRequest.limit": number;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.SessionSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.SessionSearchRequest.limit": number;
         /** @description 取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー */
         "Models.ShareLinkSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.ShareLinkSearchRequest.limit": number;
         /** @description 所属サロンの市区町村名による絞り込み(完全一致) */
         "Models.StaffProfileSearchRequest.city": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.StaffProfileSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.StaffProfileSearchRequest.limit": number;
         /** @description 所属サロンの ID による絞り込み(完全一致)。存在しないサロンを指定した場合は空の一覧を返す */
         "Models.StaffProfileSearchRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10352,17 +10328,17 @@ export interface components {
         "Models.StaffProfileSearchRequest.specialty": string;
         /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す。1900-01-01 から 2999-12-31 まで */
         "Models.StaffScheduleSearchRequest": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.StaffSearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.StaffSearchRequest.limit": number;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル */
         "Models.TreatmentRecordSearchRequest.cursor": string;
         /** @description 施術を受けた顧客の ID による絞り込み(完全一致) */
         "Models.TreatmentRecordSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
         /** @description レコード作成日時(createdAt)がこの日時以前の施術記録に一致する */
         "Models.TreatmentRecordSearchRequest.endDate": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        /** @description 1ページあたりの取得件数上限 */
         "Models.TreatmentRecordSearchRequest.limit": number;
         /** @description 施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン */
         "Models.TreatmentRecordSearchRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10482,11 +10458,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.UserResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -10601,11 +10577,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.UserResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -10720,11 +10696,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.UserResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -10813,7 +10789,7 @@ export interface operations {
     AttachmentCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.AttachmentSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.AttachmentSearchRequest.cursor"];
@@ -10833,11 +10809,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.AttachmentResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -10926,11 +10902,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentPurgeResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11012,11 +10988,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ShareLinkResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11220,11 +11196,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentUploadUrlResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11270,7 +11246,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -11281,7 +11257,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -11339,11 +11315,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11544,11 +11520,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11666,11 +11642,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentDownloadUrlResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11770,7 +11746,7 @@ export interface operations {
     ShareLinkCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ShareLinkSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.ShareLinkSearchRequest.cursor"];
@@ -11790,11 +11766,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ShareLinkResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -11901,11 +11877,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ShareLinkCreateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -11973,7 +11949,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -11984,7 +11960,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12044,11 +12020,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AuthTwoFactorBackupCodesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -12094,7 +12070,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12105,7 +12081,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12204,7 +12180,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12215,7 +12191,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12275,11 +12251,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AuthTwoFactorSetupResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -12325,7 +12301,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12336,7 +12312,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12435,7 +12411,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12446,7 +12422,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12534,7 +12510,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12545,7 +12521,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12616,7 +12592,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12627,7 +12603,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12687,11 +12663,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AuthLoginResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -12726,7 +12702,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12737,7 +12713,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -12917,11 +12893,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.UserResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -12994,11 +12970,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AuthLoginResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -13033,7 +13009,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13044,7 +13020,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13115,7 +13091,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13126,7 +13102,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13197,7 +13173,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13208,7 +13184,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13279,7 +13255,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13290,7 +13266,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13333,9 +13309,9 @@ export interface operations {
     SessionCrud_getSessions: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.SessionSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.SessionSearchRequest.cursor"];
             };
             header?: never;
@@ -13351,11 +13327,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.SessionResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -13545,7 +13521,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13556,7 +13532,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13666,7 +13642,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13677,7 +13653,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13737,11 +13713,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffInvitationResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -13770,7 +13746,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13781,7 +13757,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13852,7 +13828,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13863,7 +13839,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13934,7 +13910,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13945,7 +13921,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -13988,9 +13964,9 @@ export interface operations {
     BookingCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.BookingSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.BookingSearchRequest.cursor"];
                 /** @description サロンのIDによる絞り込み(完全一致) */
                 salonId?: components["parameters"]["Models.BookingSearchRequest.salonId"];
@@ -14018,11 +13994,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.BookingResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -14116,11 +14092,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -14177,7 +14153,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14188,7 +14164,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14251,11 +14227,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingServiceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -14323,7 +14299,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14334,7 +14310,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14393,11 +14369,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingServiceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -14610,11 +14586,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -14830,11 +14806,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -14891,7 +14867,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14902,7 +14878,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -14964,11 +14940,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15036,7 +15012,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15047,7 +15023,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15109,11 +15085,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15181,7 +15157,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15192,7 +15168,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15250,11 +15226,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15369,11 +15345,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15492,11 +15468,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15564,7 +15540,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15575,7 +15551,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15633,11 +15609,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.BookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15737,9 +15713,9 @@ export interface operations {
     CustomerCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.CustomerSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.CustomerSearchRequest.cursor"];
                 /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
                 search?: components["parameters"]["Models.CustomerSearchRequest.search"];
@@ -15767,11 +15743,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.CustomerResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -15865,11 +15841,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -15926,7 +15902,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15937,7 +15913,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -15997,11 +15973,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16058,7 +16034,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16069,7 +16045,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16129,11 +16105,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBulkCreateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16190,7 +16166,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16201,7 +16177,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16261,11 +16237,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBulkDeleteResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16333,7 +16309,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16344,7 +16320,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16404,11 +16380,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBulkUpdateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16476,7 +16452,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16487,7 +16463,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16543,11 +16519,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerDeletionRequestResponse"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16739,11 +16715,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16839,11 +16815,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -16900,7 +16876,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16911,7 +16887,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -16971,11 +16947,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17032,7 +17008,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17043,7 +17019,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17086,9 +17062,9 @@ export interface operations {
     CustomerBookings_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.CustomerBookingSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.CustomerBookingSearchRequest.cursor"];
                 /** @description ステータスによる絞り込み(完全一致) */
                 status?: components["parameters"]["Models.CustomerBookingSearchRequest.status"];
@@ -17110,11 +17086,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.CustomerBookingResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -17219,11 +17195,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17291,7 +17267,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17302,7 +17278,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17360,11 +17336,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17472,11 +17448,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17544,7 +17520,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17555,7 +17531,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17617,11 +17593,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerBookingResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17689,7 +17665,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17700,7 +17676,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17756,11 +17732,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerPreferencesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17855,11 +17831,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerPreferencesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -17916,7 +17892,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17927,7 +17903,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -17987,11 +17963,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18048,7 +18024,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18059,7 +18035,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18117,11 +18093,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18337,11 +18313,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18409,7 +18385,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18420,7 +18396,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18478,11 +18454,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18590,11 +18566,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18662,7 +18638,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18673,7 +18649,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -18731,11 +18707,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -18925,7 +18901,7 @@ export interface operations {
     CustomerCrud_getHistory: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.CustomerVersionSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する */
                 cursor?: components["parameters"]["Models.CustomerVersionSearchRequest.cursor"];
@@ -18945,11 +18921,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.CustomerHistoryEntryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -19051,11 +19027,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerPreferencesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19163,11 +19139,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerPreferencesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19224,7 +19200,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -19235,7 +19211,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -19293,11 +19269,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19419,11 +19395,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerStatisticsResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19529,11 +19505,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerVersionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19622,9 +19598,9 @@ export interface operations {
     InventoryCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.InventorySearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.InventorySearchRequest.cursor"];
                 /** @description 在庫を管理するサロンの ID による絞り込み(完全一致)。省略すると、サロンのユーザーには所属サロンの在庫、管理者にはすべてのサロンの在庫を返す */
                 salonId?: components["parameters"]["Models.InventorySearchRequest.salonId"];
@@ -19646,11 +19622,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.InventoryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -19744,11 +19720,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -19805,7 +19781,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -19816,7 +19792,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -19859,9 +19835,9 @@ export interface operations {
     InventoryAlertCrud_list: {
         parameters: {
             query: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.InventoryAlertSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.InventoryAlertSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryAlertSearchRequest.salonId"];
@@ -19885,11 +19861,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.InventoryAlertResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -19982,11 +19958,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryAlertResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -20054,7 +20030,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20065,7 +20041,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20123,11 +20099,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryAlertSummaryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -20205,9 +20181,9 @@ export interface operations {
     InventoryCrud_listExpiring: {
         parameters: {
             query: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.InventoryExpiringSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.InventoryExpiringSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryExpiringSearchRequest.salonId"];
@@ -20227,11 +20203,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.InventoryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -20307,9 +20283,9 @@ export interface operations {
     InventoryCrud_listLowStock: {
         parameters: {
             query: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.InventoryLowStockSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.InventoryLowStockSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryLowStockSearchRequest.salonId"];
@@ -20329,11 +20305,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.InventoryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -20426,11 +20402,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryTransactionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -20487,7 +20463,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20498,7 +20474,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20558,11 +20534,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryStockCountResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -20619,7 +20595,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20630,7 +20606,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -20691,11 +20667,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryValueReportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -20788,11 +20764,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -21008,11 +20984,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.InventoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -21080,7 +21056,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21091,7 +21067,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21134,9 +21110,9 @@ export interface operations {
     InventoryCrud_listMovements: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.InventoryTransactionSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.InventoryTransactionSearchRequest.cursor"];
                 /** @description 在庫操作区分による絞り込み(完全一致) */
                 transactionType?: components["parameters"]["Models.InventoryTransactionSearchRequest.transactionType"];
@@ -21160,11 +21136,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.InventoryTransactionResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -21251,9 +21227,9 @@ export interface operations {
     MedicalChartCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.MedicalChartSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.MedicalChartSearchRequest.cursor"];
                 /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない */
                 search?: components["parameters"]["Models.MedicalChartSearchRequest.search"];
@@ -21273,11 +21249,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.MedicalChartResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -21371,11 +21347,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.MedicalChartResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -21432,7 +21408,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21443,7 +21419,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21501,11 +21477,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.MedicalChartResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -21594,9 +21570,9 @@ export interface operations {
     MedicalChartCrud_listAllergies: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.CustomerAllergySearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.CustomerAllergySearchRequest.cursor"];
             };
             header?: never;
@@ -21614,11 +21590,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.CustomerAllergyResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -21724,11 +21700,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerAllergyResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -21796,7 +21772,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21807,7 +21783,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -21968,11 +21944,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.CustomerAllergyResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22040,7 +22016,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22051,7 +22027,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22113,11 +22089,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.MedicalChartResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22174,7 +22150,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22185,7 +22161,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22247,11 +22223,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PaymentResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22319,7 +22295,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22330,7 +22306,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22390,11 +22366,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointTransactionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22451,7 +22427,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22462,7 +22438,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22520,11 +22496,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointBalanceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22631,11 +22607,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointExpiringResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22724,7 +22700,7 @@ export interface operations {
     PointCrud_listTransactions: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.PointTransactionSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない */
                 cursor?: components["parameters"]["Models.PointTransactionSearchRequest.cursor"];
@@ -22748,11 +22724,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.PointTransactionResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -22856,11 +22832,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointTransactionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -22917,7 +22893,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22928,7 +22904,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -22988,11 +22964,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointExpireResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23038,7 +23014,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23049,7 +23025,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23109,11 +23085,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PointTransactionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23170,7 +23146,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23181,7 +23157,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23224,9 +23200,9 @@ export interface operations {
     PurchaseOrderCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.PurchaseOrderSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.PurchaseOrderSearchRequest.cursor"];
                 /** @description 発注を行うサロンの ID による絞り込み(完全一致) */
                 salonId?: components["parameters"]["Models.PurchaseOrderSearchRequest.salonId"];
@@ -23252,11 +23228,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -23350,11 +23326,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23400,7 +23376,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23411,7 +23387,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23454,9 +23430,9 @@ export interface operations {
     PurchaseOrderCrud_listReorderSuggestions: {
         parameters: {
             query: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ReorderSuggestionSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.ReorderSuggestionSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.ReorderSuggestionSearchRequest.salonId"];
@@ -23474,11 +23450,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ReorderSuggestionResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -23569,11 +23545,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23681,11 +23657,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23753,7 +23729,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23764,7 +23740,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -23822,11 +23798,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -23945,11 +23921,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24017,7 +23993,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24028,7 +24004,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24090,11 +24066,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PurchaseOrderResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24162,7 +24138,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24173,7 +24149,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24216,7 +24192,7 @@ export interface operations {
     ReviewReportCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ReviewReportSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る通報のIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.ReviewReportSearchRequest.cursor"];
@@ -24240,11 +24216,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ReviewReportResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -24335,11 +24311,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewReportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24439,7 +24415,7 @@ export interface operations {
     ReviewCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ReviewSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.ReviewSearchRequest.cursor"];
@@ -24473,11 +24449,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ReviewResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -24543,11 +24519,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24604,7 +24580,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24615,7 +24591,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24673,11 +24649,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24854,11 +24830,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -24915,7 +24891,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24926,7 +24902,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -24984,11 +24960,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewHelpfulResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25096,11 +25072,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewReportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25168,7 +25144,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25179,7 +25155,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25241,11 +25217,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25302,7 +25278,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25313,7 +25289,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25356,9 +25332,9 @@ export interface operations {
     SaleCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.SaleSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.SaleSearchRequest.cursor"];
                 /** @description サロン ID による絞り込み(完全一致) */
                 salonId?: components["parameters"]["Models.SaleSearchRequest.salonId"];
@@ -25386,11 +25362,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.SaleResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -25484,11 +25460,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25545,7 +25521,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25556,7 +25532,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -25619,11 +25595,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalesReportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25721,11 +25697,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalesByCategoryResponse"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25823,11 +25799,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalesByStaffResponse"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -25923,11 +25899,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.DailySalesResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26122,11 +26098,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalesTrendsResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26221,11 +26197,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleCalculateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26271,7 +26247,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26282,7 +26258,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26340,11 +26316,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26452,11 +26428,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26524,7 +26500,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26535,7 +26511,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26597,11 +26573,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PaymentResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26669,7 +26645,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26680,7 +26656,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26738,11 +26714,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleReceiptResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26861,11 +26837,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SaleResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -26933,7 +26909,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26944,7 +26920,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -26987,9 +26963,9 @@ export interface operations {
     SalonCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.SalonSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.SalonSearchRequest.cursor"];
                 /** @description 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない) */
                 keyword?: components["parameters"]["Models.SalonSearchRequest.keyword"];
@@ -27017,11 +26993,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.SalonResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -27087,11 +27063,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalonResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -27148,7 +27124,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27159,7 +27135,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27217,11 +27193,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalonResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -27409,11 +27385,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SalonResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -27481,7 +27457,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27492,7 +27468,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27535,7 +27511,7 @@ export interface operations {
     AvailableSlotCrud_list: {
         parameters: {
             query: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.AvailableSlotSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
                 cursor?: components["parameters"]["Models.AvailableSlotSearchRequest.cursor"];
@@ -27563,11 +27539,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.AvailableSlotResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -27684,11 +27660,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AvailableSlotCheckResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -27745,7 +27721,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27756,7 +27732,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -27799,9 +27775,9 @@ export interface operations {
     PaymentMethodCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.PaymentMethodSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.PaymentMethodSearchRequest.cursor"];
                 /** @description 支払い方法区分による絞り込み(完全一致) */
                 method?: components["parameters"]["Models.PaymentMethodSearchRequest.method"];
@@ -27823,11 +27799,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.PaymentMethodResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -27934,11 +27910,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PaymentMethodResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -27995,7 +27971,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28006,7 +27982,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28065,11 +28041,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PaymentMethodResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -28287,11 +28263,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.PaymentMethodResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -28348,7 +28324,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28359,7 +28335,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28402,9 +28378,9 @@ export interface operations {
     ProductCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ProductSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.ProductSearchRequest.cursor"];
                 /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
                 keyword?: components["parameters"]["Models.ProductSearchRequest.keyword"];
@@ -28434,11 +28410,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ProductResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -28545,11 +28521,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ProductResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -28617,7 +28593,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28628,7 +28604,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28687,11 +28663,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ProductResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -28909,11 +28885,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ProductResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -28981,7 +28957,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -28992,7 +28968,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29050,11 +29026,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewSummaryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29115,9 +29091,9 @@ export interface operations {
     ServiceCategoryCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ServiceCategorySearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.ServiceCategorySearchRequest.cursor"];
                 /** @description 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
                 isActive?: components["parameters"]["Models.ServiceCategorySearchRequest.isActive"];
@@ -29137,11 +29113,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ServiceCategoryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -29220,11 +29196,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceCategoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29281,7 +29257,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29292,7 +29268,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29351,11 +29327,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceCategoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29534,11 +29510,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceCategoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29595,7 +29571,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29606,7 +29582,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29649,9 +29625,9 @@ export interface operations {
     ServiceCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.ServiceSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.ServiceSearchRequest.cursor"];
                 /** @description サービスカテゴリの ID による絞り込み(完全一致) */
                 categoryId?: components["parameters"]["Models.ServiceSearchRequest.categoryId"];
@@ -29673,11 +29649,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.ServiceResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -29756,11 +29732,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29817,7 +29793,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29828,7 +29804,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29890,11 +29866,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceBulkUpdateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -29951,7 +29927,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -29962,7 +29938,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30021,11 +29997,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -30215,11 +30191,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ServiceResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -30276,7 +30252,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30287,7 +30263,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30330,9 +30306,9 @@ export interface operations {
     StaffCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.StaffSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.StaffSearchRequest.cursor"];
             };
             header?: never;
@@ -30350,11 +30326,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.StaffResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -30461,11 +30437,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -30533,7 +30509,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30544,7 +30520,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30603,11 +30579,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -30825,11 +30801,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -30897,7 +30873,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30908,7 +30884,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -30967,11 +30943,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffAccountResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31189,11 +31165,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffAccountResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31261,7 +31237,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31272,7 +31248,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31331,11 +31307,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffInvitationResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31445,11 +31421,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffInvitationResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31517,7 +31493,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31528,7 +31504,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31688,11 +31664,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffSchedule"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31801,11 +31777,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffSchedule"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31862,7 +31838,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31873,7 +31849,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31933,11 +31909,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.AttachmentDownloadUrlResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -31977,7 +31953,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -31988,7 +31964,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32048,11 +32024,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.SharedFileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32092,7 +32068,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32103,7 +32079,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32146,9 +32122,9 @@ export interface operations {
     StaffProfile_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.StaffProfileSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.StaffProfileSearchRequest.cursor"];
                 /** @description 所属サロンの ID による絞り込み(完全一致)。存在しないサロンを指定した場合は空の一覧を返す */
                 salonId?: components["parameters"]["Models.StaffProfileSearchRequest.salonId"];
@@ -32170,11 +32146,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.StaffProfileResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -32235,11 +32211,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32334,11 +32310,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32395,7 +32371,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32406,7 +32382,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32464,11 +32440,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.StaffProfileResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32544,11 +32520,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.ReviewSummaryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32609,9 +32585,9 @@ export interface operations {
     TreatmentRecordCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.TreatmentRecordSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.TreatmentRecordSearchRequest.cursor"];
                 /** @description 施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン */
                 salonId?: components["parameters"]["Models.TreatmentRecordSearchRequest.salonId"];
@@ -32637,11 +32613,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        /** @description このページの項目。 */
                         data: components["schemas"]["Models.TreatmentRecordResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        /** @description ページの位置と件数。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        /** @description このページと、前後のページの URL。 */
                         links: components["schemas"]["Models.PaginationLinks"];
                     };
                 };
@@ -32735,11 +32711,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.TreatmentRecordResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32796,7 +32772,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32807,7 +32783,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -32870,11 +32846,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.TreatmentStatisticsResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -32967,11 +32943,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.TreatmentRecordResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -33176,11 +33152,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.TreatmentRecordResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -33237,7 +33213,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -33248,7 +33224,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -33310,11 +33286,11 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        /** @description オペレーションの結果。 */
                         data: components["schemas"]["Models.TreatmentPhotoBulkCreateResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        /** @description リクエストの ID と、答えた日時。 */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        /** @description 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull */
                         links: {
                             [key: string]: string;
                         } | null;
@@ -33382,7 +33358,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            /** @description リクエスト本文が 100,000 バイトを超えている (413)。 */
             413: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
@@ -33393,7 +33369,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            /** @description リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。 */
             415: {
                 headers: {
                     /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */

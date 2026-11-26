@@ -4,6 +4,6 @@
  */
 
 /**
- * 顧客（来店者）を識別するためのブランド付きUUID。
+ * 顧客の ID。
  */
 export type ModelsCustomerId = string;

@@ -9,12 +9,12 @@ import type { ModelsPointTransactionSearchRequestStartDateParameter } from './mo
 
 export type PointCrudListTransactionsParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsPointTransactionSearchRequestLimitParameter;
-  /** 顧客ポイントの加算・減算履歴を識別するブランド付きUUID。 */
+  /** ポイントの増減の記録の ID。 */
   cursor?: ModelsPointTransactionSearchRequestCursorParameter;
   /** 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startDate?: ModelsPointTransactionSearchRequestStartDateParameter;

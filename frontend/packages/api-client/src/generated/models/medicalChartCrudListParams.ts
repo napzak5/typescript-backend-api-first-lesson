@@ -9,12 +9,12 @@ import type { ModelsMedicalChartSearchRequestSearchParameter } from './modelsMed
 
 export type MedicalChartCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsMedicalChartSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsMedicalChartSearchRequestCursorParameter;
   /**
    * 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない

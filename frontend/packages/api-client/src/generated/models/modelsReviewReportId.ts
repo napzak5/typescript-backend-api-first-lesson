@@ -4,6 +4,6 @@
  */
 
 /**
- * レビューの通報（review_reports の1行）を識別するブランド付きUUID。
+ * レビューの通報の ID。
  */
 export type ModelsReviewReportId = string;

@@ -14,7 +14,7 @@ namespace BeautySalon.Operations {
   @tag("System")
   @useAuth(NoAuth)
   namespace SystemOperations {
-    @doc("APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。")
+    @doc("依存先 (データベース) が応答するかを確かめ、依存先ごとの結果を返します。3 秒待っても応答しない依存先があるときは 503 です。")
     @summary("Check API health")
     @get
     @route("health")
@@ -28,7 +28,7 @@ namespace BeautySalon.Operations {
           @body response: HealthStatus;
         };
 
-    @doc("Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。")
+    @doc("リクエストを処理できる状態かを答えます。3 秒待っても応答しない依存先があるときは 503 で、リクエストを振り分けないでください。")
     @summary("Check API readiness")
     @get
     @route("ready")
@@ -42,7 +42,7 @@ namespace BeautySalon.Operations {
           @body response: SystemReadyResponse;
         };
 
-    @doc("プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。")
+    @doc("プロセスが動いていれば 200 です。依存先は確かめません。応答がないときは、プロセスを再起動してください。")
     @summary("Check API liveness")
     @get
     @route("alive")

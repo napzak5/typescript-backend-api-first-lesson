@@ -4,6 +4,6 @@
  */
 
 /**
- * サロン店舗・拠点を識別するためのブランド付きUUID。
+ * サロン (店舗) の ID。
  */
 export type ModelsSalonId = string;

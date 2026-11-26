@@ -6,7 +6,7 @@ import type { ModelsDailySalesGetRequestDateParameter } from './modelsDailySales
 import type { ModelsDailySalesGetRequestSalonIdParameter } from './modelsDailySalesGetRequestSalonIdParameter';
 
 export type SalesReportCrudGetDailyParams = {
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsDailySalesGetRequestSalonIdParameter;
   /** 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
   date: ModelsDailySalesGetRequestDateParameter;

@@ -6,7 +6,7 @@ import type { ModelsInventoryValueReportRequestCategoryParameter } from './model
 import type { ModelsInventoryValueReportRequestSalonIdParameter } from './modelsInventoryValueReportRequestSalonIdParameter';
 
 export type InventoryCrudGetValueReportParams = {
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId: ModelsInventoryValueReportRequestSalonIdParameter;
   /**
    * 商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない

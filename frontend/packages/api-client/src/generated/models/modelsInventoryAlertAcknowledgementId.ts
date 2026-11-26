@@ -4,6 +4,6 @@
  */
 
 /**
- * 在庫アラートを確認した記録を識別するブランド付きUUID。
+ * 在庫アラートを確認した記録の ID。
  */
 export type ModelsInventoryAlertAcknowledgementId = string;

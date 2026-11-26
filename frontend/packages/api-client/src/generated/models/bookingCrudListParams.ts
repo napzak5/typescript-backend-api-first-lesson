@@ -13,18 +13,18 @@ import type { ModelsBookingSearchRequestStatusParameter } from './modelsBookingS
 
 export type BookingCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsBookingSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsBookingSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsBookingSearchRequestSalonIdParameter;
-  /** 顧客（来店者）を識別するためのブランド付きUUID。 */
+  /** 顧客の ID。 */
   customerId?: ModelsBookingSearchRequestCustomerIdParameter;
-  /** 施術スタッフや従業員を識別するためのブランド付きUUID。 */
+  /** スタッフの ID。 */
   staffId?: ModelsBookingSearchRequestStaffIdParameter;
   /**
    * 予約ステータス区分 - 予約の詳細な進行状態を表す区分

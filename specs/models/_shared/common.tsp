@@ -4,115 +4,115 @@ using TypeSpec.Http;
 
 namespace BeautySalon.Models {
   using TypeSpec.OpenAPI;
-  @doc("システム利用者（顧客・スタッフ・管理者）を一意に識別するブランド付きUUID。")
+  @doc("利用者 (顧客、スタッフ、管理者) のアカウントの ID。")
   @format("uuid")
   scalar UserId extends string;
 
-  @doc("ログインセッションを追跡するためのブランド付きUUID。")
+  @doc("ログインセッションの ID。")
   @format("uuid")
   scalar SessionId extends string;
 
-  @doc("サロン店舗・拠点を識別するためのブランド付きUUID。")
+  @doc("サロン (店舗) の ID。")
   @format("uuid")
   scalar SalonId extends string;
 
-  @doc("施術スタッフや従業員を識別するためのブランド付きUUID。")
+  @doc("スタッフの ID。")
   @format("uuid")
   scalar StaffId extends string;
 
-  @doc("スタッフへの招待(staff_invitations の1行)を識別するブランド付きUUID。")
+  @doc("スタッフへの招待の ID。")
   @format("uuid")
   scalar StaffInvitationId extends string;
 
-  @doc("提供メニュー・施術サービスを識別するためのブランド付きUUID。")
+  @doc("サービス (メニュー) の ID。")
   @format("uuid")
   scalar ServiceId extends string;
 
-  @doc("顧客（来店者）を識別するためのブランド付きUUID。")
+  @doc("顧客の ID。")
   @format("uuid")
   scalar CustomerId extends string;
 
-  @doc("予約（bookings の1行）を識別するブランド付きUUID。")
+  @doc("予約の ID。")
   @format("uuid")
   scalar BookingId extends string;
 
-  @doc("予約に含まれる施術明細（booking_services の1行）を識別するブランド付きUUID。")
+  @doc("予約の施術明細の ID。")
   @format("uuid")
   scalar BookingServiceId extends string;
 
-  @doc("顧客レビューや口コミを識別するブランド付きUUID。")
+  @doc("レビューの ID。")
   @format("uuid")
   scalar ReviewId extends string;
 
-  @doc("レビューの通報（review_reports の1行）を識別するブランド付きUUID。")
+  @doc("レビューの通報の ID。")
   @format("uuid")
   scalar ReviewReportId extends string;
 
-  @doc("サービスカテゴリやメニュー分類を識別するブランド付きUUID。")
+  @doc("サービスカテゴリーの ID。")
   @format("uuid")
   scalar CategoryId extends string;
 
-  @doc("在庫アイテムや消耗品を識別するブランド付きUUID。")
+  @doc("在庫 (サロンの、商品 1 つの 1 ロットの在庫) の ID。")
   @format("uuid")
   scalar InventoryId extends string;
 
-  @doc("サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。")
+  @doc("商品 (店販品と、施術で使う商材) の ID。")
   @format("uuid")
   scalar ProductId extends string;
 
-  @doc("在庫の入出庫(在庫移動)の記録を識別するブランド付きUUID。")
+  @doc("在庫の移動の記録の ID。")
   @format("uuid")
   scalar InventoryTransactionId extends string;
 
-  @doc("在庫アラートを確認した記録を識別するブランド付きUUID。")
+  @doc("在庫アラートを確認した記録の ID。")
   @format("uuid")
   scalar InventoryAlertAcknowledgementId extends string;
 
-  @doc("サプライヤー発注・仕入れオーダーを識別するブランド付きUUID。")
+  @doc("発注の ID。")
   @format("uuid")
   scalar OrderId extends string;
 
-  @doc("決済取引（売上に対する1回の支払い）を識別するブランド付きUUID。")
+  @doc("決済取引 (売上に対する 1 回の支払い) の ID。")
   @format("uuid")
   scalar PaymentId extends string;
 
-  @doc("売上（1回の来店の会計）を識別するブランド付きUUID。")
+  @doc("売上 (1 回の来店の会計) の ID。")
   @format("uuid")
   scalar SaleId extends string;
 
-  @doc("サロンが受け付ける支払い方法の設定を識別するブランド付きUUID。")
+  @doc("サロンの支払い方法の ID。")
   @format("uuid")
   scalar PaymentMethodId extends string;
 
-  @doc("施術記録やカウンセリングメモを識別するブランド付きUUID。")
+  @doc("施術記録の ID。")
   @format("uuid")
   scalar TreatmentRecordId extends string;
 
-  @doc("施術記録の写真を識別するブランド付きUUID。")
+  @doc("施術記録の写真の ID。")
   @format("uuid")
   scalar TreatmentPhotoId extends string;
 
-  @doc("カルテ（メディカルチャート）を識別するブランド付きUUID。")
+  @doc("カルテの ID。")
   @format("uuid")
   scalar MedicalChartId extends string;
 
-  @doc("顧客のアレルギー（customer_allergies の行）を識別するブランド付きUUID。")
+  @doc("顧客のアレルギーの ID。")
   @format("uuid")
   scalar CustomerAllergyId extends string;
 
-  @doc("顧客の版（customer_versions の行）を識別するブランド付きUUID。")
+  @doc("顧客の版の ID。")
   @format("uuid")
   scalar CustomerVersionId extends string;
 
-  @doc("顧客のデータの削除の依頼（customer_deletion_requests の行）を識別するブランド付きUUID。")
+  @doc("顧客のデータの削除の依頼の ID。")
   @format("uuid")
   scalar CustomerDeletionRequestId extends string;
 
-  @doc("添付ファイル・画像データを識別するブランド付きUUID。")
+  @doc("添付ファイルの ID。")
   @format("uuid")
   scalar AttachmentId extends string;
 
-  @doc("顧客ポイントの加算・減算履歴を識別するブランド付きUUID。")
+  @doc("ポイントの増減の記録の ID。")
   @format("uuid")
   scalar PointTransactionId extends string;
 

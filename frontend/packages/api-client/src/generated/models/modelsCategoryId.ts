@@ -4,6 +4,6 @@
  */
 
 /**
- * サービスカテゴリやメニュー分類を識別するブランド付きUUID。
+ * サービスカテゴリーの ID。
  */
 export type ModelsCategoryId = string;

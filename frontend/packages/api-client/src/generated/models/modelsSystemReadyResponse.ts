@@ -4,14 +4,13 @@
  */
 
 /**
- * 準備完了チェックの結果モデル。
- * オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
+ * リクエストを処理できる状態かどうかを表すモデル。
  */
 export interface ModelsSystemReadyResponse {
   /** リクエストを処理できる状態であればtrue。 */
   ready: boolean;
   /**
-     * 準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull
+     * 応答しない依存先の名前 (`database`)。リクエストを処理できる場合はnull
      * @nullable
      */
   reason: string | null;

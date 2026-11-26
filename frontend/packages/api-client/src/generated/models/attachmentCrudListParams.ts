@@ -8,13 +8,13 @@ import type { ModelsAttachmentSearchRequestSalonIdParameter } from './modelsAtta
 
 export type AttachmentCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsAttachmentSearchRequestLimitParameter;
   /** 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー */
   cursor?: ModelsAttachmentSearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  /** サロン (店舗) の ID。 */
   salonId?: ModelsAttachmentSearchRequestSalonIdParameter;
 };

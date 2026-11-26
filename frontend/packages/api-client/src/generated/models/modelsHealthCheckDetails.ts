@@ -4,7 +4,7 @@
  */
 
 /**
- * 監視対象固有の追加詳細。再試行回数や依存サービス名などを含める。追加情報がない場合はnull
+ * 常にnull
  * @nullable
  */
 export type ModelsHealthCheckDetails = {[key: string]: unknown} | null;

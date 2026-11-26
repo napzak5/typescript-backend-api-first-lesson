@@ -4,7 +4,7 @@
  */
 
 /**
- * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+ * 結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull
  * @nullable
  */
 export type PointCrudGetExpiring200Links = {[key: string]: string} | null;

@@ -4,6 +4,6 @@
  */
 
 /**
- * 顧客の版（customer_versions の行）を識別するブランド付きUUID。
+ * 顧客の版の ID。
  */
 export type ModelsCustomerVersionId = string;

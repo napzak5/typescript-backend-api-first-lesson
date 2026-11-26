@@ -4,6 +4,6 @@
  */
 
 /**
- * スタッフへの招待(staff_invitations の1行)を識別するブランド付きUUID。
+ * スタッフへの招待の ID。
  */
 export type ModelsStaffInvitationId = string;

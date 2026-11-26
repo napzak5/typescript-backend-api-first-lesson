@@ -9,12 +9,12 @@ import type { ModelsPaymentMethodSearchRequestMethodParameter } from './modelsPa
 
 export type PaymentMethodCrudListParams = {
   /**
-   * 1ページあたりの取得件数上限 (1〜100)
+   * 1ページあたりの取得件数上限
    * @minimum 1
    * @maximum 100
    */
   limit?: ModelsPaymentMethodSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル */
   cursor?: ModelsPaymentMethodSearchRequestCursorParameter;
   /**
    * 支払い方法区分 - サロンで利用可能な決済手段の種類
