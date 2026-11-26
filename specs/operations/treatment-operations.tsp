@@ -132,7 +132,7 @@ namespace BeautySalon.Operations {
   @tag("Medical Charts")
   namespace MedicalChartOperations {
     interface MedicalChartCrud {
-      @doc("絞り込み条件とページネーションを指定してカルテを一覧取得します。")
+      @doc("絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。")
       @summary("List medical charts")
       @get
       list(...MedicalChartSearchRequest):
@@ -143,7 +143,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。")
+      @doc("顧客のカルテを新規作成します。実行できるのは、カルテの一覧と同じ利用者です。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーとlinks.selfは、顧客IDによるカルテ取得のURLを指します。")
       @summary("Create a medical chart")
       @post
       create(@body request: MedicalChartCreateRequest):
@@ -157,7 +157,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。")
+      @doc("顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。")
       @summary("Get the medical chart of a customer")
       @route("/customer/{customerId}")
       @get
@@ -170,7 +170,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。")
+      @doc("指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。")
       @summary("Update a medical chart")
       @patch
       update(
@@ -186,7 +186,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。")
+      @doc("施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。")
       @summary("List the allergies of a customer")
       @route("/customer/{customerId}/allergies")
       @get
@@ -202,7 +202,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。")
+      @doc("顧客のアレルギーを1件追加します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返さず、links.listがその顧客のアレルギーの一覧を指します。")
       @summary("Add an allergy of a customer")
       @route("/customer/{customerId}/allergies")
       @post
@@ -220,7 +220,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。")
+      @doc("顧客のアレルギーの指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。")
       @summary("Update an allergy of a customer")
       @route("/customer/{customerId}/allergies/{allergyId}")
       @patch
@@ -239,7 +239,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。")
+      @doc("誤って記録した顧客のアレルギーを削除します。施術の安全のための記録なので、削除できるのは管理者と、サロンのオーナー・マネージャーだけです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。")
       @summary("Remove an allergy of a customer")
       @route("/customer/{customerId}/allergies/{allergyId}")
       @delete

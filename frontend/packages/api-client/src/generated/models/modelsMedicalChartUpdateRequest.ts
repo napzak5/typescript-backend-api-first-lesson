@@ -18,22 +18,22 @@ export interface ModelsMedicalChartUpdateRequest {
      */
   previousTreatments?: ModelsPreviousTreatment[];
   /**
-     * 施術の前に注意が必要な持病・体調。nullでクリア
+     * 施術の前に注意が必要な持病・体調（空白だけは指定できない）。nullでクリア
      * @nullable
      */
   medicalConditions?: string | null;
   /**
-     * 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア
+     * 好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア
      * @maxItems 50
      */
   preferredProducts?: string[];
   /**
-     * 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア
+     * 避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア
      * @maxItems 50
      */
   avoidProducts?: string[];
   /**
-     * 自由記述のメモ。nullでクリア
+     * 自由記述のメモ（空白だけは指定できない）。nullでクリア
      * @nullable
      */
   notes?: string | null;

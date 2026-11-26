@@ -543,10 +543,7 @@ namespace BeautySalon.Models {
     confirmedDate?: plainDate | null;
   }
 
-  @doc("""
-    顧客アレルギー一覧リクエスト - ページネーションを指定する。
-    重篤度の重い順（life_threatening、severe、moderate、mild）、同じ重篤度は記録した順（作成日時、同時刻は ID の順）に返す
-    """)
+  @doc("顧客アレルギー一覧リクエスト - ページネーションを指定する。並びは listAllergies に書く")
   model CustomerAllergySearchRequest {
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)")
@@ -564,7 +561,8 @@ namespace BeautySalon.Models {
   // ============================================================================
 
   @doc("""
-    過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する
+    過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する。
+    1 件ごとの ID は持たないので、更新は一覧全体を置き換える
     """)
   model PreviousTreatment {
     @doc("施術の種類")
@@ -573,11 +571,11 @@ namespace BeautySalon.Models {
     @doc("施術日。1900-01-01 から今日まで")
     date: plainDate;
 
-    @doc("施術を受けたサロンの名前（255文字まで）。自店での施術や、サロンが分からない場合はnull")
+    @doc("施術を受けたサロンの名前（255文字まで。空白だけは指定できない）。自店での施術や、サロンが分からない場合はnull")
     @maxLength(255)
     salonName: string | null;
 
-    @doc("施術についてのメモ。特記事項がない場合はnull")
+    @doc("施術についてのメモ（空白だけは指定できない）。特記事項がない場合はnull")
     notes: string | null;
   }
 
@@ -617,7 +615,8 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する
+    カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
+    好みの一覧と避ける一覧に、同じ名前があってもよい
     """)
   model MedicalChartCreateRequest {
     @doc("対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する")
@@ -627,18 +626,18 @@ namespace BeautySalon.Models {
     @maxItems(50)
     previousTreatments: PreviousTreatment[];
 
-    @doc("施術の前に注意が必要な持病・体調。特にない場合はnull")
+    @doc("施術の前に注意が必要な持病・体調（空白だけは指定できない）。特にない場合はnull")
     medicalConditions: string | null;
 
-    @doc("好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列")
+    @doc("好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列")
     @maxItems(50)
     preferredProducts: string[];
 
-    @doc("避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列")
+    @doc("避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列")
     @maxItems(50)
     avoidProducts: string[];
 
-    @doc("自由記述のメモ。特記事項がない場合はnull")
+    @doc("自由記述のメモ（空白だけは指定できない）。特記事項がない場合はnull")
     notes: string | null;
   }
 
@@ -651,25 +650,22 @@ namespace BeautySalon.Models {
     @maxItems(50)
     previousTreatments?: PreviousTreatment[];
 
-    @doc("施術の前に注意が必要な持病・体調。nullでクリア")
+    @doc("施術の前に注意が必要な持病・体調（空白だけは指定できない）。nullでクリア")
     medicalConditions?: string | null;
 
-    @doc("好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア")
+    @doc("好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア")
     @maxItems(50)
     preferredProducts?: string[];
 
-    @doc("避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア")
+    @doc("避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア")
     @maxItems(50)
     avoidProducts?: string[];
 
-    @doc("自由記述のメモ。nullでクリア")
+    @doc("自由記述のメモ（空白だけは指定できない）。nullでクリア")
     notes?: string | null;
   }
 
-  @doc("""
-    カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。
-    作成日時の新しい順（同時刻は ID の降順）に返す。削除された顧客のカルテは含めない
-    """)
+  @doc("カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件の結合と並びは list に書く")
   model MedicalChartSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)")
@@ -682,7 +678,7 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
-    @doc("持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない）")
+    @doc("持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない")
     @minLength(1)
     @maxLength(100)
     search?: string;

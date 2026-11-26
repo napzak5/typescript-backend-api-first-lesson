@@ -1625,13 +1625,13 @@ export interface paths {
         };
         /**
          * List medical charts
-         * @description 絞り込み条件とページネーションを指定してカルテを一覧取得します。
+         * @description 絞り込み条件とページネーションを指定してカルテを一覧取得します。条件はすべてANDで結合し、作成日時の新しい順(同時刻はIDの降順)に返します。削除された顧客のカルテは含みません。実行できるのは、顧客台帳と同じく admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)です。顧客本人(ロール customer)を含め、それ以外のユーザーには403を返します。権限は最初に確認し、権限のないユーザーには、IDや本文、クエリが不正でも403を返します(このAPI操作群のどのオペレーションも同じです)。cursorが一覧に載るカルテを指していない場合は400を返します。
          */
         get: operations["MedicalChartCrud_list"];
         put?: never;
         /**
          * Create a medical chart
-         * @description 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+         * @description 顧客のカルテを新規作成します。実行できるのは、カルテの一覧と同じ利用者です。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーとlinks.selfは、顧客IDによるカルテ取得のURLを指します。
          */
         post: operations["MedicalChartCrud_create"];
         delete?: never;
@@ -1649,7 +1649,7 @@ export interface paths {
         };
         /**
          * Get the medical chart of a customer
-         * @description 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
+         * @description 顧客IDを指定してカルテを取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
          */
         get: operations["MedicalChartCrud_getByCustomer"];
         put?: never;
@@ -1669,13 +1669,13 @@ export interface paths {
         };
         /**
          * List the allergies of a customer
-         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
+         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても取得できます。施術の前に重いものから確かめられるように、重篤度の重い順(life_threatening、severe、moderate、mild)、同じ重篤度は記録した順(作成日時、同時刻はIDの順)に返します。顧客が存在しないか削除されている場合は404を、cursorがその顧客のアレルギーを指していない場合は400を返します。
          */
         get: operations["MedicalChartCrud_listAllergies"];
         put?: never;
         /**
          * Add an allergy of a customer
-         * @description 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+         * @description 顧客のアレルギーを1件追加します。実行できるのは、カルテの一覧と同じ利用者です。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返さず、links.listがその顧客のアレルギーの一覧を指します。
          */
         post: operations["MedicalChartCrud_addAllergy"];
         delete?: never;
@@ -1696,14 +1696,14 @@ export interface paths {
         post?: never;
         /**
          * Remove an allergy of a customer
-         * @description 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+         * @description 誤って記録した顧客のアレルギーを削除します。施術の安全のための記録なので、削除できるのは管理者と、サロンのオーナー・マネージャーだけです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
          */
         delete: operations["MedicalChartCrud_removeAllergy"];
         options?: never;
         head?: never;
         /**
          * Update an allergy of a customer
-         * @description 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+         * @description 顧客のアレルギーの指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。links.listがその顧客のアレルギーの一覧を指します。
          */
         patch: operations["MedicalChartCrud_updateAllergy"];
         trace?: never;
@@ -1723,7 +1723,7 @@ export interface paths {
         head?: never;
         /**
          * Update a medical chart
-         * @description 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
+         * @description 指定した項目だけを更新します。実行できるのは、カルテの一覧と同じ利用者です。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
          */
         patch: operations["MedicalChartCrud_update"];
         trace?: never;
@@ -5982,19 +5982,22 @@ export interface components {
          */
 
         "Models.LanguageType": "en" | "ja";
-        /** @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する */
+        /**
+         * @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
+         *     好みの一覧と避ける一覧に、同じ名前があってもよい
+         */
         "Models.MedicalChartCreateRequest": {
             /** @description 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
             customerId: components["schemas"]["Models.CustomerId"];
             /** @description 過去の施術の一覧。50件まで。指定した順に保存する。記録がない場合は空配列 */
             previousTreatments: components["schemas"]["Models.PreviousTreatment"][];
-            /** @description 施術の前に注意が必要な持病・体調。特にない場合はnull */
+            /** @description 施術の前に注意が必要な持病・体調（空白だけは指定できない）。特にない場合はnull */
             medicalConditions: string | null;
-            /** @description 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列 */
+            /** @description 好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列 */
             preferredProducts: string[];
-            /** @description 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列 */
+            /** @description 避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。特にない場合は空配列 */
             avoidProducts: string[];
-            /** @description 自由記述のメモ。特記事項がない場合はnull */
+            /** @description 自由記述のメモ（空白だけは指定できない）。特記事項がない場合はnull */
             notes: string | null;
         };
         /**
@@ -6041,13 +6044,13 @@ export interface components {
         "Models.MedicalChartUpdateRequest": {
             /** @description 過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア */
             previousTreatments?: components["schemas"]["Models.PreviousTreatment"][];
-            /** @description 施術の前に注意が必要な持病・体調。nullでクリア */
+            /** @description 施術の前に注意が必要な持病・体調（空白だけは指定できない）。nullでクリア */
             medicalConditions?: string | null;
-            /** @description 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア */
+            /** @description 好みの商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア */
             preferredProducts?: string[];
-            /** @description 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア */
+            /** @description 避ける商材・ブランドの名前の一覧（100文字まで。空白だけは指定できない）。50件まで。同じ名前の繰り返しは指定できない（大文字と小文字は区別する）。空配列でクリア */
             avoidProducts?: string[];
-            /** @description 自由記述のメモ。nullでクリア */
+            /** @description 自由記述のメモ（空白だけは指定できない）。nullでクリア */
             notes?: string | null;
         };
         /**
@@ -6735,7 +6738,10 @@ export interface components {
              */
             referenceId: string | null;
         };
-        /** @description 過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する */
+        /**
+         * @description 過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する。
+         *     1 件ごとの ID は持たないので、更新は一覧全体を置き換える
+         */
         "Models.PreviousTreatment": {
             /** @description 施術の種類 */
             treatment: components["schemas"]["Models.TreatmentType"];
@@ -6744,9 +6750,9 @@ export interface components {
              * @description 施術日。1900-01-01 から今日まで
              */
             date: string;
-            /** @description 施術を受けたサロンの名前（255文字まで）。自店での施術や、サロンが分からない場合はnull */
+            /** @description 施術を受けたサロンの名前（255文字まで。空白だけは指定できない）。自店での施術や、サロンが分からない場合はnull */
             salonName: string | null;
-            /** @description 施術についてのメモ。特記事項がない場合はnull */
+            /** @description 施術についてのメモ（空白だけは指定できない）。特記事項がない場合はnull */
             notes: string | null;
         };
         /**
@@ -10225,7 +10231,7 @@ export interface components {
         "Models.MedicalChartSearchRequest.hasAllergies": boolean;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.MedicalChartSearchRequest.limit": number;
-        /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない） */
+        /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない */
         "Models.MedicalChartSearchRequest.search": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.PaymentMethodSearchRequest.cursor": string;
@@ -21286,7 +21292,7 @@ export interface operations {
                 limit?: components["parameters"]["Models.MedicalChartSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
                 cursor?: components["parameters"]["Models.MedicalChartSearchRequest.cursor"];
-                /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない） */
+                /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない。% と _ は、ただの文字として扱う）。過去の施術のサロン名とメモは検索しない */
                 search?: components["parameters"]["Models.MedicalChartSearchRequest.search"];
                 /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
                 hasAllergies?: components["parameters"]["Models.MedicalChartSearchRequest.hasAllergies"];
