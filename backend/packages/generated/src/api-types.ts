@@ -2201,7 +2201,7 @@ export interface paths {
         };
         /**
          * Get a sales report
-         * @description サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+         * @description サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。売上のない期間は、すべての値が0で、内訳の配列が空のレポートを返します。管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
         get: operations["SalesReportCrud_get"];
         put?: never;
@@ -2221,7 +2221,7 @@ export interface paths {
         };
         /**
          * Get sales by service category
-         * @description 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+         * @description 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。数える売上は、期間のレポート(get)と同じで、同じ期間のレポートの salesByCategory と同じ値を返します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
         get: operations["SalesReportCrud_getByCategory"];
         put?: never;
@@ -2241,7 +2241,7 @@ export interface paths {
         };
         /**
          * Get sales by staff
-         * @description 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+         * @description 期間内の売上の明細を、担当スタッフ別に集計します。数える売上は、期間のレポート(get)と同じです。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを、ページには分けずにすべて返します。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
         get: operations["SalesReportCrud_getByStaff"];
         put?: never;
@@ -2261,7 +2261,7 @@ export interface paths {
         };
         /**
          * Get daily sales
-         * @description サロンの、売上日が date の、取り消していない売上を集計します。
+         * @description サロンの、売上日が date の、取り消していない売上を集計します。startDate と endDate がどちらも date の期間のレポート(get)と同じ売上を数えます。売上のない日は、すべての値が0です。実行できるのは、期間のレポート(get)と同じ利用者です。
          */
         get: operations["SalesReportCrud_getDaily"];
         put?: never;
@@ -2281,7 +2281,7 @@ export interface paths {
         };
         /**
          * Export a sales report as CSV
-         * @description 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+         * @description 期間の売上を、1日を1行にした CSV ファイルとして返します。会計ソフトや表計算ソフトに取り込むためのファイルです。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は、getDaily の値に、その日の売上の消費税額(tax)と値引額(discounts)の合計を加えたものです)。合計の行はありません(表計算ソフトで合計すると二重になり、取り込むときに日付でない行が混じるためです)。文字コードは UTF-8(BOM なし)、改行は CRLF で(RFC 4180。最後の行も CRLF で終わります)、1行目は列名です。列名は英語で、値は日付と整数だけなので、引用符で囲む値はなく、ファイルは ASCII の文字だけです(Shift_JIS で開く表計算ソフトでも文字化けしません)。ファイルは保存せず、応答の本文として返します(本文がファイルそのもので、data・meta・links の包みはありません)。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
         get: operations["SalesReportCrud_export"];
         put?: never;
@@ -2301,7 +2301,7 @@ export interface paths {
         };
         /**
          * Get sales trends
-         * @description 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+         * @description 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。数える売上は、期間のレポート(get)と同じです。実行できるのは、期間のレポート(get)と同じ利用者です。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
         get: operations["SalesReportCrud_getTrends"];
         put?: never;
@@ -7851,7 +7851,7 @@ export interface components {
             /** @description 取消理由。空白だけの文字列は指定できない。理由を記録しない場合はnull */
             voidReason: string | null;
         };
-        /** @description サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスのカテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない */
+        /** @description サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスがいま属するカテゴリーの区分(category)ごとに合わせる。明細は売ったときのカテゴリーを持たないので、サービスを別のカテゴリーに移すと、過去の売上も移した先で数える。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない */
         "Models.SalesByCategoryResponse": {
             /** @description サービスカテゴリ区分 */
             category: components["schemas"]["Models.ServiceCategoryType"];
@@ -7867,7 +7867,7 @@ export interface components {
             count: number;
             /**
              * Format: float
-             * @description 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0
+             * @description 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0
              */
             percentage: number;
         };
@@ -7882,24 +7882,24 @@ export interface components {
             amount: number;
             /**
              * Format: int32
-             * @description 決済取引の件数
+             * @description 決済取引の件数。全額を返金した決済取引も数える
              */
             count: number;
             /**
              * Format: float
-             * @description 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0
+             * @description 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0
              */
             percentage: number;
         };
-        /** @description スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。削除したスタッフも載る */
+        /** @description スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。売上はそのスタッフが売った記録なので、削除したスタッフも、無効にしたスタッフも載る */
         "Models.SalesByStaffResponse": {
             /** @description スタッフ ID */
             staffId: components["schemas"]["Models.StaffId"];
-            /** @description スタッフの表示名(staff.displayName のいまの値) */
+            /** @description スタッフの表示名(displayName)。売ったときの値ではなく、いまの値 */
             displayName: string;
             /**
              * Format: int64
-             * @description 担当した明細の合計金額(totalAmount)の合計
+             * @description 担当した明細の合計金額(totalAmount)の合計。サービスの明細も、商品などサービスでない明細も数える。getByStaff のすべての行の合計は、同じ期間のレポートの totalSales から、どちらの担当スタッフもない明細の合計金額を引いた額に等しい
              */
             totalSales: number;
             /**
@@ -8021,7 +8021,7 @@ export interface components {
              * @description totalSales を transactionCount で割った額(1円未満を切り捨て)。売上がなければ0
              */
             averageTransactionValue: number;
-            /** @description 支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順 */
+            /** @description 支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順。まだ受け取っていない額(支払いが済んでいない売上と、一部だけを受け取った売上の残り)は入らず、返金は amount から引くので、amount の合計は totalSales と一致しないことがある */
             salesByMethod: components["schemas"]["Models.SalesByMethodResponse"][];
             /** @description サービスのカテゴリーの区分ごとの売上。amount の多い順、同じなら区分の名前の順 */
             salesByCategory: components["schemas"]["Models.SalesByCategoryResponse"][];
@@ -8055,7 +8055,7 @@ export interface components {
         "Models.SalesTrendPeriodType": "daily" | "weekly" | "monthly";
         /** @description 売上推移 - 期間を区切った単位ごとの、取り消していない売上の時系列。各配列の同じ位置が同じ区切りを表す。最初と最後の区切りは期間の中の売上だけを数え、売上のない区切りも0で載せる */
         "Models.SalesTrendsResponse": {
-            /** @description 各区切りのラベル(SalesTrendPeriodType の説明を参照) */
+            /** @description 各区切りのラベル(SalesTrendPeriodType の説明を参照)。古い順。weekly の最初のラベルは、startDate より前の日付になることがある */
             labels: string[];
             /** @description 各区切りの売上の合計金額(totalAmount)の合計 */
             sales: number[];
@@ -10093,7 +10093,7 @@ export interface components {
         "Models.CustomerVersionSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 */
         "Models.CustomerVersionSearchRequest.limit": number;
-        /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+        /** @description 集計対象の売上日(saleDate) */
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
         "Models.DailySalesGetRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10255,11 +10255,11 @@ export interface components {
         "Models.SaleSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.SaleSearchRequest.startDate": string;
-        /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+        /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
         "Models.SalesReportGetRequest.endDate": string;
         /** @description 集計対象のサロン ID */
         "Models.SalesReportGetRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+        /** @description 期間の最初の売上日(saleDate) */
         "Models.SalesReportGetRequest.startDate": string;
         /** @description 区切りの単位 */
         "Models.SalesTrendsGetRequest.period": components["schemas"]["Models.SalesTrendPeriodType"];
@@ -25562,9 +25562,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最初の売上日(saleDate) */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -25664,9 +25664,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最初の売上日(saleDate) */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -25766,9 +25766,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最初の売上日(saleDate) */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -25868,7 +25868,7 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.DailySalesGetRequest.salonId"];
-                /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 集計対象の売上日(saleDate) */
                 date: components["parameters"]["Models.DailySalesGetRequest.date"];
             };
             header?: never;
@@ -25968,9 +25968,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最初の売上日(saleDate) */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -26063,9 +26063,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最初の売上日(saleDate) */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
                 /** @description 区切りの単位 */
                 period: components["parameters"]["Models.SalesTrendsGetRequest.period"];

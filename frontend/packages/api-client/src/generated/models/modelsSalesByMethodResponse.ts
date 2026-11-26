@@ -12,8 +12,8 @@ export interface ModelsSalesByMethodResponse {
   method: ModelsPaymentMethodType;
   /** 決済取引の金額(amount)から返金額(refundAmount)を引いた額の合計 */
   amount: number;
-  /** 決済取引の件数 */
+  /** 決済取引の件数。全額を返金した決済取引も数える */
   count: number;
-  /** 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0 */
+  /** 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に四捨五入するので、行の合計が100にならないことがある。合計が0なら0 */
   percentage: number;
 }

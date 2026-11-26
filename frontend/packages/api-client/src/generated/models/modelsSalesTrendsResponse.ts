@@ -7,7 +7,7 @@
  * 売上推移 - 期間を区切った単位ごとの、取り消していない売上の時系列。各配列の同じ位置が同じ区切りを表す。最初と最後の区切りは期間の中の売上だけを数え、売上のない区切りも0で載せる
  */
 export interface ModelsSalesTrendsResponse {
-  /** 各区切りのラベル(SalesTrendPeriodType の説明を参照) */
+  /** 各区切りのラベル(SalesTrendPeriodType の説明を参照)。古い順。weekly の最初のラベルは、startDate より前の日付になることがある */
   labels: string[];
   /** 各区切りの売上の合計金額(totalAmount)の合計 */
   sales: number[];

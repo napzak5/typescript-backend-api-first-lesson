@@ -4,6 +4,6 @@
  */
 
 /**
- * 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで
+ * 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで
  */
 export type ModelsSalesReportGetRequestEndDateParameter = string;

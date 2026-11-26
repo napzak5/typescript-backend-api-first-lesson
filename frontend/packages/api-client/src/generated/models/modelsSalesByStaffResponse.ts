@@ -5,14 +5,14 @@
 import type { ModelsStaffId } from './modelsStaffId';
 
 /**
- * スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。削除したスタッフも載る
+ * スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。売上はそのスタッフが売った記録なので、削除したスタッフも、無効にしたスタッフも載る
  */
 export interface ModelsSalesByStaffResponse {
   /** スタッフ ID */
   staffId: ModelsStaffId;
-  /** スタッフの表示名(staff.displayName のいまの値) */
+  /** スタッフの表示名(displayName)。売ったときの値ではなく、いまの値 */
   displayName: string;
-  /** 担当した明細の合計金額(totalAmount)の合計 */
+  /** 担当した明細の合計金額(totalAmount)の合計。サービスの明細も、商品などサービスでない明細も数える。getByStaff のすべての行の合計は、同じ期間のレポートの totalSales から、どちらの担当スタッフもない明細の合計金額を引いた額に等しい */
   totalSales: number;
   /** 担当した、itemType が service の明細の数量(quantity)の合計 */
   serviceCount: number;
