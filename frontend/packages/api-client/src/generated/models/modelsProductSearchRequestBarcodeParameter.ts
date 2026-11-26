@@ -4,6 +4,6 @@
  */
 
 /**
- * バーコードによる絞り込み(完全一致)
+ * バーコードによる絞り込み(完全一致。空白だけは指定できない)
  */
 export type ModelsProductSearchRequestBarcodeParameter = string;

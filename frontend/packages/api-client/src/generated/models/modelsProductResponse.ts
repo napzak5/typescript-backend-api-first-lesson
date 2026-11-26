@@ -6,8 +6,7 @@ import type { ModelsProductId } from './modelsProductId';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
- * プロパティ名と null 許可は DB カラムと一致させている。
+ * 商品レスポンス - サロンが店頭で売る、または施術で使う商品1件を表す。
  * 在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
  */
 export interface ModelsProductResponse {

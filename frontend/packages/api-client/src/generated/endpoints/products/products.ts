@@ -135,7 +135,7 @@ export const getProductCrudListUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+ * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
  * @summary List products
  */
 export const productCrudList = async (salonId: ModelsSalonId,
@@ -186,7 +186,7 @@ export type ProductCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+ * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
  * @summary List products
  */
 export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrudList>>, TError = ModelsProblemDetails>(
@@ -201,7 +201,7 @@ export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrud
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+ * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
  * @summary List products
  */
 export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrudList>>, TError = ModelsProblemDetails>(
@@ -216,7 +216,7 @@ export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+ * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
  * @summary List products
  */
 export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrudList>>, TError = ModelsProblemDetails>(
@@ -225,7 +225,7 @@ export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+ * サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
  * @summary List products
  */
 export function useProductCrudList<TData = Awaited<ReturnType<typeof productCrudList>>, TError = ModelsProblemDetails>(
@@ -314,7 +314,7 @@ export const getProductCrudCreateUrl = (salonId: ModelsSalonId,) => {
 }
 
 /**
- * サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+ * サロンに商品を登録します。実行できるのは admin と、パスのサロンの owner / manager です(staff には403を返します)。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は、商品とは別に登録します。
  * @summary Create product
  */
 export const productCrudCreate = async (salonId: ModelsSalonId,
@@ -368,7 +368,7 @@ const {mutation: mutationOptions} = options ?
     export type ProductCrudCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsProductCreateRequest}
 
     /**
- * サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+ * サロンに商品を登録します。実行できるのは admin と、パスのサロンの owner / manager です(staff には403を返します)。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は、商品とは別に登録します。
  * @summary Create product
  */
 export const useProductCrudCreate = <TError = ModelsProblemDetails,
@@ -435,7 +435,7 @@ export const getProductCrudGetUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+ * サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
  * @summary Get product
  */
 export const productCrudGet = async (salonId: ModelsSalonId,
@@ -486,7 +486,7 @@ export type ProductCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+ * サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
  * @summary Get product
  */
 export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudGet>>, TError = ModelsProblemDetails>(
@@ -501,7 +501,7 @@ export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudG
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+ * サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
  * @summary Get product
  */
 export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudGet>>, TError = ModelsProblemDetails>(
@@ -516,7 +516,7 @@ export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+ * サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
  * @summary Get product
  */
 export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudGet>>, TError = ModelsProblemDetails>(
@@ -525,7 +525,7 @@ export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+ * サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
  * @summary Get product
  */
 export function useProductCrudGet<TData = Awaited<ReturnType<typeof productCrudGet>>, TError = ModelsProblemDetails>(
@@ -615,7 +615,7 @@ export const getProductCrudUpdateUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+ * 商品を更新します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も、在庫のある商品も更新できます。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode が、サロンの削除されていないほかの商品と重複する場合は409を返します。値が変わらない更新でも、updatedAt は更新した時刻になります。
  * @summary Update product
  */
 export const productCrudUpdate = async (salonId: ModelsSalonId,
@@ -670,7 +670,7 @@ const {mutation: mutationOptions} = options ?
     export type ProductCrudUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsProductId;data: ModelsProductUpdateRequest}
 
     /**
- * 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+ * 商品を更新します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も、在庫のある商品も更新できます。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode が、サロンの削除されていないほかの商品と重複する場合は409を返します。値が変わらない更新でも、updatedAt は更新した時刻になります。
  * @summary Update product
  */
 export const useProductCrudUpdate = <TError = ModelsProblemDetails,
@@ -742,7 +742,7 @@ export const getProductCrudDeleteUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+ * 商品を削除します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も削除できます。在庫のある商品は削除できず、409を返します。数量が0の在庫も、ロットや保管場所の記録なので、在庫に数えます。先に在庫を削除するか、削除せずに isActive を false にして取り扱いをやめます。削除した商品の商品コードは、ほかの商品に使えます。
  * @summary Delete product
  */
 export const productCrudDelete = async (salonId: ModelsSalonId,
@@ -796,7 +796,7 @@ const {mutation: mutationOptions} = options ?
     export type ProductCrudDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsProductId}
 
     /**
- * 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+ * 商品を削除します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も削除できます。在庫のある商品は削除できず、409を返します。数量が0の在庫も、ロットや保管場所の記録なので、在庫に数えます。先に在庫を削除するか、削除せずに isActive を false にして取り扱いをやめます。削除した商品の商品コードは、ほかの商品に使えます。
  * @summary Delete product
  */
 export const useProductCrudDelete = <TError = ModelsProblemDetails,

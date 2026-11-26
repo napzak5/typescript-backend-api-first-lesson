@@ -21107,7 +21107,7 @@ paths:
     get:
       operationId: ProductCrud_list
       summary: List products
-      description: サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+      description: サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に返します。取り扱いをやめた商品(isActive が false)も含みます。実行できるのは admin と、パスのサロンの owner / manager / staff です。それ以外のユーザー(ほかのサロンのメンバー、顧客)には403を返します。cursorの商品の商品コードが、前のページを取得したあとに変わっていた場合は、変わったあとの商品コードの次から返します。
       parameters:
         - name: salonId
           in: path
@@ -21241,7 +21241,7 @@ paths:
     post:
       operationId: ProductCrud_create
       summary: Create product
-      description: サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+      description: サロンに商品を登録します。実行できるのは admin と、パスのサロンの owner / manager です(staff には403を返します)。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は、商品とは別に登録します。
       parameters:
         - name: salonId
           in: path
@@ -21418,7 +21418,7 @@ paths:
     get:
       operationId: ProductCrud_get
       summary: Get product
-      description: サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+      description: サロンの商品を1件取得します。実行できるのは、商品の一覧と同じ利用者です。取り扱いをやめた商品も取得できます。
       parameters:
         - name: salonId
           in: path
@@ -21552,7 +21552,7 @@ paths:
     patch:
       operationId: ProductCrud_update
       summary: Update product
-      description: 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+      description: 商品を更新します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も、在庫のある商品も更新できます。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode が、サロンの削除されていないほかの商品と重複する場合は409を返します。値が変わらない更新でも、updatedAt は更新した時刻になります。
       parameters:
         - name: salonId
           in: path
@@ -21728,7 +21728,7 @@ paths:
     delete:
       operationId: ProductCrud_delete
       summary: Delete product
-      description: 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+      description: 商品を削除します。実行できるのは、商品の登録と同じ利用者です。取り扱いをやめた商品も削除できます。在庫のある商品は削除できず、409を返します。数量が0の在庫も、ロットや保管場所の記録なので、在庫に数えます。先に在庫を削除するか、削除せずに isActive を false にして取り扱いをやめます。削除した商品の商品コードは、ほかの商品に使えます。
       parameters:
         - name: salonId
           in: path
@@ -27910,7 +27910,7 @@ components:
       name: barcode
       in: query
       required: false
-      description: バーコードによる絞り込み(完全一致)
+      description: バーコードによる絞り込み(完全一致。空白だけは指定できない)
       schema:
         type: string
         minLength: 1
@@ -27920,7 +27920,7 @@ components:
       name: category
       in: query
       required: false
-      description: 商品カテゴリによる絞り込み(完全一致)
+      description: 商品カテゴリによる絞り込み(完全一致。大文字小文字を区別する。空白だけは指定できない)
       schema:
         type: string
         minLength: 1
@@ -27962,7 +27962,7 @@ components:
       name: keyword
       in: query
       required: false
-      description: 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)
+      description: 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない。% と _ は、ただの文字として扱う。空白だけは指定できない)
       schema:
         type: string
         minLength: 1
@@ -33797,7 +33797,7 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          description: 商品コード。サロンの削除されていない商品の間で一意
+          description: 商品コード。サロンの削除されていない商品の間で一意(取り扱いをやめた商品のコードも重複になる)。大文字と小文字は区別する
         name:
           type: string
           minLength: 1
@@ -33880,7 +33880,7 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: 商品画像の URL(http または https)。未設定の場合はnull
+          description: 商品画像の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull
         barcode:
           type: string
           nullable: true
@@ -33909,13 +33909,13 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: 安全データシート(SDS)の URL(http または https)。未設定の場合はnull
+          description: 安全データシート(SDS)の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull
         isActive:
           type: boolean
           description: 取り扱い中か
       description: |-
-        商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-        商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+        商品新規登録リクエスト - 商品を持つサロンはパスの salonId で指定する。
+        文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
         在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
     Models.ProductId:
       type: string
@@ -34066,8 +34066,7 @@ components:
           format: date-time
           description: レコード最終更新日時
       description: |-
-        商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
-        プロパティ名と null 許可は DB カラムと一致させている。
+        商品レスポンス - サロンが店頭で売る、または施術で使う商品1件を表す。
         在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
     Models.ProductUpdateRequest:
       type: object
@@ -34076,7 +34075,7 @@ components:
           type: string
           minLength: 1
           maxLength: 100
-          description: 商品コード。サロンの削除されていない商品の間で一意
+          description: 商品コード。サロンの削除されていない、ほかの商品と重複できない(比べ方は登録と同じ)。その商品がいま持つコードは指定できる
         name:
           type: string
           minLength: 1
@@ -34159,7 +34158,7 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: 商品画像の URL(http または https)。nullでクリア
+          description: 商品画像の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア
         barcode:
           type: string
           nullable: true
@@ -34173,7 +34172,7 @@ components:
           description: 施術で使う商品か
         requiresLotTracking:
           type: boolean
-          description: 在庫をロット番号で分けて管理するか
+          description: 在庫をロット番号で分けて管理するか。在庫のある商品でも変更でき、すでにある在庫のロット番号は変わらない
         expiryMonths:
           type: integer
           format: int32
@@ -34188,13 +34187,13 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: 安全データシート(SDS)の URL(http または https)。nullでクリア
+          description: 安全データシート(SDS)の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア
         isActive:
           type: boolean
           description: 取り扱い中か
       description: |-
-        商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-        DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+        商品部分更新リクエスト - 商品を持つサロンは変更できない。
+        文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
         在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
     Models.PurchaseOrderCancelRequest:
       type: object

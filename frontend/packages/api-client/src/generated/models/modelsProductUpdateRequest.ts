@@ -4,13 +4,13 @@
  */
 
 /**
- * 商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
- * DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+ * 商品部分更新リクエスト - 商品を持つサロンは変更できない。
+ * 文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
  * 在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
  */
 export interface ModelsProductUpdateRequest {
   /**
-     * 商品コード。サロンの削除されていない商品の間で一意
+     * 商品コード。サロンの削除されていない、ほかの商品と重複できない(比べ方は登録と同じ)。その商品がいま持つコードは指定できる
      * @minLength 1
      * @maxLength 100
      */
@@ -101,7 +101,7 @@ export interface ModelsProductUpdateRequest {
      */
   leadTimeDays?: number | null;
   /**
-     * 商品画像の URL(http または https)。nullでクリア
+     * 商品画像の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア
      * @maxLength 500
      * @nullable
      */
@@ -116,7 +116,7 @@ export interface ModelsProductUpdateRequest {
   isForSale?: boolean;
   /** 施術で使う商品か */
   isForTreatment?: boolean;
-  /** 在庫をロット番号で分けて管理するか */
+  /** 在庫をロット番号で分けて管理するか。在庫のある商品でも変更でき、すでにある在庫のロット番号は変わらない */
   requiresLotTracking?: boolean;
   /**
      * 使用期限までの月数の目安。nullでクリア
@@ -130,7 +130,7 @@ export interface ModelsProductUpdateRequest {
      */
   storageConditions?: string | null;
   /**
-     * 安全データシート(SDS)の URL(http または https)。nullでクリア
+     * 安全データシート(SDS)の URL(http か https で、ホスト名がドメイン名の URL に限る)。nullでクリア
      * @maxLength 500
      * @nullable
      */

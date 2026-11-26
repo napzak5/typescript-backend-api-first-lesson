@@ -4,13 +4,13 @@
  */
 
 /**
- * 商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+ * 商品新規登録リクエスト - 商品を持つサロンはパスの salonId で指定する。
+ * 文字列は、空文字と、空白だけの文字列(全角の空白を含む)を指定できない。
  * 在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
  */
 export interface ModelsProductCreateRequest {
   /**
-     * 商品コード。サロンの削除されていない商品の間で一意
+     * 商品コード。サロンの削除されていない商品の間で一意(取り扱いをやめた商品のコードも重複になる)。大文字と小文字は区別する
      * @minLength 1
      * @maxLength 100
      */
@@ -101,7 +101,7 @@ export interface ModelsProductCreateRequest {
      */
   leadTimeDays: number | null;
   /**
-     * 商品画像の URL(http または https)。未設定の場合はnull
+     * 商品画像の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull
      * @maxLength 500
      * @nullable
      */
@@ -130,7 +130,7 @@ export interface ModelsProductCreateRequest {
      */
   storageConditions: string | null;
   /**
-     * 安全データシート(SDS)の URL(http または https)。未設定の場合はnull
+     * 安全データシート(SDS)の URL。画面がそのままリンクにできるように、http か https で、ホスト名がドメイン名の URL に限る(localhost や IP アドレスは指定できない)。未設定の場合はnull
      * @maxLength 500
      * @nullable
      */
