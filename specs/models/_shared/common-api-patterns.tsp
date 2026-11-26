@@ -5,36 +5,33 @@ using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 namespace BeautySalon.Models {
-  @doc("""
-    RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
-    美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
-    """)
+  @doc("エラーの本文。RFC 9457 (Problem Details for HTTP APIs) の形で、どのエラーもこのモデルで返す。")
   model ProblemDetails {
-    @doc("エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。")
+    @doc("エラーの種類を表す URN (`urn:beauty-salon:problem:not-found` など)。")
     type: string;
 
-    @doc("ユーザーに短く要点を伝えるエラー概要メッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。")
+    @doc("エラーの種類を短く言う文。言語は、レスポンスの Content-Language ヘッダーのとおり。")
     title: string;
 
-    @doc("レスポンスに付与される HTTP ステータスコード。")
+    @doc("レスポンスの HTTP ステータスコード。")
     status: int32;
 
-    @doc("今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。言語は、レスポンスの Content-Language ヘッダーのとおり。詳細が不要な場合はnull")
+    @doc("今回のエラーを説明する文。言語は、レスポンスの Content-Language ヘッダーのとおり。サーバー内部のエラー (500) など、説明を付けないエラーではnull")
     detail: string | null;
 
-    @doc("この事象を一意に識別するための URI。監査ログやダッシュボードと連携する。URIが不要な場合はnull")
+    @doc("リクエストの URL (パスとクエリ)。")
     instance: string | null;
 
-    @doc("システム全体で共有する機械判読可能なエラーコード。画面表示や分岐処理に使用する。")
+    @doc("エラーの種類を表すコード。画面は、この値で分岐する。")
     code: ErrorCodeType;
 
-    @doc("フィールド単位の検証エラーなど、追加のエラー詳細情報一覧。検証エラーがない場合はnull")
+    @doc("規則に合わなかった値の一覧。検証エラー (code が 2001) でない場合はnull")
     errors: ValidationError[] | null;
 
-    @doc("障害調査や問い合わせで利用する相関 ID。リクエスト単位で一意。相関IDが不要な場合はnull")
+    @doc("リクエストの ID。レスポンスの X-Request-Id ヘッダーと同じ値で、サーバーのログと照合できる。")
     correlationId: string | null;
 
-    @doc("エラー発生日時 (UTC)。サーバーログの検索キーとして使用する。")
+    @doc("エラーを返した日時 (UTC)。")
     timestamp: utcDateTime;
   }
 
@@ -78,10 +75,10 @@ namespace BeautySalon.Models {
   @doc("サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。")
   model InternalServerErrorResponse is ProblemResponse<500>;
 
-  @doc("リクエスト本文がサイズ上限を超えている (413)。")
+  @doc("リクエスト本文が 100,000 バイトを超えている (413)。")
   model PayloadTooLargeResponse is ProblemResponse<413>;
 
-  @doc("リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。")
+  @doc("リクエスト本文が JSON ではない (415)。本文を送るリクエストの Content-Type は application/json にする。")
   model UnsupportedMediaTypeResponse is ProblemResponse<415>;
 
   @doc("""
@@ -115,39 +112,31 @@ namespace BeautySalon.Models {
     | UnsupportedMediaTypeResponse;
 
   @doc("""
-    エラーコードタイプ区分 - 一貫したエラー処理のための標準化されたエラーコード
+    エラーコードタイプ区分 - エラーの種類を表すコード。括弧の中は、そのコードを返すステータスコード
     
     // 認証・認可 (1xxx)
-    1001: 認証必須 - アクセスには認証が必要
-    1002: 無効な資格情報 - ユーザー名またはパスワードが不正
-    1003: トークン期限切れ - 認証トークンが期限切れ
-    1004: トークン無効 - 認証トークンが無効または破損
-    1005: 権限不足 - 操作を実行する権限が不足
-    1006: アカウントロック - アカウントがロックされている
-    1007: 2要素認証必須 - 2要素認証の入力が必要
+    1001: 認証必須 (401) - アクセストークンがない
+    1002: 無効な資格情報 - ログインのメールアドレスかパスワードが正しくない (401)。共有リンクのパスワードがない、または正しくない (403)
+    1003: トークン期限切れ (401) - アクセストークンの有効期限が切れている
+    1004: トークン無効 (401) - アクセストークンかリフレッシュトークンが無効
+    1005: 権限不足 (403) - 操作を行う権限がない
+    1007: 2要素認証必須 (401) - ログインに 2 要素認証のコードが要る
     
     // バリデーション (2xxx)
-    2001: 検証失敗 - 入力データの検証に失敗
-    2002: 不正な形式 - データ形式が不正
-    2003: 必須フィールド欠落 - 必須フィールドが入力されていない
-    2004: 範囲外の値 - 値が許可された範囲を超えている
-    2005: 重複値 - 一意であるべき値が重複している
+    2001: 検証失敗 (400) - 値が規則に合わない。合わなかった値は errors にある
+    2002: 不正な形式 - 本文を JSON として読めない、または URL を読めない (400)。本文が JSON ではない (415)
+    2004: 範囲外の値 (413) - 本文が大きすぎる
     
     // ビジネスロジック (3xxx)
-    3001: リソース未検出 - 指定されたリソースが存在しない
-    3002: リソース既存 - リソースが既に存在する
-    3003: 操作不可 - 現在の状態では操作が許可されない
-    3004: ビジネスルール違反 - ビジネスルールに違反している
-    3005: 残高不足 - ポイントや残高が不足
-    3006: 予約競合 - 予約時間が重複している
-    3007: 容量超過 - 利用可能な容量を超えている
+    3001: リソース未検出 (404) - 対象がない、または URL に合うオペレーションがない
+    3002: リソース既存 (409) - 同じ値を持つものが、すでにある
+    3003: 操作不可 (409) - 現在の状態では操作できない
     
     // システム (4xxx)
-    4001: 内部サーバーエラー - サーバー内部でエラーが発生
-    4002: サービス利用不可 - サービスが一時的に利用できない
-    4003: データベースエラー - データベース処理中にエラーが発生
-    4004: 外部サービスエラー - 外部サービスでエラーが発生
-    4005: レート制限超過 - APIレート制限を超えた
+    4001: 内部サーバーエラー (500) - 予期しない失敗
+    4003: データベースエラー (500) - データベースの失敗
+    4004: 外部サービスエラー (500) - ファイルの保存先の失敗
+    4005: レート制限超過 (429) - リクエスト数の上限を超えた
     """)
   enum ErrorCodeType {
     // 認証・認可 (1xxx)
@@ -157,201 +146,166 @@ namespace BeautySalon.Models {
     TOKEN_EXPIRED: "1003",
     TOKEN_INVALID: "1004",
     INSUFFICIENT_PERMISSIONS: "1005",
-    ACCOUNT_LOCKED: "1006",
     TWO_FACTOR_REQUIRED: "1007",
 
     // バリデーション (2xxx)
     VALIDATION_FAILED: "2001",
 
     INVALID_FORMAT: "2002",
-    REQUIRED_FIELD_MISSING: "2003",
     VALUE_OUT_OF_RANGE: "2004",
-    DUPLICATE_VALUE: "2005",
 
     // ビジネスロジック (3xxx)
     RESOURCE_NOT_FOUND: "3001",
 
     RESOURCE_ALREADY_EXISTS: "3002",
     OPERATION_NOT_ALLOWED: "3003",
-    BUSINESS_RULE_VIOLATION: "3004",
-    INSUFFICIENT_BALANCE: "3005",
-    BOOKING_CONFLICT: "3006",
-    CAPACITY_EXCEEDED: "3007",
 
     // システム (4xxx)
     INTERNAL_SERVER_ERROR: "4001",
 
-    SERVICE_UNAVAILABLE: "4002",
     DATABASE_ERROR: "4003",
     EXTERNAL_SERVICE_ERROR: "4004",
     RATE_LIMIT_EXCEEDED: "4005",
   }
 
-  @doc("""
-    入力検証での失敗内容を表すモデル。
-    画面入力フォームやAPI連携時のフィールド単位のエラー詳細を格納し、顧客やスタッフへのフィードバックに利用する。
-    """)
+  @doc("規則に合わなかった値 1 件を表すモデル。")
   model ValidationError {
-    @doc("検証に失敗したフィールドパス。ネストしたキーをドット記法で表現する。")
+    @doc("値の場所。本文のプロパティは、キーと配列の番号をドットでつないだパス (`details.0.quantity`)。クエリとパスのパラメーターは、その名前。リクエスト全体についての違反では空文字。")
     field: string;
 
-    @doc("違反した検証ルール名またはコード。")
+    @doc("合わなかった規則の名前 (`too_big`、`not_found` など)。画面は、field とこの値で分岐する。")
     rule: string;
 
-    @doc("ユーザーに提示する具体的なエラーメッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。")
+    @doc("違反を説明する文。言語は、レスポンスの Content-Language ヘッダーのとおり。")
     message: string;
 
-    @doc("検証対象となった実際の値。セキュリティ観点で出力が許容される場合のみ利用する。出力不可の場合はnull")
+    @doc("常にnull")
     value: unknown | null;
 
-    @doc("期待される値や制約条件。入力補助やUI表示のガイダンスに使用する。制約が明示不要な場合はnull")
+    @doc("常にnull")
     constraint: unknown | null;
   }
 
-  @doc("""
-    カーソル方式のページネーションレスポンスモデル。
-    `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
-    """)
+  @doc("一覧の 1 ページを表すレスポンスモデル。")
   model CursorPaginationResponse<T> {
-    @doc("現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。")
+    @doc("このページの項目。")
     data: T[];
 
-    @doc("ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。")
+    @doc("ページの位置と件数。")
     meta: PaginationMeta;
 
-    @doc("関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。")
+    @doc("このページと、前後のページの URL。")
     links: PaginationLinks;
   }
 
-  @doc("""
-    ページネーションに関する統計情報モデル。
-    総件数やカーソル位置を保持し、フロントエンドの続き取得や無限スクロールの制御に利用する。
-    """)
+  @doc("一覧のページの位置と件数を表すモデル。")
   model PaginationMeta {
-    @doc("取得対象全体の総件数。件数計測ができない場合はnull")
+    @doc("条件に合う項目の、全体の件数。")
     total: int32 | null;
 
-    @doc("1ページあたりの取得件数。クエリパラメータ `limit` と一致する。")
+    @doc("1 ページの件数の上限。リクエストの `limit` の値で、指定がなければ 20。")
     limit: int32;
 
-    @doc("次ページが存在するかを示すフラグ。無限スクロールの継続判定に使用。")
+    @doc("次のページがあればtrue。")
     hasMore: boolean;
 
-    @doc("現在ページのカーソル値。次リクエストで `cursor` に指定することで同位置から再開できる。初回ページの場合はnull")
+    @doc("このページを読んだリクエストの `cursor` の値。最初のページの場合はnull")
     cursor: string | null;
 
-    @doc("次ページを取得するためのカーソル値。最終ページの場合はnull")
+    @doc("次のページを読むリクエストの `cursor` に書く値。最後のページの場合はnull")
     nextCursor: string | null;
 
-    @doc("前ページへ戻るためのカーソル値。初回ページまたは戻り操作が不要な場合はnull")
+    @doc("常にnull。一覧は先へだけ進む。")
     prevCursor: string | null;
   }
 
-  @doc("""
-    ページ遷移に利用するリンク情報モデル。
-    API クライアントや外部連携がRESTフローで次・前のリソースを辿る際に利用する。
-    """)
+  @doc("一覧のページの URL を表すモデル。URL は、パスとクエリ。")
   model PaginationLinks {
-    @doc("現在ページを指すリンク。")
+    @doc("このページの URL。")
     self: string;
 
-    @doc("最初のページへのリンク。総件数が確定しない場合はnull")
+    @doc("最初のページの URL。")
     first: string | null;
 
-    @doc("最後のページへのリンク。カーソル算出ができない場合はnull")
+    @doc("常にnull。一覧は先へだけ進む。")
     last: string | null;
 
-    @doc("次ページへのリンク。最終ページの場合はnull")
+    @doc("次のページの URL。最後のページの場合はnull")
     next: string | null;
 
-    @doc("前ページへのリンク。初回ページまたは戻り操作が不要な場合はnull")
+    @doc("常にnull。一覧は先へだけ進む。")
     prev: string | null;
   }
 
-  @doc("""
-    API 成功レスポンスの共通ラッパーモデル。
-    サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-    """)
+  @doc("成功レスポンスの本文を表すモデル。")
   model ApiResponse<T> {
-    @doc("レスポンスの主体となるビジネスデータ。")
+    @doc("オペレーションの結果。")
     data: T;
 
-    @doc("リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull")
+    @doc("リクエストの ID と、答えた日時。")
     meta: ResponseMeta | null;
 
-    @doc("関連リソースや次アクションへのリンク情報。リンクがない場合はnull")
+    @doc("結果に関連する URL。`self` は、結果そのものの URL。URL のないオペレーションの場合はnull")
     links: Record<string> | null;
   }
 
-  @doc("""
-    レスポンス共通メタデータモデル。
-    問い合わせ対応やロギングで必要となる識別情報を保持する。
-    """)
+  @doc("成功レスポンスが、どのリクエストにいつ答えたものかを表すモデル。")
   model ResponseMeta {
-    @doc("リクエストを一意に紐づける相関 ID。ログ横断調査に使用する。")
+    @doc("リクエストの ID。レスポンスの X-Request-Id ヘッダーと同じ値で、サーバーのログと照合できる。")
     correlationId: string;
 
-    @doc("レスポンス生成日時 (UTC)。障害時のタイムライン整理に利用。")
+    @doc("答えた日時 (UTC)。")
     timestamp: utcDateTime;
 
-    @doc("レスポンスを返却した API バージョン。")
+    @doc("API の版 (`v1`)。")
     version: string;
 
     // その他のメタデータ
     ...Record<unknown>;
   }
 
-  @doc("""
-    API ヘルスチェック結果モデル。
-    監視基盤や運用ダッシュボードにシステム状態を提供し、早期異常検知を実現する。
-    """)
+  @doc("稼働の状態と、依存先ごとの確認の結果を表すモデル。")
   model HealthStatus {
-    @doc("システム全体の稼働状態。`healthy` は正常、`degraded` は性能低下、`unhealthy` は停止を表す。")
+    @doc("全体の状態。`healthy` は、どの依存先も応答した。`unhealthy` は、応答しない依存先がある。")
     status: "healthy" | "degraded" | "unhealthy";
 
-    @doc("稼働中の API バージョン。運用チームのバージョン管理に利用。")
+    @doc("API の版 (`v1`)。")
     version: string;
 
-    @doc("判定実行時点のサーバー時刻 (UTC)。")
+    @doc("確認した日時 (UTC)。")
     timestamp: utcDateTime;
 
-    @doc("各内部サービスや依存コンポーネントのヘルスチェック結果一覧。")
+    @doc("依存先ごとの確認の結果。")
     checks: HealthCheck[];
 
-    @doc("監視環境固有の追加メタ情報。必要に応じてキーを拡張する。追加情報がない場合はnull")
+    @doc("常にnull")
     metadata: Record<unknown> | null;
   }
 
-  @doc("""
-    準備完了チェックの結果モデル。
-    オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
-    """)
+  @doc("リクエストを処理できる状態かどうかを表すモデル。")
   model SystemReadyResponse {
     @doc("リクエストを処理できる状態であればtrue。")
     ready: boolean;
 
-    @doc("準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull")
+    @doc("応答しない依存先の名前 (`database`)。リクエストを処理できる場合はnull")
     reason: string | null;
   }
 
-  @doc("""
-    個別サービスのヘルスチェック結果モデル。
-    外部サービス連携や内部マイクロサービスごとの状態を把握する。
-    """)
+  @doc("依存先 1 つの確認の結果を表すモデル。")
   model HealthCheck {
-    @doc("対象サービス名またはコンポーネント識別子。")
+    @doc("依存先の名前 (`database`)。")
     name: string;
 
-    @doc("対象サービスの稼働状態。`up` は正常、`down` は停止、`degraded` は部分的な性能低下を示す。")
+    @doc("依存先の状態。`up` は応答した、`down` は応答しなかった。")
     status: "up" | "down" | "degraded";
 
-    @doc("ヘルスチェックに要した時間 (ミリ秒)。応答遅延の指標。測定不可の場合はnull")
+    @doc("応答を待った時間 (ミリ秒)。")
     responseTime: int32 | null;
 
-    @doc("停止時のエラーメッセージや原因メモ。正常時はnull")
+    @doc("応答しなかったことの説明。応答した場合はnull")
     error: string | null;
 
-    @doc("監視対象固有の追加詳細。再試行回数や依存サービス名などを含める。追加情報がない場合はnull")
+    @doc("常にnull")
     details: Record<unknown> | null;
   }
 }

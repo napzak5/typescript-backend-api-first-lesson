@@ -46,7 +46,7 @@ ID は `specs/models/_shared/common.tsp` のスカラーを使う。素の `stri
 
 ```typespec
 // specs/models/_shared/common.tsp
-@doc("サロン店舗・拠点を識別するためのブランド付きUUID。")
+@doc("サロン (店舗) の ID。")
 @format("uuid")
 scalar SalonId extends string;
 ```
@@ -144,6 +144,7 @@ taxRate: float64;
 ## `@doc`
 
 - モデル、プロパティ、Enum、オペレーションのすべてに日本語の `@doc` を付ける
+- `@doc` には、API のクライアントから見えることを書く。テーブルやカラムの名前、トランザクション、実装の状況は書かない。どの規則をどこに書くかは、スキル [requirements-docs](../.claude/skills/requirements-docs/SKILL.md) にある
 - nullable なプロパティ（`Type | null`）には、null になる条件を必ず書く
 - Update モデルでは、null を指定したときの効果を書く（「nullでクリア」）
 
@@ -255,7 +256,7 @@ namespace SalonOperations {
 - どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに、呼び出し方に合うエイリアスを 1 つ加える（下の表）。本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
 - 権限の確認があるオペレーションの `@doc` には、実行できるロールを書く（「admin だけが実行できます。」）
 - パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
-- オペレーションのファイルは `namespace <Domain>Operations { interface <Resource>Crud { ... } }` の形にし、`@route` と `@tag` は namespace に付ける
+- オペレーションのファイルは `namespace <Domain>Operations { interface <Resource>Crud { ... } }` の形にし、`@route` と `@tag` は namespace に付ける。namespace と interface には `@doc` を付けない（生成物に出ない）。タグの説明は、`specs/main.tsp` の `@tagMetadata` に書く
 - 新しいオペレーションは、実装する単位で定義する。使う予定のないオペレーションを先に定義しない（YAGNI）
 
 認証と権限に関するエラーは、オペレーションの呼び出し方で決まる 3 つのエイリアスのどれかで定義する。エイリアスは包含関係にあり、広いものが狭いものを含む。

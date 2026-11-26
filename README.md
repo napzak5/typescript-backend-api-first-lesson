@@ -168,10 +168,10 @@ accounts and their roles are listed in
 
 The OpenAPI document is published as a page, the
 [API reference](https://napzak5.github.io/typescript-backend-api-first-lesson/):
-every operation and model of the contract, with what the contract says about
-them. A push to `main` that changes `specs/` publishes it to GitHub Pages, and
-`pnpm build:api-reference` builds it locally
-(`specs/dist/api-reference/index.html`).
+the rules every operation shares, and every operation and model of the
+contract with what the contract says about it. A push to `main` that changes
+`specs/` publishes it to GitHub Pages, and `pnpm build:api-reference` builds
+it locally (`specs/dist/api-reference/index.html`).
 
 ### Database Workflow
 

@@ -14,9 +14,10 @@ listing it again.
 
 A fact is written once. Where, and the form of the document of a domain, is
 the skill [requirements-docs](../.claude/skills/requirements-docs/SKILL.md):
-the rule of one property or one operation is in the contract (TypeSpec), and
-the document of the domain holds the rules across operations and their
-reasons.
+the rule of one property or one operation is in the contract (TypeSpec), the
+rules every operation shares are in the description of the service, at the
+top of the API reference, and the document of a domain holds the rules across
+its operations and their reasons.
 
 ## 📚 Architecture & Design
 - [**Architecture Overview**](./architecture-overview.md) - The system as a whole: layers, packages, request flow
@@ -58,7 +59,7 @@ reasons.
 - [Cleanup Policy](./cleanup-policy.md) - YAGNI in practice and the tools that enforce it
 
 ## 🏗️ Type Generation & API
-- [API Reference](https://napzak5.github.io/typescript-backend-api-first-lesson/) - Every operation and model of the contract, as a page built from the OpenAPI document
+- [API Reference](https://napzak5.github.io/typescript-backend-api-first-lesson/) - The rules every operation shares, and every operation and model of the contract, as a page built from the OpenAPI document
 - [Type Generation System](./type-generation-system.md) - TypeSpec → OpenAPI → TypeScript pipeline
 - [**TypeSpec API Type Rules**](./typespec-api-type-rules.md) - Model naming, required / optional / nullable rules
 - [TypeSpec Directory Structure](./typespec-directory-structure.md) - How `specs/` is organized

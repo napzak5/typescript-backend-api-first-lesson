@@ -1661,9 +1661,6 @@ importers:
       '@typespec/rest':
         specifier: 0.88.0
         version: 0.88.0(@typespec/compiler@1.18.0(@types/node@26.6.6))(@typespec/http@1.18.0(@typespec/compiler@1.18.0(@types/node@26.6.6)))
-      '@typespec/versioning':
-        specifier: 0.88.0
-        version: 0.88.0(@typespec/compiler@1.18.0(@types/node@26.6.6))
 
 packages:
 
@@ -8121,6 +8118,7 @@ snapshots:
   '@typespec/versioning@0.88.0(@typespec/compiler@1.18.0(@types/node@26.6.6))':
     dependencies:
       '@typespec/compiler': 1.18.0(@types/node@26.6.6)
+    optional: true
 
   '@vitejs/plugin-react@6.3.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))':
     dependencies:

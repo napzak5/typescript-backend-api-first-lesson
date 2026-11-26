@@ -370,13 +370,13 @@ namespace BeautySalon.Models {
     """)
   model TreatmentRecordSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
 
     @query
@@ -461,10 +461,7 @@ namespace BeautySalon.Models {
   // 顧客アレルギー (customer_allergies)
   // ============================================================================
 
-  @doc("""
-    顧客アレルギーレスポンス - customer_allergies テーブルの1行。顧客ごとのアレルギー情報を返す。
-    プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
-    """)
+  @doc("顧客アレルギーレスポンス - 顧客のアレルギー1件を返す。対象の顧客はパスの customerId で示す")
   model CustomerAllergyResponse {
     @doc("アレルギー ID")
     id: CustomerAllergyId;
@@ -494,9 +491,7 @@ namespace BeautySalon.Models {
     updatedAt: utcDateTime;
   }
 
-  @doc("""
-    顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す
-    """)
+  @doc("顧客アレルギー追加リクエスト - 対象の顧客はパスの customerId で示す")
   model CustomerAllergyCreateRequest {
     @doc("アレルギーの種類")
     allergyType: AllergyType;
@@ -514,14 +509,11 @@ namespace BeautySalon.Models {
     @doc("施術時の注意事項などのメモ（空白だけは指定できない）。特記事項がない場合はnull")
     notes: string | null;
 
-    @doc("アレルギーを確認した日。1900-01-01 から今日まで。確認日が不明な場合はnull")
+    @doc("アレルギーを確認した日。今日まで。確認日が不明な場合はnull")
     confirmedDate: plainDate | null;
   }
 
-  @doc("""
-    顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-    DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
-    """)
+  @doc("顧客アレルギー部分更新リクエスト - 対象の顧客は変更できない")
   model CustomerAllergyUpdateRequest {
     @doc("アレルギーの種類")
     allergyType?: AllergyType;
@@ -539,20 +531,20 @@ namespace BeautySalon.Models {
     @doc("施術時の注意事項などのメモ（空白だけは指定できない）。nullでクリア")
     notes?: string | null;
 
-    @doc("アレルギーを確認した日。1900-01-01 から今日まで。nullでクリア")
+    @doc("アレルギーを確認した日。今日まで。nullでクリア")
     confirmedDate?: plainDate | null;
   }
 
   @doc("顧客アレルギー一覧リクエスト - ページネーションを指定する。並びは listAllergies に書く")
   model CustomerAllergySearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
   }
 
@@ -561,14 +553,14 @@ namespace BeautySalon.Models {
   // ============================================================================
 
   @doc("""
-    過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する。
+    過去の施術 1 件。カルテの previousTreatments の要素。
     1 件ごとの ID は持たないので、更新は一覧全体を置き換える
     """)
   model PreviousTreatment {
     @doc("施術の種類")
     treatment: TreatmentType;
 
-    @doc("施術日。1900-01-01 から今日まで")
+    @doc("施術日。今日まで")
     date: plainDate;
 
     @doc("施術を受けたサロンの名前（255文字まで。空白だけは指定できない）。自店での施術や、サロンが分からない場合はnull")
@@ -580,9 +572,8 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
-    プロパティ名と null 許可は DB カラムと一致させている。
-    顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+    カルテレスポンス - 顧客1人に1件で、施術の前に確認する情報を返す。
+    顧客のアレルギーはカルテとは別の記録で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
     medicalConditions はスタッフ向けの情報で、顧客には返さない
     """)
   model MedicalChartResponse {
@@ -614,10 +605,7 @@ namespace BeautySalon.Models {
     updatedAt: utcDateTime;
   }
 
-  @doc("""
-    カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する。
-    好みの一覧と避ける一覧に、同じ名前があってもよい
-    """)
+  @doc("カルテ新規作成リクエスト - 好みの一覧と避ける一覧に、同じ名前があってもよい")
   model MedicalChartCreateRequest {
     @doc("対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する")
     customerId: CustomerId;
@@ -641,10 +629,7 @@ namespace BeautySalon.Models {
     notes: string | null;
   }
 
-  @doc("""
-    カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
-    DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
-    """)
+  @doc("カルテ部分更新リクエスト - 一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない")
   model MedicalChartUpdateRequest {
     @doc("過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア")
     @maxItems(50)
@@ -668,13 +653,13 @@ namespace BeautySalon.Models {
   @doc("カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件の結合と並びは list に書く")
   model MedicalChartSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
 
     @query
@@ -684,7 +669,7 @@ namespace BeautySalon.Models {
     search?: string;
 
     @query
-    @doc("アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する")
+    @doc("アレルギーの有無による絞り込み。trueの場合はアレルギーの記録がある顧客の、falseの場合は記録がない顧客のカルテに一致する")
     hasAllergies?: boolean;
   }
 }

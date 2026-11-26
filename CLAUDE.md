@@ -194,9 +194,10 @@ How a domain is built is the skill
 [backend-domain](.claude/skills/backend-domain/SKILL.md), and where a fact is
 written, once, is the skill
 [requirements-docs](.claude/skills/requirements-docs/SKILL.md): the rule of
-one property or one operation is in the contract, a rule across operations
-in the document of the domain, and why code is as it is in a comment at that
-code.
+one property or one operation is in the contract, a rule every operation
+shares in the description of the service (the top of the API reference), a
+rule across the operations of a domain in its document, and why code is as it
+is in a comment at that code.
 
 ### Frontend Packages
 ```

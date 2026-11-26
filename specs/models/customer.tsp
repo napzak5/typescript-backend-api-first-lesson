@@ -511,13 +511,13 @@ namespace BeautySalon.Models {
     """)
   model CustomerSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル")
     cursor?: string;
 
     @query
@@ -1181,7 +1181,7 @@ namespace BeautySalon.Models {
     """)
   model CustomerVersionSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;

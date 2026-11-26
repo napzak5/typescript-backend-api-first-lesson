@@ -228,7 +228,7 @@ namespace BeautySalon.Models {
     """)
   model ReviewSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
@@ -340,7 +340,7 @@ namespace BeautySalon.Models {
     """)
   model ReviewReportSearchRequest {
     @query
-    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @doc("1ページあたりの取得件数上限")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
