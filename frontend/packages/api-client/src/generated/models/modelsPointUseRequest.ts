@@ -6,14 +6,13 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPointMovementReferenceType } from './modelsPointMovementReferenceType';
 
 /**
- * ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
- * DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+ * ポイント利用リクエスト - 種別 used のポイント取引を登録する。残高はシステムが計算する
  */
 export interface ModelsPointUseRequest {
   /** ポイントを利用する顧客の ID */
   customerId: ModelsCustomerId;
   /**
-     * 利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する
+     * 利用するポイント数。残高を超える場合は409。ポイント取引には負の値で記録する
      * @minimum 1
      */
   points: number;
@@ -25,7 +24,7 @@ export interface ModelsPointUseRequest {
   /** 利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
   referenceType: ModelsPointMovementReferenceType | null;
   /**
-     * 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull
+     * 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに利用した記録を指定した場合は409。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;

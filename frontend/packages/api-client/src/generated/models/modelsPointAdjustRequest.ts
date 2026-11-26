@@ -6,13 +6,12 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPointMovementReferenceType } from './modelsPointMovementReferenceType';
 
 /**
- * ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
- * DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+ * ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。残高はシステムが計算する
  */
 export interface ModelsPointAdjustRequest {
   /** ポイントを調整する顧客の ID */
   customerId: ModelsCustomerId;
-  /** 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない */
+  /** 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる場合と、2,147,483,647 を超える場合は409 */
   points: number;
   /**
      * 調整の理由。空白だけの文字列は指定できない。未設定の場合はnull
@@ -22,7 +21,7 @@ export interface ModelsPointAdjustRequest {
   /** 調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
   referenceType: ModelsPointMovementReferenceType | null;
   /**
-     * 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
+     * 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も、すでに付与・利用・調整した記録も指定できる。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;

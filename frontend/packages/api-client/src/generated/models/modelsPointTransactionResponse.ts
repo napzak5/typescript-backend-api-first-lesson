@@ -8,8 +8,7 @@ import type { ModelsPointTransactionId } from './modelsPointTransactionId';
 import type { ModelsPointTransactionType } from './modelsPointTransactionType';
 
 /**
- * ポイント取引レスポンス - customer_points テーブルの1行。顧客ポイントの1回の増減と、その後の残高を表す。
- * プロパティ名と null 許可は DB カラムと一致させている
+ * ポイント取引レスポンス - 顧客ポイントの1回の増減と、その後の残高を表す
  */
 export interface ModelsPointTransactionResponse {
   /** ポイント取引 ID */

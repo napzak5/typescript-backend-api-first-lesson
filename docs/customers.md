@@ -727,7 +727,7 @@
 - 来店回数、無断キャンセル回数、キャンセル回数は 0 以上（CHECK 制約 `customers_counts_not_negative`）
 - 以前の行の 5 つの値は、マイグレーションが予約から数え直します。これまでは、シードだけが書いていた値で、予約と合っていませんでした
 
-マイグレーション `202611181800_customer_versions.sql` で、版のテーブル（`customer_versions`）と列挙型 `customer_version_operation`（`baseline`、`create`、`update`、`delete`、`restore`）を作り、いた顧客すべてに版 1（`baseline`）を残しました。`merge` は、マイグレーション `202611181900_customer_merge.sql` で加えました（[ポイント台帳](./points.md#db-の制約)の移行の制約も、このマイグレーションです）。
+マイグレーション `202611181800_customer_versions.sql` で、版のテーブル（`customer_versions`）と列挙型 `customer_version_operation`（`baseline`、`create`、`update`、`delete`、`restore`）を作り、いた顧客すべてに版 1（`baseline`）を残しました。`merge` は、マイグレーション `202611181900_customer_merge.sql` で加えました（[ポイント台帳](./points.md)の移行の制約も、このマイグレーションです）。
 
 - 台帳の 30 項目は、`customers` のカラムと同じ型と NULL 許可で、既定値はありません（`backend/packages/database/src/__tests__/customer-versions.test.ts` が、2 つのテーブルで一致していることを確かめます）。値は、書き込んだあとの顧客の行から写すので、`customers` の CHECK 制約を写していません。`referredBy` には外部キーを付けず、版は、その時点の紹介元を持ち続けます
 - `(customerId, version)` は一意（`customer_versions_customer_version_unique`）で、変更履歴は、その一意インデックスで新しい順に読みます。番号は 1 以上（`customer_versions_version_positive`）

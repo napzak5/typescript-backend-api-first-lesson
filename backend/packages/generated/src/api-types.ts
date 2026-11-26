@@ -1759,7 +1759,7 @@ export interface paths {
         put?: never;
         /**
          * Adjust points
-         * @description 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。
+         * @description 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。誤った付与や利用は、調整で打ち消します。管理者と、どのサロンの owner・manager も実行できます。付与や利用と違い、会計や来店の記録によらずにポイントを動かすので、サロンの staff には403を返します(顧客のアカウントも403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。links は、付与と同じです。
          */
         post: operations["PointCrud_adjust"];
         delete?: never;
@@ -1777,7 +1777,7 @@ export interface paths {
         };
         /**
          * Get the point balance of a customer
-         * @description 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
+         * @description 顧客の現在のポイント残高を取得します。顧客の loyaltyPoints と同じ値で、最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。links.balance と links.transactions は、その顧客の残高と履歴を指します。
          */
         get: operations["PointCrud_getBalance"];
         put?: never;
@@ -1797,7 +1797,7 @@ export interface paths {
         };
         /**
          * Get the expiring points of a customer
-         * @description 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
+         * @description 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを集計します。失効させるまでは使えるので、有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。links.self はこのリクエストを、links.balance と links.transactions はその顧客の残高と履歴を指します。
          */
         get: operations["PointCrud_getExpiring"];
         put?: never;
@@ -1817,7 +1817,7 @@ export interface paths {
         };
         /**
          * List the point transactions of a customer
-         * @description 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
+         * @description 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順(同時刻はIDの降順)に一覧取得します。startDate と endDate は、発生日時を、レスポンスと同じミリ秒までの値で比べます。レスポンスの createdAt を指定すると、その取引も一致します。ページと件数は、同じ時点の値です。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、endDate が startDate より前の場合は400を返します。
          */
         get: operations["PointCrud_listTransactions"];
         put?: never;
@@ -1839,7 +1839,7 @@ export interface paths {
         put?: never;
         /**
          * Earn points
-         * @description 顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。
+         * @description 顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。ポイント取引を1件取得するオペレーションはないため、links.balance と links.transactions が、その顧客の残高と履歴を指します。
          */
         post: operations["PointCrud_earn"];
         delete?: never;
@@ -1859,7 +1859,7 @@ export interface paths {
         put?: never;
         /**
          * Expire points
-         * @description 有効期限が processBefore より前の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
+         * @description 有効期限が processBefore より前の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同時に顧客の残高を減らします。この取引の description・referenceType・referenceId は null です。失効させるポイントのない顧客には何も登録せず、processedCount にも数えません。どのサロンで貯めたポイントも、すべての顧客についてまとめて減らすので、管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。customerId が null の場合は、顧客を1人ずつ処理します。途中で失敗して500を返した場合も、それまでに処理した顧客の失効は残り、もう一度実行すると、残りの顧客を処理します。links は null です。
          */
         post: operations["PointCrud_expire"];
         delete?: never;
@@ -1879,7 +1879,7 @@ export interface paths {
         put?: never;
         /**
          * Use points
-         * @description 顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。
+         * @description 顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。links は、付与と同じです。
          */
         post: operations["PointCrud_use"];
         delete?: never;
@@ -6431,16 +6431,13 @@ export interface components {
          */
 
         "Models.PaymentStatusType": "pending" | "processing" | "completed" | "failed" | "refunded" | "partial_refund";
-        /**
-         * @description ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
-         *     DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-         */
+        /** @description ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。残高はシステムが計算する */
         "Models.PointAdjustRequest": {
             /** @description ポイントを調整する顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
             /**
              * Format: int32
-             * @description 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない
+             * @description 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる場合と、2,147,483,647 を超える場合は409
              */
             points: number;
             /** @description 調整の理由。空白だけの文字列は指定できない。未設定の場合はnull */
@@ -6449,14 +6446,11 @@ export interface components {
             referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
-             * @description 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
+             * @description 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も、すでに付与・利用・調整した記録も指定できる。参照する記録がない場合はnull
              */
             referenceId: string | null;
         };
-        /**
-         * @description ポイント残高レスポンス - 顧客の残高(customers.loyaltyPoints)を返す。
-         *     残高は最新のポイント取引(customer_points)の balance と等しく、ポイント取引のない顧客の残高は 0
-         */
+        /** @description ポイント残高レスポンス - 顧客の現在のポイント残高を返す */
         "Models.PointBalanceResponse": {
             /** @description 対象顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
@@ -6466,16 +6460,13 @@ export interface components {
              */
             balance: number;
         };
-        /**
-         * @description ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
-         *     DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-         */
+        /** @description ポイント付与リクエスト - 種別 earned のポイント取引を登録する。残高はシステムが計算する */
         "Models.PointEarnRequest": {
             /** @description ポイントを付与する顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
             /**
              * Format: int32
-             * @description 付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない
+             * @description 付与するポイント数。付与の後の残高が 2,147,483,647 を超える場合は409
              */
             points: number;
             /** @description 付与の理由。空白だけの文字列は指定できない。未設定の場合はnull */
@@ -6484,22 +6475,22 @@ export interface components {
             referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
-             * @description 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
+             * @description 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに付与した記録を指定した場合は409。参照する記録がない場合はnull
              */
             referenceId: string | null;
             /**
              * Format: date
-             * @description 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで
+             * @description 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。日付はタイムゾーンを持たないため、どのタイムゾーンの今日も指定できるように、昨日(UTC)から受け付ける。有効期限を設けない場合はnull
              */
             expiryDate: string | null;
         };
-        /** @description ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須 */
+        /** @description ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する */
         "Models.PointExpireRequest": {
             /** @description 対象顧客の ID。削除されていないすべての顧客を処理する場合はnull */
             customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
             /**
              * Format: date
-             * @description 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない。1900-01-01 から 2999-12-31 まで
+             * @description 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない
              */
             processBefore: string | null;
         };
@@ -6558,7 +6549,7 @@ export interface components {
 
          * @description
 
-         * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+         * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類
 
          *
 
@@ -6584,10 +6575,7 @@ export interface components {
          * @description ポイントの増減の記録の ID。
          */
         "Models.PointTransactionId": string;
-        /**
-         * @description ポイント取引レスポンス - customer_points テーブルの1行。顧客ポイントの1回の増減と、その後の残高を表す。
-         *     プロパティ名と null 許可は DB カラムと一致させている
-         */
+        /** @description ポイント取引レスポンス - 顧客ポイントの1回の増減と、その後の残高を表す */
         "Models.PointTransactionResponse": {
             /** @description ポイント取引 ID */
             id: components["schemas"]["Models.PointTransactionId"];
@@ -6629,7 +6617,7 @@ export interface components {
 
          * @description
 
-         * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+         * ポイント取引種別区分 - 顧客ポイントの増減の種類
 
          *
 
@@ -6651,23 +6639,20 @@ export interface components {
 
          *
 
-         * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
+         * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは、サブの残高を増やした取引(付与、正の調整、移行)のうち、使われずに残っているものごとの正の取引
 
          * @enum {string}
 
          */
 
         "Models.PointTransactionType": "earned" | "used" | "expired" | "adjusted" | "transferred";
-        /**
-         * @description ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
-         *     DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
-         */
+        /** @description ポイント利用リクエスト - 種別 used のポイント取引を登録する。残高はシステムが計算する */
         "Models.PointUseRequest": {
             /** @description ポイントを利用する顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
             /**
              * Format: int32
-             * @description 利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する
+             * @description 利用するポイント数。残高を超える場合は409。ポイント取引には負の値で記録する
              */
             points: number;
             /** @description 利用の理由。空白だけの文字列は指定できない。未設定の場合はnull */
@@ -6676,7 +6661,7 @@ export interface components {
             referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
-             * @description 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull
+             * @description 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約を指定する。取り消した売上、ステータスが draft・cancelled・no_show の予約、すでに利用した記録を指定した場合は409。参照する記録がない場合はnull
              */
             referenceId: string | null;
         };
@@ -10165,7 +10150,7 @@ export interface components {
         "Models.PaymentMethodSearchRequest.limit": number;
         /** @description 支払い方法区分による絞り込み(完全一致) */
         "Models.PaymentMethodSearchRequest.method": components["schemas"]["Models.PaymentMethodType"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない */
+        /** @description 取得開始位置を示すカーソル */
         "Models.PointTransactionSearchRequest.cursor": components["schemas"]["Models.PointTransactionId"];
         /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.endDate": string;
@@ -22574,7 +22559,7 @@ export interface operations {
     PointCrud_getExpiring: {
         parameters: {
             query?: {
-                /** @description 集計する期間の日数 (1〜365) */
+                /** @description 集計する期間の日数 */
                 days?: number;
             };
             header?: never;
@@ -22687,7 +22672,7 @@ export interface operations {
             query?: {
                 /** @description 1ページあたりの取得件数上限 */
                 limit?: components["parameters"]["Models.PointTransactionSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない */
+                /** @description 取得開始位置を示すカーソル */
                 cursor?: components["parameters"]["Models.PointTransactionSearchRequest.cursor"];
                 /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 startDate?: components["parameters"]["Models.PointTransactionSearchRequest.startDate"];

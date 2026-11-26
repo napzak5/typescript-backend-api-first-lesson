@@ -308,12 +308,11 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("顧客ポイントの付与・利用・調整・失効と、残高・履歴の参照を行うAPI操作群です。ポイントはサロンではなく顧客のもので、どのサロンでも同じ残高を使います。ポイントの増減はすべてポイント取引として記録し、取引ごとにその後の残高を保持して、同じトランザクションで顧客の残高(loyaltyPoints)も更新します。7つの操作はすべて実装済みで、定義と実装は一致しています。有効期限のある獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、どれだけが使われずに残っているかは、ポイント取引を古い順にたどり、残高を減らす取引(利用、失効、負の調整)が、その時点で残っているポイントを有効期限の近い順に(期限のないものは最後に)使ったものとして求めます。")
   @route("/api/v1/points")
   @tag("Points")
   namespace PointOperations {
     interface PointCrud {
-      @doc("顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。")
+      @doc("顧客の現在のポイント残高を取得します。顧客の loyaltyPoints と同じ値で、最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。links.balance と links.transactions は、その顧客の残高と履歴を指します。")
       @summary("Get the point balance of a customer")
       @route("/customer/{customerId}/balance")
       @get
@@ -326,7 +325,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。")
+      @doc("顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順(同時刻はIDの降順)に一覧取得します。startDate と endDate は、発生日時を、レスポンスと同じミリ秒までの値で比べます。レスポンスの createdAt を指定すると、その取引も一致します。ページと件数は、同じ時点の値です。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、endDate が startDate より前の場合は400を返します。")
       @summary("List the point transactions of a customer")
       @route("/customer/{customerId}/transactions")
       @get
@@ -342,7 +341,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。")
+      @doc("顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。ポイント取引を1件取得するオペレーションはないため、links.balance と links.transactions が、その顧客の残高と履歴を指します。")
       @summary("Earn points")
       @route("/earn")
       @post
@@ -356,7 +355,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。")
+      @doc("顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。links は、付与と同じです。")
       @summary("Use points")
       @route("/use")
       @post
@@ -370,7 +369,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。")
+      @doc("顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。誤った付与や利用は、調整で打ち消します。管理者と、どのサロンの owner・manager も実行できます。付与や利用と違い、会計や来店の記録によらずにポイントを動かすので、サロンの staff には403を返します(顧客のアカウントも403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。links は、付与と同じです。")
       @summary("Adjust points")
       @route("/adjust")
       @post
@@ -384,14 +383,14 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。")
+      @doc("顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを集計します。失効させるまでは使えるので、有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、どのサロンの owner・manager・staff も実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。links.self はこのリクエストを、links.balance と links.transactions はその顧客の残高と履歴を指します。")
       @summary("Get the expiring points of a customer")
       @route("/customer/{customerId}/expiring")
       @get
       getExpiring(
         @path customerId: CustomerId,
 
-        @doc("集計する期間の日数 (1〜365)")
+        @doc("集計する期間の日数")
         @query
         @minValue(1)
         @maxValue(365)
@@ -405,7 +404,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("有効期限が processBefore より前の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。")
+      @doc("有効期限が processBefore より前の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同時に顧客の残高を減らします。この取引の description・referenceType・referenceId は null です。失効させるポイントのない顧客には何も登録せず、processedCount にも数えません。どのサロンで貯めたポイントも、すべての顧客についてまとめて減らすので、管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。customerId が null の場合は、顧客を1人ずつ処理します。途中で失敗して500を返した場合も、それまでに処理した顧客の失効は残り、もう一度実行すると、残りの顧客を処理します。links は null です。")
       @summary("Expire points")
       @route("/expire")
       @post

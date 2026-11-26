@@ -842,7 +842,7 @@ export type PointMovementReferenceType = z.infer<typeof PointMovementReferenceTy
 
 /**
  * @description
- * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類
  *
  *
  * sale: 売上 - referenceId は売上の ID
@@ -854,7 +854,7 @@ export type PointMovementReferenceType = z.infer<typeof PointMovementReferenceTy
 export const PointReferenceTypeSchema = z.enum(['sale', 'booking', 'customer'])
 /**
  * @description
- * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類
  *
  *
  * sale: 売上 - referenceId は売上の ID
@@ -867,7 +867,7 @@ export type PointReferenceType = z.infer<typeof PointReferenceTypeSchema>
 
 /**
  * @description
- * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+ * ポイント取引種別区分 - 顧客ポイントの増減の種類
  *
  *
  * earned: 獲得 - 来店や購入などでポイントを付与した取引
@@ -878,12 +878,12 @@ export type PointReferenceType = z.infer<typeof PointReferenceTypeSchema>
  *
  * adjusted: 調整 - スタッフが手動でポイントを増減した取引
  *
- * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
+ * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは、サブの残高を増やした取引(付与、正の調整、移行)のうち、使われずに残っているものごとの正の取引
  */
 export const PointTransactionTypeSchema = z.enum(['earned', 'used', 'expired', 'adjusted', 'transferred'])
 /**
  * @description
- * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+ * ポイント取引種別区分 - 顧客ポイントの増減の種類
  *
  *
  * earned: 獲得 - 来店や購入などでポイントを付与した取引
@@ -894,7 +894,7 @@ export const PointTransactionTypeSchema = z.enum(['earned', 'used', 'expired', '
  *
  * adjusted: 調整 - スタッフが手動でポイントを増減した取引
  *
- * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
+ * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは、サブの残高を増やした取引(付与、正の調整、移行)のうち、使われずに残っているものごとの正の取引
  */
 export type PointTransactionType = z.infer<typeof PointTransactionTypeSchema>
 
